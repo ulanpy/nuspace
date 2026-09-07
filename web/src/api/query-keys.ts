@@ -25,6 +25,16 @@ export const qk = {
     mine: () => ["communities", "mine"] as const,
   },
 
+  /**
+   * The shareable admin-access link is a secret artifact, not community data —
+   * and the backend issues a fresh token on every GET. Kept OUT of the
+   * `communities` prefix so list/detail invalidations can never silently
+   * rotate the link the user is currently looking at.
+   */
+  adminLink: {
+    detail: (slug: string) => ["admin-link", slug] as const,
+  },
+
   announcements: {
     all: () => ["announcements"] as const,
     bundle: () => ["announcements", "bundle"] as const,

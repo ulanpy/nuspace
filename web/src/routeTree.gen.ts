@@ -31,8 +31,8 @@ import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppEventsEventIdRouteImport } from './routes/_app/events/$eventId'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
 import { Route as AppCommunitiesSlugIndexRouteImport } from './routes/_app/communities/$slug/index'
-import { Route as AppCommunitiesSlugEditDetailsRouteImport } from './routes/_app/communities/$slug.edit-details'
-import { Route as AppCommunitiesSlugEditPageRouteImport } from './routes/_app/communities/$slug.edit-page'
+import { Route as AppCommunitiesSlugEditorRouteImport } from './routes/_app/communities/$slug.editor'
+import { Route as AppCommunitiesSlugSettingsRouteImport } from './routes/_app/communities/$slug.settings'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -142,16 +142,16 @@ const AppCommunitiesSlugIndexRoute = AppCommunitiesSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppCommunitiesSlugRoute,
 } as any)
-const AppCommunitiesSlugEditDetailsRoute =
-  AppCommunitiesSlugEditDetailsRouteImport.update({
-    id: '/edit-details',
-    path: '/edit-details',
+const AppCommunitiesSlugEditorRoute =
+  AppCommunitiesSlugEditorRouteImport.update({
+    id: '/editor',
+    path: '/editor',
     getParentRoute: () => AppCommunitiesSlugRoute,
   } as any)
-const AppCommunitiesSlugEditPageRoute =
-  AppCommunitiesSlugEditPageRouteImport.update({
-    id: '/edit-page',
-    path: '/edit-page',
+const AppCommunitiesSlugSettingsRoute =
+  AppCommunitiesSlugSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
     getParentRoute: () => AppCommunitiesSlugRoute,
   } as any)
 
@@ -175,8 +175,8 @@ export interface FileRoutesByFullPath {
   '/courses/': typeof AppCoursesIndexRoute
   '/events/': typeof AppEventsIndexRoute
   '/sgotinish/': typeof AppSgotinishIndexRoute
-  '/communities/$slug/edit-details': typeof AppCommunitiesSlugEditDetailsRoute
-  '/communities/$slug/edit-page': typeof AppCommunitiesSlugEditPageRoute
+  '/communities/$slug/editor': typeof AppCommunitiesSlugEditorRoute
+  '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsRoute
   '/communities/$slug/': typeof AppCommunitiesSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -197,8 +197,8 @@ export interface FileRoutesByTo {
   '/courses': typeof AppCoursesIndexRoute
   '/events': typeof AppEventsIndexRoute
   '/sgotinish': typeof AppSgotinishIndexRoute
-  '/communities/$slug/edit-details': typeof AppCommunitiesSlugEditDetailsRoute
-  '/communities/$slug/edit-page': typeof AppCommunitiesSlugEditPageRoute
+  '/communities/$slug/editor': typeof AppCommunitiesSlugEditorRoute
+  '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsRoute
   '/communities/$slug': typeof AppCommunitiesSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -224,8 +224,8 @@ export interface FileRoutesById {
   '/_app/courses/': typeof AppCoursesIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/sgotinish/': typeof AppSgotinishIndexRoute
-  '/_app/communities/$slug/edit-details': typeof AppCommunitiesSlugEditDetailsRoute
-  '/_app/communities/$slug/edit-page': typeof AppCommunitiesSlugEditPageRoute
+  '/_app/communities/$slug/editor': typeof AppCommunitiesSlugEditorRoute
+  '/_app/communities/$slug/settings': typeof AppCommunitiesSlugSettingsRoute
   '/_app/communities/$slug/': typeof AppCommunitiesSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -250,8 +250,8 @@ export interface FileRouteTypes {
     | '/courses/'
     | '/events/'
     | '/sgotinish/'
-    | '/communities/$slug/edit-details'
-    | '/communities/$slug/edit-page'
+    | '/communities/$slug/editor'
+    | '/communities/$slug/settings'
     | '/communities/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -272,8 +272,8 @@ export interface FileRouteTypes {
     | '/courses'
     | '/events'
     | '/sgotinish'
-    | '/communities/$slug/edit-details'
-    | '/communities/$slug/edit-page'
+    | '/communities/$slug/editor'
+    | '/communities/$slug/settings'
     | '/communities/$slug'
   id:
     | '__root__'
@@ -298,8 +298,8 @@ export interface FileRouteTypes {
     | '/_app/courses/'
     | '/_app/events/'
     | '/_app/sgotinish/'
-    | '/_app/communities/$slug/edit-details'
-    | '/_app/communities/$slug/edit-page'
+    | '/_app/communities/$slug/editor'
+    | '/_app/communities/$slug/settings'
     | '/_app/communities/$slug/'
   fileRoutesById: FileRoutesById
 }
@@ -464,18 +464,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCommunitiesSlugIndexRouteImport
       parentRoute: typeof AppCommunitiesSlugRoute
     }
-    '/_app/communities/$slug/edit-details': {
-      id: '/_app/communities/$slug/edit-details'
-      path: '/edit-details'
-      fullPath: '/communities/$slug/edit-details'
-      preLoaderRoute: typeof AppCommunitiesSlugEditDetailsRouteImport
+    '/_app/communities/$slug/editor': {
+      id: '/_app/communities/$slug/editor'
+      path: '/editor'
+      fullPath: '/communities/$slug/editor'
+      preLoaderRoute: typeof AppCommunitiesSlugEditorRouteImport
       parentRoute: typeof AppCommunitiesSlugRoute
     }
-    '/_app/communities/$slug/edit-page': {
-      id: '/_app/communities/$slug/edit-page'
-      path: '/edit-page'
-      fullPath: '/communities/$slug/edit-page'
-      preLoaderRoute: typeof AppCommunitiesSlugEditPageRouteImport
+    '/_app/communities/$slug/settings': {
+      id: '/_app/communities/$slug/settings'
+      path: '/settings'
+      fullPath: '/communities/$slug/settings'
+      preLoaderRoute: typeof AppCommunitiesSlugSettingsRouteImport
       parentRoute: typeof AppCommunitiesSlugRoute
     }
   }
@@ -500,14 +500,14 @@ const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
 )
 
 interface AppCommunitiesSlugRouteChildren {
-  AppCommunitiesSlugEditDetailsRoute: typeof AppCommunitiesSlugEditDetailsRoute
-  AppCommunitiesSlugEditPageRoute: typeof AppCommunitiesSlugEditPageRoute
+  AppCommunitiesSlugEditorRoute: typeof AppCommunitiesSlugEditorRoute
+  AppCommunitiesSlugSettingsRoute: typeof AppCommunitiesSlugSettingsRoute
   AppCommunitiesSlugIndexRoute: typeof AppCommunitiesSlugIndexRoute
 }
 
 const AppCommunitiesSlugRouteChildren: AppCommunitiesSlugRouteChildren = {
-  AppCommunitiesSlugEditDetailsRoute: AppCommunitiesSlugEditDetailsRoute,
-  AppCommunitiesSlugEditPageRoute: AppCommunitiesSlugEditPageRoute,
+  AppCommunitiesSlugEditorRoute: AppCommunitiesSlugEditorRoute,
+  AppCommunitiesSlugSettingsRoute: AppCommunitiesSlugSettingsRoute,
   AppCommunitiesSlugIndexRoute: AppCommunitiesSlugIndexRoute,
 }
 

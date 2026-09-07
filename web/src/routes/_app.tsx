@@ -42,7 +42,7 @@ function AppLayout() {
   // The community page editor fills the whole main area (the Puck canvas is
   // the page itself, not a widget in a container).
   const isImmersiveEditor = Boolean(
-    matchRoute({ to: "/communities/$slug/edit-page", fuzzy: true })
+    matchRoute({ to: "/communities/$slug/editor", fuzzy: true })
   )
 
   useEffect(() => {

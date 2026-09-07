@@ -230,6 +230,106 @@ export interface paths {
         patch: operations["toggle_community_verified_communities__slug__verified_patch"];
         trace?: never;
     };
+    "/communities/{slug}/admin-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Community Admin Link
+         * @description Get a shareable admin access link for the community. Owner or admin only.
+         */
+        get: operations["get_community_admin_link_communities__slug__admin_link_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/communities/{slug}/admin-link/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate Community Admin Link
+         * @description Rotate the admin access link, invalidating the previous one. Owner or admin only.
+         */
+        post: operations["rotate_community_admin_link_communities__slug__admin_link_rotate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/communities/{slug}/admins/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Leave Community Admin
+         * @description Leave a community as an admin. Owner cannot leave this way.
+         */
+        delete: operations["leave_community_admin_communities__slug__admins_me_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/communities/{slug}/admins/{user_sub}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Community Admin
+         * @description Remove an admin from a community. Site-admin or owner only.
+         */
+        delete: operations["remove_community_admin_communities__slug__admins__user_sub__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/communities/admin-links/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Community Admin Link
+         * @description Redeem an admin access link. Idempotent; no-op if already admin or owner.
+         */
+        post: operations["accept_community_admin_link_communities_admin_links_accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -1471,6 +1571,40 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdminLinkAcceptRequest */
+        AdminLinkAcceptRequest: {
+            /** Token */
+            token: string;
+        };
+        /** AdminLinkAcceptResponse */
+        AdminLinkAcceptResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "granted" | "already_admin" | "already_owner";
+        };
+        /** AdminLinkResponse */
+        AdminLinkResponse: {
+            /** Url */
+            url: string;
+        };
+        /** AdminResponse */
+        AdminResponse: {
+            /** Sub */
+            sub: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /** Picture */
+            picture?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * AnnouncementsBundleResponse
          * @description Aggregated response for the announcements landing page to reduce request count.
@@ -1916,6 +2050,8 @@ export interface components {
              */
             updated_at: string;
             owner_user: components["schemas"]["ShortUserResponse"];
+            /** Admins */
+            admins?: components["schemas"]["AdminResponse"][];
             /**
              * Media
              * @default []
@@ -1929,6 +2065,8 @@ export interface components {
              *       "can_share_access": false,
              *       "can_change_owner": false,
              *       "can_toggle_verified": false,
+             *       "can_manage_admins": false,
+             *       "can_view_admin_link": false,
              *       "editable_fields": []
              *     }
              */
@@ -3014,6 +3152,16 @@ export interface components {
              */
             can_toggle_verified: boolean;
             /**
+             * Can Manage Admins
+             * @default false
+             */
+            can_manage_admins: boolean;
+            /**
+             * Can View Admin Link
+             * @default false
+             */
+            can_view_admin_link: boolean;
+            /**
              * Editable Fields
              * @default []
              */
@@ -3733,6 +3881,184 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommunityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_community_admin_link_communities__slug__admin_link_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminLinkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rotate_community_admin_link_communities__slug__admin_link_rotate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminLinkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    leave_community_admin_communities__slug__admins_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_community_admin_communities__slug__admins__user_sub__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+                user_sub: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_community_admin_link_communities_admin_links_accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminLinkAcceptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminLinkAcceptResponse"];
                 };
             };
             /** @description Validation Error */

@@ -13,6 +13,8 @@ import type { UploadItem } from "@/features/media/use-media-upload"
 import { assertValidImageBatch } from "@/features/media/types"
 import { saveWithMedia } from "@/features/media/save-with-media"
 import type {
+  AdminLink,
+  AdminLinkAcceptResult,
   CommunityCategory,
   CommunityCreate,
   CommunityType,
@@ -232,6 +234,91 @@ export function useDeleteCommunity() {
       unwrap(
         api.DELETE("/communities/{slug}", {
           params: { path: { slug } },
+        })
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    },
+  })
+}
+
+export function communityAdminLinkQueryOptions(slug: string) {
+  return queryOptions({
+    queryKey: qk.adminLink.detail(slug),
+    queryFn: () =>
+      unwrap(
+        api.GET("/communities/{slug}/admin-link", {
+          params: { path: { slug } },
+        })
+      ),
+    // The backend issues a fresh token per GET, so the value must never be
+    // silently refetched after it has been shown to the user.
+    staleTime: Infinity,
+  })
+}
+
+/** Rotates the shareable admin-access link, invalidating the previous one. */
+export function useRotateAdminLink() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (slug: string): Promise<AdminLink> =>
+      unwrap(
+        api.POST("/communities/{slug}/admin-link/rotate", {
+          params: { path: { slug } },
+        })
+      ),
+    onSuccess: (link, slug) => {
+      queryClient.setQueryData(qk.adminLink.detail(slug), link)
+    },
+  })
+}
+
+/** Removes another admin. Owner or site admin only. */
+export function useRemoveCommunityAdmin() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ slug, userSub }: { slug: string; userSub: string }) =>
+      unwrap(
+        api.DELETE("/communities/{slug}/admins/{user_sub}", {
+          params: { path: { slug, user_sub: userSub } },
+        })
+      ),
+    onSuccess: (community, { slug }) => {
+      queryClient.setQueryData(qk.communities.detail(slug), community)
+      void queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    },
+  })
+}
+
+/** Leaves a community as an admin. Owners cannot leave this way. */
+export function useLeaveCommunity() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (slug: string) =>
+      unwrap(
+        api.DELETE("/communities/{slug}/admins/me", {
+          params: { path: { slug } },
+        })
+      ),
+    onSuccess: (community, slug) => {
+      queryClient.setQueryData(qk.communities.detail(slug), community)
+      void queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    },
+  })
+}
+
+/** Redeems a shareable admin-access link. Idempotent. */
+export function useAcceptCommunityAdminLink() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (token: string): Promise<AdminLinkAcceptResult> =>
+      unwrap(
+        api.POST("/communities/admin-links/accept", {
+          body: { token },
         })
       ),
     onSuccess: async () => {

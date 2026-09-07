@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Link,
   createFileRoute,
@@ -6,12 +6,20 @@ import {
   useNavigate,
 } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { BadgeCheckIcon, MailIcon, PencilIcon, Trash2Icon } from "lucide-react"
+import {
+  BadgeCheckIcon,
+  MailIcon,
+  PaletteIcon,
+  SettingsIcon,
+  Trash2Icon,
+} from "lucide-react"
+import { toast } from "sonner"
 
 import { ApiError } from "@/api/client"
 import { apiErrorMessage } from "@/api/errors"
 import {
   communityDetailQueryOptions,
+  useAcceptCommunityAdminLink,
   useDeleteCommunity,
 } from "@/features/communities/api"
 import { selectMedia } from "@/features/media/select"
@@ -21,8 +29,16 @@ import { ResilientImage } from "@/components/resilient-image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export const Route = createFileRoute("/_app/communities/$slug/")({
+  validateSearch: (search: Record<string, unknown>): { admin?: string } => ({
+    admin: typeof search.admin === "string" ? search.admin : undefined,
+  }),
   loader: async ({ context, params }) => {
     try {
       return await context.queryClient.ensureQueryData(
@@ -59,6 +75,13 @@ function CommunityNotFound() {
   )
 }
 
+/** Messages for each idempotent redemption outcome. */
+const REDEMPTION_MESSAGES = {
+  granted: (name: string) => `You're now an admin of ${name}.`,
+  already_admin: (name: string) => `You're already an admin of ${name}.`,
+  already_owner: (name: string) => `You own ${name}.`,
+} as const
+
 function CommunityDetail() {
   const { slug } = Route.useParams()
   const { data: community } = useSuspenseQuery(
@@ -68,13 +91,45 @@ function CommunityDetail() {
   const navigate = useNavigate()
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const deleteCommunity = useDeleteCommunity()
+  const acceptAdminLink = useAcceptCommunityAdminLink()
+  const search = Route.useSearch()
 
   const banner = selectMedia(community.media, "banner")?.url
   const avatar = selectMedia(community.media, "profile")?.url
 
-  // Server-decided. Note that an owner gets can_edit but not can_delete —
-  // removing a community is admin-only.
+  // Server-decided. An owner gets can_edit and can_delete; a community admin
+  // gets can_edit but not can_delete.
   const { can_edit: canEdit, can_delete: canDelete } = community.permissions
+
+  // Redeem a shareable admin-link (`?admin=<token>`) exactly once, on load.
+  useEffect(() => {
+    const token = search.admin
+    if (!token) return
+    acceptAdminLink.mutate(token, {
+      onSuccess: (result) => {
+        toast.success(REDEMPTION_MESSAGES[result.status](community.name))
+        void navigate({
+          to: "/communities/$slug",
+          params: { slug },
+          search: {},
+          replace: true,
+        })
+      },
+      onError: (error) => {
+        toast.error(
+          apiErrorMessage(error, "This admin link is no longer valid.")
+        )
+        void navigate({
+          to: "/communities/$slug",
+          params: { slug },
+          search: {},
+          replace: true,
+        })
+      },
+    })
+    // Intentionally run once per page load, whenever a token is present.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <article className="mx-auto max-w-4xl space-y-4">
@@ -144,35 +199,50 @@ function CommunityDetail() {
             </div>
 
             {(canEdit || canDelete) && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-1">
                 {canEdit && (
-                  <Button
-                    render={
-                      <Link
-                        to="/communities/$slug/edit-details"
-                        params={{ slug }}
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Settings"
+                            render={
+                              <Link
+                                to="/communities/$slug/settings"
+                                params={{ slug }}
+                              />
+                            }
+                          >
+                            <SettingsIcon aria-hidden />
+                          </Button>
+                        }
                       />
-                    }
-                    variant="outline"
-                    size="sm"
-                  >
-                    <PencilIcon aria-hidden />
-                    Edit details
-                  </Button>
-                )}
-                {canEdit && (
-                  <Button
-                    render={
-                      <Link
-                        to="/communities/$slug/edit-page"
-                        params={{ slug }}
+                      <TooltipContent>Settings</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Design page"
+                            render={
+                              <Link
+                                to="/communities/$slug/editor"
+                                params={{ slug }}
+                              />
+                            }
+                          >
+                            <PaletteIcon aria-hidden />
+                          </Button>
+                        }
                       />
-                    }
-                    variant="outline"
-                    size="sm"
-                  >
-                    Design page
-                  </Button>
+                      <TooltipContent>Design page</TooltipContent>
+                    </Tooltip>
+                  </>
                 )}
                 {canDelete && (
                   <Button

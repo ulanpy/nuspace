@@ -152,3 +152,66 @@ async def toggle_community_verified(
     return await community_service.toggle_verified(
         infra=infra, slug=slug, verified=body.verified, user=user
     )
+
+
+@router.get("/communities/{slug}/admin-link", response_model=schemas.AdminLinkResponse)
+async def get_community_admin_link(
+    request: Request,
+    slug: str,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.AdminLinkResponse:
+    """Get a shareable admin access link for the community. Owner or admin only."""
+    return await community_service.view_admin_link(infra=infra, slug=slug, user=user)
+
+
+@router.post("/communities/{slug}/admin-link/rotate", response_model=schemas.AdminLinkResponse)
+async def rotate_community_admin_link(
+    request: Request,
+    slug: str,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.AdminLinkResponse:
+    """Rotate the admin access link, invalidating the previous one. Owner or admin only."""
+    return await community_service.rotate_admin_link(infra=infra, slug=slug, user=user)
+
+
+@router.delete("/communities/{slug}/admins/me", response_model=schemas.CommunityResponse)
+async def leave_community_admin(
+    request: Request,
+    slug: str,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.CommunityResponse:
+    """Leave a community as an admin. Owner cannot leave this way."""
+    return await community_service.leave_admin(infra=infra, slug=slug, user=user)
+
+
+@router.delete("/communities/{slug}/admins/{user_sub}", response_model=schemas.CommunityResponse)
+async def remove_community_admin(
+    request: Request,
+    slug: str,
+    user_sub: str,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.CommunityResponse:
+    """Remove an admin from a community. Site-admin or owner only."""
+    return await community_service.remove_admin(
+        infra=infra, slug=slug, user_sub=user_sub, user=user
+    )
+
+
+@router.post("/communities/admin-links/accept", response_model=schemas.AdminLinkAcceptResponse)
+async def accept_community_admin_link(
+    request: Request,
+    body: schemas.AdminLinkAcceptRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.AdminLinkAcceptResponse:
+    """Redeem an admin access link. Idempotent; no-op if already admin or owner."""
+    return await community_service.accept_admin_link(infra=infra, token=body.token, user=user)

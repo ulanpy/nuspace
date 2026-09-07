@@ -24,16 +24,20 @@ it as you go.**
 ### Status
 
 ```text
-Branch:            (confirm against git before starting)
-Backend models:    pending | in_progress | done
-Migration:         pending | in_progress | done
-Policy/permissions:pending | in_progress | done
-Admin link API:    pending | in_progress | done
-Frontend routes:   pending | in_progress | done
-Settings page:     pending | in_progress | done
-Verification:      pending | in_progress | done
+Branch:            f/puck-integration
+Alembic head:      a1b2c3d4e5f6 (verified upgrade/downgrade round-trip)
+Backend models:    done
+Migration:         done
+Policy/permissions:done
+Admin link API:    done
+Frontend routes:   done
+Settings page:     done
+Verification:      in_progress — all automated checks pass (ruff, pytest,
+                   migrations, tsc, vite build, api:check); only the manual
+                   browser click-through is left (needs auth).
 
-Next:
+Next: manual browser sanity on http://localhost (create community → admin
+link → edit/leave/remove/rotate → delete), then mark every checkbox `- [x]`.
 ```
 
 ---
@@ -63,22 +67,75 @@ Next:
 
 ---
 
+## Deployment & migration environment (IMPORTANT)
+
+- **Environments**: `local` (dev), **`staging`**, and **`prod`**.
+  - Deploys are driven from CI (`.github/workflows/deploy.yml`): a push to
+    `dev` deploys to **staging** (GCP project `nuspace-staging`), a push to
+    `main` deploys to **prod** (GCP project `nuspace2025`).
+  - Deployment runs **Ansible** (`ansible/playbook.yml` +
+    `ansible/roles/backend/tasks/main.yml`) against a GCP VM. It only deploys
+    the services whose paths changed (`backend/**`, `web/**`, infra roles…).
+- **Repo state (check this against git yourself, don't assume)**:
+  - Work happens on branch `f/puck-integration`. As of writing it carries
+    **~17 commits that are NOT yet on staging or prod** and are NOT pushed
+    (`origin/f/puck-integration` and `upstream/dev` are several commits
+    behind): the RBAC work (`RBAC.md` — all phases complete: `reassign_owner`,
+    `toggle_verified`, ban/allow scope, banned-scope enforcement in
+    `get_creds_or_401`), the puck page-editor + `/edit-details`/`/edit-page`
+    route work, the shadcn component library, and this plan. These are the
+    pre-requisites this feature builds on — confirm they are present before
+    starting (see Preflight).
+  - **Do not push / do not deploy without being asked.** CI deploys from
+    `dev`/`main` only; this feature should reach those branches (and then
+    staging/prod) through the normal PR/release flow.
+- **DB migrations are Alembic, applied on the VM by Ansible**:
+  - The backend image ships `backend/migrations/versions/*.py`.
+  - On the VM, Ansible runs the compose `migrate` service
+    (`infra/prod.docker-compose.yml` → `command: alembic upgrade head`), which
+    applies **every pending migration up to `head`** against the shared
+    Postgres, then recreates `fastapi`.
+  - **Local**: run `uv run alembic upgrade head` (or `downgrade -1`) from
+    `backend/`; config lives in `backend/alembic.ini`, env from `infra/.env`.
+- **There are already pending migrations in this repo that are NOT yet applied
+  to staging or prod.** The new migration MUST chain off the **current repo
+  head** so `upgrade head` walks the whole chain cleanly:
+  - Current head today: `8b32e85c3697` (`community_user_schema_refactor`) —
+    always re-confirm with `cd backend && uv run alembic heads` before writing
+    the migration; do not assume.
+  - Because the `migrate` service runs `upgrade head`, all pending migrations
+    (including this feature's) are applied to each environment **in one batch**
+    the next time that environment deploys the backend — you do not (and
+    should not) run migrations by hand on staging/prod.
+- Backwards compatibility matters: the fresh `fastapi` container code and the
+  old running schema live side-by-side momentarily during a deploy once every
+  pending migration is applied before the app recreates, so any migration must
+  be safe to run against data that still reflects only the older schema.
+
+---
+
 ## Preflight (do FIRST)
 
-- [ ] Confirm working branch with `git branch --show-current` and record it in
+- [x] Confirm working branch with `git branch --show-current` and record it in
       the Status block above.
-- [ ] Re-read current models: `backend/modules/campuscurrent/models/community.py`,
+- [x] Re-read current models: `backend/modules/campuscurrent/models/community.py`,
       `backend/modules/campuscurrent/models/events.py` (for the
       `EventAccessInvite` / composite-PK patterns to mirror), and
       `backend/modules/auth/models.py`. Record the confirmed owner column name
       in the Status block if it differs from `owner`.
-- [ ] Read `backend/modules/campuscurrent/communities/` (`api.py`, `service.py`,
+- [x] Confirm the RBAC pre-requisites from the committed branch are present
+      (they should be, per the commits landed): `CommunityPolicy.check_admin_only`,
+      `service.reassign_owner`/`toggle_verified`, `ResourcePermissions`
+      `can_change_owner`/`can_toggle_verified`, and the banned-scope check in
+      `get_creds_or_401`. If any are missing, stop and report — the plan builds
+      on them.
+- [x] Read `backend/modules/campuscurrent/communities/` (`api.py`, `service.py`,
       `repository.py`, `policy.py`, `schemas.py`, `utils.py`,
       `dependencies.py`), `backend/modules/campuscurrent/base.py`,
       `backend/common/schemas.py`, `backend/common/utils/enums.py`,
       `backend/core/database/model_registry.py`, and
       `backend/modules/auth/dependencies.py`.
-- [ ] Read frontend: `web/src/routes/_app/communities/$slug/index.tsx`,
+- [x] Read frontend: `web/src/routes/_app/communities/$slug/index.tsx`,
       `$slug.edit-details.tsx`, `$slug.edit-page.tsx`,
       `web/src/features/communities/api.ts`, `types.ts`, `query-keys.ts`,
       `web/src/features/auth/use-session.ts`, and list
@@ -88,7 +145,7 @@ Next:
 
 ## Backend — data model
 
-- [ ] Add `CommunityAdmin` model in
+- [x] Add `CommunityAdmin` model in
       `backend/modules/campuscurrent/models/community.py`:
       - table `community_admins`
       - `community_id` BigInteger FK → `communities.id` ondelete CASCADE (indexed)
@@ -97,34 +154,41 @@ Next:
       - composite primary key `(community_id, user_sub)` (prevents duplicates)
       - add a `community_admins` relationship on `Community` for eager loading
         (mirror the existing `owner_user` relationship).
-- [ ] Add `CommunityAdminLink` model (mirror `EventAccessInvite` shape):
+- [x] Add `CommunityAdminLink` model (mirror `EventAccessInvite` shape):
       - table `community_admin_links`
       - `id` BigInteger PK, `community_id` FK → `communities.id` CASCADE
         (indexed), `token_hash` String(64) unique+indexed, `created_by_sub`
         String FK → `users.sub`, `created_at`, `revoked_at` nullable
       - **no expiry** — valid until rotated
-- [ ] Export both models from
+- [x] Export both models from
       `backend/modules/campuscurrent/models/__init__.py`.
 
 ## Backend — migration
 
-- [ ] Write hand migration (follow style of
+- [x] Write hand migration (follow style of
       `backend/migrations/versions/c3e8a1b4f902_event_access_invites.py`):
+      - first confirm the current head: `cd backend && uv run alembic heads`
+        (expected `8b32e85c3697` today; re-verify) and use a fresh revision id
       - `create_table("community_admins", …)` with composite PK `(community_id,
         user_sub)` and FK constraints + indexes
       - `create_table("community_admin_links", …)` + a **partial unique index**
         `uq_community_admin_links_active` on `community_id WHERE revoked_at IS NULL`
         (enforces a single active link per community; history retained)
       - downgrade drops tables/indexes
-      - chain `down_revision` to the current head migration (confirm with `uv
-        run alembic heads` in `backend/` or the migrations dir)
-- [ ] Register models import path if needed in
+      - chain `down_revision` to the **current repo head** (see "Deployment &
+        migration environment" above) so `alembic upgrade head` walks cleanly
+      - run the migration locally against local Postgres to verify
+        (`uv run alembic upgrade head`, check the two tables + partial index,
+        then `uv run alembic downgrade -1` and re-upgrade to confirm reversibility)
+      - do NOT run migrations on staging/prod yourself — Ansible's `migrate`
+        service applies them on the next backend deploy
+- [x] Register models import path if needed in
       `backend/core/database/model_registry.py` (verify the campuscurrent import
       already covers it).
 
 ## Backend — permission checks
 
-- [ ] In `backend/modules/campuscurrent/communities/policy.py`:
+- [x] In `backend/modules/campuscurrent/communities/policy.py`:
       - constructor gains `is_community_admin: bool = False`
       - `UPDATE` branch: allow site-admin **or** owner (`community.owner_user.sub
         == self.user_sub`) **or** `self.is_community_admin`
@@ -136,17 +200,17 @@ Next:
         `is_community_admin`) for viewing/rotating the link
       - add `async def check_self_leave(self, community)` — must be a community
         admin; owner gets HTTP 400 ("Owners cannot leave a community")
-- [ ] In `backend/modules/campuscurrent/communities/service.py`: change
+- [x] In `backend/modules/campuscurrent/communities/service.py`: change
       `reassign_owner` from `check_admin_only()` to **owner-or-site-admin**
       (approved matrix). Toggle `delete_community` to also pass owner. Keep
       `toggle_verified` as site-admin-only unless the UI needs otherwise (leave
       as-is).
-- [ ] Extend `ResourcePermissions` in `backend/common/schemas.py` with
+- [x] Extend `ResourcePermissions` in `backend/common/schemas.py` with
       `can_manage_admins: bool = False` and `can_view_admin_link: bool = False`.
 
 ## Backend — repository
 
-- [ ] Add to `CommunityRepository` (`communities/repository.py`):
+- [x] Add to `CommunityRepository` (`communities/repository.py`):
       - `list_admins(community_id) -> list[CommunityAdmin]` (selectinload the
         linked `User` for name/surname/picture)
       - `add_admin(community_id, user_sub)` / `remove_admin(community_id,
@@ -161,7 +225,7 @@ Next:
 
 ## Backend — service
 
-- [ ] In `CommunityService`:
+- [x] In `CommunityService`:
       - compute `is_community_admin = await repo.is_admin(...)` per request and
         pass into `CommunityPolicy(user=user, is_community_admin=...)`
       - `_build_community_response`: include `admins` (list) built from admin
@@ -176,16 +240,16 @@ Next:
 
 ## Backend — schemas & API
 
-- [ ] In `communities/schemas.py`: add `AdminResponse(sub, name, surname,
+- [x] In `communities/schemas.py`: add `AdminResponse(sub, name, surname,
       picture, created_at)`, `AdminLinkResponse(url)`,
       `AdminLinkAcceptRequest(token)`, `AdminLinkAcceptResponse(status:
       Literal["granted","already_admin","already_owner"])`. Include `admins:
       list[AdminResponse]` on `CommunityResponse`.
-- [ ] In `communities/utils.py`: extend `get_community_permissions` to
+- [x] In `communities/utils.py`: extend `get_community_permissions` to
       accept an `is_admin_community: bool` (or membership set) and set
       `can_edit`, `can_delete` (owner/site-admin), `can_manage_admins`,
       `can_view_admin_link`.
-- [ ] In `communities/api.py` add endpoints (all via service; keep the
+- [x] In `communities/api.py` add endpoints (all via service; keep the
       `slug`-taken handling on the existing PATCH):
       - `GET  /communities/{slug}/admin-link` → owner/admin; lazily create if
         none active; returns `{ url }`
@@ -197,21 +261,21 @@ Next:
         `get_creds_or_401`; resolve hash → active row; **no-op** (200,
         `already_admin` / `already_owner`) if already admin or owner; otherwise
         insert and return `granted`; invalid/revoked → 404/410
-- [ ] Backend verification:
-      - [ ] `cd backend && uv run ruff check --fix . && uv run black .`
-      - [ ] `uv run pytest`
+- [x] Backend verification:
+      - [x] `cd backend && uv run ruff check --fix . && uv run black .`
+      - [x] `uv run pytest` (150 passed, via fastapi container)
 
 ---
 
 ## Admin Access Link — mechanics (confirm against implementation)
 
-- [ ] Token = `secrets.token_urlsafe(32)`; store ONLY `sha256(token)` in
+- [x] Token = `secrets.token_urlsafe(32)`; store ONLY `sha256(token)` in
       `token_hash` (never the raw token). Revealed artifact =
       `{APP_ORIGIN}/communities/{slug}?admin={raw}` (slug is a hint only;
       authorization is token-based).
-- [ ] Rotation invalidates the previous link (set `revoked_at`; partial unique
+- [x] Rotation invalidates the previous link (set `revoked_at`; partial unique
       index guarantees one active row). Owner **and** admins may rotate.
-- [ ] Redemption is idempotent: already-admin → no-op `already_admin`;
+- [x] Redemption is idempotent: already-admin → no-op `already_admin`;
       owner → `already_owner`; neither → insert `granted`. No pending/approval
       state.
 
@@ -219,38 +283,38 @@ Next:
 
 ## Frontend — API layer
 
-- [ ] Regenerate `web/src/api/schema.d.ts` with `pnpm api:generate` after the
+- [x] Regenerate `web/src/api/schema.d.ts` with `pnpm api:generate` after the
       backend endpoints exist (verify `pnpm --dir web api:generate`; it reads an
       offline OpenAPI export — see `web/scripts/generate-api-types.mjs`).
-- [ ] Update `web/src/features/communities/api.ts` with mutations:
+- [x] Update `web/src/features/communities/api.ts` with mutations:
       `useRotateAdminLink`, `useRemoveCommunityAdmin`, `useLeaveCommunity`,
       `useAcceptCommunityAdminLink`; invalidate `qk.communities.all()` and/or
       `qk.communities.detail(slug)` on success. Update `types.ts` for
       `admins`/link response fields.
-- [ ] Redemption wiring: on the community detail route, read `?admin=` from the
+- [x] Redemption wiring: on the community detail route, read `?admin=` from the
       search params and POST it on load; toast result
       ("You're now an admin of …" / already-admin / already-owner); then
       navigate so the token is removed from the URL; invalidate queries.
 
 ## Frontend — route renames (TanStack file-based routing regenerates the tree)
 
-- [ ] Rename `web/src/routes/_app/communities/$slug.edit-details.tsx` →
+- [x] Rename `web/src/routes/_app/communities/$slug.edit-details.tsx` →
       `$slug.settings.tsx` (route `/communities/$slug/settings`).
-- [ ] Rename `web/src/routes/_app/communities/$slug.edit-page.tsx` →
+- [x] Rename `web/src/routes/_app/communities/$slug.edit-page.tsx` →
       `$slug.editor.tsx` (route `/communities/$slug/editor`).
-- [ ] Drop old `/edit-details` / `/edit-page` references everywhere; confirm
+- [x] Drop old `/edit-details` / `/edit-page` references everywhere; confirm
       `web/src/routeTree.gen.ts` regenerated and builds.
 
 ## Frontend — community page (`$slug/index.tsx`)
 
-- [ ] Replace the labeled "Edit details" button with an **icon-only gear
+- [x] Replace the labeled "Edit details" button with an **icon-only gear
       button**: `Button variant="ghost" size="icon" aria-label="Settings"`
       wrapping `<Link to="/communities/$slug/settings">`, `Settings` icon.
-- [ ] Replace the labeled "Design page" button with an **icon-only button using
+- [x] Replace the labeled "Design page" button with an **icon-only button using
       a distinct icon** (e.g. `Palette` or `LayoutTemplate`,
       `aria-label="Design page`, `size="icon"`) pointing to `/editor`. Verify
       the lucide icon names exist in the installed `lucide-react`.
-- [ ] Keep the Delete button (now shown for owners too, per `canDelete`).
+- [x] Keep the Delete button (now shown for owners too, per `canDelete`).
 
 ## Frontend — settings page (`$slug.settings.tsx`)
 
@@ -258,10 +322,10 @@ No tabs, no extra containers. One scrolling page reusing the existing details
 card, then two plain sections. Loader mirrors the old `edit-details.tsx`
 (`communityDetailQueryOptions`).
 
-- [ ] Page header (heading + a "Back to community" / cancel link).
-- [ ] **Details section** — move the existing `CommunityForm` card here
+- [x] Page header (heading + a "Back to community" / cancel link).
+- [x] **Details section** — move the existing `CommunityForm` card here
       unchanged (`useUpdateCommunity`, slug navigation, media handling).
-- [ ] **Admins section** — heading + plain rows (`Separator` between rows):
+- [x] **Admins section** — heading + plain rows (`Separator` between rows):
       - owner row from `owner_user` with an "Owner" `Badge` (not removable)
       - one row per `community.admins[]`: `Avatar` (picture / initials) + name
         + surname + joined date (reuse existing campus date formatter)
@@ -271,7 +335,7 @@ card, then two plain sections. Loader mirrors the old `edit-details.tsx`
         `ConfirmDialog`
       - empty state via `web/src/components/ui/empty.tsx`
       - distinguish owner/self/other using `useCurrentUser().sub`
-- [ ] **Admin Access Link section** — gated by `permissions.can_view_admin_link`:
+- [x] **Admin Access Link section** — gated by `permissions.can_view_admin_link`:
       - clearly labeled heading "Admin Access Link" and an
         `Alert`/`AlertDescription` plainly stating what the link does (e.g.
         "Anyone with this link who is signed in becomes an admin of this
@@ -281,18 +345,37 @@ card, then two plain sections. Loader mirrors the old `edit-details.tsx`
       - rotate `Button` (`RotateCw` icon) with `Tooltip` ("Rotating invalidates
         the current link and issues a new one") — available to owner **and**
         admins; invalidate + refresh the shown URL on success
-- [ ] All UI from existing `web/src/components/ui/*` components only. No new
+- [x] All UI from existing `web/src/components/ui/*` components only. No new
       component library, no hand-rolled equivalents of what shadcn provides.
 
 ---
 
 ## Final verification
 
-- [ ] Backend: `cd backend && uv run ruff check --fix . && uv run black . &&
+- [x] Backend: `cd backend && uv run ruff check --fix . && uv run black . &&
       uv run pytest`
-- [ ] Frontend: `cd web && pnpm typecheck && pnpm lint && pnpm build`
+      (ruff clean on all changed files; pytest 150 passed — run in the
+      `fastapi` container)
+- [x] Migrations: `cd backend && uv run alembic heads` shows exactly ONE head
+      (the new revision, chained to `8b32e85c3697`); `uv run alembic upgrade
+      head` then `uv run alembic downgrade -1` then `uv run alembic upgrade
+      head` all succeed against local Postgres.
+      (heads = `a1b2c3d4e5f6 (head)`; round-trip verified in container)
+- [x] Frontend: `cd web && pnpm typecheck && pnpm lint && pnpm build`
       (build = `tsc -b && vite build`)
+      (`tsc -b --noEmit` and `vite build` pass; scoped oxlint clean on all
+      changed files + prettier applied. Repo-wide `pnpm lint` still reports
+      PRE-EXISTING issues in `chart.tsx`, `sidebar.tsx`, `input-group.tsx`,
+      `toggle-group.tsx` — untouched by this work.)
+- [x] `pnpm api:check` — `schema.d.ts` in sync with the live backend.
+      Live OpenAPI confirms all 5 new endpoints registered; Vite dev server
+      (served at http://localhost) compiles `$slug.settings.tsx`,
+      `$slug/index.tsx`, `$slug.editor.tsx` and `api.ts` cleanly.
+<!-- in_progress -->
 - [ ] Manual sanity (if environment allows): create community, become admin via
       a link, admin edits details, owner removes admin, admin leaves, owner
       rotates link, owner deletes community.
+      (Automated smoke checks done — app serves and modules compile on
+      localhost; the click-through below needs an authenticated browser
+      session.)
 - [ ] Update the Status block above to `done` and mark every checkbox `- [x]`.

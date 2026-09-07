@@ -10,7 +10,7 @@ import { UploadContext } from "@/features/page-editor/context"
 import { toast } from "sonner"
 import { qk } from "@/api/query-keys"
 
-export const Route = createFileRoute("/_app/communities/$slug/edit-page")({
+export const Route = createFileRoute("/_app/communities/$slug/editor")({
   loader: async ({ context, params }) => {
     try {
       return await context.queryClient.ensureQueryData(
@@ -21,10 +21,10 @@ export const Route = createFileRoute("/_app/communities/$slug/edit-page")({
       throw error
     }
   },
-  component: CommunityEditPagePage,
+  component: CommunityEditorPage,
 })
 
-function CommunityEditPagePage() {
+function CommunityEditorPage() {
   const { slug } = Route.useParams()
   const { data: community } = useSuspenseQuery(
     communityDetailQueryOptions(slug)
@@ -53,10 +53,9 @@ function CommunityEditPagePage() {
         })
       })
       .catch((error) => {
-        toast.error(
-          apiErrorMessage(error, "Could not publish. Try again."),
-          { id: loading }
-        )
+        toast.error(apiErrorMessage(error, "Could not publish. Try again."), {
+          id: loading,
+        })
       })
   }
 

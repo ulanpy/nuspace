@@ -5,10 +5,13 @@ from sqlalchemy import case, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from backend.common.datetime_utils import utc_now
 from backend.common.utils import meilisearch
 from backend.modules.auth.models import User
 from backend.modules.campuscurrent.models.community import (
     Community,
+    CommunityAdmin,
+    CommunityAdminLink,
     CommunityCategory,
     CommunityType,
 )
@@ -193,5 +196,83 @@ class CommunityRepository:
 
     async def get_user_by_sub(self, sub: str) -> User | None:
         stmt = select(User).where(User.sub == sub)
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
+
+    async def list_admins(self, community_id: int) -> List[CommunityAdmin]:
+        stmt = (
+            select(CommunityAdmin)
+            .where(CommunityAdmin.community_id == community_id)
+            .options(selectinload(CommunityAdmin.user))
+        )
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def add_admin(self, community_id: int, user_sub: str) -> CommunityAdmin:
+        admin = CommunityAdmin(community_id=community_id, user_sub=user_sub)
+        self.db_session.add(admin)
+        await self.db_session.flush()
+        stmt = (
+            select(CommunityAdmin)
+            .where(
+                CommunityAdmin.community_id == community_id,
+                CommunityAdmin.user_sub == user_sub,
+            )
+            .options(selectinload(CommunityAdmin.user))
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().one()
+
+    async def remove_admin(self, community_id: int, user_sub: str) -> bool:
+        stmt = select(CommunityAdmin).where(
+            CommunityAdmin.community_id == community_id,
+            CommunityAdmin.user_sub == user_sub,
+        )
+        result = await self.db_session.execute(stmt)
+        admin = result.scalars().first()
+        if admin is None:
+            return False
+        await self.db_session.delete(admin)
+        return True
+
+    async def is_admin(self, community_id: int, user_sub: str) -> bool:
+        stmt = select(CommunityAdmin).where(
+            CommunityAdmin.community_id == community_id,
+            CommunityAdmin.user_sub == user_sub,
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first() is not None
+
+    async def admin_community_ids(self, user_sub: str) -> set[int]:
+        stmt = select(CommunityAdmin.community_id).where(CommunityAdmin.user_sub == user_sub)
+        result = await self.db_session.execute(stmt)
+        return set(result.scalars().all())
+
+    async def get_active_admin_link(self, community_id: int) -> CommunityAdminLink | None:
+        stmt = select(CommunityAdminLink).where(
+            CommunityAdminLink.community_id == community_id,
+            CommunityAdminLink.revoked_at.is_(None),
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
+
+    async def create_admin_link(
+        self, community_id: int, token_hash: str, created_by_sub: str
+    ) -> CommunityAdminLink:
+        link = CommunityAdminLink(
+            community_id=community_id,
+            token_hash=token_hash,
+            created_by_sub=created_by_sub,
+        )
+        self.db_session.add(link)
+        await self.db_session.flush()
+        return link
+
+    async def revoke_admin_link(self, link: CommunityAdminLink) -> None:
+        link.revoked_at = utc_now()
+        await self.db_session.flush()
+
+    async def get_admin_link_by_token_hash(self, token_hash: str) -> CommunityAdminLink | None:
+        stmt = select(CommunityAdminLink).where(CommunityAdminLink.token_hash == token_hash)
         result = await self.db_session.execute(stmt)
         return result.scalars().first()

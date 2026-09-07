@@ -15,11 +15,16 @@ class CommunityPolicy:
     All other logic should be kept outside of this class.
     """
 
-    def __init__(self, user: tuple[dict, dict]):
+    def __init__(self, user: tuple[dict, dict], is_community_admin: bool = False):
         self.user = user
-        self.user_role: UserRole = user[1]["role"]
+        self.user_role: str = user[1]["role"]
         self.user_sub: str = user[0]["sub"]
         self.user_communities: list[int] = user[1]["communities"]
+        self.is_community_admin = is_community_admin
+        self.is_admin = self.user_role == UserRole.admin.value
+
+    def _is_owner(self, community: Community) -> bool:
+        return community.owner_user.sub == self.user_sub or community.id in self.user_communities
 
     async def check_permission(
         self,
@@ -39,7 +44,7 @@ class CommunityPolicy:
             HTTPException: If the user doesn't have permission
         """
         # Admin can do everything
-        if self.user_role == UserRole.admin:
+        if self.is_admin:
             return True
 
         if action == ResourceAction.CREATE:
@@ -64,8 +69,8 @@ class CommunityPolicy:
 
         elif action == ResourceAction.UPDATE:
 
-            # Check if user is owner of community
-            if community.owner_user.sub == self.user_sub or community.id in self.user_communities:
+            # Check if user is owner of community or a community admin
+            if self._is_owner(community) or self.is_community_admin:
                 return True
 
             raise HTTPException(
@@ -74,20 +79,53 @@ class CommunityPolicy:
             )
 
         elif action == ResourceAction.DELETE:
-            if self.user_role != UserRole.admin:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only admins can delete communities",
-                )
-            return True
+            if self._is_owner(community):
+                return True
+
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only admins or community owners can delete communities",
+            )
 
         # This should never happen as we've handled all enum cases
         raise ValueError(f"Unhandled action type: {action}")
 
     async def check_admin_only(self) -> bool:
-        if self.user_role == UserRole.admin:
+        if self.is_admin:
             return True
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can perform this action",
+        )
+
+    async def check_manage_admins(self, community: Community) -> bool:
+        """Site-admin or owner may add/remove OTHER community admins."""
+        if self.is_admin or self._is_owner(community):
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins or community owners can manage admins",
+        )
+
+    async def check_admin_link(self, community: Community) -> bool:
+        """Site-admin, owner, or a community admin may view/rotate the access link."""
+        if self.is_admin or self._is_owner(community) or self.is_community_admin:
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins or community owners can manage the admin access link",
+        )
+
+    async def check_self_leave(self, community: Community) -> bool:
+        """Only a community admin may leave; an owner cannot resign via this path."""
+        if self._is_owner(community):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Owners cannot leave a community",
+            )
+        if self.is_community_admin:
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only community admins can leave a community",
         )

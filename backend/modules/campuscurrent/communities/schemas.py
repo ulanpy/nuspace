@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -72,8 +72,32 @@ class BaseCommunity(BaseModel):
 
 class CommunityResponse(BaseCommunity):
     owner_user: ShortUserResponse
+    admins: List["AdminResponse"] = Field(default_factory=list)
     media: List[MediaResponse] = []
     permissions: ResourcePermissions = ResourcePermissions()
+
+
+class AdminResponse(BaseModel):
+    sub: str
+    name: str
+    surname: str
+    picture: str | None = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AdminLinkResponse(BaseModel):
+    url: str
+
+
+class AdminLinkAcceptRequest(BaseModel):
+    token: str
+
+
+class AdminLinkAcceptResponse(BaseModel):
+    status: Literal["granted", "already_admin", "already_owner"]
 
 
 class ShortCommunityResponse(BaseModel):

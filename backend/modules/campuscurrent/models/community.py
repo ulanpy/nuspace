@@ -1,6 +1,6 @@
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Text
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, PrimaryKeyConstraint, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -46,3 +46,39 @@ class Community(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     owner_user = relationship("User")
+    community_admins = relationship(
+        "CommunityAdmin", back_populates="community", cascade="all, delete-orphan"
+    )
+
+
+class CommunityAdmin(Base):
+    __tablename__ = "community_admins"
+    __table_args__ = (PrimaryKeyConstraint("community_id", "user_sub"),)
+
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    community = relationship("Community", back_populates="community_admins")
+    user = relationship("User")
+
+
+class CommunityAdminLink(Base):
+    """Secret invite link that grants community-admin access on redemption."""
+
+    __tablename__ = "community_admin_links"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_by_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
