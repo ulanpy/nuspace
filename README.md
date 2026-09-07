@@ -77,6 +77,7 @@ Access the application at [localhost](http://localhost) to confirm everything is
 
 ## Documentation
 
+- [Frontend Conventions](web/CONVENTIONS.md) - how the frontend is structured, named, split, and written
 - [Workload Identity Federation](docs/wif-setup.md) - GitHub Actions authentication with GCP for the deployment pipeline
 - [Monitoring Guide](infra/README.md) - Local and production monitoring stack configuration
 - [Terraform Setup](terraform/README.md) - GCP infrastructure for staging and production
