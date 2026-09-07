@@ -1,0 +1,58 @@
+import assert from "node:assert/strict"
+import test, { describe, it } from "node:test"
+import {
+  eventGoogleCalendarUrl,
+  eventPolicyLabel,
+  getEventTiming,
+} from "./functions"
+
+describe("event Google Calendar link", () => {
+  it("uses UTC instants and preserves the event details", () => {
+    const url = new URL(
+      eventGoogleCalendarUrl({
+        name: "Open day & Q&A",
+        start_datetime: "2026-08-10T15:30:00+05:00",
+        end_datetime: "2026-08-10T17:00:00+05:00",
+        place: "Block C, room 101",
+        description: "Bring your student ID",
+      })
+    )
+
+    assert.equal(url.origin, "https://calendar.google.com")
+    assert.equal(url.searchParams.get("text"), "Open day & Q&A")
+    assert.equal(
+      url.searchParams.get("dates"),
+      "20260810T103000Z/20260810T120000Z"
+    )
+    assert.equal(url.searchParams.get("location"), "Block C, room 101")
+    assert.equal(url.searchParams.get("details"), "Bring your student ID")
+  })
+})
+
+const NOW = Date.parse("2026-07-27T12:00:00.000Z")
+
+test("presents an upcoming event with a compact countdown", () => {
+  assert.deepEqual(
+    getEventTiming("2026-07-29T15:00:00.000Z", "2026-07-29T17:00:00.000Z", NOW),
+    { kind: "upcoming", label: "Starts in", detail: "2d 3h" }
+  )
+})
+
+test("presents an event as ongoing until its end", () => {
+  assert.deepEqual(
+    getEventTiming("2026-07-27T11:30:00.000Z", "2026-07-27T13:15:00.000Z", NOW),
+    { kind: "ongoing", label: "Happening now", detail: "1h 15m left" }
+  )
+})
+
+test("presents a finished event relative to its end", () => {
+  assert.deepEqual(
+    getEventTiming("2026-07-27T08:00:00.000Z", "2026-07-27T10:00:00.000Z", NOW),
+    { kind: "finished", label: "Finished", detail: "Ended 2h ago" }
+  )
+})
+
+test("uses readable registration policy labels", () => {
+  assert.equal(eventPolicyLabel("open"), "Open entry")
+  assert.equal(eventPolicyLabel("registration"), "Registration required")
+})

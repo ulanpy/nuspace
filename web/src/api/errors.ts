@@ -9,7 +9,7 @@ import { ApiError } from "@/api/client"
  * Both copies rendered whatever `detail` came back, whatever the status.
  *
  * This one follows the rule established in
- * `features/courses/registrar-errors.ts`: **never render a 5xx `detail`.**
+ * `src/lib/courses/functions.ts`: **never render a 5xx `detail`.**
  * FastAPI runs with `debug=True` locally, so a 500 body is a Python traceback;
  * in production it is still an internal description written for developers.
  * A 4xx detail is the opposite — deliberate, addressed to the caller, and

@@ -27,5 +27,5 @@
   },
   "include": ["src"],
   // Tests run under Node and need its types; tsconfig.test.json covers them.
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "src/**/tests.ts"]
 }
