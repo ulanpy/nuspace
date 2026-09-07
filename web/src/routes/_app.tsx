@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react"
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
+import {
+  Outlet,
+  createFileRoute,
+  redirect,
+  useMatchRoute,
+} from "@tanstack/react-router"
 
 import { sessionQueryOptions } from "@/features/auth/api"
 import {
@@ -33,25 +38,38 @@ function AppLayout() {
     readSidebarCollapsed(window.localStorage)
   )
 
+  const matchRoute = useMatchRoute()
+  // The community page editor fills the whole main area (the Puck canvas is
+  // the page itself, not a widget in a container).
+  const isImmersiveEditor = Boolean(
+    matchRoute({ to: "/communities/$slug/edit-page", fuzzy: true })
+  )
+
   useEffect(() => {
     writeSidebarCollapsed(window.localStorage, sidebarCollapsed)
   }, [sidebarCollapsed])
 
   return (
     <div className="min-h-screen bg-background">
-      <AppSidebar
-        collapsed={sidebarCollapsed}
-        onCollapsedChange={setSidebarCollapsed}
-      />
+      {!isImmersiveEditor && (
+        <AppSidebar
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
+        />
+      )}
       <main
         className={cn(
           "transition-[padding-left] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
-          sidebarCollapsed ? "md:pl-16" : "md:pl-64"
+          isImmersiveEditor ? "pl-0" : sidebarCollapsed ? "md:pl-16" : "md:pl-64"
         )}
       >
-        <PageContainer className="py-4 sm:py-6">
+        {isImmersiveEditor ? (
           <Outlet />
-        </PageContainer>
+        ) : (
+          <PageContainer className="py-4 sm:py-6">
+            <Outlet />
+          </PageContainer>
+        )}
       </main>
     </div>
   )

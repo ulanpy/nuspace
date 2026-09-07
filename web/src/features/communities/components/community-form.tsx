@@ -183,7 +183,6 @@ export function CommunityForm({
               email,
               // Resolved to the caller server-side, as on events.
               owner: "me",
-              // TODO: page_content editing (block editor) — defaults to {} server-side.
             },
             update: {
               ...ifEditable("name", values.name),
