@@ -17,6 +17,7 @@ from backend.modules.courses.statistics import api as statistics_api
 from backend.modules.courses.templates import api as templates_api
 from backend.modules.elections import api as elections_api
 from backend.modules.google_bucket import api as google_bucket_api
+from backend.modules.media import api as media_api
 from backend.modules.notification import api as notification_api
 from backend.modules.opportunities import api as opportunities_api
 from backend.modules.search import api as search_api
@@ -31,6 +32,7 @@ routers: List[APIRouter] = [
     test_endpoint_api.router,
     search_api.router,
     google_bucket_api.router,
+    media_api.router,
     web_router,
     courses_api.router,
     planner_api.router,

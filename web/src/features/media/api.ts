@@ -14,6 +14,19 @@ export function requestUploadUrls(requests: SignedUrlRequest[]) {
   return unwrap(api.POST("/bucket/upload-url", { body: requests }))
 }
 
+/**
+ * Resolve raw GCS filenames into displayable download URLs.
+ *
+ * Page content (Puck) stores filenames, not URLs: production URLs are signed
+ * V4 links that expire in ~15 min, so persisting them would break the public
+ * page shortly after upload. The backend re-signs on demand instead.
+ */
+export function resolveFileUrls(filenames: string[]) {
+  return unwrap(
+    api.POST("/media/resolve-urls", { body: { filenames } })
+  ).then((res) => res.urls)
+}
+
 /** A failed PUT to the bucket. Not an ApiError — this never touched our API. */
 export class MediaUploadError extends Error {
   readonly status: number

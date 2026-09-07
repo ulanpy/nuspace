@@ -47,6 +47,14 @@ class MediaService:
             media_repo = self.uow.get_repo(MediaRepository)
             return await media_repo.list_by_ids(media_ids)
 
+    async def resolve_filenames(self, filenames: List[str]) -> dict[str, str]:
+        """Return a mapping of raw GCS filename -> fresh download URL."""
+        if not filenames:
+            return {}
+        unique = list(dict.fromkeys(filenames))
+        urls = await self.storage.generate_download_urls(unique)
+        return dict(zip(unique, urls))
+
     async def build_url_map(self, media_objects: List[Media]) -> dict[int, str]:
         if not media_objects:
             return {}

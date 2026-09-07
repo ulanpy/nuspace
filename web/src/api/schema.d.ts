@@ -114,6 +114,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/{sub}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update User Scope
+         * @description Ban or allow a user. Admin only.
+         */
+        patch: operations["update_user_scope_users__sub__scope_patch"];
+        trace?: never;
+    };
     "/communities": {
         parameters: {
             query?: never;
@@ -168,6 +188,46 @@ export interface paths {
          * @description Updates fields of an existing community. Head or admin only.
          */
         patch: operations["update_community_communities__slug__patch"];
+        trace?: never;
+    };
+    "/communities/{slug}/owner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Reassign Community Owner
+         * @description Reassign community owner. Admin only.
+         */
+        patch: operations["reassign_community_owner_communities__slug__owner_patch"];
+        trace?: never;
+    };
+    "/communities/{slug}/verified": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Toggle Community Verified
+         * @description Toggle community verified status. Admin only.
+         */
+        patch: operations["toggle_community_verified_communities__slug__verified_patch"];
         trace?: never;
     };
     "/events": {
@@ -496,6 +556,23 @@ export interface paths {
         get: operations["local_download_proxy_bucket_local_download__bucket___full_path__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/resolve-urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Media Urls */
+        post: operations["resolve_media_urls_media_resolve_urls_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1800,6 +1877,14 @@ export interface components {
              */
             owner: string;
         };
+        /** CommunityOwnerUpdateRequest */
+        CommunityOwnerUpdateRequest: {
+            /**
+             * Owner Sub
+             * @description Sub of the new owner user
+             */
+            owner_sub: string;
+        };
         /** CommunityResponse */
         CommunityResponse: {
             /** Id */
@@ -1842,6 +1927,8 @@ export interface components {
              *       "can_delete": false,
              *       "can_view_attendees": false,
              *       "can_share_access": false,
+             *       "can_change_owner": false,
+             *       "can_toggle_verified": false,
              *       "editable_fields": []
              *     }
              */
@@ -1884,6 +1971,14 @@ export interface components {
              * @description IDs of media attachments to delete as part of this update
              */
             media_ids_to_delete?: number[] | null;
+        };
+        /** CommunityVerifiedUpdateRequest */
+        CommunityVerifiedUpdateRequest: {
+            /**
+             * Verified
+             * @description New verified status
+             */
+            verified: boolean;
         };
         /** CourseItemCreate */
         CourseItemCreate: {
@@ -2868,6 +2963,24 @@ export interface components {
          * @enum {string}
          */
         RegistrationPolicy: "registration" | "open";
+        /**
+         * ResolveUrlsRequest
+         * @description Filenames to resolve into fresh signed download URLs.
+         */
+        ResolveUrlsRequest: {
+            /** Filenames */
+            filenames?: string[];
+        };
+        /**
+         * ResolveUrlsResponse
+         * @description Mapping of raw GCS filename -> displayable download URL.
+         */
+        ResolveUrlsResponse: {
+            /** Urls */
+            urls: {
+                [key: string]: string;
+            };
+        };
         /** ResourcePermissions */
         ResourcePermissions: {
             /**
@@ -2890,6 +3003,16 @@ export interface components {
              * @default false
              */
             can_share_access: boolean;
+            /**
+             * Can Change Owner
+             * @default false
+             */
+            can_change_owner: boolean;
+            /**
+             * Can Toggle Verified
+             * @default false
+             */
+            can_toggle_verified: boolean;
             /**
              * Editable Fields
              * @default []
@@ -3082,6 +3205,22 @@ export interface components {
             /** Course Code */
             course_code: string;
             time: components["schemas"]["ScheduleTimeSchema"];
+        };
+        /**
+         * UserScope
+         * @enum {string}
+         */
+        UserScope: "allowed" | "banned";
+        /** UserScopeResponse */
+        UserScopeResponse: {
+            /** Sub */
+            sub: string;
+            scope: components["schemas"]["UserScope"];
+        };
+        /** UserScopeUpdateRequest */
+        UserScopeUpdateRequest: {
+            /** @description New scope: 'allowed' or 'banned' */
+            scope: components["schemas"]["UserScope"];
         };
         /** ValidationError */
         ValidationError: {
@@ -3304,6 +3443,45 @@ export interface operations {
             };
         };
     };
+    update_user_scope_users__sub__scope_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserScopeUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserScopeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_communities_communities_get: {
         parameters: {
             query?: {
@@ -3467,6 +3645,84 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CommunityUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reassign_community_owner_communities__slug__owner_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityOwnerUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_community_verified_communities__slug__verified_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityVerifiedUpdateRequest"];
             };
         };
         responses: {
@@ -4146,6 +4402,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_media_urls_media_resolve_urls_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveUrlsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveUrlsResponse"];
                 };
             };
             /** @description Validation Error */
