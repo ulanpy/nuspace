@@ -96,11 +96,10 @@ export function Page({ slug }: { slug: string }) {
   return (
     <div className="mx-auto max-w-5xl space-y-10">
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-1">
+        <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             Settings
           </h1>
-          <p className="text-muted-foreground">Manage {community.name}.</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button
