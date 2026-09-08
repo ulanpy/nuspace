@@ -110,9 +110,9 @@ export function Page({
   }, [])
 
   return (
-    <article className="mx-auto max-w-4xl space-y-6">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-2 py-3">
+    <article>
+      <header className="sticky top-0 z-40 border-b bg-background">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-3 sm:px-6">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -259,7 +259,7 @@ export function Page({
         </div>
       </header>
 
-      <div className="px-1">
+      <div className="mx-auto max-w-6xl px-3 py-4 sm:px-6">
         <PageRenderer data={community.page_content ?? {}} />
       </div>
     </article>
