@@ -112,7 +112,7 @@ export function Page({
   return (
     <article>
       <header className="sticky top-0 z-40 border-b border-sidebar-border bg-sidebar">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:px-6 md:h-16">
+        <div className="mx-auto flex h-[52px] max-w-6xl items-center gap-2 px-3 sm:px-6 md:h-16">
           <Tooltip>
             <TooltipTrigger
               render={
