@@ -17,9 +17,13 @@ export function AppLayout() {
 
   const matchRoute = useMatchRoute()
   // The community page editor fills the whole main area (the Puck canvas is
-  // the page itself, not a widget in a container).
-  const isImmersiveEditor = Boolean(
-    matchRoute({ to: "/communities/$slug/editor", fuzzy: true })
+  // the page itself, not a widget in a container), and the community detail
+  // page is designed as a full-width landing page with its own compact header,
+  // so both drop the global shell sidebar. The details check is fuzzy=false so
+  // sub-routes (`/settings`, `/editor`) are not caught by it.
+  const shouldHideSidebar = Boolean(
+    matchRoute({ to: "/communities/$slug/editor", fuzzy: true }) ||
+    matchRoute({ to: "/communities/$slug" })
   )
 
   useEffect(() => {
@@ -28,7 +32,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      {!isImmersiveEditor && (
+      {!shouldHideSidebar && (
         <AppSidebar
           collapsed={sidebarCollapsed}
           onCollapsedChange={setSidebarCollapsed}
@@ -37,14 +41,14 @@ export function AppLayout() {
       <main
         className={cn(
           "transition-[padding-left] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
-          isImmersiveEditor
+          shouldHideSidebar
             ? "pl-0"
             : sidebarCollapsed
               ? "md:pl-16"
               : "md:pl-64"
         )}
       >
-        {isImmersiveEditor ? (
+        {shouldHideSidebar ? (
           <Outlet />
         ) : (
           <PageContainer className="py-4 sm:py-6">

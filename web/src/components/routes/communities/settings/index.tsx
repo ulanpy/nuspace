@@ -1,10 +1,11 @@
-import { useState, type ReactNode } from "react"
+import { useState } from "react"
 import {
   ArrowLeftIcon,
   CheckIcon,
   CopyIcon,
   LogOutIcon,
   RotateCwIcon,
+  Trash2Icon,
   UserMinusIcon,
 } from "lucide-react"
 import { Link, useNavigate } from "@tanstack/react-router"
@@ -20,6 +21,7 @@ import { qk } from "@/api/query-keys"
 import {
   communityAdminLinkQueryOptions,
   communityDetailQueryOptions,
+  useDeleteCommunity,
   useLeaveCommunity,
   useRemoveCommunityAdmin,
   useRotateAdminLink,
@@ -35,16 +37,31 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   Tooltip,
   TooltipContent,
@@ -53,6 +70,39 @@ import {
 
 function initialsOf(name: string, surname: string): string {
   return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase()
+}
+
+interface AdminTableRow {
+  sub: string
+  name: string
+  surname: string
+  picture: string | null
+  created_at: string | null
+  isOwner: boolean
+}
+
+const PAGE_SIZES = [10, 25, 50] as const
+const DEFAULT_PAGE_SIZE = 10
+
+function pageItem(
+  text: number,
+  current: number,
+  onPageChange: (page: number) => void
+) {
+  return (
+    <PaginationItem>
+      <PaginationLink
+        href="#"
+        isActive={current === text}
+        onClick={(event) => {
+          event.preventDefault()
+          onPageChange(text)
+        }}
+      >
+        {text}
+      </PaginationLink>
+    </PaginationItem>
+  )
 }
 
 export function Page({ slug }: { slug: string }) {
@@ -66,11 +116,16 @@ export function Page({ slug }: { slug: string }) {
   const updateCommunity = useUpdateCommunity()
   const removeCommunityAdmin = useRemoveCommunityAdmin()
   const leaveCommunity = useLeaveCommunity()
+  const deleteCommunity = useDeleteCommunity()
 
   const [removingAdmin, setRemovingAdmin] = useState<string | null>(null)
   const [isConfirmingLeave, setIsConfirmingLeave] = useState(false)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE)
 
-  const { can_view_admin_link: canViewAdminLink } = community.permissions
+  const { can_view_admin_link: canViewAdminLink, can_delete: canDelete } =
+    community.permissions
   const isOwner = community.owner_user.sub === me.sub
 
   const handleDetailsSubmit = ({ update, items }: CommunitySubmitPayload) => {
@@ -86,12 +141,10 @@ export function Page({ slug }: { slug: string }) {
         onSuccess: (result) => {
           toast.success("Community updated.", { id: loading })
           const currentSlug = result.entity.slug ?? slug
-          if (currentSlug !== slug) {
-            void navigate({
-              to: "/communities/$slug/settings",
-              params: { slug: currentSlug },
-            })
-          }
+          void navigate({
+            to: "/communities/$slug",
+            params: { slug: currentSlug },
+          })
           void queryClient.invalidateQueries({
             queryKey: qk.communities.all(),
           })
@@ -109,15 +162,39 @@ export function Page({ slug }: { slug: string }) {
     (admin) => admin.sub === removingAdmin
   )
 
+  const rows: AdminTableRow[] = [
+    {
+      sub: community.owner_user.sub,
+      name: community.owner_user.name,
+      surname: community.owner_user.surname,
+      picture: community.owner_user.picture ?? null,
+      created_at: null,
+      isOwner: true,
+    },
+    ...(community.admins ?? []).map((admin) => ({
+      sub: admin.sub,
+      name: admin.name,
+      surname: admin.surname,
+      picture: admin.picture ?? null,
+      created_at: admin.created_at,
+      isOwner: false,
+    })),
+  ]
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const pageRows = rows.slice((safePage - 1) * pageSize, safePage * pageSize)
+
+  const changePageSize = (value: string | null) => {
+    const next = Number(value ?? DEFAULT_PAGE_SIZE)
+    setPageSize(next)
+    setPage(1)
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-10">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Community settings</h1>
-          <p className="text-muted-foreground">
-            Update details, manage admins and share access.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">Community settings</h1>
         <Button
           render={
             <Link to="/communities/$slug" params={{ slug }}>
@@ -131,108 +208,178 @@ export function Page({ slug }: { slug: string }) {
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Details</h2>
-        <Card className="p-6">
-          <CommunityForm
-            community={community}
-            isPending={updateCommunity.isPending}
-            submitError={
-              updateCommunity.error
-                ? apiErrorMessage(
-                    updateCommunity.error,
-                    "Could not save. Try again."
-                  )
-                : null
-            }
-            onSubmit={handleDetailsSubmit}
-            onCancel={() => {
-              void navigate({
-                to: "/communities/$slug",
-                params: { slug },
-              })
-            }}
-          />
-        </Card>
+        <CommunityForm
+          community={community}
+          isPending={updateCommunity.isPending}
+          submitError={
+            updateCommunity.error
+              ? apiErrorMessage(
+                  updateCommunity.error,
+                  "Could not save. Try again."
+                )
+              : null
+          }
+          onSubmit={handleDetailsSubmit}
+          onCancel={() => {
+            void navigate({
+              to: "/communities/$slug",
+              params: { slug },
+            })
+          }}
+        />
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Admins</h2>
-            <p className="text-muted-foreground">
-              Admins can edit community details and the page.
-            </p>
-          </div>
-          {canViewAdminLink && (
-            <Button
-              render={<Link to="/communities/$slug/editor" params={{ slug }} />}
-              variant="outline"
-              size="sm"
-            >
-              Design page
-            </Button>
-          )}
-        </div>
-
-        <Card className="p-6">
-          {(community.admins ?? []).length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyTitle>No admins yet</EmptyTitle>
-                <EmptyDescription>
-                  Share the admin access link below to add helpers.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <div>
-              <AdminRow
-                picture={community.owner_user.picture}
-                name={community.owner_user.name}
-                surname={community.owner_user.surname}
-                right={<Badge variant="secondary">Owner</Badge>}
-              />
-              {(community.admins ?? []).map((admin) => {
-                const isSelf = admin.sub === me.sub
+        <h2 className="text-xl font-semibold">Admins</h2>
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Member</TableHead>
+                <TableHead>Added</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pageRows.map((row) => {
+                const isSelf = row.sub === me.sub
                 return (
-                  <div key={admin.sub}>
-                    <Separator />
-                    <AdminRow
-                      picture={admin.picture}
-                      name={admin.name}
-                      surname={admin.surname}
-                      meta={`Admin since ${formatCampusDate(admin.created_at)}`}
-                      right={
-                        isSelf ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsConfirmingLeave(true)}
-                          >
-                            <LogOutIcon aria-hidden />
-                            Leave
-                          </Button>
-                        ) : isOwner ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Remove ${admin.name}`}
-                            className="text-muted-foreground hover:text-destructive"
-                            onClick={() => setRemovingAdmin(admin.sub)}
-                          >
-                            <UserMinusIcon aria-hidden />
-                          </Button>
-                        ) : null
-                      }
-                    />
-                  </div>
+                  <TableRow key={row.sub}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage
+                            src={row.picture ?? undefined}
+                            alt={`${row.name} ${row.surname}`}
+                          />
+                          <AvatarFallback>
+                            {initialsOf(row.name, row.surname)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate font-medium">
+                            {row.name} {row.surname}
+                          </p>
+                          {row.isOwner ? (
+                            <Badge variant="secondary">Owner</Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                      {row.isOwner
+                        ? "Owner"
+                        : `Admin since ${formatCampusDate(row.created_at ?? "")}`}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.isOwner ? null : isSelf ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsConfirmingLeave(true)}
+                        >
+                          <LogOutIcon aria-hidden />
+                          Leave
+                        </Button>
+                      ) : isOwner ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remove ${row.name} ${row.surname}`}
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setRemovingAdmin(row.sub)}
+                        >
+                          <UserMinusIcon aria-hidden />
+                        </Button>
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
                 )
               })}
+            </TableBody>
+          </Table>
+
+          <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Rows per page
+              </span>
+              <Select value={String(pageSize)} onValueChange={changePageSize}>
+                <SelectTrigger className="w-20">
+                  <SelectValue>{pageSize}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZES.map((size) => (
+                    <SelectItem key={size} value={String(size)}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </Card>
+
+            <Pagination className="justify-end">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    aria-disabled={safePage === 1}
+                    onClick={(event) => {
+                      if (safePage === 1) {
+                        event.preventDefault()
+                      } else {
+                        setPage((current) => Math.max(1, current - 1))
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                {Array.from(
+                  { length: totalPages },
+                  (_, index) => index + 1
+                ).map((item) => pageItem(item, safePage, setPage))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    aria-disabled={safePage === totalPages}
+                    onClick={(event) => {
+                      if (safePage === totalPages) {
+                        event.preventDefault()
+                      } else {
+                        setPage((current) => Math.min(totalPages, current + 1))
+                      }
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        </div>
       </section>
 
       {canViewAdminLink && <AdminAccessLinkSection slug={slug} />}
+
+      {canDelete && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Danger zone</h2>
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-destructive/40 p-4">
+            <div>
+              <p className="font-medium">Delete this community</p>
+              <p className="text-sm text-muted-foreground">
+                The community and its images will be removed for everyone. Its
+                events are not deleted with it.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              onClick={() => setIsConfirmingDelete(true)}
+            >
+              <Trash2Icon aria-hidden />
+              Delete community
+            </Button>
+          </div>
+        </section>
+      )}
 
       <ConfirmDialog
         open={removingAdmin != null}
@@ -277,38 +424,23 @@ export function Page({ slug }: { slug: string }) {
           })
         }}
       />
-    </div>
-  )
-}
 
-function AdminRow({
-  picture,
-  name,
-  surname,
-  meta,
-  right,
-}: {
-  picture?: string | null
-  name: string
-  surname: string
-  meta?: string
-  right?: ReactNode
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <Avatar>
-          <AvatarImage src={picture ?? undefined} alt={`${name} ${surname}`} />
-          <AvatarFallback>{initialsOf(name, surname)}</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0">
-          <p className="truncate font-medium">
-            {name} {surname}
-          </p>
-          {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
-        </div>
-      </div>
-      {right}
+      <ConfirmDialog
+        open={isConfirmingDelete}
+        onOpenChange={setIsConfirmingDelete}
+        title="Delete this community?"
+        description={`"${community.name}" and its images will be removed for everyone. Its events are not deleted with it.`}
+        confirmLabel="Delete community"
+        isPending={deleteCommunity.isPending}
+        onConfirm={() => {
+          deleteCommunity.mutate(community.slug, {
+            onSuccess: () => {
+              setIsConfirmingDelete(false)
+              void navigate({ to: "/communities", search: {} })
+            },
+          })
+        }}
+      />
     </div>
   )
 }
@@ -335,7 +467,7 @@ function AdminAccessLinkSection({ slug }: { slug: string }) {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Admin Access Link</h2>
-      <Card className="space-y-4 p-6">
+      <div className="space-y-4">
         <Alert>
           <AlertDescription>
             Anyone with this link who is signed in becomes an admin of this
@@ -385,7 +517,7 @@ function AdminAccessLinkSection({ slug }: { slug: string }) {
             )}
           </p>
         )}
-      </Card>
+      </div>
     </section>
   )
 }

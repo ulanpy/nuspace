@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import {
+  ArrowLeftIcon,
   BadgeCheckIcon,
+  InfoIcon,
   MailIcon,
   PaletteIcon,
   SettingsIcon,
-  Trash2Icon,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -14,15 +15,17 @@ import { apiErrorMessage } from "@/api/errors"
 import {
   communityDetailQueryOptions,
   useAcceptCommunityAdminLink,
-  useDeleteCommunity,
 } from "@/lib/communities"
 import { selectMedia } from "@/lib/media"
 import { PageRenderer } from "@/components/shared/page-editor/components/page-renderer"
-import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Tooltip,
   TooltipContent,
@@ -68,16 +71,13 @@ export function Page({
   )
 
   const navigate = useNavigate()
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
-  const deleteCommunity = useDeleteCommunity()
   const acceptAdminLink = useAcceptCommunityAdminLink()
 
-  const banner = selectMedia(community.media, "banner")?.url
   const avatar = selectMedia(community.media, "profile")?.url
 
-  // Server-decided. An owner gets can_edit and can_delete; a community admin
-  // gets can_edit but not can_delete.
-  const { can_edit: canEdit, can_delete: canDelete } = community.permissions
+  // Server-decided. An owner gets can_edit; a community admin also gets
+  // can_edit. (Delete lives on the settings page, not here.)
+  const { can_edit: canEdit } = community.permissions
 
   // Redeem a shareable admin-link (`?admin=<token>`) exactly once, on load.
   useEffect(() => {
@@ -110,31 +110,35 @@ export function Page({
   }, [])
 
   return (
-    <article className="mx-auto max-w-4xl space-y-4">
-      <Card className="overflow-hidden p-0 sm:rounded-4xl">
-        <div className="aspect-[3/1] max-h-72 min-h-40 bg-community/10">
-          <ResilientImage
-            src={banner}
-            alt={`${community.name} banner`}
-            containerClassName="size-full"
-            eager
-            fallback={
-              <span className="block size-full bg-community/10" aria-hidden />
-            }
-          />
-        </div>
+    <article className="mx-auto max-w-4xl space-y-6">
+      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+        <div className="flex items-center gap-2 py-3">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Back to communities"
+                  render={<Link to="/communities" search={{}} />}
+                >
+                  <ArrowLeftIcon aria-hidden />
+                </Button>
+              }
+            />
+            <TooltipContent>Back to communities</TooltipContent>
+          </Tooltip>
 
-        <header className="relative px-5 pt-14 pb-6 sm:px-8 sm:pt-5 sm:pb-8 sm:pl-44">
-          <div className="absolute top-[-3.5rem] left-5 rounded-full bg-card p-1.5 shadow-md ring-2 ring-border sm:top-[-3.75rem] sm:left-8">
+          <div className="aspect-square size-12 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
             <ResilientImage
               src={avatar}
               alt={`${community.name} profile`}
-              containerClassName="size-24 rounded-full sm:size-28"
+              containerClassName="size-full"
               eager
               fallback={
                 <span
                   aria-hidden
-                  className="grid size-full place-items-center bg-community/15 text-3xl font-semibold text-community"
+                  className="grid size-full place-items-center bg-community/15 text-xl font-semibold text-community"
                 >
                   {community.name.charAt(0).toUpperCase()}
                 </span>
@@ -142,132 +146,122 @@ export function Page({
             />
           </div>
 
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 space-y-3">
-              <div className="flex items-center gap-2">
-                <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">
-                  {community.name}
-                </h1>
-                {community.verified && (
-                  <BadgeCheckIcon
-                    className="size-6 shrink-0 text-primary"
-                    aria-label="Verified community"
-                  />
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="default">{community.category}</Badge>
-                <Badge variant="outline">{community.type}</Badge>
-                {community.email && (
-                  <>
-                    <span className="text-muted-foreground" aria-hidden>
-                      &middot;
-                    </span>
-                    <a
-                      href={`mailto:${community.email}`}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                    >
-                      <MailIcon className="size-4" aria-hidden />
-                      <span className="break-all">{community.email}</span>
-                    </a>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {(canEdit || canDelete) && (
-              <div className="flex flex-wrap items-center gap-1">
-                {canEdit && (
-                  <>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Settings"
-                            render={
-                              <Link
-                                to="/communities/$slug/settings"
-                                params={{ slug }}
-                              />
-                            }
-                          >
-                            <SettingsIcon aria-hidden />
-                          </Button>
-                        }
-                      />
-                      <TooltipContent>Settings</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Design page"
-                            render={
-                              <Link
-                                to="/communities/$slug/editor"
-                                params={{ slug }}
-                              />
-                            }
-                          >
-                            <PaletteIcon aria-hidden />
-                          </Button>
-                        }
-                      />
-                      <TooltipContent>Design page</TooltipContent>
-                    </Tooltip>
-                  </>
-                )}
-                {canDelete && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => {
-                      setIsConfirmingDelete(true)
-                    }}
-                  >
-                    <Trash2Icon aria-hidden />
-                    Delete
-                  </Button>
-                )}
-              </div>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h1 className="truncate text-lg leading-tight font-bold tracking-tight">
+              {community.name}
+            </h1>
+            {community.verified && (
+              <BadgeCheckIcon
+                className="size-5 shrink-0 text-primary"
+                aria-label="Verified community"
+              />
             )}
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                    aria-label="Community details"
+                  >
+                    <InfoIcon className="size-4" aria-hidden />
+                  </Button>
+                }
+              />
+              <PopoverContent align="start" className="w-56">
+                <div className="grid gap-2 p-1">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Category
+                    </p>
+                    <p className="text-sm capitalize">{community.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Type
+                    </p>
+                    <p className="text-sm capitalize">{community.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Verification
+                    </p>
+                    <p className="text-sm">
+                      {community.verified ? "Verified" : "Not verified"}
+                    </p>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
-            {deleteCommunity.isError && (
-              <p className="mt-3 text-sm text-destructive" role="alert">
-                {apiErrorMessage(
-                  deleteCommunity.error,
-                  "Could not delete the community. Try again."
-                )}
-              </p>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            {canEdit && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Design page"
+                        render={
+                          <Link
+                            to="/communities/$slug/editor"
+                            params={{ slug }}
+                          />
+                        }
+                      >
+                        <PaletteIcon aria-hidden />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Design page</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Settings"
+                        render={
+                          <Link
+                            to="/communities/$slug/settings"
+                            params={{ slug }}
+                          />
+                        }
+                      >
+                        <SettingsIcon aria-hidden />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Settings</TooltipContent>
+                </Tooltip>
+              </>
+            )}
+            {community.email && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                render={
+                  <a href={`mailto:${community.email}`}>
+                    <MailIcon className="size-4" aria-hidden />
+                    <span className="hidden sm:inline">{community.email}</span>
+                  </a>
+                }
+              />
             )}
           </div>
-        </header>
-      </Card>
+        </div>
+      </header>
 
-      <PageRenderer data={community.page_content ?? {}} />
-
-      <ConfirmDialog
-        open={isConfirmingDelete}
-        onOpenChange={setIsConfirmingDelete}
-        title="Delete this community?"
-        description={`"${community.name}" and its images will be removed for everyone. Its events are not deleted with it.`}
-        confirmLabel="Delete community"
-        isPending={deleteCommunity.isPending}
-        onConfirm={() => {
-          deleteCommunity.mutate(community.slug, {
-            onSuccess: () => {
-              setIsConfirmingDelete(false)
-              void navigate({ to: "/communities", search: {} })
-            },
-          })
-        }}
-      />
+      <div className="px-1">
+        <PageRenderer data={community.page_content ?? {}} />
+      </div>
     </article>
   )
 }
