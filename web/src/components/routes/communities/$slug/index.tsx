@@ -112,7 +112,7 @@ export function Page({
   return (
     <article>
       <header className="sticky top-0 z-40 border-b border-sidebar-border bg-sidebar">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 safe-area-inset-top sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-6xl items-center gap-2 px-3 safe-area-inset-top sm:px-6">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -129,7 +129,7 @@ export function Page({
             <TooltipContent>Back to communities</TooltipContent>
           </Tooltip>
 
-          <div className="aspect-square size-7 shrink-0 overflow-hidden rounded-md bg-community/10 ring-1 ring-border">
+          <div className="aspect-square size-8 shrink-0 overflow-hidden rounded-md bg-community/10 ring-1 ring-border">
             <ResilientImage
               src={avatar}
               alt={`${community.name} profile`}
@@ -163,10 +163,10 @@ export function Page({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground"
                     aria-label="Community details"
                   >
-                    <InfoIcon className="size-4" aria-hidden />
+                    <InfoIcon className="size-5" aria-hidden />
                   </Button>
                 }
               />
@@ -213,7 +213,7 @@ export function Page({
                         />
                       }
                     >
-                      <SettingsIcon aria-hidden />
+                      <SettingsIcon className="size-5" aria-hidden />
                     </Button>
                   }
                 />
@@ -239,10 +239,7 @@ export function Page({
                 <TooltipContent>{community.email}</TooltipContent>
               </Tooltip>
             )}
-            <Tooltip>
-              <TooltipTrigger render={<ThemeToggle />} />
-              <TooltipContent>Change theme</TooltipContent>
-            </Tooltip>
+            <ThemeToggle />
           </div>
         </div>
       </header>
