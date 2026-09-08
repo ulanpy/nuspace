@@ -114,6 +114,14 @@ class CommunityUpdateRequest(BaseModel):
     name: str | None = Field(
         default=None, description="The name of the community", example="NU Fencing Club"
     )
+    type: CommunityType | None = Field(
+        default=None, description="The type of the community", example=CommunityType.club
+    )
+    category: CommunityCategory | None = Field(
+        default=None,
+        description="The category of the community",
+        example=CommunityCategory.academic,
+    )
     email: EmailStr | None = Field(
         default=None,
         description="The email of the community",

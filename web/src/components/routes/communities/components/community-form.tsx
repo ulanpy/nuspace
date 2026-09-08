@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
@@ -186,6 +186,8 @@ export function CommunityForm({
             },
             update: {
               ...ifEditable("name", values.name),
+              ...ifEditable("type", values.type),
+              ...ifEditable("category", values.category),
               ...ifEditable("slug", values.slug),
               ...ifEditable("email", email),
               media_ids_to_delete:
@@ -208,98 +210,28 @@ export function CommunityForm({
         <FieldError message={errors.name?.message} />
       </div>
 
-      {community ? (
-        <dl className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-sm font-medium">Type</dt>
-            <dd className="text-sm text-muted-foreground capitalize">
-              {community.type}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium">Category</dt>
-            <dd className="text-sm text-muted-foreground capitalize">
-              {community.category}
-            </dd>
-          </div>
-          <p className="text-xs text-muted-foreground sm:col-span-2">
-            Type and category are fixed once a community exists. Ask an admin if
-            one of them is wrong.
-          </p>
-        </dl>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="community-type">Type</Label>
-            <Controller
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    if (value) field.onChange(value)
-                  }}
-                  disabled={isPending}
-                >
-                  <SelectTrigger
-                    id="community-type"
-                    className="w-full capitalize"
-                  >
-                    <SelectValue>{field.value}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COMMUNITY_TYPES.map((type) => (
-                      <SelectItem
-                        key={type}
-                        value={type}
-                        className="capitalize"
-                      >
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="community-category">Category</Label>
-            <Controller
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    if (value) field.onChange(value)
-                  }}
-                  disabled={isPending}
-                >
-                  <SelectTrigger
-                    id="community-category"
-                    className="w-full capitalize"
-                  >
-                    <SelectValue>{field.value}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COMMUNITY_CATEGORIES.map((category) => (
-                      <SelectItem
-                        key={category}
-                        value={category}
-                        className="capitalize"
-                      >
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FieldSelect
+          label="Type"
+          id="community-type"
+          options={COMMUNITY_TYPES}
+          editable={!community || canEditField(community, "type")}
+          displayValue={community?.type}
+          disabled={isPending}
+          control={form.control}
+          name="type"
+        />
+        <FieldSelect
+          label="Category"
+          id="community-category"
+          options={COMMUNITY_CATEGORIES}
+          editable={!community || canEditField(community, "category")}
+          displayValue={community?.category}
+          disabled={isPending}
+          control={form.control}
+          name="category"
+        />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
@@ -388,4 +320,68 @@ export function CommunityForm({
 function FieldError({ message }: { message?: string }) {
   if (!message) return null
   return <p className="text-xs text-destructive">{message}</p>
+}
+
+function FieldSelect({
+  label,
+  id,
+  options,
+  editable,
+  displayValue,
+  disabled,
+  control,
+  name,
+}: {
+  label: string
+  id: string
+  options: readonly string[]
+  editable: boolean
+  displayValue?: string
+  disabled: boolean
+  control: Control<CommunityFormValues>
+  name: "type" | "category"
+}) {
+  if (!editable) {
+    return (
+      <div className="space-y-1">
+        <Label htmlFor={id}>{label}</Label>
+        <p
+          id={id}
+          className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground capitalize"
+        >
+          {displayValue}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={id}>{label}</Label>
+      <Controller
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <Select
+            value={field.value}
+            onValueChange={(value) => {
+              if (value) field.onChange(value)
+            }}
+            disabled={disabled}
+          >
+            <SelectTrigger id={id} className="w-full capitalize">
+              <SelectValue>{field.value}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option} value={option} className="capitalize">
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      />
+    </div>
+  )
 }

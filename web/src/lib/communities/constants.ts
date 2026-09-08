@@ -17,8 +17,8 @@ export const COMMUNITY_CATEGORIES = [
 ] as const satisfies readonly CommunityCategory[]
 
 /**
- * Fields the create request accepts and the update request does not.
+ * Fields the create request accepts but the update request does not.
  * Rendered as read-only text in edit mode rather than as disabled inputs,
  * which would suggest a permission that could be granted.
  */
-export const COMMUNITY_CREATE_ONLY = ["type", "category", "owner"] as const
+export const COMMUNITY_CREATE_ONLY = ["owner"] as const

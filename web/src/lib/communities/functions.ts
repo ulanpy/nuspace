@@ -413,10 +413,11 @@ export function getInstagramUrlError(value: string): string | undefined {
  *
  * Read `editable_fields` and not a role check — see the equivalent on events.
  *
- * One caveat the server's own list does not capture: it names `type`,
- * `category` and `owner` as editable, but `CommunityUpdateRequest` has no such
- * fields, so a PATCH cannot carry them whatever the permissions say. Those
- * three are set at creation and changed nowhere; see COMMUNITY_CREATE_ONLY.
+ * Note the server's editable_fields list also names `page_content` and
+ * `owner`. `owner` has no matching field on `CommunityUpdateRequest` and is
+ * changed through a dedicated endpoint, so it is not editable here. The rest
+ * (`name`, `type`, `category`, `email`, `slug`) map directly onto the PATCH
+ * body.
  */
 export function canEditField(community: Community, field: string): boolean {
   return community.permissions.editable_fields.includes(field)

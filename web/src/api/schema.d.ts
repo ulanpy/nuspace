@@ -2086,6 +2086,16 @@ export interface components {
              */
             name?: string | null;
             /**
+             * @description The type of the community
+             * @example club
+             */
+            type?: components["schemas"]["CommunityType"] | null;
+            /**
+             * @description The category of the community
+             * @example academic
+             */
+            category?: components["schemas"]["CommunityCategory"] | null;
+            /**
              * Email
              * @description The email of the community
              * @example nufencingclub@gmail.com
