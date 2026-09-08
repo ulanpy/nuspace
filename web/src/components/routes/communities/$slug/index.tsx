@@ -6,7 +6,6 @@ import {
   BadgeCheckIcon,
   InfoIcon,
   MailIcon,
-  PaletteIcon,
   SettingsIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -112,7 +111,7 @@ export function Page({
 
   return (
     <article>
-      <header className="sticky top-0 z-40 border-b bg-background">
+      <header className="sticky top-0 z-40 border-b border-sidebar-border bg-sidebar">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 safe-area-inset-top sm:px-6">
           <Tooltip>
             <TooltipTrigger
@@ -130,7 +129,7 @@ export function Page({
             <TooltipContent>Back to communities</TooltipContent>
           </Tooltip>
 
-          <div className="aspect-square size-8 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
+          <div className="aspect-square size-7 shrink-0 overflow-hidden rounded-md bg-community/10 ring-1 ring-border">
             <ResilientImage
               src={avatar}
               alt={`${community.name} profile`}
@@ -200,61 +199,45 @@ export function Page({
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
             {canEdit && (
-              <>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Design page"
-                        render={
-                          <Link
-                            to="/communities/$slug/editor"
-                            params={{ slug }}
-                          />
-                        }
-                      >
-                        <PaletteIcon aria-hidden />
-                      </Button>
-                    }
-                  />
-                  <TooltipContent>Design page</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Settings"
-                        render={
-                          <Link
-                            to="/communities/$slug/settings"
-                            params={{ slug }}
-                          />
-                        }
-                      >
-                        <SettingsIcon aria-hidden />
-                      </Button>
-                    }
-                  />
-                  <TooltipContent>Settings</TooltipContent>
-                </Tooltip>
-              </>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Settings"
+                      render={
+                        <Link
+                          to="/communities/$slug/settings"
+                          params={{ slug }}
+                        />
+                      }
+                    >
+                      <SettingsIcon aria-hidden />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Settings</TooltipContent>
+              </Tooltip>
             )}
             {community.email && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                render={
-                  <a href={`mailto:${community.email}`}>
-                    <MailIcon className="size-4" aria-hidden />
-                    <span className="hidden sm:inline">{community.email}</span>
-                  </a>
-                }
-              />
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Email ${community.name}`}
+                      render={
+                        <a href={`mailto:${community.email}`}>
+                          <MailIcon className="size-5" aria-hidden />
+                        </a>
+                      }
+                    />
+                  }
+                />
+                <TooltipContent>{community.email}</TooltipContent>
+              </Tooltip>
             )}
             <Tooltip>
               <TooltipTrigger render={<ThemeToggle />} />
