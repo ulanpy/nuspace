@@ -176,14 +176,6 @@
   --sidebar-ring: hsl(25.8 93.2% 63%);
 }
 
-@utility safe-area-inset-top {
-  padding-top: env(safe-area-inset-top);
-}
-
-@utility safe-area-inset-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
 @utility scroll-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--border) var(--muted);

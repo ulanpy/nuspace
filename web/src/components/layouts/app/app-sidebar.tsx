@@ -312,7 +312,7 @@ export function AppSidebar({
       </aside>
 
       {/* Mobile */}
-      <header className="sticky top-0 z-40 flex items-center gap-2 border-b border-sidebar-border bg-sidebar px-3 py-2 safe-area-inset-top md:hidden">
+      <header className="sticky top-0 z-40 flex items-center gap-2 border-b border-sidebar-border bg-sidebar px-3 py-2 md:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger
             render={

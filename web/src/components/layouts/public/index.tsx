@@ -26,7 +26,7 @@ export function PublicLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3 safe-area-inset-top">
+      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
         <Link
           to="/"
           aria-label="Nuspace home"
@@ -52,7 +52,7 @@ export function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-border px-4 py-6 safe-area-inset-bottom">
+      <footer className="border-t border-border px-4 py-6">
         <nav
           className="mx-auto flex max-w-prose flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
           aria-label="Footer"
