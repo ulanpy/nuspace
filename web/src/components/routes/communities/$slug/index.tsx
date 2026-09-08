@@ -129,7 +129,7 @@ export function Page({
             <TooltipContent>Back to communities</TooltipContent>
           </Tooltip>
 
-          <div className="aspect-square size-11 shrink-0 overflow-hidden rounded-md bg-community/10 ring-1 ring-border md:size-14">
+          <div className="aspect-square size-9 shrink-0 overflow-hidden rounded-md bg-community/10 ring-1 ring-border md:size-11">
             <ResilientImage
               src={avatar}
               alt={`${community.name} profile`}
