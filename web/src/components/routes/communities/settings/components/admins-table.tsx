@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import {
   Pagination,
   PaginationContent,
@@ -14,14 +15,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 
 export interface AdminTableRow {
   sub: string
@@ -86,64 +79,50 @@ export function AdminsTable({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-lg border bg-card">
-        <Table className="min-w-[30rem]">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pageRows.map((row) => {
-              const isSelf = row.sub === meSub
-              return (
-                <TableRow key={row.sub}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage
-                          src={row.picture ?? undefined}
-                          alt={`${row.name} ${row.surname}`}
-                        />
-                        <AvatarFallback>
-                          {initialsOf(row.name, row.surname)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex min-w-0 items-center gap-2">
-                        <p className="truncate font-medium">
-                          {row.name} {row.surname}
-                        </p>
-                        {row.isOwner ? (
-                          <Badge variant="secondary">Owner</Badge>
-                        ) : null}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {row.isOwner ? null : isSelf ? (
-                      <Button variant="outline" size="sm" onClick={onLeave}>
-                        <LogOutIcon aria-hidden />
-                        Leave
-                      </Button>
-                    ) : isOwner ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Remove ${row.name} ${row.surname}`}
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setRemovingAdmin(row.sub)}
-                      >
-                        <UserMinusIcon aria-hidden />
-                      </Button>
-                    ) : null}
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <Card>
+        <div className="divide-y">
+          {pageRows.map((row) => {
+            const isSelf = row.sub === meSub
+            return (
+              <div key={row.sub} className="flex items-center gap-3 p-4">
+                <Avatar>
+                  <AvatarImage
+                    src={row.picture ?? undefined}
+                    alt={`${row.name} ${row.surname}`}
+                  />
+                  <AvatarFallback>
+                    {initialsOf(row.name, row.surname)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <p className="truncate font-medium">
+                    {row.name} {row.surname}
+                  </p>
+                  {row.isOwner ? (
+                    <Badge variant="secondary">Owner</Badge>
+                  ) : null}
+                </div>
+                {row.isOwner ? null : isSelf ? (
+                  <Button variant="outline" size="sm" onClick={onLeave}>
+                    <LogOutIcon aria-hidden />
+                    Leave
+                  </Button>
+                ) : isOwner ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remove ${row.name} ${row.surname}`}
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => setRemovingAdmin(row.sub)}
+                  >
+                    <UserMinusIcon aria-hidden />
+                  </Button>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      </Card>
 
       {totalPages > 1 && (
         <div className="flex justify-center sm:justify-end">
