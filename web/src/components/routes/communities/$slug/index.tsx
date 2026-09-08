@@ -19,6 +19,7 @@ import {
 import { selectMedia } from "@/lib/media"
 import { PageRenderer } from "@/components/shared/page-editor/components/page-renderer"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
+import { ThemeToggle } from "@/components/shared/theme/toggle"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -112,7 +113,7 @@ export function Page({
   return (
     <article>
       <header className="sticky top-0 z-40 border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 safe-area-inset-top sm:px-6">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -122,14 +123,14 @@ export function Page({
                   aria-label="Back to communities"
                   render={<Link to="/communities" search={{}} />}
                 >
-                  <ArrowLeftIcon aria-hidden />
+                  <ArrowLeftIcon className="size-5" aria-hidden />
                 </Button>
               }
             />
             <TooltipContent>Back to communities</TooltipContent>
           </Tooltip>
 
-          <div className="aspect-square size-12 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
+          <div className="aspect-square size-8 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
             <ResilientImage
               src={avatar}
               alt={`${community.name} profile`}
@@ -138,7 +139,7 @@ export function Page({
               fallback={
                 <span
                   aria-hidden
-                  className="grid size-full place-items-center bg-community/15 text-xl font-semibold text-community"
+                  className="grid size-full place-items-center bg-community/15 text-base font-semibold text-community"
                 >
                   {community.name.charAt(0).toUpperCase()}
                 </span>
@@ -147,7 +148,7 @@ export function Page({
           </div>
 
           <div className="flex min-w-0 items-center gap-1.5">
-            <h1 className="truncate text-lg leading-tight font-bold tracking-tight">
+            <h1 className="truncate text-lg leading-tight font-semibold tracking-tight">
               {community.name}
             </h1>
             {community.verified && (
@@ -255,6 +256,10 @@ export function Page({
                 }
               />
             )}
+            <Tooltip>
+              <TooltipTrigger render={<ThemeToggle />} />
+              <TooltipContent>Change theme</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
