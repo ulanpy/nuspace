@@ -82,7 +82,6 @@ export function Page({ slug }: { slug: string }) {
       name: community.owner_user.name,
       surname: community.owner_user.surname,
       picture: community.owner_user.picture ?? null,
-      created_at: null,
       isOwner: true,
     },
     ...(community.admins ?? []).map((admin) => ({
@@ -90,7 +89,6 @@ export function Page({ slug }: { slug: string }) {
       name: admin.name,
       surname: admin.surname,
       picture: admin.picture ?? null,
-      created_at: admin.created_at,
       isOwner: false,
     })),
   ]

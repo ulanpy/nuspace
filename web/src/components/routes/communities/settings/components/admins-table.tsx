@@ -2,7 +2,6 @@ import { useState } from "react"
 import { LogOutIcon, UserMinusIcon } from "lucide-react"
 
 import { useRemoveCommunityAdmin } from "@/lib/communities"
-import { formatCampusDate } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -29,7 +28,6 @@ export interface AdminTableRow {
   name: string
   surname: string
   picture: string | null
-  created_at: string | null
   isOwner: boolean
 }
 
@@ -93,7 +91,6 @@ export function AdminsTable({
           <TableHeader>
             <TableRow>
               <TableHead>Member</TableHead>
-              <TableHead>Added</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -122,11 +119,6 @@ export function AdminsTable({
                         ) : null}
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {row.isOwner
-                      ? "Owner"
-                      : `Admin since ${formatCampusDate(row.created_at ?? "")}`}
                   </TableCell>
                   <TableCell className="text-right">
                     {row.isOwner ? null : isSelf ? (
