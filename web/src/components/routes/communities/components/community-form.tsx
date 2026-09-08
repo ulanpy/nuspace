@@ -248,9 +248,6 @@ export function CommunityForm({
             }}
           />
           <FieldError message={errors.slug?.message} />
-          <p className="text-xs text-muted-foreground">
-            Used in the community's URL.
-          </p>
         </div>
 
         <div className="space-y-1">
@@ -277,7 +274,6 @@ export function CommunityForm({
           markedForDeletion={removedMedia}
           onToggleDeletion={toggleRemoval}
           disabled={isPending}
-          hint="Shown on the community card and beside the name."
         />
 
         <MediaPicker
@@ -290,7 +286,6 @@ export function CommunityForm({
           markedForDeletion={removedMedia}
           onToggleDeletion={toggleRemoval}
           disabled={isPending}
-          hint="Runs across the top of the community page."
         />
       </div>
 

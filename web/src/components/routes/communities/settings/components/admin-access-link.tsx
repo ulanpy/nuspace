@@ -10,7 +10,6 @@ import {
 } from "@/lib/communities"
 import { SectionHeading } from "@/components/routes/communities/settings/components/section-heading"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -18,6 +17,7 @@ export function AdminAccessLinkSection({ slug }: { slug: string }) {
   const { data: adminLink } = useQuery(communityAdminLinkQueryOptions(slug))
   const rotateAdminLink = useRotateAdminLink()
   const [copied, setCopied] = useState(false)
+  const [isConfirmingCopy, setIsConfirmingCopy] = useState(false)
   const [isConfirmingRotate, setIsConfirmingRotate] = useState(false)
 
   const url = adminLink?.url ?? ""
@@ -38,12 +38,6 @@ export function AdminAccessLinkSection({ slug }: { slug: string }) {
     <section className="space-y-4">
       <SectionHeading title="Admin access link" />
       <div className="space-y-4">
-        <Alert>
-          <AlertDescription>
-            Anyone with this link who is signed in becomes an admin of this
-            community. Do not share it publicly.
-          </AlertDescription>
-        </Alert>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             readOnly
@@ -56,7 +50,7 @@ export function AdminAccessLinkSection({ slug }: { slug: string }) {
               variant="outline"
               size="icon"
               aria-label="Copy admin access link"
-              onClick={() => void copyLink()}
+              onClick={() => setIsConfirmingCopy(true)}
             >
               {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
             </Button>
@@ -79,6 +73,20 @@ export function AdminAccessLinkSection({ slug }: { slug: string }) {
           </p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={isConfirmingCopy}
+        onOpenChange={setIsConfirmingCopy}
+        title="Copy the admin link?"
+        description="Anyone with this link who is signed in becomes an admin of this community. Do not share it publicly."
+        confirmLabel="Copy link"
+        destructive={false}
+        isPending={false}
+        onConfirm={() => {
+          setIsConfirmingCopy(false)
+          void copyLink()
+        }}
+      />
 
       <ConfirmDialog
         open={isConfirmingRotate}
