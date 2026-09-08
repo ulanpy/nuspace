@@ -36,10 +36,7 @@ export function AdminAccessLinkSection({ slug }: { slug: string }) {
 
   return (
     <section className="space-y-4">
-      <SectionHeading
-        title="Admin access link"
-        description="A shareable link that turns anyone who opens it into an admin."
-      />
+      <SectionHeading title="Admin access link" />
       <div className="space-y-4">
         <Alert>
           <AlertDescription>

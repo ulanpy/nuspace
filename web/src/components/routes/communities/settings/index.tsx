@@ -124,10 +124,7 @@ export function Page({ slug }: { slug: string }) {
       </header>
 
       <section className="space-y-4">
-        <SectionHeading
-          title="Details"
-          description="How this community appears on its page and across Nuspace."
-        />
+        <SectionHeading title="Details" />
         <Card className="px-4 sm:px-6">
           <CommunityForm
             community={community}
@@ -152,10 +149,7 @@ export function Page({ slug }: { slug: string }) {
       </section>
 
       <section className="space-y-4">
-        <SectionHeading
-          title="Admins"
-          description="Admins can edit the community's page and settings; the owner controls everything."
-        />
+        <SectionHeading title="Admins" />
         <AdminsTable
           slug={slug}
           rows={rows}
@@ -169,10 +163,7 @@ export function Page({ slug }: { slug: string }) {
 
       {canDelete && (
         <section className="space-y-4">
-          <SectionHeading
-            title="Danger zone"
-            description="Actions that cannot be undone."
-          />
+          <SectionHeading title="Danger zone" />
           <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
             <div className="space-y-1">
               <p className="font-medium">Delete this community</p>
