@@ -1,4 +1,4 @@
-import { FieldLabel } from "@puckeditor/core"
+import { createUsePuck, FieldLabel } from "@puckeditor/core"
 import { requestUploadUrls, uploadToSignedUrl } from "@/lib/media"
 import { validateImage, ACCEPTED_IMAGE_TYPES } from "@/lib/media"
 import { useResolvedFileUrl } from "@/components/shared/page-editor/hooks/use-resolved-file-url"
@@ -87,4 +87,44 @@ export function ImageField<T extends string | undefined>({
       </label>
     </FieldLabel>
   )
+}
+
+const MAX_PAGE_IMAGES = 20
+
+const usePuck = createUsePuck()
+
+function countPhotoBlocks(items: any[]): number {
+  let count = 0
+  for (const item of items) {
+    if (item.type === "Image") count++
+    for (const key of Object.keys(item.props || {})) {
+      const val = item.props[key]
+      if (Array.isArray(val)) count += countPhotoBlocks(val)
+    }
+  }
+  return count
+}
+
+/** Image upload that rejects pages already at the per-page image limit. */
+export function LimitedImageField<T extends string | undefined>({
+  value,
+  ...rest
+}: {
+  field?: { label?: string }
+  value: T
+  onChange: (val: T) => void
+  name: string
+}) {
+  const puckData = usePuck((s) => s.appState.data)
+  const photoCount = countPhotoBlocks(puckData.content ?? [])
+  const atLimit = photoCount >= MAX_PAGE_IMAGES && !value
+
+  if (atLimit) {
+    return (
+      <p className="text-sm text-destructive">
+        Maximum of {MAX_PAGE_IMAGES} images reached.
+      </p>
+    )
+  }
+  return <ImageField value={value} {...rest} />
 }

@@ -10,18 +10,13 @@ export type SectionProps = {
 }
 
 /**
- * Mirrors the Puck demo's `Section`: a wrapper with horizontal page padding
- * and a centered, max-width inner container.
+ * Mirrors the Puck demo's `Section`: a centered, max-width inner container.
+ * Horizontal page padding is owned by the root config (see `horizontalPadding`),
+ * so this wrapper does not add any itself.
  */
 export const Section = forwardRef<HTMLDivElement, SectionProps>(
-  ({ children, className, maxWidth = "1280px", style, nested }, ref) => (
-    <div
-      ref={ref}
-      className={["w-full", nested ? "" : "px-4 md:px-5", className]
-        .filter(Boolean)
-        .join(" ")}
-      style={style}
-    >
+  ({ children, className, maxWidth = "1280px", style }, ref) => (
+    <div ref={ref} className={["w-full", className].filter(Boolean).join(" ")} style={style}>
       <div className="mx-auto h-full w-full" style={{ maxWidth }}>
         {children}
       </div>

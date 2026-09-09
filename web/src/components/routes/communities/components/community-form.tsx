@@ -47,16 +47,8 @@ const RESERVED_SLUGS: string[] = [
   "sgotinish",
 ]
 
-/** Lowercase, digits and single hyphens — the server's `validate_slug` shape. */
+/** Lowercase letters, digits and single hyphens — the server's `validate_slug` shape. */
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
-
-/** Normalises free text so `NU Fencing Club` becomes `nu-fencing-club`. */
-function normalizeSlug(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
 
 const communitySchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -241,11 +233,6 @@ export function CommunityForm({
             placeholder="nu-fencing-club"
             disabled={isPending || !editable("slug")}
             {...form.register("slug")}
-            onChange={(event) => {
-              form.setValue("slug", normalizeSlug(event.target.value), {
-                shouldValidate: true,
-              })
-            }}
           />
           <FieldError message={errors.slug?.message} />
         </div>

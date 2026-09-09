@@ -1,18 +1,26 @@
+import { type CSSProperties } from "react"
 import type { ComponentConfig } from "@puckeditor/core"
+
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
 import {
+  optionsField,
+  resolveRadius,
+  styleFields,
   withLayout,
   type WithLayout,
+  type ComponentStyleProps,
 } from "@/components/shared/page-editor/blocks/_lib"
 
-type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "span"
+type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
 
-export type HeadingProps = WithLayout<{
-  align: "left" | "center" | "right"
-  text?: string
-  level?: string
-  size: "xxxl" | "xxl" | "xl" | "l" | "m" | "s" | "xs"
-}>
+export type HeadingProps = WithLayout<
+  ComponentStyleProps & {
+    align: "left" | "center" | "right"
+    text?: string
+    level?: string
+    size: "xxxl" | "xxl" | "xl" | "l" | "m" | "s" | "xs"
+  }
+>
 
 const sizeOptions = [
   { value: "xxxl", label: "XXXL" },
@@ -25,13 +33,12 @@ const sizeOptions = [
 ]
 
 const levelOptions = [
-  { label: "", value: "" },
-  { label: "1", value: "1" },
-  { label: "2", value: "2" },
-  { label: "3", value: "3" },
-  { label: "4", value: "4" },
-  { label: "5", value: "5" },
-  { label: "6", value: "6" },
+  { label: "H1", value: "1" },
+  { label: "H2", value: "2" },
+  { label: "H3", value: "3" },
+  { label: "H4", value: "4" },
+  { label: "H5", value: "5" },
+  { label: "H6", value: "6" },
 ]
 
 const sizeClasses: Record<HeadingProps["size"], string> = {
@@ -44,48 +51,53 @@ const sizeClasses: Record<HeadingProps["size"], string> = {
   xs: "text-lg",
 }
 
+const alignOptions = [
+  { label: "Left", value: "left" },
+  { label: "Center", value: "center" },
+  { label: "Right", value: "right" },
+]
+
 const HeadingInternal: ComponentConfig<HeadingProps> = {
   fields: {
     text: {
       type: "textarea",
+      label: "Text",
       contentEditable: true,
     },
-    size: {
-      type: "select",
-      options: sizeOptions,
-    },
-    level: {
-      type: "select",
-      options: levelOptions,
-    },
+    size: optionsField<HeadingProps["size"]>("Size", sizeOptions),
+    level: optionsField<HeadingProps["level"]>("Level", levelOptions),
     align: {
       type: "radio",
-      options: [
-        { label: "Left", value: "left" },
-        { label: "Center", value: "center" },
-        { label: "Right", value: "right" },
-      ],
+      label: "Align",
+      options: alignOptions,
     },
+    ...styleFields({ backgroundDefault: "transparent" }),
   },
   defaultProps: {
     align: "left",
     text: "Heading",
     size: "m",
+    level: "1",
     layout: {
       padding: "8px",
     },
   },
-  render: ({ align, text, size, level }) => {
-    const Tag = (level ? `h${level}` : "span") as HeadingTag
+  render: ({ align, text, size, level, textColor, backgroundColor, radius, fontFamily }) => {
+    const Tag = (`h${level || "1"}`) as HeadingTag
+    const style: CSSProperties = {
+      margin: 0,
+      fontWeight: 600,
+      letterSpacing: "-0.011em",
+      textAlign: align,
+      width: "100%",
+      color: textColor || undefined,
+      backgroundColor: backgroundColor || undefined,
+      borderRadius: resolveRadius(radius),
+      fontFamily: fontFamily || undefined,
+    }
     return (
       <Section>
-        <Tag
-          className={[
-            "m-0 font-semibold tracking-tight",
-            sizeClasses[size],
-          ].join(" ")}
-          style={{ textAlign: align, width: "100%" }}
-        >
+        <Tag className={sizeClasses[size]} style={style}>
           {text}
         </Tag>
       </Section>

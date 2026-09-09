@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, type CSSProperties } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import {
@@ -17,8 +17,8 @@ import {
 } from "@/lib/communities"
 import { selectMedia } from "@/lib/media"
 import { PageRenderer } from "@/components/shared/page-editor/components/page-renderer"
+import { contrastColor } from "@/components/shared/page-editor/blocks/_lib"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
-import { ThemeToggle } from "@/components/shared/theme/toggle"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -75,6 +75,37 @@ export function Page({
 
   const avatar = selectMedia(community.media, "profile")?.url
 
+  // Match the app header to the background the page's puck editor chose for
+  // the page root, re-rendering as it changes.
+  const rootData = (community.page_content?.root ?? {}) as
+    | {
+        props?: { backgroundColor?: unknown; textColor?: unknown }
+        backgroundColor?: unknown
+        textColor?: unknown
+      }
+    | undefined
+  const rawPageBg =
+    rootData?.props?.backgroundColor ?? rootData?.backgroundColor
+  const pageBg =
+    typeof rawPageBg === "string" && rawPageBg ? rawPageBg : "#ffffff"
+  const rawTextColor = rootData?.props?.textColor ?? rootData?.textColor
+  const headerFg =
+    typeof rawTextColor === "string" && rawTextColor
+      ? rawTextColor
+      : contrastColor(pageBg)
+  const headerStyle: CSSProperties = {
+    backgroundColor: pageBg,
+    color: headerFg,
+    ["--sidebar" as string]: pageBg,
+    ["--sidebar-foreground" as string]: headerFg,
+    ["--sidebar-border" as string]: `color-mix(in oklab, ${headerFg} 15%, transparent)`,
+    ["--sidebar-accent" as string]: `color-mix(in oklab, ${headerFg} 10%, transparent)`,
+    ["--sidebar-accent-foreground" as string]: headerFg,
+    ["--foreground" as string]: headerFg,
+    ["--muted-foreground" as string]: `color-mix(in oklab, ${headerFg} 65%, transparent)`,
+    ["--border" as string]: `color-mix(in oklab, ${headerFg} 15%, transparent)`,
+  }
+
   // Server-decided. An owner gets can_edit; a community admin also gets
   // can_edit. (Delete lives on the settings page, not here.)
   const { can_edit: canEdit } = community.permissions
@@ -111,7 +142,10 @@ export function Page({
 
   return (
     <article>
-      <header className="sticky top-0 z-40 border-b border-sidebar-border bg-sidebar">
+      <header
+        className="sticky top-0 z-40 border-b border-sidebar-border bg-sidebar"
+        style={headerStyle}
+      >
         <div className="mx-auto flex h-[52px] max-w-6xl items-center gap-2 px-3 sm:px-6 md:h-16">
           <Tooltip>
             <TooltipTrigger
@@ -239,12 +273,11 @@ export function Page({
                 <TooltipContent>{community.email}</TooltipContent>
               </Tooltip>
             )}
-            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-3 py-4 sm:px-6">
+      <div>
         <PageRenderer data={community.page_content ?? {}} />
       </div>
     </article>

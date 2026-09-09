@@ -1,0 +1,227 @@
+/*
+  Editor chrome follows the Nuspace theme. Page content (canvas) stays
+  theme-independent — only the panels, header and controls are restyled here.
+  The tokens below map the Nuspace design variables onto Puck's internal
+  design tokens so the editor looks native in both light and dark mode.
+*/
+
+.puck-editor-shell {
+  /* Surfaces */
+  --puck-color-surface: hsl(194.7 100% 99.6%);
+  --puck-color-surface-muted: hsl(214 40.1% 93.4%);
+  --puck-color-surface-subtle: hsl(214 47.5% 93.5%);
+  --puck-color-surface-inverse: hsl(215.8 37.5% 12.9%);
+  --puck-color-bg-disabled: hsl(214 19.4% 88.8%);
+
+  /* Text */
+  --puck-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-color-text-primary: hsl(217.3 68.2% 41.8%);
+  --puck-color-text-muted: hsl(215.8 16.5% 38.3%);
+  --puck-color-text-secondary: hsl(215.8 16.5% 38.3%);
+  --puck-color-text-subtle: hsl(215.8 16.5% 38.3%);
+  --puck-color-text-disabled: hsl(215.8 11.1% 41.2%);
+  --puck-color-text-inverse: hsl(214 80.7% 98.4%);
+
+  /* Lines & focus */
+  --puck-color-border: hsl(214 22.4% 82.8%);
+  --puck-color-border-muted: hsl(214 22.4% 82.8%);
+  --puck-color-focus-ring: hsl(24.6 97.6% 45.6%);
+  --puck-border-width-focus: 2px;
+
+  /* Interactive */
+  --puck-color-interactive: hsl(217.3 68.2% 41.8%);
+  --puck-color-interactive-hover: hsl(217.3 68.2% 34%);
+  --puck-color-interactive-active: hsl(217.3 68.2% 41.8%);
+  --puck-color-interactive-soft: hsl(214 63.9% 91.5%);
+  --puck-color-interactive-soft-hover: hsl(214 63.9% 86%);
+  --puck-color-interactive-subtle: hsl(214 63.9% 91.5%);
+  --puck-color-interactive-neutral-hover: hsl(214 40.1% 93.4%);
+  --puck-color-interactive-inverse-hover: hsl(214 80.7% 98.4%);
+  --puck-color-interactive-inverse-active: hsl(214 80.7% 98.4%);
+  --puck-color-selection-bg: hsl(214 63.9% 91.5%);
+  --puck-color-selection-border: hsl(217.3 68.2% 41.8%);
+  --puck-color-highlight: hsl(214 63.9% 91.5%);
+
+  /* Text inputs & controls */
+  --puck-field-color-bg: hsl(194.7 100% 99.6%);
+  --puck-field-color-bg-hover: hsl(214 63.9% 91.5%);
+  --puck-field-color-bg-active: hsl(214 63.9% 91.5%);
+  --puck-field-color-bg-disabled: hsl(214 19.4% 88.8%);
+  --puck-field-color-border: hsl(213.9 23.1% 78%);
+  --puck-field-color-border-hover: hsl(213.9 23.1% 78%);
+  --puck-field-color-border-focus: hsl(24.6 97.6% 45.6%);
+  --puck-field-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-field-color-text-hover: hsl(215.8 37.5% 12.9%);
+  --puck-field-radius: 0.5rem;
+  --puck-field-label-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-field-array-add-color-icon: hsl(217.3 68.2% 41.8%);
+
+  /* Chrome panels */
+  --puck-header-color-bg: hsl(214 80.7% 98.4%);
+  --puck-sidebar-left-color-bg: hsl(214 80.7% 98.4%);
+  --puck-sidebar-right-color-bg: hsl(214 80.7% 98.4%);
+  --puck-pluginbar-color-bg: hsl(214 80.7% 98.4%);
+  --puck-pluginbar-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-pluginbar-color-text-hover: hsl(217.3 68.2% 41.8%);
+  --puck-pluginbar-color-text-selected: hsl(217.3 68.2% 41.8%);
+  --puck-pluginbar-color-bg-hover: hsl(214 63.9% 91.5%);
+  --puck-canvas-color-bg: hsl(214 80.7% 98.4%);
+
+  /* Outline (layers) */
+  --puck-outline-color-bg-hover: hsl(214 63.9% 91.5%);
+  --puck-outline-color-bg-selected: hsl(214 63.9% 91.5%);
+  --puck-outline-color-border-hover: hsl(214 22.4% 82.8%);
+  --puck-outline-color-border-selected: hsl(217.3 68.2% 41.8%);
+  --puck-outline-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-outline-color-text-hover: hsl(215.8 37.5% 12.9%);
+  --puck-outline-color-icon: hsl(215.8 16.5% 38.3%);
+  --puck-outline-color-drop-indicator: hsl(217.3 68.2% 41.8%);
+
+  /* Drawer categories */
+  --puck-drawer-category-color-bg-hover: hsl(214 63.9% 91.5%);
+  --puck-drawer-category-color-bg-active: hsl(214 63.9% 91.5%);
+  --puck-drawer-category-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-drawer-category-color-text-hover: hsl(215.8 37.5% 12.9%);
+  --puck-drawer-item-color-bg-hover: hsl(214 63.9% 91.5%);
+  --puck-drawer-item-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-drawer-item-color-text-hover: hsl(215.8 37.5% 12.9%);
+  --puck-drawer-item-color-border: hsl(214 22.4% 82.8%);
+
+  /* Action bar */
+  --puck-actionbar-color-bg: hsl(194.7 100% 99.6%);
+  --puck-actionbar-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-actionbar-color-action-hover: hsl(214 63.9% 91.5%);
+  --puck-actionbar-color-action-active: hsl(214 63.9% 86%);
+  --puck-actionbar-color-separator: hsl(214 22.4% 82.8%);
+
+  /* Icon buttons */
+  --puck-iconbutton-color-bg: transparent;
+  --puck-iconbutton-color-bg-hover: hsl(214 63.9% 91.5%);
+  --puck-iconbutton-color-bg-active: hsl(214 63.9% 86%);
+  --puck-iconbutton-color-icon: hsl(215.8 37.5% 12.9%);
+  --puck-iconbutton-color-icon-hover: hsl(215.8 37.5% 12.9%);
+  --puck-iconbutton-color-icon-disabled: hsl(215.8 11.1% 41.2%);
+
+  /* Primary / secondary buttons */
+  --puck-button-primary-color-bg: hsl(217.3 68.2% 41.8%);
+  --puck-button-primary-color-bg-hover: hsl(217.3 68.2% 34%);
+  --puck-button-primary-color-bg-active: hsl(217.3 68.2% 41.8%);
+  --puck-button-primary-color-bg-disabled: hsl(214 19.4% 88.8%);
+  --puck-button-primary-color-text: hsl(214 80.7% 98.4%);
+  --puck-button-primary-color-text-disabled: hsl(215.8 11.1% 41.2%);
+  --puck-button-secondary-color-bg: transparent;
+  --puck-button-secondary-color-bg-hover: hsl(214 63.9% 91.5%);
+  --puck-button-secondary-color-bg-active: hsl(214 63.9% 86%);
+  --puck-button-secondary-color-bg-disabled: transparent;
+  --puck-button-secondary-color-text: hsl(215.8 37.5% 12.9%);
+  --puck-button-secondary-color-text-disabled: hsl(215.8 11.1% 41.2%);
+  --puck-button-secondary-color-border: hsl(214 22.4% 82.8%);
+
+  /* Type */
+  --puck-font-family: "Onest Variable", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --puck-radius-m: 0.75rem;
+  --puck-radius-l: 0.75rem;
+}
+
+.puck-editor-shell.dark,
+.dark .puck-editor-shell {
+  --puck-color-surface: hsl(215.8 31.8% 11.7%);
+  --puck-color-surface-muted: hsl(215.8 20.1% 17.4%);
+  --puck-color-surface-subtle: hsl(215.8 23.5% 17.5%);
+  --puck-color-surface-inverse: hsl(214 36.4% 92.8%);
+  --puck-color-bg-disabled: hsl(215.8 17.8% 15.8%);
+
+  --puck-color-text: hsl(214 36.4% 92.8%);
+  --puck-color-text-primary: hsl(215.8 87.1% 70%);
+  --puck-color-text-muted: hsl(213.9 15.5% 65.7%);
+  --puck-color-text-secondary: hsl(213.9 15.5% 65.7%);
+  --puck-color-text-subtle: hsl(213.9 15.5% 65.7%);
+  --puck-color-text-disabled: hsl(213.9 8.6% 50%);
+  --puck-color-text-inverse: hsl(217.5 60% 8.1%);
+
+  --puck-color-border: hsl(215.8 20.7% 24.2%);
+  --puck-color-border-muted: hsl(215.8 20.7% 24.2%);
+  --puck-color-focus-ring: hsl(25.8 93.2% 63%);
+
+  --puck-color-interactive: hsl(215.8 87.1% 70%);
+  --puck-color-interactive-hover: hsl(215.8 87.1% 78%);
+  --puck-color-interactive-active: hsl(215.8 87.1% 70%);
+  --puck-color-interactive-soft: hsl(215.8 30.4% 21.4%);
+  --puck-color-interactive-soft-hover: hsl(215.8 30.4% 26%);
+  --puck-color-interactive-subtle: hsl(215.8 30.4% 21.4%);
+  --puck-color-interactive-neutral-hover: hsl(215.8 20.1% 17.4%);
+  --puck-color-interactive-inverse-hover: hsl(217.5 60% 8.1%);
+  --puck-color-interactive-inverse-active: hsl(217.5 60% 8.1%);
+  --puck-color-selection-bg: hsl(215.8 30.4% 21.4%);
+  --puck-color-selection-border: hsl(215.8 87.1% 70%);
+  --puck-color-highlight: hsl(215.8 30.4% 21.4%);
+  --puck-color-overlay-backdrop: hsl(215.8 40.9% 7.6% / 0.6);
+
+  --puck-field-color-bg: hsl(215.8 31.8% 11.7%);
+  --puck-field-color-bg-hover: hsl(215.8 30.4% 21.4%);
+  --puck-field-color-bg-active: hsl(215.8 30.4% 21.4%);
+  --puck-field-color-bg-disabled: hsl(215.8 17.8% 15.8%);
+  --puck-field-color-border: hsl(215.8 20.8% 31.8%);
+  --puck-field-color-border-hover: hsl(215.8 20.8% 31.8%);
+  --puck-field-color-border-focus: hsl(25.8 93.2% 63%);
+  --puck-field-color-text: hsl(214 36.4% 92.8%);
+  --puck-field-color-text-hover: hsl(214 36.4% 92.8%);
+  --puck-field-label-color-text: hsl(214 36.4% 92.8%);
+  --puck-field-array-add-color-icon: hsl(215.8 87.1% 70%);
+
+  --puck-header-color-bg: hsl(215.8 31.8% 11.7%);
+  --puck-sidebar-left-color-bg: hsl(215.8 31.8% 11.7%);
+  --puck-sidebar-right-color-bg: hsl(215.8 31.8% 11.7%);
+  --puck-pluginbar-color-bg: hsl(215.8 31.8% 11.7%);
+  --puck-pluginbar-color-text: hsl(214 36.4% 92.8%);
+  --puck-pluginbar-color-text-hover: hsl(215.8 87.1% 70%);
+  --puck-pluginbar-color-text-selected: hsl(215.8 87.1% 70%);
+  --puck-pluginbar-color-bg-hover: hsl(215.8 30.4% 21.4%);
+  --puck-canvas-color-bg: hsl(215.8 40.9% 7.6%);
+
+  --puck-outline-color-bg-hover: hsl(215.8 30.4% 21.4%);
+  --puck-outline-color-bg-selected: hsl(215.8 30.4% 21.4%);
+  --puck-outline-color-border-hover: hsl(215.8 20.7% 24.2%);
+  --puck-outline-color-border-selected: hsl(215.8 87.1% 70%);
+  --puck-outline-color-text: hsl(214 36.4% 92.8%);
+  --puck-outline-color-text-hover: hsl(214 36.4% 92.8%);
+  --puck-outline-color-icon: hsl(213.9 15.5% 65.7%);
+  --puck-outline-color-drop-indicator: hsl(215.8 87.1% 70%);
+
+  --puck-drawer-category-color-bg-hover: hsl(215.8 30.4% 21.4%);
+  --puck-drawer-category-color-bg-active: hsl(215.8 30.4% 21.4%);
+  --puck-drawer-category-color-text: hsl(214 36.4% 92.8%);
+  --puck-drawer-category-color-text-hover: hsl(214 36.4% 92.8%);
+  --puck-drawer-item-color-bg-hover: hsl(215.8 30.4% 21.4%);
+  --puck-drawer-item-color-text: hsl(214 36.4% 92.8%);
+  --puck-drawer-item-color-text-hover: hsl(214 36.4% 92.8%);
+  --puck-drawer-item-color-border: hsl(215.8 20.7% 24.2%);
+
+  --puck-actionbar-color-bg: hsl(215.8 31.8% 11.7%);
+  --puck-actionbar-color-text: hsl(214 36.4% 92.8%);
+  --puck-actionbar-color-action-hover: hsl(215.8 30.4% 21.4%);
+  --puck-actionbar-color-action-active: hsl(215.8 30.4% 26%);
+  --puck-actionbar-color-separator: hsl(215.8 20.7% 24.2%);
+
+  --puck-iconbutton-color-bg: transparent;
+  --puck-iconbutton-color-bg-hover: hsl(215.8 30.4% 21.4%);
+  --puck-iconbutton-color-bg-active: hsl(215.8 30.4% 26%);
+  --puck-iconbutton-color-icon: hsl(214 36.4% 92.8%);
+  --puck-iconbutton-color-icon-hover: hsl(214 36.4% 92.8%);
+  --puck-iconbutton-color-icon-disabled: hsl(213.9 8.6% 50%);
+
+  --puck-button-primary-color-bg: hsl(215.8 87.1% 70%);
+  --puck-button-primary-color-bg-hover: hsl(215.8 87.1% 78%);
+  --puck-button-primary-color-bg-active: hsl(215.8 87.1% 70%);
+  --puck-button-primary-color-bg-disabled: hsl(215.8 17.8% 15.8%);
+  --puck-button-primary-color-text: hsl(217.5 60% 8.1%);
+  --puck-button-primary-color-text-disabled: hsl(213.9 8.6% 50%);
+  --puck-button-secondary-color-bg: transparent;
+  --puck-button-secondary-color-bg-hover: hsl(215.8 30.4% 21.4%);
+  --puck-button-secondary-color-bg-active: hsl(215.8 30.4% 26%);
+  --puck-button-secondary-color-bg-disabled: transparent;
+  --puck-button-secondary-color-text: hsl(214 36.4% 92.8%);
+  --puck-button-secondary-color-text-disabled: hsl(213.9 8.6% 50%);
+  --puck-button-secondary-color-border: hsl(215.8 20.7% 24.2%);
+}

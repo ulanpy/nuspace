@@ -1,147 +1,147 @@
+import { type CSSProperties } from "react"
 import type { ComponentConfig } from "@puckeditor/core"
+
 import {
-  Award,
-  Bell,
-  BookOpen,
-  Camera,
-  Check,
-  Cloud,
-  Cpu,
-  Database,
-  Feather,
-  Film,
-  Gift,
-  Globe2,
-  Heart,
-  Lock,
-  Mail,
-  MapPin,
-  Music,
-  Palette,
-  Phone,
-  Rocket,
-  Share2,
-  Shield,
-  Star,
-  Target,
-  ThumbsUp,
-  TrendingUp,
-  Truck,
-  Users,
-  Wifi,
-  Zap,
-  type LucideIcon,
-} from "lucide-react"
-import {
+  getIcon,
+  iconOptions,
+  optionsField,
+  resolveRadius,
+  styleFields,
   withLayout,
   type WithLayout,
+  type ComponentStyleProps,
 } from "@/components/shared/page-editor/blocks/_lib"
 
-type IconMapEntry = { Icon: LucideIcon; label: string }
+export type CardProps = WithLayout<
+  ComponentStyleProps & {
+    title: string
+    description: string
+    icon?: string
+    mode: "flat" | "card"
+    align: "left" | "center" | "right"
+  }
+>
 
-const ICONS: IconMapEntry[] = [
-  { Icon: Feather, label: "Feather" },
-  { Icon: Star, label: "Star" },
-  { Icon: Heart, label: "Heart" },
-  { Icon: Zap, label: "Zap" },
-  { Icon: Award, label: "Award" },
-  { Icon: TrendingUp, label: "TrendingUp" },
-  { Icon: Users, label: "Users" },
-  { Icon: Globe2, label: "Globe" },
-  { Icon: Camera, label: "Camera" },
-  { Icon: BookOpen, label: "Book" },
-  { Icon: Shield, label: "Shield" },
-  { Icon: Truck, label: "Truck" },
-  { Icon: Bell, label: "Bell" },
-  { Icon: Check, label: "Check" },
-  { Icon: Mail, label: "Mail" },
-  { Icon: MapPin, label: "MapPin" },
-  { Icon: Phone, label: "Phone" },
-  { Icon: Cpu, label: "Cpu" },
-  { Icon: Database, label: "Database" },
-  { Icon: Rocket, label: "Rocket" },
-  { Icon: ThumbsUp, label: "ThumbsUp" },
-  { Icon: Target, label: "Target" },
-  { Icon: Wifi, label: "Wifi" },
-  { Icon: Cloud, label: "Cloud" },
-  { Icon: Lock, label: "Lock" },
-  { Icon: Share2, label: "Share" },
-  { Icon: Gift, label: "Gift" },
-  { Icon: Palette, label: "Palette" },
-  { Icon: Music, label: "Music" },
-  { Icon: Film, label: "Film" },
-]
-
-const iconOptions = ICONS.map(({ label }) => ({ label, value: label }))
-
-export type CardProps = WithLayout<{
-  title: string
-  description: string
-  icon?: string
-  mode: "flat" | "card"
-}>
-
-function getIcon(name?: string): LucideIcon {
-  return ICONS.find(({ label }) => label === name)?.Icon ?? Feather
-}
+const CARD_BG = "#ffffff"
+const CARD_BORDER = "#e2e8f0"
+/** Soft accent-tinted badge so the badge follows the page's accent color. */
+const ICON_BADGE_BG =
+  "color-mix(in oklch, var(--nuspace-accent, #1d4ed8), white 90%)"
+const ICON_BADGE_TEXT = "var(--nuspace-accent, #1d4ed8)"
 
 const CardInner: ComponentConfig<CardProps> = {
   fields: {
     title: {
       type: "text",
+      label: "Title",
       contentEditable: true,
     },
     description: {
       type: "textarea",
+      label: "Description",
       contentEditable: true,
     },
-    icon: {
-      type: "select",
-      options: iconOptions,
-    },
+    icon: optionsField<string | undefined>("Icon", iconOptions),
     mode: {
       type: "radio",
+      label: "Style",
       options: [
-        { label: "card", value: "card" },
-        { label: "flat", value: "flat" },
+        { label: "Card", value: "card" },
+        { label: "Flat", value: "flat" },
       ],
     },
+    align: {
+      type: "radio",
+      label: "Align",
+      options: [
+        { label: "Left", value: "left" },
+        { label: "Center", value: "center" },
+        { label: "Right", value: "right" },
+      ],
+    },
+    ...styleFields({ backgroundDefault: "transparent" }),
   },
   defaultProps: {
     title: "Title",
     description: "Description",
     icon: "Feather",
     mode: "flat",
+    align: "center",
   },
-  render: ({ title, icon, description, mode }) => {
+  render: ({
+    title,
+    icon,
+    description,
+    mode,
+    align,
+    textColor,
+    backgroundColor,
+    radius,
+    fontFamily,
+  }) => {
     const Icon = getIcon(icon)
     const card = mode === "card"
+
+    const surface: CSSProperties = {
+      ...(textColor ? { color: textColor } : {}),
+      ...(card && !backgroundColor ? { backgroundColor: CARD_BG } : {}),
+      ...(card && !backgroundColor
+        ? { border: `1px solid ${CARD_BORDER}` }
+        : {}),
+    }
+
+    const containerStyle: CSSProperties = {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
+      gap: 16,
+      height: "100%",
+      width: "100%",
+      padding: card ? 20 : 0,
+      borderRadius: resolveRadius(radius),
+      boxShadow: card ? "0 1px 3px rgb(15 23 42 / 0.1)" : undefined,
+      ...surface,
+      ...(backgroundColor ? { backgroundColor } : {}),
+    }
+
+    const textAlign = align ?? "center"
+
     return (
       <div className="h-full">
-        <div
-          className={[
-            "flex h-full flex-col items-center gap-4",
-            card ? "max-w-full rounded-2xl bg-background p-5 shadow-sm" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Icon className="size-6" />
+        <div style={containerStyle}>
+          <div
+            style={{
+              display: "flex",
+              height: 64,
+              width: 64,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              backgroundColor: ICON_BADGE_BG,
+              color: ICON_BADGE_TEXT,
+              flexShrink: 0,
+            }}
+          >
+            <Icon style={{ width: 24, height: 24 }} />
           </div>
           <div
-            className={[
-              "text-2xl",
-              card ? "self-start text-left" : "text-center",
-            ].join(" ")}
+            style={{
+              fontSize: 24,
+              textAlign,
+              color: "inherit",
+              fontFamily: fontFamily || undefined,
+            }}
           >
             {title}
           </div>
           <div
-            className={[
-              "text-sm leading-relaxed font-light text-muted-foreground",
-              card ? "self-start text-left" : "text-center",
-            ].join(" ")}
+            style={{
+              fontSize: 14,
+              lineHeight: 1.6,
+              fontWeight: 300,
+              textAlign,
+              color: textColor ? undefined : "#475569",
+            }}
           >
             {description}
           </div>

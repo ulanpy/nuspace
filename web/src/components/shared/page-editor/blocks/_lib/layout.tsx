@@ -4,6 +4,7 @@ import type {
   DefaultComponentProps,
   ObjectField,
 } from "@puckeditor/core"
+import { optionsField } from "./style-fields"
 import { spacingOptions } from "./options"
 
 export type LayoutFieldProps = {
@@ -21,30 +22,29 @@ export const layoutField: ObjectField<LayoutFieldProps> = {
   type: "object",
   objectFields: {
     spanCol: {
-      label: "Grid Columns",
+      label: "Grid columns",
       type: "number",
       min: 1,
       max: 12,
     },
     spanRow: {
-      label: "Grid Rows",
+      label: "Grid rows",
       type: "number",
       min: 1,
       max: 12,
     },
     grow: {
-      label: "Flex Grow",
+      label: "Flex grow",
       type: "radio",
       options: [
-        { label: "true", value: true },
-        { label: "false", value: false },
+        { label: "True", value: true },
+        { label: "False", value: false },
       ],
     },
-    padding: {
-      type: "select",
-      label: "Vertical Padding",
-      options: [{ label: "0px", value: "0px" }, ...spacingOptions],
-    },
+    padding: optionsField<LayoutFieldProps["padding"]>(
+      "Vertical padding",
+      [{ label: "0px", value: "0px" }, ...spacingOptions]
+    ),
   },
 }
 

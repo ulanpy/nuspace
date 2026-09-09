@@ -1,5 +1,6 @@
 import { Puck } from "@puckeditor/core"
 import "@puckeditor/core/puck.css"
+import "./editor.css"
 import { pageEditorConfig } from "../config"
 
 interface EditorProps {
@@ -8,5 +9,9 @@ interface EditorProps {
 }
 
 export function Editor({ data, onPublish }: EditorProps) {
-  return <Puck config={pageEditorConfig} data={data} onPublish={onPublish} />
+  return (
+    <div className="puck-editor-shell">
+      <Puck config={pageEditorConfig} data={data} onPublish={onPublish} />
+    </div>
+  )
 }

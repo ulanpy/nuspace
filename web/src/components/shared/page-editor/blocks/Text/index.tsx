@@ -1,80 +1,75 @@
+import { type CSSProperties } from "react"
 import type { ComponentConfig } from "@puckeditor/core"
+
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
 import {
+  optionsField,
+  resolveRadius,
+  styleFields,
   withLayout,
   type WithLayout,
+  type ComponentStyleProps,
 } from "@/components/shared/page-editor/blocks/_lib"
 
-export type TextProps = WithLayout<{
-  align: "left" | "center" | "right"
-  text?: string
-  size?: "s" | "m"
-  color: "default" | "muted"
-  maxWidth?: string
-}>
+export type TextProps = WithLayout<
+  ComponentStyleProps & {
+    align: "left" | "center" | "right"
+    text?: string
+    size?: "s" | "m"
+    maxWidth?: string
+  }
+>
 
 const TextInner: ComponentConfig<TextProps> = {
   fields: {
     text: {
       type: "textarea",
+      label: "Text",
       contentEditable: true,
     },
-    size: {
-      type: "select",
-      options: [
-        { label: "S", value: "s" },
-        { label: "M", value: "m" },
-      ],
-    },
+    size: optionsField<TextProps["size"]>("Size", [
+      { label: "S", value: "s" },
+      { label: "M", value: "m" },
+    ]),
     align: {
       type: "radio",
+      label: "Align",
       options: [
         { label: "Left", value: "left" },
         { label: "Center", value: "center" },
         { label: "Right", value: "right" },
       ],
     },
-    color: {
-      type: "radio",
-      options: [
-        { label: "Default", value: "default" },
-        { label: "Muted", value: "muted" },
-      ],
-    },
-    maxWidth: { type: "text" },
+    maxWidth: { type: "text", label: "Max width" },
+    ...styleFields({ backgroundDefault: "transparent" }),
   },
   defaultProps: {
     align: "left",
     text: "Text",
     size: "m",
-    color: "default",
   },
-  render: ({ align, color, text, size, maxWidth }) => (
-    <Section maxWidth={maxWidth}>
-      <span
-        className={[
-          "flex w-full leading-relaxed font-light",
-          color === "muted" ? "text-muted-foreground" : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        style={{
-          color: color === "default" ? "inherit" : undefined,
-          textAlign: align,
-          fontSize: size === "m" ? "20px" : "16px",
-          maxWidth,
-          justifyContent:
-            align === "center"
-              ? "center"
-              : align === "right"
-                ? "flex-end"
-                : "flex-start",
-        }}
-      >
-        {text}
-      </span>
-    </Section>
-  ),
+  render: ({ align, text, size, maxWidth, textColor, backgroundColor, radius, fontFamily }) => {
+    const style: CSSProperties = {
+      color: textColor || undefined,
+      backgroundColor: backgroundColor || undefined,
+      borderRadius: resolveRadius(radius),
+      fontFamily: fontFamily || undefined,
+      display: "flex",
+      width: "100%",
+      lineHeight: 1.625,
+      fontWeight: 300,
+      textAlign: align,
+      fontSize: size === "m" ? "20px" : "16px",
+      maxWidth,
+      justifyContent:
+        align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
+    }
+    return (
+      <Section maxWidth={maxWidth}>
+        <span style={style}>{text}</span>
+      </Section>
+    )
+  },
 }
 
 export const Text = withLayout(TextInner)

@@ -1,5 +1,8 @@
 import type { ComponentConfig } from "@puckeditor/core"
-import { spacingOptions } from "@/components/shared/page-editor/blocks/_lib"
+import {
+  optionsField,
+  spacingOptions,
+} from "@/components/shared/page-editor/blocks/_lib"
 
 export type SpaceProps = {
   direction?: "" | "vertical" | "horizontal"
@@ -9,10 +12,7 @@ export type SpaceProps = {
 export const Space: ComponentConfig<SpaceProps> = {
   label: "Space",
   fields: {
-    size: {
-      type: "select",
-      options: spacingOptions,
-    },
+    size: optionsField<string>("Size", spacingOptions),
     direction: {
       type: "radio",
       options: [
