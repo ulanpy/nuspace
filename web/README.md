@@ -78,8 +78,11 @@ http://localhost/api/login?mock_user=alice
 pnpm dev            # dev server
 pnpm build          # typecheck + production build
 pnpm typecheck      # tsc -b --noEmit over the project references
-pnpm lint           # oxlint, including type-aware rules
-pnpm format         # prettier, sorts Tailwind classes
+pnpm check          # formatting, linting, and type checks
+pnpm check:fix      # apply available formatting and lint fixes
+pnpm check:staged   # check/fix staged frontend files
+pnpm lint           # Vite+ Oxlint, including type-aware rules
+pnpm format         # Vite+ Oxfmt, sorts Tailwind classes
 pnpm test           # node --test over src/**/*.test.ts
 pnpm api:generate   # regenerate src/api/schema.d.ts from the backend
 pnpm api:check      # fail if the committed schema is stale
@@ -174,8 +177,11 @@ old app along with the module. It is the interesting kind of test: `new URL`
 accepts `https://wtf://t.me/x` and reports `wtf:` as the host, so a naive
 protocol check passes something that goes nowhere near Telegram.
 
-## Linting
+## Tooling
 
-Oxlint, not ESLint. typescript-eslint refuses to load under TypeScript 7 and
-has no supporting release yet, while oxlint parses with its own Rust parser and
-its type-aware mode tracks TS 7 via `oxlint-tsgolint`.
+Vite+ provides Oxlint and Oxfmt, configured in `vite.config.ts`. The `pnpm`
+commands above use project-local tools; a global `vp` installation is optional.
+Use the Node and pnpm versions specified in `package.json`.
+
+Run tests with `pnpm test` or `vp run test`; `vp test` invokes Vitest, which this
+project does not use yet.

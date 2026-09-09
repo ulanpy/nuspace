@@ -23,7 +23,10 @@ import {
 export type ContactType = "phone" | "email" | "web" | "location" | "hours"
 
 export type ServiceCategory =
-  "urgent-wellbeing" | "student-life" | "academic-support" | "campus-services"
+  | "urgent-wellbeing"
+  | "student-life"
+  | "academic-support"
+  | "campus-services"
 
 export interface ContactInfo {
   id?: string

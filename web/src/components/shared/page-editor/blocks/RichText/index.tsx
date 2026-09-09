@@ -38,7 +38,14 @@ const RichTextInner: ComponentConfig<RichTextProps> = {
     richtext: "<h2>Heading</h2><p>Body</p>",
     align: "left",
   },
-  render: ({ richtext, align, textColor, backgroundColor, radius, fontFamily }) => {
+  render: ({
+    richtext,
+    align,
+    textColor,
+    backgroundColor,
+    radius,
+    fontFamily,
+  }) => {
     const style: CSSProperties = {
       textAlign: align,
       color: textColor || undefined,

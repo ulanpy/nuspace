@@ -20,10 +20,8 @@ export {
   photoFields,
 } from "./style-fields"
 export type { ComponentStyleProps, Option, PhotoFields } from "./style-fields"
+export { ICONS, iconOptions, iconSelectOptions, getIcon } from "./icons"
 export {
-  ICONS,
-  iconOptions,
-  iconSelectOptions,
-  getIcon,
-} from "./icons"
-export { iconDependentSelectField, iconDependentRadioField } from "./dynamic-array-fields"
+  iconDependentSelectField,
+  iconDependentRadioField,
+} from "./dynamic-array-fields"

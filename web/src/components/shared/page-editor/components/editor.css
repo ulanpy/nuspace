@@ -118,8 +118,8 @@
   --puck-button-secondary-color-border: hsl(214 22.4% 82.8%);
 
   /* Type */
-  --puck-font-family: "Onest Variable", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  --puck-font-family:
+    "Onest Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --puck-radius-m: 0.75rem;
   --puck-radius-l: 0.75rem;
 }

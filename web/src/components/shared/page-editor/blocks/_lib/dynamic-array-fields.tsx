@@ -91,10 +91,9 @@ function useIconVisible(
 }
 
 /** A Select (matching `optionsField`) hidden until the item has an icon. */
-export function iconDependentSelectField<Value extends string | number | undefined>(
-  label: string,
-  options: Option[]
-): Field<Value> {
+export function iconDependentSelectField<
+  Value extends string | number | undefined,
+>(label: string, options: Option[]): Field<Value> {
   return {
     type: "custom",
     label,

@@ -70,7 +70,14 @@ const StatsInner: ComponentConfig<StatsProps> = {
     ],
     align: "center",
   },
-  render: ({ items, align, textColor, backgroundColor, radius, fontFamily }) => {
+  render: ({
+    items,
+    align,
+    textColor,
+    backgroundColor,
+    radius,
+    fontFamily,
+  }) => {
     const panelStyle: CSSProperties = {
       color: textColor || "var(--nuspace-accent-foreground, #ffffff)",
       background: backgroundColor || "var(--nuspace-accent, #1d4ed8)",
@@ -82,7 +89,12 @@ const StatsInner: ComponentConfig<StatsProps> = {
       display: "flex",
       width: "100%",
       flexDirection: "column",
-      alignItems: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
+      alignItems:
+        align === "center"
+          ? "center"
+          : align === "right"
+            ? "flex-end"
+            : "flex-start",
       gap: 8,
       textAlign: align,
     }

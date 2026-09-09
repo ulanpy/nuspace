@@ -135,16 +135,13 @@ export const Hero: ComponentConfig<HeroProps> = {
         { label: "Right", value: "right" },
       ],
     },
-    contentGap: optionsField<HeroProps["contentGap"]>(
-      "Content gap & padding",
-      [
-        { label: "8px", value: "8px" },
-        { label: "16px", value: "16px" },
-        { label: "24px", value: "24px" },
-        { label: "32px", value: "32px" },
-        { label: "48px", value: "48px" },
-      ]
-    ),
+    contentGap: optionsField<HeroProps["contentGap"]>("Content gap & padding", [
+      { label: "8px", value: "8px" },
+      { label: "16px", value: "16px" },
+      { label: "24px", value: "24px" },
+      { label: "32px", value: "32px" },
+      { label: "48px", value: "48px" },
+    ]),
     image: {
       type: "object",
       label: "Image",
@@ -167,7 +164,11 @@ export const Hero: ComponentConfig<HeroProps> = {
           ],
         },
         ...photoFields({ urlField: "url" }),
-        ...styleFields({ font: false, text: false, backgroundDefault: "transparent" }),
+        ...styleFields({
+          font: false,
+          text: false,
+          backgroundDefault: "transparent",
+        }),
       } as unknown as Fields<NonNullable<HeroProps["image"]>>,
     },
     padding: optionsField<string>("Vertical padding", [
@@ -252,10 +253,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     }
 
     const content = (
-      <div
-        className={`w-full ${row ? "sm:w-1/2" : ""}`}
-        style={contentStyle}
-      >
+      <div className={`w-full ${row ? "sm:w-1/2" : ""}`} style={contentStyle}>
         <h1
           style={{
             margin: 0,
@@ -389,7 +387,8 @@ export const Hero: ComponentConfig<HeroProps> = {
                     border:
                       button.variant === "secondary"
                         ? `1px solid ${
-                            button.backgroundColor || "var(--nuspace-accent, #1d4ed8)"
+                            button.backgroundColor ||
+                            "var(--nuspace-accent, #1d4ed8)"
                           }`
                         : "none",
                     ...(button.textColor ? { color: button.textColor } : {}),

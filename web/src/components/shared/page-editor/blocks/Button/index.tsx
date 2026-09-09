@@ -75,7 +75,10 @@ const buttonFields: Fields<ButtonProps> = {
       { label: "True", value: true },
     ],
   },
-  ...styleFields({ backgroundLabel: "Main color", backgroundDefault: "accent" }),
+  ...styleFields({
+    backgroundLabel: "Main color",
+    backgroundDefault: "accent",
+  }),
 }
 
 const {
@@ -183,11 +186,7 @@ export const Button: ComponentConfig<ButtonProps> = {
       fontSize: size === "large" ? "16px" : "14px",
     }
 
-    const iconSize = onlyIcon
-      ? size === "large"
-        ? 20
-        : 16
-      : 16
+    const iconSize = onlyIcon ? (size === "large" ? 20 : 16) : 16
     const iconStyle = { width: iconSize, height: iconSize, flexShrink: 0 }
 
     const contents: ReactElement[] = []

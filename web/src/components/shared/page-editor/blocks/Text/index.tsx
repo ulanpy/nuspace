@@ -48,7 +48,16 @@ const TextInner: ComponentConfig<TextProps> = {
     text: "Text",
     size: "m",
   },
-  render: ({ align, text, size, maxWidth, textColor, backgroundColor, radius, fontFamily }) => {
+  render: ({
+    align,
+    text,
+    size,
+    maxWidth,
+    textColor,
+    backgroundColor,
+    radius,
+    fontFamily,
+  }) => {
     const style: CSSProperties = {
       color: textColor || undefined,
       backgroundColor: backgroundColor || undefined,
@@ -62,7 +71,11 @@ const TextInner: ComponentConfig<TextProps> = {
       fontSize: size === "m" ? "20px" : "16px",
       maxWidth,
       justifyContent:
-        align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
+        align === "center"
+          ? "center"
+          : align === "right"
+            ? "flex-end"
+            : "flex-start",
     }
     return (
       <Section maxWidth={maxWidth}>

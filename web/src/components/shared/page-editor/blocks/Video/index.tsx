@@ -33,7 +33,11 @@ function parseVideoUrl(url: string): string | null {
 const VideoInner: ComponentConfig<VideoProps> = {
   fields: {
     url: { type: "text", label: "Video URL or embed" },
-    ...styleFields({ font: false, text: false, backgroundDefault: "transparent" }),
+    ...styleFields({
+      font: false,
+      text: false,
+      backgroundDefault: "transparent",
+    }),
   },
   defaultProps: {
     url: "",
