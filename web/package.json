@@ -5,17 +5,20 @@
   "type": "module",
   "packageManager": "pnpm@11.15.0",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint --type-aware",
-    "format": "prettier --write \"**/*.{ts,tsx,css,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,css,json,md}\"",
+    "dev": "vp dev",
+    "build": "tsc -b && vp build",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
     "typecheck": "tsc -b --noEmit",
     "test": "node --import ./scripts/test-imports.mjs --test \"src/**/*.test.ts\" \"src/**/tests.ts\"",
-    "preview": "vite preview",
+    "preview": "vp preview",
     "api:generate": "node scripts/generate-api-types.mjs",
     "api:check": "node scripts/generate-api-types.mjs --check",
-    "lint:fix": "oxlint --type-aware --fix"
+    "lint:fix": "vp lint --fix",
+    "check": "vp check",
+    "check:fix": "vp check --fix",
+    "check:staged": "vp staged"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -27,7 +30,6 @@
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "^1.170.18",
     "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "cn": "^0.2.5",
     "date-fns": "^4.4.0",
@@ -45,12 +47,13 @@
     "remark-gfm": "^4.0.1",
     "shadcn": "^4.14.1",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@tanstack/eslint-plugin-query": "^5.102.8",
+    "@tanstack/eslint-plugin-router": "^1.162.0",
     "@tanstack/react-query-devtools": "^5.101.4",
     "@tanstack/react-router-devtools": "^1.167.0",
     "@tanstack/router-plugin": "^1.168.23",
@@ -58,11 +61,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",
-    "oxlint": "^1.75.0",
-    "oxlint-tsgolint": "^7.0.2001",
-    "prettier": "^3.8.3",
-    "prettier-plugin-tailwindcss": "^0.8.0",
+    "eslint-plugin-better-tailwindcss": "^4.7.0",
     "typescript": "~7.0.2",
-    "vite": "^8"
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": "^22.18.0 || >=24.11.0"
   }
 }

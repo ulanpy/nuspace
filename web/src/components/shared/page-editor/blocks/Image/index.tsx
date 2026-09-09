@@ -43,7 +43,11 @@ function imageStyle(
 const ImageInner: ComponentConfig<ImageProps> = {
   fields: {
     ...photoFields({ limited: true }),
-    ...styleFields({ font: false, text: false, backgroundDefault: "transparent" }),
+    ...styleFields({
+      font: false,
+      text: false,
+      backgroundDefault: "transparent",
+    }),
   },
   defaultProps: {
     image: "",
@@ -64,7 +68,11 @@ const ImageInner: ComponentConfig<ImageProps> = {
           }}
         >
           {imageUrl ? (
-            <img src={imageUrl} alt={alt} style={imageStyle(aspectRatio, focalPoint)} />
+            <img
+              src={imageUrl}
+              alt={alt}
+              style={imageStyle(aspectRatio, focalPoint)}
+            />
           ) : (
             <div
               className={

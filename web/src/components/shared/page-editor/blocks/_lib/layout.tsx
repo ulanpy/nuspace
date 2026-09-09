@@ -41,10 +41,10 @@ export const layoutField: ObjectField<LayoutFieldProps> = {
         { label: "False", value: false },
       ],
     },
-    padding: optionsField<LayoutFieldProps["padding"]>(
-      "Vertical padding",
-      [{ label: "0px", value: "0px" }, ...spacingOptions]
-    ),
+    padding: optionsField<LayoutFieldProps["padding"]>("Vertical padding", [
+      { label: "0px", value: "0px" },
+      ...spacingOptions,
+    ]),
   },
 }
 

@@ -14,7 +14,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 type FormattingAction =
-  "bold" | "italic" | "heading" | "unordered-list" | "ordered-list" | "quote"
+  | "bold"
+  | "italic"
+  | "heading"
+  | "unordered-list"
+  | "ordered-list"
+  | "quote"
 
 interface MarkdownToolbarProps {
   /** The textarea being edited. Selection is read straight off it. */

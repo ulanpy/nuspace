@@ -16,7 +16,11 @@ export type SectionProps = {
  */
 export const Section = forwardRef<HTMLDivElement, SectionProps>(
   ({ children, className, maxWidth = "1280px", style }, ref) => (
-    <div ref={ref} className={["w-full", className].filter(Boolean).join(" ")} style={style}>
+    <div
+      ref={ref}
+      className={["w-full", className].filter(Boolean).join(" ")}
+      style={style}
+    >
       <div className="mx-auto h-full w-full" style={{ maxWidth }}>
         {children}
       </div>

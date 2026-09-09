@@ -82,8 +82,17 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
       padding: "8px",
     },
   },
-  render: ({ align, text, size, level, textColor, backgroundColor, radius, fontFamily }) => {
-    const Tag = (`h${level || "1"}`) as HeadingTag
+  render: ({
+    align,
+    text,
+    size,
+    level,
+    textColor,
+    backgroundColor,
+    radius,
+    fontFamily,
+  }) => {
+    const Tag = `h${level || "1"}` as HeadingTag
     const style: CSSProperties = {
       margin: 0,
       fontWeight: 600,

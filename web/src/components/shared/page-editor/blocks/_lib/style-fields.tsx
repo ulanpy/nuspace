@@ -15,7 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ImageField, LimitedImageField } from "@/components/shared/page-editor/blocks/_shared"
+import {
+  ImageField,
+  LimitedImageField,
+} from "@/components/shared/page-editor/blocks/_shared"
 
 // --- Fonts ---------------------------------------------------------------
 
@@ -109,7 +112,9 @@ export function resolveRadius(
  * root, and the radius falls back to the `--nuspace-radius` variable set by
  * the root config.
  */
-export function getComponentStyle(props: Partial<ComponentStyleProps>): CSSProperties {
+export function getComponentStyle(
+  props: Partial<ComponentStyleProps>
+): CSSProperties {
   return {
     color: props.textColor || undefined,
     backgroundColor: props.backgroundColor || undefined,
@@ -185,7 +190,8 @@ function resolveDefaultColor(
   defaultColor?: string
 ): string | null {
   if (defaultColor === "transparent") return null
-  if (defaultColor === "accent") return rootColor(rootProps, "accentColor") ?? "#1d4ed8"
+  if (defaultColor === "accent")
+    return rootColor(rootProps, "accentColor") ?? "#1d4ed8"
   if (defaultColor) return defaultColor
   if (name === "backgroundColor") {
     return rootColor(rootProps, "accentColor") ?? "#1d4ed8"
@@ -200,12 +206,12 @@ export function ColorField({
   onChange,
   readOnly,
 }: CustomRenderParams<string | undefined>): ReactElement {
-  const { allowReset = true, defaultColor } = (field as CustomField<
-    string | undefined
-  > & { allowReset?: boolean; defaultColor?: string }) ?? {}
-  const rootProps = usePuck(
-    (state) => state.appState.data.root?.props
-  ) ?? {}
+  const { allowReset = true, defaultColor } =
+    (field as CustomField<string | undefined> & {
+      allowReset?: boolean
+      defaultColor?: string
+    }) ?? {}
+  const rootProps = usePuck((state) => state.appState.data.root?.props) ?? {}
   const pendingDefault = resolveDefaultColor(name, rootProps, defaultColor)
   const resolved = (value || pendingDefault) ?? "#ffffff"
   const isDefault = !value
@@ -229,7 +235,9 @@ export function ColorField({
               inset: 2,
               borderRadius: "calc(var(--puck-field-radius) - 2px)",
               background: isTransparent ? "transparent" : resolved,
-              border: isDefault ? "1px dashed var(--puck-color-border)" : "none",
+              border: isDefault
+                ? "1px dashed var(--puck-color-border)"
+                : "none",
               display: "block",
             }}
           />
@@ -250,7 +258,9 @@ export function ColorField({
           />
         </label>
         <span style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ fontSize: 12, color: "var(--puck-color-text-secondary)" }}>
+          <span
+            style={{ fontSize: 12, color: "var(--puck-color-text-secondary)" }}
+          >
             {isDefault ? "Default" : value}
           </span>
           {isDefault && (
@@ -302,7 +312,13 @@ export function FocalPointField({
 }: CustomRenderParams<string | undefined>): ReactElement {
   return (
     <FieldLabel label={field?.label ?? name} readOnly={readOnly}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 28px)", gap: 4 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 28px)",
+          gap: 4,
+        }}
+      >
         {FOCAL_POINTS.map((point) => {
           const active = (value || "50% 50%") === point
           return (
@@ -355,7 +371,8 @@ export function OptionsField<Value extends string | number | undefined>({
   onChange,
   readOnly,
 }: CustomRenderParams<Value>): ReactElement {
-  const options = ((field as CustomField<Value> & { options?: Option[] })?.options) ?? []
+  const options =
+    (field as CustomField<Value> & { options?: Option[] })?.options ?? []
   const emptyOption = options.find((option) => option.value === "")
   return (
     <FieldLabel label={field?.label ?? name} readOnly={readOnly}>
@@ -373,7 +390,11 @@ export function OptionsField<Value extends string | number | undefined>({
             <SelectItem
               key={option.value}
               value={option.value}
-              style={option.fontFamily ? { fontFamily: option.fontFamily } : undefined}
+              style={
+                option.fontFamily
+                  ? { fontFamily: option.fontFamily }
+                  : undefined
+              }
             >
               {option.label}
             </SelectItem>
@@ -454,10 +475,7 @@ export function styleFields(options?: {
     ),
     ...(font
       ? {
-          fontFamily: optionsField<string | undefined>(
-            "Font",
-            fontOptions
-          ),
+          fontFamily: optionsField<string | undefined>("Font", fontOptions),
         }
       : {}),
   } as unknown as Fields

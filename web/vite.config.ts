@@ -1,20 +1,137 @@
-import path from "path"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+import { defineConfig, lazyPlugins } from "vite-plus"
 
 // Inside Docker the backend is reachable as `fastapi:8000`; from the host it is
 // nginx on :80 that proxies /api through. Override with VITE_API_PROXY_TARGET.
 const apiTarget = process.env.VITE_API_PROXY_TARGET ?? "http://localhost"
 
 export default defineConfig({
-  plugins: [
+  staged: {
+    "*": "vp check --fix",
+  },
+  lint: {
+    ignorePatterns: [
+      "out/",
+      "coverage/",
+      "src/api/schema.d.ts",
+      "src/routeTree.gen.ts",
+    ],
+    plugins: ["react", "typescript", "oxc", "jsx-a11y", "import"],
+    categories: {
+      correctness: "error",
+      suspicious: "warn",
+    },
+    rules: {
+      "react/react-in-jsx-scope": "off",
+      "import/no-unassigned-import": "off",
+      "vite-plus/prefer-vite-plus-imports": "error",
+      "react/rules-of-hooks": "error",
+      "react/only-export-components": ["warn", { allowConstantExport: true }],
+      "@tanstack/query/exhaustive-deps": "error",
+      "@tanstack/query/infinite-query-property-order": "error",
+      "@tanstack/query/mutation-property-order": "error",
+      "@tanstack/query/no-rest-destructuring": "warn",
+      "@tanstack/query/no-unstable-deps": "error",
+      "@tanstack/query/no-void-query-fn": "error",
+      "@tanstack/query/stable-query-client": "error",
+      "@tanstack/router/create-route-property-order": "error",
+    },
+    overrides: [
+      {
+        files: ["src/**/*.{ts,tsx}"],
+        rules: {
+          "better-tailwindcss/enforce-canonical-classes": "error",
+        },
+      },
+      {
+        files: ["src/routes/**/*.tsx"],
+        rules: {
+          "react/only-export-components": "off",
+        },
+      },
+      {
+        files: ["src/components/ui/**"],
+        rules: {
+          "jsx-a11y/label-has-associated-control": "off",
+        },
+      },
+      {
+        files: ["src/**/*.test.ts", "src/**/tests.ts"],
+        rules: {
+          "typescript/no-floating-promises": "off",
+        },
+      },
+      {
+        files: ["src/components/shared/markdown/renderer.tsx"],
+        rules: {
+          "jsx-a11y/anchor-has-content": "off",
+          "jsx-a11y/heading-has-content": "off",
+        },
+      },
+    ],
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
+    settings: {
+      "better-tailwindcss": {
+        cwd: fileURLToPath(new URL(".", import.meta.url)),
+        entryPoint: "./src/index.css",
+      },
+    },
+    jsPlugins: [
+      {
+        name: "better-tailwindcss",
+        specifier: "eslint-plugin-better-tailwindcss",
+      },
+      {
+        name: "@tanstack/query",
+        specifier: "@tanstack/eslint-plugin-query",
+      },
+      {
+        name: "@tanstack/router",
+        specifier: "@tanstack/eslint-plugin-router",
+      },
+      {
+        name: "vite-plus",
+        specifier: "vite-plus/oxlint-plugin",
+      },
+    ],
+  },
+  fmt: {
+    endOfLine: "lf",
+    semi: false,
+    singleQuote: false,
+    tabWidth: 2,
+    trailingComma: "es5",
+    printWidth: 80,
+    sortPackageJson: false,
+    sortTailwindcss: {
+      stylesheet: "src/index.css",
+      functions: ["cn", "cva"],
+    },
+    ignorePatterns: [
+      "node_modules/",
+      "coverage/",
+      ".pnpm-store/",
+      "pnpm-lock.yaml",
+      "package-lock.json",
+      "yarn.lock",
+      "src/routeTree.gen.ts",
+      "src/api/schema.d.ts",
+      "out/",
+    ],
+  },
+  plugins: lazyPlugins(() => [
     // Must precede the react plugin so generated route files get transformed.
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     tailwindcss(),
-  ],
+  ]),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

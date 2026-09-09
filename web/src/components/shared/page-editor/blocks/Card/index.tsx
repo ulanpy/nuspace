@@ -93,7 +93,12 @@ const CardInner: ComponentConfig<CardProps> = {
     const containerStyle: CSSProperties = {
       display: "flex",
       flexDirection: "column",
-      alignItems: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
+      alignItems:
+        align === "center"
+          ? "center"
+          : align === "right"
+            ? "flex-end"
+            : "flex-start",
       gap: 16,
       height: "100%",
       width: "100%",
