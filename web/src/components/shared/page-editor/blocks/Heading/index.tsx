@@ -18,19 +18,8 @@ export type HeadingProps = WithLayout<
     align: "left" | "center" | "right"
     text?: string
     level?: string
-    size: "xxxl" | "xxl" | "xl" | "l" | "m" | "s" | "xs"
   }
 >
-
-const sizeOptions = [
-  { value: "xxxl", label: "XXXL" },
-  { value: "xxl", label: "XXL" },
-  { value: "xl", label: "XL" },
-  { value: "l", label: "L" },
-  { value: "m", label: "M" },
-  { value: "s", label: "S" },
-  { value: "xs", label: "XS" },
-] as const
 
 const levelOptions = [
   { label: "H1", value: "1" },
@@ -41,14 +30,17 @@ const levelOptions = [
   { label: "H6", value: "6" },
 ]
 
-const sizeClasses: Record<HeadingProps["size"], string> = {
-  xxxl: "text-6xl",
-  xxl: "text-5xl",
-  xl: "text-4xl",
-  l: "text-3xl",
-  m: "text-2xl",
-  s: "text-xl",
-  xs: "text-lg",
+/**
+ * Pixel sizes matching the RichText block's heading scale (headings are `em`
+ * multiples of its default M body size).
+ */
+const levelFontSizes: Record<string, number> = {
+  "1": 50,
+  "2": 40,
+  "3": 35,
+  "4": 28,
+  "5": 22,
+  "6": 20,
 }
 
 const alignOptions = [
@@ -64,7 +56,6 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
       label: "Text",
       contentEditable: true,
     },
-    size: optionsField<HeadingProps["size"]>("Size", sizeOptions),
     level: optionsField<HeadingProps["level"]>("Level", levelOptions),
     align: {
       type: "radio",
@@ -76,7 +67,6 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
   defaultProps: {
     align: "left",
     text: "Heading",
-    size: "m",
     level: "1",
     layout: {
       padding: "8px",
@@ -85,7 +75,6 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
   render: ({
     align,
     text,
-    size,
     level,
     textColor,
     backgroundColor,
@@ -103,8 +92,10 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
     const Tag = tags[level || "1"]
     const style: CSSProperties = {
       margin: 0,
+      fontSize: levelFontSizes[level || "1"],
       fontWeight: 600,
       letterSpacing: "-0.011em",
+      lineHeight: 1.15,
       textAlign: align,
       width: "100%",
       color: textColor || undefined,
@@ -114,9 +105,7 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
     }
     return (
       <Section>
-        <Tag className={sizeClasses[size]} style={style}>
-          {text}
-        </Tag>
+        <Tag style={style}>{text}</Tag>
       </Section>
     )
   },

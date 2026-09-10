@@ -232,6 +232,132 @@
   }
 }
 
+/*
+  Typography baseline for the page-editor RichText block. Tailwind's preflight
+  resets list markers (`ol, ul`) and makes headings inherit body size, so the
+  editor's HTML content needs these rules restored. Sizes are `em`-relative so
+  headings scale with the block's selected S/M/L body size.
+*/
+.nuspace-richtext {
+  line-height: 1.625;
+  font-weight: 300;
+}
+
+.nuspace-richtext > :first-child {
+  margin-top: 0;
+}
+
+.nuspace-richtext > :last-child {
+  margin-bottom: 0;
+}
+
+.nuspace-richtext p {
+  margin: 0 0 1em;
+}
+
+.nuspace-richtext ul,
+.nuspace-richtext ol {
+  margin: 0 0 1em;
+  padding-left: 1.5em;
+}
+
+.nuspace-richtext ul {
+  list-style: disc;
+}
+
+.nuspace-richtext ol {
+  list-style: decimal;
+}
+
+.nuspace-richtext li {
+  margin: 0.25em 0;
+  padding-left: 0.25em;
+}
+
+.nuspace-richtext h1 {
+  font-size: 2.5em;
+}
+
+.nuspace-richtext h2 {
+  font-size: 2em;
+}
+
+.nuspace-richtext h3 {
+  font-size: 1.75em;
+}
+
+.nuspace-richtext h4 {
+  font-size: 1.4em;
+}
+
+.nuspace-richtext h5 {
+  font-size: 1.1em;
+}
+
+.nuspace-richtext h6 {
+  font-size: 1em;
+}
+
+.nuspace-richtext h1,
+.nuspace-richtext h2,
+.nuspace-richtext h3,
+.nuspace-richtext h4,
+.nuspace-richtext h5,
+.nuspace-richtext h6 {
+  margin: 1.4em 0 0.5em;
+  font-weight: 600;
+  letter-spacing: -0.011em;
+  line-height: 1.15;
+}
+
+.nuspace-richtext a {
+  color: var(--nuspace-accent, #1d4ed8);
+  text-decoration: underline;
+}
+
+.nuspace-richtext blockquote {
+  margin: 1em 0;
+  padding: 0 1em;
+  border-left: 3px solid var(--nuspace-accent, #1d4ed8);
+}
+
+.nuspace-richtext blockquote p {
+  margin-bottom: 0;
+}
+
+.nuspace-richtext img {
+  max-width: 100%;
+  height: auto;
+}
+
+.nuspace-richtext code {
+  background-color: var(--color-muted);
+  padding: 0.1em 0.3em;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.nuspace-richtext pre {
+  background-color: var(--color-muted);
+  padding: 1em;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0 0 1em;
+}
+
+.nuspace-richtext pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+.nuspace-richtext hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2em 0;
+}
+
 @layer utilities {
   /* iOS zooms the viewport when a focused input is under 16px. */
   @media (max-width: 768px) {

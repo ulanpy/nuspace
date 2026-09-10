@@ -10,6 +10,8 @@ export {
   resolveRadius,
   contrastColor,
   DEFAULT_TEXT_COLOR,
+  textSizeOptions,
+  textSizePx,
   ColorField,
   FocalPointField,
   OptionsField,
@@ -19,7 +21,12 @@ export {
   aspectRatioOptions,
   photoFields,
 } from "./style-fields"
-export type { ComponentStyleProps, Option, PhotoFields } from "./style-fields"
+export type {
+  ComponentStyleProps,
+  Option,
+  PhotoFields,
+  TextSize,
+} from "./style-fields"
 export { ICONS, iconOptions, iconSelectOptions, getIcon } from "./icons"
 export {
   iconDependentSelectField,

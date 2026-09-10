@@ -152,11 +152,10 @@ const colorSwatchStyle: CSSProperties = {
 }
 
 /**
- * The root config's default global text color. Buttons deliberately do NOT
- * fall back to it blindly, because the literal default can clash with the page
- * Main color (e.g. near-black on navy). A button's label instead uses the
- * explicit global text color once the user picks one, and falls back to a
- * contrast color against the Main color otherwise (see `--nuspace-button-text`).
+ * The root config's default global typography color. It only affects the
+ * Typography blocks (Heading, Text, RichText) — controls like buttons pick
+ * their label color from the page background / Main color instead, so they
+ * never inherit this literal.
  */
 export const DEFAULT_TEXT_COLOR = "#0f172a"
 
@@ -290,16 +289,38 @@ export function ColorField({
   )
 }
 
-const FOCAL_POINTS = [
-  "0% 0%",
+/**
+ * Body text sizes shared by the Text and RichText blocks. Sizes are plain
+ * pixel values; RichText headings scale from the chosen size via `em`.
+ */
+export const textSizeOptions = [
+  { label: "S", value: "s" },
+  { label: "M", value: "m" },
+  { label: "L", value: "l" },
+] as const
+
+export type TextSize = "s" | "m" | "l"
+
+export function textSizePx(size?: TextSize): number {
+  return size === "s" ? 16 : size === "l" ? 24 : 20
+}
+
+/**
+ * Focal positions, laid out as a 3x3 plus: top / middle / bottom in the middle
+ * column and left / center / right in the middle row. Corner positions are
+ * dropped because the image always fits the frame by width — the corners don't
+ * represent a cropped region the way the edge midpoints do.
+ */
+const FOCAL_POINTS: (string | null)[] = [
+  null,
   "50% 0%",
-  "100% 0%",
+  null,
   "0% 50%",
   "50% 50%",
   "100% 50%",
-  "0% 100%",
+  null,
   "50% 100%",
-  "100% 100%",
+  null,
 ]
 
 export function FocalPointField({
@@ -324,15 +345,21 @@ export function FocalPointField({
           gap: 4,
         }}
       >
-        {FOCAL_POINTS.map((point) => {
+        {FOCAL_POINTS.map((point, index) => {
+          if (!point) {
+            return <span key={index} aria-hidden />
+          }
           const active = (value || "50% 50%") === point
+          const focalLabel =
+            ["", "Top", "", "Left", "Center", "Right", "", "Bottom"][index] ??
+            "Center"
           return (
             <Button
               key={point}
               type="button"
               variant={active ? "secondary" : "ghost"}
               size="icon-sm"
-              aria-label={`Focal point ${point}`}
+              aria-label={`Focus point ${focalLabel}`}
               aria-pressed={active}
               disabled={readOnly}
               onClick={() => onChange(point)}
@@ -507,7 +534,8 @@ export type PhotoFields = {
  * The image edit controls shared by the standalone Image block and the Hero
  * image: upload, alt text, aspect ratio and focal point. `urlField` names the
  * key written by the upload control (Image stores it under `image`, the Hero
- * under `url`).
+ * under `url`). The focal control keeps the plus (top/bottom + left/center/
+ * right) with the corners removed, since images fit the frame by width.
  */
 export function photoFields(options: {
   limited?: boolean

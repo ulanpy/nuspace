@@ -124,6 +124,23 @@
   --puck-radius-l: 0.75rem;
 }
 
+/*
+  The header's Cancel action: Puck's secondary button whose colors we point at
+  the app's destructive token (light/dark aware via `--destructive`). The
+  trigger used to be a primary like Publish, which read as another publish.
+*/
+.puck-editor-shell .puck-cancel-action {
+  --puck-button-secondary-color-text: var(--destructive);
+  --puck-button-secondary-color-text-hover: var(--destructive);
+  --puck-button-secondary-color-border: var(--destructive);
+  --puck-button-secondary-color-bg-hover: color-mix(
+    in oklch,
+    var(--destructive),
+    transparent 88%
+  );
+  --puck-button-secondary-color-bg-active: transparent;
+}
+
 .puck-editor-shell.dark,
 .dark .puck-editor-shell {
   --puck-color-surface: hsl(215.8 31.8% 11.7%);

@@ -1,18 +1,27 @@
 import { type CSSProperties, type ReactElement } from "react"
-import type { ComponentConfig } from "@puckeditor/core"
+import type {
+  ComponentConfig,
+  Fields,
+  ObjectField,
+} from "@puckeditor/core"
+import { ImageIcon } from "lucide-react"
 
 import {
   getIcon,
   iconSelectOptions,
   iconDependentSelectField,
   iconDependentRadioField,
+  layoutField,
   optionsField,
   photoFields,
   resolveRadius,
+  spacingOptions,
   styleFields,
   type ComponentStyleProps,
+  type LayoutFieldProps,
   type PhotoFields,
 } from "@/components/shared/page-editor/blocks/_lib"
+import { ImageField } from "@/components/shared/page-editor/blocks/_shared"
 import { useResolvedFileUrl } from "@/components/shared/page-editor/hooks/use-resolved-file-url"
 
 type HeroImage = {
@@ -37,24 +46,173 @@ type HeroButton = ComponentStyleProps & {
   iconOnly?: boolean
 }
 
+type VerticalAlign = "top" | "center" | "bottom"
+
 export type HeroProps = ComponentStyleProps & {
   title: string
   description: string
   buttons: HeroButton[]
   align: "left" | "center" | "right"
-  /**
-   * The gap between the title, description and button row (vertical), between
-   * buttons and the photo (horizontal), and the padding from the sides of the
-   * hero. A single value controls all of them.
-   */
-  contentGap: string
-  padding: string
+  verticalAlign?: VerticalAlign
+  /** Vertical gap (row gap): spacing between stacked content, incl. on mobile. */
+  verticalGap: string
+  /** Horizontal gap (column gap): spacing between columns and within button rows. */
+  horizontalGap: string
   image?: HeroImage
+  layout?: LayoutFieldProps
 }
 
-export const Hero: ComponentConfig<HeroProps> = {
-  label: "Hero",
-  fields: {
+const gapOptions = [
+  { label: "0px", value: "0px" },
+  ...spacingOptions,
+]
+
+/**
+ * The hero only needs the padding part of the shared Layout object (edges are
+ * owned by the layout section); grid/flex span controls make no sense on a
+ * full-bleed section.
+ */
+const heroLayoutField: ObjectField<LayoutFieldProps> = {
+  ...layoutField,
+  objectFields: {
+    paddingX: layoutField.objectFields.paddingX,
+    padding: layoutField.objectFields.padding,
+  },
+}
+
+const flexAlign = (
+  value?: VerticalAlign
+): "flex-start" | "center" | "flex-end" =>
+  value === "top" ? "flex-start" : value === "bottom" ? "flex-end" : "center"
+
+const alignOptions = [
+  { label: "Left", value: "left" },
+  { label: "Center", value: "center" },
+  { label: "Right", value: "right" },
+]
+
+const buttonArray: Fields<HeroProps>["buttons"] = {
+  type: "array",
+  label: "Buttons",
+  min: 1,
+  max: 4,
+  getItemSummary: (item: { label?: string }) =>
+    item.label ? item.label : "Button",
+  defaultItemProps: {
+    label: "Button",
+    description: "",
+    href: "#",
+    variant: "primary",
+    size: "large",
+    icon: "none",
+    iconPosition: "left",
+    iconOnly: false,
+  },
+  arrayFields: {
+    label: { type: "text", label: "Label", contentEditable: true },
+    description: {
+      type: "textarea",
+      label: "Description",
+      placeholder: "Optional text shown below the label",
+    },
+    href: { type: "text", label: "Link" },
+    variant: {
+      type: "radio",
+      label: "Style",
+      options: [
+        { label: "Primary", value: "primary" },
+        { label: "Secondary", value: "secondary" },
+      ],
+    },
+    size: {
+      type: "radio",
+      label: "Size",
+      options: [
+        { label: "Small", value: "small" },
+        { label: "Large", value: "large" },
+      ],
+    },
+    icon: optionsField<HeroButton["icon"]>("Icon", iconSelectOptions),
+    iconPosition: iconDependentSelectField<HeroButton["iconPosition"]>(
+      "Icon position",
+      [
+        { label: "Left", value: "left" },
+        { label: "Right", value: "right" },
+        { label: "Top", value: "top" },
+        { label: "Bottom", value: "bottom" },
+      ]
+    ),
+    iconOnly: iconDependentRadioField<HeroButton["iconOnly"]>("Icon only", [
+      { label: "False", value: false },
+      { label: "True", value: true },
+    ]),
+    ...styleFields({
+      backgroundLabel: "Main color",
+      backgroundDefault: "accent",
+    }),
+  },
+}
+
+const placementField = optionsField<NonNullable<HeroProps["image"]>["placement"]>(
+  "Placement",
+  [
+    { label: "Top", value: "top" },
+    { label: "Bottom", value: "bottom" },
+    { label: "Left", value: "left" },
+    { label: "Right", value: "right" },
+  ]
+)
+
+const modeField = {
+  type: "radio" as const,
+  label: "Mode",
+  options: [
+    { label: "Inline", value: "inline" },
+    { label: "Background", value: "background" },
+  ],
+}
+
+/**
+ * The image object adapts to its mode: inline photos crop a frame (aspect
+ * ratio + focal point), background photos fill the section and are sized by
+ * height (S/M/L) instead. Swapped in via `resolveFields`.
+ */
+function imageField(isBackground: boolean): Fields<HeroProps>["image"] {
+  if (isBackground) {
+    return {
+      type: "object",
+      label: "Image",
+      objectFields: {
+        placement: placementField,
+        mode: modeField,
+        url: {
+          type: "custom",
+          label: "Image",
+          render: ImageField,
+        },
+        alt: { type: "text", label: "Alt text" },
+      },
+    } as unknown as Fields<HeroProps>["image"]
+  }
+  return {
+    type: "object",
+    label: "Image",
+    objectFields: {
+      placement: placementField,
+      mode: modeField,
+      ...photoFields({ urlField: "url" }),
+      ...styleFields({
+        font: false,
+        text: false,
+        backgroundDefault: "transparent",
+      }),
+    },
+  } as unknown as Fields<HeroProps>["image"]
+}
+
+function buildHeroFields(image?: HeroImage): Fields<HeroProps> {
+  const isBackground = image?.mode === "background"
+  return {
     title: {
       type: "text",
       label: "Title",
@@ -65,125 +223,43 @@ export const Hero: ComponentConfig<HeroProps> = {
       label: "Description",
       contentEditable: true,
     },
-    buttons: {
-      type: "array",
-      label: "Buttons",
-      min: 1,
-      max: 4,
-      getItemSummary: (item: { label?: string }) =>
-        item.label ? item.label : "Button",
-      defaultItemProps: {
-        label: "Button",
-        description: "",
-        href: "#",
-        variant: "primary",
-        size: "large",
-        icon: "none",
-        iconPosition: "left",
-        iconOnly: false,
-      },
-      arrayFields: {
-        label: { type: "text", label: "Label", contentEditable: true },
-        description: {
-          type: "textarea",
-          label: "Description",
-          placeholder: "Optional text shown below the label",
-        },
-        href: { type: "text", label: "Link" },
-        variant: {
-          type: "radio",
-          label: "Style",
-          options: [
-            { label: "Primary", value: "primary" },
-            { label: "Secondary", value: "secondary" },
-          ],
-        },
-        size: {
-          type: "radio",
-          label: "Size",
-          options: [
-            { label: "Small", value: "small" },
-            { label: "Large", value: "large" },
-          ],
-        },
-        icon: optionsField<HeroButton["icon"]>("Icon", iconSelectOptions),
-        iconPosition: iconDependentSelectField<HeroButton["iconPosition"]>(
-          "Icon position",
-          [
-            { label: "Left", value: "left" },
-            { label: "Right", value: "right" },
-            { label: "Top", value: "top" },
-            { label: "Bottom", value: "bottom" },
-          ]
-        ),
-        iconOnly: iconDependentRadioField<HeroButton["iconOnly"]>("Icon only", [
-          { label: "False", value: false },
-          { label: "True", value: true },
-        ]),
-        ...styleFields({
-          backgroundLabel: "Main color",
-          backgroundDefault: "accent",
-        }),
-      },
-    },
+    buttons: buttonArray,
     align: {
       type: "radio",
-      label: "Align",
+      label: "Horizontal align",
+      options: alignOptions,
+    },
+    verticalAlign: {
+      type: "radio",
+      label: "Vertical align",
       options: [
-        { label: "Left", value: "left" },
+        { label: "Top", value: "top" },
         { label: "Center", value: "center" },
-        { label: "Right", value: "right" },
+        { label: "Bottom", value: "bottom" },
       ],
     },
-    contentGap: optionsField<HeroProps["contentGap"]>("Content gap & padding", [
-      { label: "8px", value: "8px" },
-      { label: "16px", value: "16px" },
-      { label: "24px", value: "24px" },
-      { label: "32px", value: "32px" },
-      { label: "48px", value: "48px" },
-    ]),
-    image: {
-      type: "object",
-      label: "Image",
-      objectFields: {
-        placement: optionsField<NonNullable<HeroProps["image"]>["placement"]>(
-          "Placement",
-          [
-            { label: "Top", value: "top" },
-            { label: "Bottom", value: "bottom" },
-            { label: "Left", value: "left" },
-            { label: "Right", value: "right" },
-          ]
-        ),
-        mode: {
-          type: "radio",
-          label: "Mode",
-          options: [
-            { label: "Inline", value: "inline" },
-            { label: "Background", value: "background" },
-          ],
-        },
-        ...photoFields({ urlField: "url" }),
-        ...styleFields({
-          font: false,
-          text: false,
-          backgroundDefault: "transparent",
-        }),
-      },
-    },
-    padding: optionsField<string>("Vertical padding", [
-      { label: "0px", value: "0px" },
-      { label: "16px", value: "16px" },
-      { label: "32px", value: "32px" },
-      { label: "64px", value: "64px" },
-      { label: "96px", value: "96px" },
-      { label: "128px", value: "128px" },
-    ]),
+    verticalGap: optionsField<HeroProps["verticalGap"]>(
+      "Vertical gap",
+      gapOptions
+    ),
+    horizontalGap: optionsField<HeroProps["horizontalGap"]>(
+      "Horizontal gap",
+      gapOptions
+    ),
+    image: imageField(isBackground),
     ...styleFields({ backgroundDefault: "transparent" }),
-  },
+    layout: heroLayoutField,
+  } as unknown as Fields<HeroProps>
+}
+
+export const Hero: ComponentConfig<HeroProps> = {
+  label: "Hero",
+  fields: buildHeroFields({ mode: "inline" }),
+  resolveFields: (data) => buildHeroFields(data.props.image),
   defaultProps: {
     title: "Hero",
     align: "left",
+    verticalAlign: "center",
     description: "<p>Description</p>",
     buttons: [
       {
@@ -202,21 +278,27 @@ export const Hero: ComponentConfig<HeroProps> = {
       alt: "",
       aspectRatio: "original",
     },
-    contentGap: "16px",
-    padding: "64px",
+    verticalGap: "24px",
+    horizontalGap: "24px",
+    layout: {
+      paddingX: "16px",
+      padding: "64px",
+    },
   },
   render: ({
     title,
     description,
     buttons,
     align,
+    verticalAlign,
     image,
-    contentGap,
-    padding,
+    verticalGap,
+    horizontalGap,
     textColor,
     backgroundColor,
     radius,
     fontFamily,
+    layout,
     puck,
   }) => {
     const centered = align === "center"
@@ -228,16 +310,20 @@ export const Hero: ComponentConfig<HeroProps> = {
     // spans the full width of the hero and aligns against it, not a half column.
     const row = isRow && !isBackground
     const photoFirst = placement === "left" || placement === "top"
-    const spacing = contentGap || "16px"
 
     const onBackground = isBackground
+    const headingColor = textColor || (onBackground ? "#ffffff" : undefined)
+    const vertical = verticalGap || "24px"
+    const horizontal = horizontalGap || "24px"
+
     const sectionStyle: CSSProperties = {
-      paddingTop: padding,
-      paddingBottom: padding,
-      color: textColor || (onBackground ? "#ffffff" : undefined),
+      paddingTop: layout?.padding,
+      paddingBottom: layout?.padding,
+      color: headingColor,
       backgroundColor: backgroundColor || undefined,
       borderRadius: resolveRadius(radius),
       fontFamily: fontFamily || undefined,
+      alignItems: "center",
     }
 
     const contentStyle: CSSProperties = {
@@ -249,7 +335,18 @@ export const Hero: ComponentConfig<HeroProps> = {
           ? "flex-end"
           : "flex-start",
       textAlign: centered ? "center" : align,
-      gap: spacing,
+      gap: vertical,
+    }
+
+    const buttonRowStyle: CSSProperties = {
+      display: "flex",
+      // The direction is class-driven (`flex-col` base, `sm:flex-row` above, so
+      // an inline `flex-direction` must not override the responsive behavior).
+      // Column mode relies on default `align-items: stretch` to make every
+      // button span the full width on mobile; at `sm` the `align` field maps to
+      // `justify-content` (horizontal) instead.
+      rowGap: vertical,
+      columnGap: horizontal,
     }
 
     const content = (
@@ -261,33 +358,34 @@ export const Hero: ComponentConfig<HeroProps> = {
             lineHeight: 1.1,
             fontWeight: 700,
             letterSpacing: "-0.011em",
-            color: textColor || (onBackground ? "#ffffff" : undefined),
+            color: headingColor,
           }}
         >
           {title}
         </h1>
         <div
+          className="nuspace-richtext"
           style={{
             lineHeight: 1.6,
             fontWeight: 300,
             width: "100%",
             color:
-              textColor || (onBackground ? "rgba(255,255,255,0.8)" : undefined),
+              textColor || (onBackground ? "rgba(255,255,255,0.85)" : undefined),
           }}
         >
           {description}
         </div>
         {buttons.length > 0 && (
           <div
-            className="flex w-full flex-col sm:flex-row sm:flex-wrap"
-            style={{
-              gap: spacing,
-              justifyContent: centered
-                ? "center"
+            className={[
+              "flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center",
+              centered
+                ? "sm:justify-center"
                 : align === "right"
-                  ? "flex-end"
-                  : "flex-start",
-            }}
+                  ? "sm:justify-end"
+                  : "sm:justify-start",
+            ].join(" ")}
+            style={buttonRowStyle}
           >
             {buttons.map((button, index) => {
               const ButtonIcon = getIcon(button.icon)
@@ -315,9 +413,11 @@ export const Hero: ComponentConfig<HeroProps> = {
                     flexDirection: "column",
                     alignItems: "center",
                     lineHeight: 1.2,
+                    minWidth: 0,
+                    overflowWrap: "anywhere",
                   }}
                 >
-                  <span>{button.label}</span>
+                  <span style={{ minWidth: 0 }}>{button.label}</span>
                   {button.description ? (
                     <span
                       style={{
@@ -325,6 +425,7 @@ export const Hero: ComponentConfig<HeroProps> = {
                         fontWeight: 400,
                         opacity: 0.85,
                         lineHeight: 1.35,
+                        minWidth: 0,
                       }}
                     >
                       {button.description}
@@ -358,6 +459,7 @@ export const Hero: ComponentConfig<HeroProps> = {
                     justifyContent: "center",
                     gap: 8,
                     boxSizing: "border-box",
+                    maxWidth: "100%",
                     padding: onlyIcon
                       ? button.size === "small"
                         ? "10px"
@@ -378,8 +480,8 @@ export const Hero: ComponentConfig<HeroProps> = {
                       button.variant === "secondary"
                         ? onBackground
                           ? "#ffffff"
-                          : "var(--nuspace-text, #0f172a)"
-                        : "var(--nuspace-button-text, #ffffff)",
+                          : "var(--nuspace-page-text, #0f172a)"
+                        : "var(--nuspace-accent-foreground, #ffffff)",
                     backgroundColor:
                       button.variant === "secondary"
                         ? "transparent"
@@ -406,23 +508,48 @@ export const Hero: ComponentConfig<HeroProps> = {
       </div>
     )
 
-    const photoElement = photo?.url ? (
+    const photoElement = photo ? (
       <div className={`w-full ${row ? "sm:w-1/2" : ""}`}>
-        <HeroPhoto image={photo} />
+        {photo.url ? (
+          <HeroPhoto image={photo} />
+        ) : (
+          <div
+            className={
+              photo.aspectRatio === "circle"
+                ? "flex aspect-square w-full items-center justify-center rounded-full bg-muted"
+                : "flex aspect-video w-full items-center justify-center bg-muted"
+            }
+            style={{
+              borderRadius: resolveRadius(
+                photo.radius,
+                "var(--nuspace-radius, 24px)"
+              ),
+            }}
+          >
+            <ImageIcon className="size-8 text-muted-foreground" />
+          </div>
+        )}
       </div>
     ) : null
 
     return (
       <section
-        className="relative flex w-full items-center overflow-hidden"
+        className="relative flex w-full overflow-hidden"
         style={sectionStyle}
       >
         {onBackground && <HeroBackground filename={image?.url ?? ""} />}
         <div
           className={`relative z-10 mx-auto flex w-full max-w-[1280px] flex-col ${
-            row ? "sm:flex-row sm:items-center" : ""
+            row ? "sm:flex-row" : ""
           }`}
-          style={{ gap: spacing, paddingLeft: spacing, paddingRight: spacing }}
+          style={{
+            rowGap: vertical,
+            columnGap: horizontal,
+            paddingLeft: layout?.paddingX,
+            paddingRight: layout?.paddingX,
+            alignItems: row ? flexAlign(verticalAlign) : undefined,
+            justifyContent: row ? undefined : flexAlign(verticalAlign),
+          }}
         >
           {photoFirst ? (
             <>
