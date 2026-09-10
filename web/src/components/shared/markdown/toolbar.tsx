@@ -87,7 +87,7 @@ export function MarkdownToolbar({
     pendingSelection.current = null
 
     const textarea = textareaRef.current
-    if (!textarea) return
+    if (!textarea || textarea.value !== value) return
     textarea.focus()
     textarea.setSelectionRange(selection[0], selection[1])
   }, [value, textareaRef])

@@ -144,6 +144,7 @@ function PrimaryCallToAction({
   if (isSignedIn) {
     return (
       <Button
+        nativeButton={false}
         size="lg"
         className="gap-2 px-6"
         render={
@@ -187,11 +188,11 @@ export function Page({ returnTo }: { returnTo?: string }) {
             <span className="text-xl font-bold tracking-tight">Nuspace</span>
           </div>
 
-          <h1 className="mx-auto max-w-4xl text-4xl leading-tight font-bold tracking-tight sm:text-6xl">
+          <h1 className="mx-auto max-w-4xl text-4xl/tight font-bold tracking-tight sm:text-6xl">
             Track grades, find events, and{" "}
             <span className="text-primary">stay on top of campus</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl text-lg/relaxed text-muted-foreground sm:text-xl">
             Plan your semester with GPA insights, degree audits, course
             planning, and campus resources.
           </p>
@@ -235,7 +236,7 @@ export function Page({ returnTo }: { returnTo?: string }) {
                 <Link
                   key={product.title}
                   to={product.to}
-                  className="group relative flex min-h-64 flex-col overflow-hidden rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm transition-[border-color,box-shadow,transform] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="group relative flex min-h-64 flex-col overflow-hidden rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm transition-[border-color,box-shadow,transform] duration-(--duration-panel) ease-(--ease-campus-snap) hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <span
                     className={cn(
@@ -299,7 +300,7 @@ export function Page({ returnTo }: { returnTo?: string }) {
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Know what is happening before you miss it
               </h2>
-              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-4 text-lg/relaxed text-muted-foreground">
                 Browse upcoming events, recruitment announcements, and community
                 activities in one campus calendar.
               </p>
@@ -316,6 +317,7 @@ export function Page({ returnTo }: { returnTo?: string }) {
                 ))}
               </ul>
               <Button
+                nativeButton={false}
                 variant="outline"
                 className="mt-6 gap-2"
                 render={
@@ -327,7 +329,7 @@ export function Page({ returnTo }: { returnTo?: string }) {
               />
             </div>
 
-            <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:aspect-video">
+            <div className="aspect-4/3 overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:aspect-video">
               <EventPhotoCarousel
                 images={EVENT_PHOTOS}
                 alt="Students taking part in a Nazarbayev University campus event"
@@ -352,7 +354,7 @@ export function Page({ returnTo }: { returnTo?: string }) {
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 One NU login, all your campus tools
               </h2>
-              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-4 text-lg/relaxed text-muted-foreground">
                 Sign in once and move between the tools you need without
                 learning another portal.
               </p>
@@ -371,7 +373,7 @@ export function Page({ returnTo }: { returnTo?: string }) {
                       <Icon className="size-5 text-primary" aria-hidden />
                     </div>
                     <h3 className="font-bold">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    <p className="mt-2 text-sm/relaxed text-muted-foreground">
                       {step.description}
                     </p>
                   </li>

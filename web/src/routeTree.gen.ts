@@ -29,7 +29,7 @@ import { Route as AppCommunitiesSlugIndexRouteImport } from './routes/_app/commu
 import { Route as AppCoursesAuditIndexRouteImport } from './routes/_app/courses/audit/index'
 import { Route as AppCoursesScheduleIndexRouteImport } from './routes/_app/courses/schedule/index'
 import { Route as AppCoursesStatisticsIndexRouteImport } from './routes/_app/courses/statistics/index'
-import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$event-id/index'
+import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$eventId/index'
 import { Route as AppCommunitiesSlugEditorIndexRouteImport } from './routes/_app/communities/$slug/editor/index'
 import { Route as AppCommunitiesSlugSettingsIndexRouteImport } from './routes/_app/communities/$slug/settings/index'
 
@@ -135,8 +135,8 @@ const AppCoursesStatisticsIndexRoute =
     getParentRoute: () => AppCoursesRouteRoute,
   } as any)
 const AppEventsEventIdIndexRoute = AppEventsEventIdIndexRouteImport.update({
-  id: '/events/$event-id/',
-  path: '/events/$event-id/',
+  id: '/events/$eventId/',
+  path: '/events/$eventId/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCommunitiesSlugEditorIndexRoute =
@@ -171,7 +171,7 @@ export interface FileRoutesByFullPath {
   '/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/courses/schedule/': typeof AppCoursesScheduleIndexRoute
   '/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
-  '/events/$event-id/': typeof AppEventsEventIdIndexRoute
+  '/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
   '/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
 }
@@ -193,7 +193,7 @@ export interface FileRoutesByTo {
   '/courses/audit': typeof AppCoursesAuditIndexRoute
   '/courses/schedule': typeof AppCoursesScheduleIndexRoute
   '/courses/statistics': typeof AppCoursesStatisticsIndexRoute
-  '/events/$event-id': typeof AppEventsEventIdIndexRoute
+  '/events/$eventId': typeof AppEventsEventIdIndexRoute
   '/communities/$slug/editor': typeof AppCommunitiesSlugEditorIndexRoute
   '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsIndexRoute
 }
@@ -219,7 +219,7 @@ export interface FileRoutesById {
   '/_app/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/_app/courses/schedule/': typeof AppCoursesScheduleIndexRoute
   '/_app/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
-  '/_app/events/$event-id/': typeof AppEventsEventIdIndexRoute
+  '/_app/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/_app/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
   '/_app/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
 }
@@ -244,7 +244,7 @@ export interface FileRouteTypes {
     | '/courses/audit/'
     | '/courses/schedule/'
     | '/courses/statistics/'
-    | '/events/$event-id/'
+    | '/events/$eventId/'
     | '/communities/$slug/editor/'
     | '/communities/$slug/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -266,7 +266,7 @@ export interface FileRouteTypes {
     | '/courses/audit'
     | '/courses/schedule'
     | '/courses/statistics'
-    | '/events/$event-id'
+    | '/events/$eventId'
     | '/communities/$slug/editor'
     | '/communities/$slug/settings'
   id:
@@ -291,7 +291,7 @@ export interface FileRouteTypes {
     | '/_app/courses/audit/'
     | '/_app/courses/schedule/'
     | '/_app/courses/statistics/'
-    | '/_app/events/$event-id/'
+    | '/_app/events/$eventId/'
     | '/_app/communities/$slug/editor/'
     | '/_app/communities/$slug/settings/'
   fileRoutesById: FileRoutesById
@@ -443,10 +443,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCoursesStatisticsIndexRouteImport
       parentRoute: typeof AppCoursesRouteRoute
     }
-    '/_app/events/$event-id/': {
-      id: '/_app/events/$event-id/'
-      path: '/events/$event-id'
-      fullPath: '/events/$event-id/'
+    '/_app/events/$eventId/': {
+      id: '/_app/events/$eventId/'
+      path: '/events/$eventId'
+      fullPath: '/events/$eventId/'
       preLoaderRoute: typeof AppEventsEventIdIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }

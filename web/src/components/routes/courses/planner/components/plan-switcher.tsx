@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
   ChevronDownIcon,
   CopyIcon,
@@ -268,20 +268,11 @@ function RenameDialog({
   const renamePlan = useRenamePlan()
   const [name, setName] = useState(plan.name)
 
-  /**
-   * Refill the field every time the dialog opens.
-   *
-   * `useState` takes its initial value once, at mount, and this dialog stays
-   * mounted across plan switches — so without this it opened on the name of
-   * whichever plan happened to be active when the page loaded. It also drops
-   * text that was typed and then cancelled.
-   *
-   * Resetting inside `onOpenChange` is not enough: the parent opens the dialog
-   * by setting its own state, so that handler never runs on the way in.
-   */
-  useEffect(() => {
+  const [previous, setPrevious] = useState({ open, name: plan.name })
+  if (previous.open !== open || previous.name !== plan.name) {
+    setPrevious({ open, name: plan.name })
     if (open) setName(plan.name)
-  }, [open, plan.name])
+  }
 
   const trimmed = name.trim()
   const unchanged = trimmed === plan.name

@@ -1,3 +1,4 @@
+import type { ComponentType } from "react"
 import {
   AtSign,
   Award,
@@ -43,17 +44,16 @@ import {
   Users,
   Wifi,
   Zap,
-  type LucideIcon,
   type LucideProps,
 } from "lucide-react"
 
-type IconMapEntry = { Icon: LucideIcon; label: string }
+type IconMapEntry = { Icon: ComponentType<LucideProps>; label: string }
 
 /**
  * Renders a 24x24 monochrome brand glyph (path data from simple-icons.org)
  * using the lucide SVG props, so it drops into the same spots as lucide icons.
  */
-function brandIcon(path: string): LucideIcon {
+function brandIcon(path: string): ComponentType<LucideProps> {
   function BrandIcon(props: LucideProps) {
     const { size = 24, ...rest } = props
     return (
@@ -69,7 +69,7 @@ function brandIcon(path: string): LucideIcon {
       </svg>
     )
   }
-  return BrandIcon as LucideIcon
+  return BrandIcon
 }
 
 // <references:
@@ -185,7 +185,7 @@ export const iconSelectOptions = [
   ...iconOptions,
 ]
 
-export function getIcon(name?: string): LucideIcon {
+export function getIcon(name?: string): ComponentType<LucideProps> {
   if (!name || name === "none") return Feather
   return ICONS.find(({ label }) => label === name)?.Icon ?? Feather
 }

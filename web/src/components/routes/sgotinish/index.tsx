@@ -57,7 +57,7 @@ export function Page() {
             </span>
             <div className="min-w-0 pt-0.5">
               <p className="font-medium">{step.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-1 text-sm/relaxed text-muted-foreground">
                 {step.body}
               </p>
             </div>
@@ -74,6 +74,7 @@ export function Page() {
 
       <Card className="space-y-3 p-4">
         <Button
+          nativeButton={false}
           size="lg"
           className="w-full gap-2"
           render={

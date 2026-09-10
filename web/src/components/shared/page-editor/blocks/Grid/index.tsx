@@ -1,4 +1,4 @@
-import type { ComponentConfig, SlotComponent } from "@puckeditor/core"
+import type { ComponentConfig, Slot } from "@puckeditor/core"
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
 import {
   withLayout,
@@ -8,7 +8,7 @@ import {
 export type GridProps = WithLayout<{
   numColumns: number
   gap: number
-  items: SlotComponent
+  items: Slot
 }>
 
 const GridInternal: ComponentConfig<GridProps> = {
@@ -31,7 +31,7 @@ const GridInternal: ComponentConfig<GridProps> = {
   defaultProps: {
     numColumns: 4,
     gap: 24,
-    items: [] as unknown as SlotComponent,
+    items: [],
   },
   render: ({ gap, numColumns, items: Items }) => (
     <Section>

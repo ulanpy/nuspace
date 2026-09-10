@@ -114,6 +114,7 @@ export function Page() {
           Found a bug or having issues? Reach out directly for quick assistance.
         </p>
         <Button
+          nativeButton={false}
           render={
             <a
               href="https://t.me/kamikadze24"

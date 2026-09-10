@@ -40,7 +40,7 @@ export function AppLayout() {
       )}
       <main
         className={cn(
-          "transition-[padding-left] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
+          "transition-[padding-left] duration-(--duration-panel) ease-(--ease-campus-snap)",
           shouldHideSidebar
             ? "pl-0"
             : sidebarCollapsed

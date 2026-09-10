@@ -48,7 +48,11 @@ const VideoInner: ComponentConfig<VideoProps> = {
       <Section>
         <div style={{ ...getComponentStyle(style), overflow: "hidden" }}>
           {embedUrl ? (
+            // parseVideoUrl constructs only third-party YouTube/Vimeo origins.
+            // Their players need scripts and their own origin, never our origin.
             <iframe
+              // oxlint-disable-next-line react/iframe-missing-sandbox
+              sandbox="allow-scripts allow-same-origin allow-presentation"
               src={embedUrl}
               title="Embedded video"
               className="aspect-video w-full"

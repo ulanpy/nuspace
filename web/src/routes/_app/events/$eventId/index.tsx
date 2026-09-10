@@ -1,20 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { Page } from "@/components/routes/events/$event-id"
+import { Page } from "@/components/routes/events/$eventId"
 import { eventDetailQueryOptions } from "@/lib/events"
 
-export const Route = createFileRoute("/_app/events/$event-id/")({
+export const Route = createFileRoute("/_app/events/$eventId/")({
   // Fetched during navigation rather than after render, so the page does not
   // flash a skeleton on an already-cached event.
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(
-      eventDetailQueryOptions(Number(params["event-id"]))
+      eventDetailQueryOptions(Number(params.eventId))
     ),
   component: EventDetailRoute,
 })
 
 function EventDetailRoute() {
-  const eventId = Number(Route.useParams()["event-id"])
+  const eventId = Number(Route.useParams().eventId)
 
   return <Page eventId={eventId} />
 }

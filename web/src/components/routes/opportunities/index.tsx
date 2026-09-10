@@ -50,7 +50,8 @@ import {
 } from "@/components/shared/list-filters"
 import { formatCampusDate } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { Markdown, toPlainText } from "@/components/shared/markdown/renderer"
+import { Markdown } from "@/components/shared/markdown/renderer"
+import { toPlainText } from "@/lib/markdown"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
 import { PageHeader } from "@/components/shared/page/header"
@@ -114,7 +115,7 @@ function OpportunityCard({
       </div>
 
       <div className="space-y-1">
-        <h3 className="text-lg leading-snug font-semibold text-balance">
+        <h3 className="text-lg/snug font-semibold text-balance">
           {opportunity.name}
         </h3>
         {opportunity.host && (
@@ -135,8 +136,8 @@ function OpportunityCard({
             <p
               className={
                 canExpandDescription
-                  ? "line-clamp-4 text-sm leading-relaxed text-muted-foreground"
-                  : "text-sm leading-relaxed text-muted-foreground"
+                  ? "line-clamp-4 text-sm/relaxed text-muted-foreground"
+                  : "text-sm/relaxed text-muted-foreground"
               }
             >
               {description}
@@ -238,6 +239,7 @@ function OpportunityCard({
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
         {opportunity.link ? (
           <Button
+            nativeButton={false}
             size="sm"
             render={
               <a
@@ -399,9 +401,11 @@ export function Page({
   const updateOpportunity = useUpdateOpportunity()
   const deleteOpportunity = useDeleteOpportunity()
 
-  useEffect(() => {
+  const [previousQuery, setPreviousQuery] = useState(q)
+  if (previousQuery !== q) {
+    setPreviousQuery(q)
     setSearchInput(q ?? "")
-  }, [q])
+  }
 
   useEffect(() => {
     onSearchChange(

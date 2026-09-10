@@ -3,12 +3,16 @@ import {
   createUsePuck,
   FieldLabel,
   type CustomFieldRender,
-  type Field,
+  type CustomField,
 } from "@puckeditor/core"
 
 import { OptionsField, type Option } from "./style-fields"
 
 const usePuck = createUsePuck()
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
 
 type FlowNode = {
   id?: string
@@ -74,10 +78,10 @@ function useArrayItemSibling(
     const nodes: FlowNode[] = []
     collectNodes((data as { content?: unknown[] } | undefined)?.content, nodes)
     const node = nodes.find((candidate) => candidate.id === path.nodeId)
-    const items = node?.props?.[path.arrayProp] as unknown[] | undefined
-    const item = Array.isArray(items) ? items[path.index] : undefined
-    if (!item || typeof item !== "object") return undefined
-    return (item as { props?: Record<string, unknown> }).props?.[prop]
+    const items = node?.props?.[path.arrayProp]
+    const item: unknown = Array.isArray(items) ? items[path.index] : undefined
+    if (!isRecord(item) || !isRecord(item.props)) return undefined
+    return item.props[prop]
   }, [data, fieldId, fieldName, prop])
 }
 
@@ -93,20 +97,19 @@ function useIconVisible(
 /** A Select (matching `optionsField`) hidden until the item has an icon. */
 export function iconDependentSelectField<
   Value extends string | number | undefined,
->(label: string, options: Option[]): Field<Value> {
+>(
+  label: string,
+  options: readonly Option<Exclude<Value, undefined>>[]
+): CustomField<Value> {
   return {
     type: "custom",
     label,
-    options,
-    render: ((props: Parameters<CustomFieldRender<Value>>[0]) => {
+    render: function IconDependentSelect(props) {
       const visible = useIconVisible(props.id, props.name)
-      if (!visible) return null
-      return <OptionsField {...props} />
-    }) as unknown as CustomFieldRender<Value>,
-  } as unknown as Field<Value>
+      return visible ? <OptionsField {...props} options={options} /> : <></>
+    },
+  }
 }
-
-type RadioRenderParams = Parameters<CustomFieldRender<string>>[0]
 
 const radioPillStyle: CSSProperties = {
   display: "inline-flex",
@@ -124,19 +127,21 @@ const radioPillStyle: CSSProperties = {
 }
 
 /** Mirrors Puck's "radio" control; hidden until the item has an icon. */
-function IconDependentRadio({
+function IconDependentRadio<
+  Value extends string | number | boolean | undefined,
+>({
   field,
+  options,
   name,
   id,
   value,
   onChange,
   readOnly,
-}: RadioRenderParams): ReactElement | null {
+}: Parameters<CustomFieldRender<Value>>[0] & {
+  options: readonly Option<Value>[]
+}): ReactElement {
   const visible = useIconVisible(id, name)
-  if (!visible) return null
-  const options =
-    (field as { options?: Array<{ label: string; value: string | number }> })
-      ?.options ?? []
+  if (!visible) return <></>
   return (
     <FieldLabel label={field?.label ?? name} readOnly={readOnly}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -147,7 +152,7 @@ function IconDependentRadio({
               key={String(option.value)}
               type="button"
               disabled={readOnly}
-              onClick={() => onChange(option.value as string, undefined)}
+              onClick={() => onChange(option.value, undefined)}
               style={{
                 ...radioPillStyle,
                 ...(active
@@ -174,11 +179,10 @@ export function iconDependentRadioField<
 >(
   label: string,
   options: Array<{ label: string; value: Value }>
-): Field<Value> {
+): CustomField<Value> {
   return {
     type: "custom",
     label,
-    options,
-    render: IconDependentRadio as unknown as CustomFieldRender<Value>,
-  } as unknown as Field<Value>
+    render: (props) => <IconDependentRadio {...props} options={options} />,
+  }
 }

@@ -51,6 +51,7 @@ export function Page({ eventId }: { eventId: number }) {
   return (
     <article className="mx-auto max-w-6xl space-y-6">
       <Button
+        nativeButton={false}
         variant="ghost"
         size="sm"
         render={
@@ -63,7 +64,7 @@ export function Page({ eventId }: { eventId: number }) {
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
         <div className="lg:sticky lg:top-20">
-          <div className="aspect-[3/4] overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10">
+          <div className="aspect-3/4 overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10">
             <ResilientImage
               src={poster?.url}
               alt={`Poster for ${event.name}`}
@@ -101,7 +102,7 @@ export function Page({ eventId }: { eventId: number }) {
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance lg:text-4xl">
+              <h1 className="text-3xl/tight font-bold tracking-tight text-balance lg:text-4xl">
                 {event.name}
               </h1>
               <p className="text-lg text-muted-foreground">
@@ -112,6 +113,7 @@ export function Page({ eventId }: { eventId: number }) {
             <div className="flex flex-wrap gap-2">
               {!finished && event.type !== "recruitment" && (
                 <Button
+                  nativeButton={false}
                   variant="outline"
                   size="sm"
                   render={
@@ -130,6 +132,7 @@ export function Page({ eventId }: { eventId: number }) {
                 event.registration_link &&
                 !finished && (
                   <Button
+                    nativeButton={false}
                     size="sm"
                     render={
                       <a

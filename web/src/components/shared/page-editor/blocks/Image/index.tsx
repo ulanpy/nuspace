@@ -55,7 +55,13 @@ const ImageInner: ComponentConfig<ImageProps> = {
     aspectRatio: "original",
     focalPoint: "50% 50%",
   },
-  render: ({ image, alt, aspectRatio, focalPoint, ...style }) => {
+  render: function ImageBlock({
+    image,
+    alt,
+    aspectRatio,
+    focalPoint,
+    ...style
+  }) {
     const imageUrl = useResolvedFileUrl(image)
     const circle = aspectRatio === "circle"
     return (

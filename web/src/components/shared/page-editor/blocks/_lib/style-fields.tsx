@@ -3,7 +3,6 @@ import {
   createUsePuck,
   type CustomField,
   type CustomFieldRender,
-  type Field,
   type Fields,
   FieldLabel,
 } from "@puckeditor/core"
@@ -309,7 +308,13 @@ export function FocalPointField({
   value,
   onChange,
   readOnly,
-}: CustomRenderParams<string | undefined>): ReactElement {
+}: {
+  field?: { label?: string }
+  name: string
+  value: string | undefined
+  onChange: (value: string) => void
+  readOnly?: boolean
+}): ReactElement {
   return (
     <FieldLabel label={field?.label ?? name} readOnly={readOnly}>
       <div
@@ -352,9 +357,9 @@ export function FocalPointField({
   )
 }
 
-export type Option = {
+export type Option<Value = string> = {
   label: string
-  value: string
+  value: Value
   /** When set, the option is rendered in this font family (used by font pickers). */
   fontFamily?: string
 }
@@ -370,17 +375,20 @@ export function OptionsField<Value extends string | number | undefined>({
   value,
   onChange,
   readOnly,
-}: CustomRenderParams<Value>): ReactElement {
-  const options =
-    (field as CustomField<Value> & { options?: Option[] })?.options ?? []
+  options,
+}: CustomRenderParams<Value> & {
+  options: readonly Option<Exclude<Value, undefined>>[]
+}): ReactElement {
   const emptyOption = options.find((option) => option.value === "")
   return (
     <FieldLabel label={field?.label ?? name} readOnly={readOnly}>
       <Select
-        value={(value ?? "") as string}
+        value={value ?? null}
         items={options}
         disabled={readOnly}
-        onValueChange={(next) => onChange((next ?? "") as Value)}
+        onValueChange={(next) => {
+          if (next !== null) onChange(next)
+        }}
       >
         <SelectTrigger className="w-full" size="sm">
           <SelectValue placeholder={emptyOption?.label ?? "Select…"} />
@@ -388,7 +396,7 @@ export function OptionsField<Value extends string | number | undefined>({
         <SelectContent>
           {options.map((option) => (
             <SelectItem
-              key={option.value}
+              key={String(option.value)}
               value={option.value}
               style={
                 option.fontFamily
@@ -413,14 +421,13 @@ export function OptionsField<Value extends string | number | undefined>({
  */
 export function optionsField<Value extends string | number | undefined>(
   label: string,
-  options: Option[]
-): Field<Value> {
+  options: readonly Option<Exclude<Value, undefined>>[]
+): CustomField<Value> {
   return {
     type: "custom",
     label,
-    render: OptionsField as unknown as CustomFieldRender<Value>,
-    options,
-  } as unknown as Field<Value>
+    render: (props) => <OptionsField {...props} options={options} />,
+  }
 }
 
 // --- Field builders -------------------------------------------------------
@@ -441,7 +448,7 @@ export function styleFields(options?: {
   backgroundLabel?: string
   font?: boolean
   text?: boolean
-}): Fields {
+}): Partial<Fields<ComponentStyleProps>> {
   const {
     background = true,
     backgroundDefault,
@@ -478,7 +485,7 @@ export function styleFields(options?: {
           fontFamily: optionsField<string | undefined>("Font", fontOptions),
         }
       : {}),
-  } as unknown as Fields
+  }
 }
 
 export const aspectRatioOptions = [
@@ -487,7 +494,7 @@ export const aspectRatioOptions = [
   { label: "Vertical (3:4)", value: "3/4" },
   { label: "Square (1:1)", value: "1/1" },
   { label: "Circle", value: "circle" },
-]
+] as const
 
 export type PhotoFields = {
   image: string
@@ -502,26 +509,50 @@ export type PhotoFields = {
  * key written by the upload control (Image stores it under `image`, the Hero
  * under `url`).
  */
+export function photoFields(options: {
+  limited?: boolean
+  urlField: "url"
+}): Fields<Partial<Omit<PhotoFields, "image">> & { url?: string }>
 export function photoFields(options?: {
   limited?: boolean
-  urlField?: string
-}): Fields<PhotoFields> {
+  urlField?: "image"
+}): Fields<PhotoFields>
+export function photoFields(options?: {
+  limited?: boolean
+  urlField?: "image" | "url"
+}):
+  | Fields<PhotoFields>
+  | Fields<Partial<Omit<PhotoFields, "image">> & { url?: string }> {
   const { limited = false, urlField = "image" } = options ?? {}
-  return {
-    [urlField]: {
-      type: "custom",
-      label: "Image",
-      render: limited ? LimitedImageField : ImageField,
+  const upload = {
+    type: "custom" as const,
+    label: "Image",
+    render: limited ? LimitedImageField : ImageField,
+  }
+  const common = {
+    alt: { type: "text" as const, label: "Alt text" },
+    focalPoint: {
+      type: "custom" as const,
+      label: "Focal point",
+      render: FocalPointField,
     },
-    alt: { type: "text", label: "Alt text" },
+  }
+  if (urlField === "url") {
+    return {
+      ...common,
+      url: upload,
+      aspectRatio: optionsField<PhotoFields["aspectRatio"] | undefined>(
+        "Aspect ratio",
+        aspectRatioOptions
+      ),
+    }
+  }
+  return {
+    ...common,
+    image: upload,
     aspectRatio: optionsField<PhotoFields["aspectRatio"]>(
       "Aspect ratio",
       aspectRatioOptions
     ),
-    focalPoint: {
-      type: "custom",
-      label: "Focal point",
-      render: FocalPointField,
-    },
-  } as Fields<PhotoFields>
+  }
 }

@@ -103,6 +103,7 @@ export function Page({ slug }: { slug: string }) {
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button
+            nativeButton={false}
             render={
               <Link to="/communities/$slug/editor" params={{ slug }}>
                 <PaletteIcon aria-hidden />
@@ -111,6 +112,7 @@ export function Page({ slug }: { slug: string }) {
             }
           />
           <Button
+            nativeButton={false}
             variant="outline"
             render={
               <Link to="/communities/$slug" params={{ slug }}>

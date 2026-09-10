@@ -96,7 +96,12 @@ export { Layout }
 export function withLayout<
   Config extends ComponentConfig<any> = ComponentConfig,
 >(componentConfig: Config): Config {
+  // Puck's conditional config type is invariant; this wrapper preserves the input
+  // config and forwards every prop to its original renderer.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const baseConfig = componentConfig as unknown as ComponentConfig
+  // Restore the caller's config type after adding the shared layout controls.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return {
     ...baseConfig,
     fields: {
@@ -164,13 +169,11 @@ export function withLayout<
     render: (
       renderProps: Parameters<NonNullable<ComponentConfig["render"]>>[0]
     ) => {
-      const { puck } = renderProps as unknown as {
-        puck?: { dragRef?: ((element: Element | null) => void) | null }
-      }
-      const Inner = baseConfig.render as (props: unknown) => ReactNode
+      const { puck } = renderProps
+      const Inner = baseConfig.render
       return (
         <Layout layout={renderProps.layout} ref={puck?.dragRef ?? null}>
-          {Inner(renderProps)}
+          <Inner {...renderProps} />
         </Layout>
       )
     },

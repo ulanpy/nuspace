@@ -9,7 +9,7 @@ import {
 
 // Sourced from the app's own ThemeProvider rather than next-themes, which the
 // shadcn template assumes but this project does not use.
-import { useTheme } from "@/components/shared/theme/provider"
+import { useTheme } from "@/components/shared/theme/context"
 
 // React.CSSProperties has no room for custom properties, so widen it rather
 // than asserting the whole object.

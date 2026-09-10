@@ -9,7 +9,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
       <p className="text-3xl font-semibold tracking-tight tabular-nums">
         {value}
       </p>
-      <p className="mt-1 text-sm leading-snug text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm/snug text-muted-foreground">{label}</p>
     </div>
   )
 }

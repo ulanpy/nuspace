@@ -47,7 +47,7 @@ function CommunityRow({ community }: { community: Community }) {
     <Link
       to="/communities/$slug"
       params={{ slug: community.slug }}
-      className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="flex items-center gap-3 rounded-md p-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <ResilientImage
         src={avatar}
@@ -90,6 +90,7 @@ function MyCommunities() {
             description="Communities you own show up here."
           />
           <Button
+            nativeButton={false}
             variant="outline"
             className="w-full"
             render={<Link to="/communities">Create a community</Link>}

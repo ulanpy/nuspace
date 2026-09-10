@@ -42,9 +42,11 @@ export function Page({
 
   const [isCreating, setIsCreating] = useState(false)
 
-  useEffect(() => {
+  const [previousQuery, setPreviousQuery] = useState(q)
+  if (previousQuery !== q) {
+    setPreviousQuery(q)
     setSearchInput(q ?? "")
-  }, [q])
+  }
 
   useEffect(() => {
     onSearchChange(

@@ -30,7 +30,7 @@ const sizeOptions = [
   { value: "m", label: "M" },
   { value: "s", label: "S" },
   { value: "xs", label: "XS" },
-]
+] as const
 
 const levelOptions = [
   { label: "H1", value: "1" },
@@ -92,7 +92,15 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
     radius,
     fontFamily,
   }) => {
-    const Tag = `h${level || "1"}` as HeadingTag
+    const tags: Record<NonNullable<HeadingProps["level"]>, HeadingTag> = {
+      "1": "h1",
+      "2": "h2",
+      "3": "h3",
+      "4": "h4",
+      "5": "h5",
+      "6": "h6",
+    }
+    const Tag = tags[level || "1"]
     const style: CSSProperties = {
       margin: 0,
       fontWeight: 600,

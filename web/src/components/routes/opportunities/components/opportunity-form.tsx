@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
@@ -133,7 +133,7 @@ function optional(value: string): string | null {
  * `year: null` — not zero rows, which would mean nobody is eligible. PhD is
  * always `year: null` because a PhD has no year to pick.
  */
-export function toEligibilities(
+function toEligibilities(
   levels: readonly EducationLevel[],
   years: Partial<Record<EducationLevel, number[]>>
 ): OpportunityCreate["eligibilities"] {
@@ -183,9 +183,9 @@ export function OpportunityForm({
 
   const { errors } = form.formState
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null)
-  const description = form.watch("description")
-  const levels = form.watch("levels")
-  const yearRound = form.watch("yearRound")
+  const description = useWatch({ control: form.control, name: "description" })
+  const levels = useWatch({ control: form.control, name: "levels" })
+  const yearRound = useWatch({ control: form.control, name: "yearRound" })
 
   const descriptionField = form.register("description")
 

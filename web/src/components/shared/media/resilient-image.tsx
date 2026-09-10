@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ImageOffIcon } from "lucide-react"
 import type { ImgHTMLAttributes, ReactNode } from "react"
 
@@ -15,7 +15,11 @@ interface ResilientImageProps extends Omit<
   fallback?: ReactNode
 }
 
-export function ResilientImage({
+export function ResilientImage(props: ResilientImageProps) {
+  return <ImageContent key={props.src} {...props} />
+}
+
+function ImageContent({
   src,
   alt,
   className,
@@ -29,10 +33,6 @@ export function ResilientImage({
   const [status, setStatus] = useState<"loading" | "loaded" | "error">(
     src ? "loading" : "error"
   )
-
-  useEffect(() => {
-    setStatus(src ? "loading" : "error")
-  }, [src])
 
   return (
     <span
@@ -62,7 +62,7 @@ export function ResilientImage({
           fetchPriority={eager ? "high" : "auto"}
           decoding="async"
           className={cn(
-            "size-full object-cover transition-opacity duration-[var(--duration-fast)]",
+            "size-full object-cover transition-opacity duration-(--duration-fast)",
             status === "loaded" ? "opacity-100" : "opacity-0",
             className
           )}

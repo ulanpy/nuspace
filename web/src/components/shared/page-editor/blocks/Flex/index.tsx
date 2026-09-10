@@ -1,4 +1,4 @@
-import type { ComponentConfig, SlotComponent } from "@puckeditor/core"
+import type { ComponentConfig, Slot } from "@puckeditor/core"
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
 import {
   withLayout,
@@ -10,7 +10,7 @@ export type FlexProps = WithLayout<{
   direction: "row" | "column"
   gap: number
   wrap: "wrap" | "nowrap"
-  items: SlotComponent
+  items: Slot
 }>
 
 const FlexInternal: ComponentConfig<FlexProps> = {
@@ -57,12 +57,12 @@ const FlexInternal: ComponentConfig<FlexProps> = {
     layout: {
       grow: true,
     },
-    items: [] as unknown as SlotComponent,
+    items: [],
   },
   render: ({ justifyContent, direction, gap, wrap, items: Items }) => (
     <Section style={{ height: "100%" }}>
       <Items
-        className="flex h-full w-full"
+        className="flex size-full"
         style={{
           justifyContent,
           flexDirection: direction,

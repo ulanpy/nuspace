@@ -40,6 +40,7 @@ export function PublicLayout() {
           <ThemeToggle />
           {session && (
             <Button
+              nativeButton={false}
               variant="outline"
               size="sm"
               render={<Link to="/announcements">Open Nuspace</Link>}

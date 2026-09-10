@@ -79,8 +79,8 @@ export function EventCard({ event, variant = "poster" }: EventCardProps) {
     return (
       <Card className="overflow-hidden p-0 transition-shadow hover:shadow-md">
         <Link
-          to="/events/$event-id"
-          params={{ "event-id": String(event.id) }}
+          to="/events/$eventId"
+          params={{ eventId: String(event.id) }}
           className="flex min-h-32 gap-3 p-3 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <ResilientImage
@@ -118,11 +118,11 @@ export function EventCard({ event, variant = "poster" }: EventCardProps) {
   return (
     <Card className="overflow-hidden p-0 transition-shadow hover:shadow-md">
       <Link
-        to="/events/$event-id"
-        params={{ "event-id": String(event.id) }}
+        to="/events/$eventId"
+        params={{ eventId: String(event.id) }}
         className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        <div className="relative aspect-3/4 overflow-hidden bg-muted">
           <ResilientImage
             src={poster?.url}
             alt={`Poster for ${event.name}`}

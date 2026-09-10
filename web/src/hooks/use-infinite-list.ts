@@ -51,7 +51,7 @@ export function useInfiniteList<T>({
   getId,
 }: UseInfiniteListOptions<T>) {
   const query = useInfiniteQuery({
-    queryKey,
+    queryKey: [...queryKey, { size }],
     queryFn: ({ pageParam }) => fetchPage({ page: pageParam, size }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -74,7 +74,13 @@ export function useInfiniteList<T>({
   }, [query.data, getId])
 
   return {
-    ...query,
+    isPending: query.isPending,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    fetchNextPage: query.fetchNextPage,
     items,
     total: query.data?.pages[0]?.total ?? 0,
     isEmpty: !query.isPending && items.length === 0,

@@ -70,6 +70,7 @@ function ChallengeDialog({
           <li className="space-y-2">
             <p className="font-medium">1. Open the bot</p>
             <Button
+              nativeButton={false}
               variant="outline"
               className="w-full"
               render={
@@ -136,9 +137,7 @@ export function TelegramLink({
   const waiting = challenge !== null && !isLinked
   useAwaitTelegramLink(waiting)
 
-  useEffect(() => {
-    if (isLinked) setChallenge(null)
-  }, [isLinked])
+  if (isLinked && challenge !== null) setChallenge(null)
 
   if (isLinked) {
     return (

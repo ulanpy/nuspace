@@ -18,7 +18,7 @@ export function CommunityCard({ community }: { community: Community }) {
         params={{ slug: community.slug }}
         className="flex h-full flex-col focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
-        <div className="relative aspect-[2/1] bg-community/10">
+        <div className="relative aspect-2/1 bg-community/10">
           <ResilientImage
             src={banner}
             alt={`${community.name} banner`}
