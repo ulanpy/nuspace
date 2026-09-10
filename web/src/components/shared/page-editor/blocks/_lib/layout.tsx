@@ -8,6 +8,7 @@ import { optionsField } from "./style-fields"
 import { spacingOptions } from "./options"
 
 export type LayoutFieldProps = {
+  paddingX?: string
   padding?: string
   spanCol?: number
   spanRow?: number
@@ -20,6 +21,7 @@ export type WithLayout<Props extends DefaultComponentProps> = Props & {
 
 export const layoutField: ObjectField<LayoutFieldProps> = {
   type: "object",
+  label: "Layout",
   objectFields: {
     spanCol: {
       label: "Grid columns",
@@ -41,6 +43,10 @@ export const layoutField: ObjectField<LayoutFieldProps> = {
         { label: "False", value: false },
       ],
     },
+    paddingX: optionsField<LayoutFieldProps["paddingX"]>("Horizontal padding", [
+      { label: "0px", value: "0px" },
+      ...spacingOptions,
+    ]),
     padding: optionsField<LayoutFieldProps["padding"]>("Vertical padding", [
       { label: "0px", value: "0px" },
       ...spacingOptions,
@@ -66,6 +72,8 @@ const Layout = forwardRef<HTMLDivElement, LayoutProps>(
         gridRow: layout?.spanRow
           ? `span ${Math.max(Math.min(layout.spanRow, 12), 1)}`
           : undefined,
+        paddingLeft: layout?.paddingX,
+        paddingRight: layout?.paddingX,
         paddingTop: layout?.padding,
         paddingBottom: layout?.padding,
         flex: layout?.grow ? "1 1 0" : undefined,
@@ -113,6 +121,7 @@ export function withLayout<
       layout: {
         spanCol: 1,
         spanRow: 1,
+        paddingX: "16px",
         padding: "0px",
         grow: false,
         ...baseConfig.defaultProps?.layout,
@@ -136,6 +145,7 @@ export function withLayout<
             objectFields: {
               spanCol: layoutField.objectFields.spanCol,
               spanRow: layoutField.objectFields.spanRow,
+              paddingX: layoutField.objectFields.paddingX,
               padding: layoutField.objectFields.padding,
             },
           },
@@ -149,6 +159,7 @@ export function withLayout<
             ...layoutField,
             objectFields: {
               grow: layoutField.objectFields.grow,
+              paddingX: layoutField.objectFields.paddingX,
               padding: layoutField.objectFields.padding,
             },
           },
@@ -160,6 +171,7 @@ export function withLayout<
         layout: {
           ...layoutField,
           objectFields: {
+            paddingX: layoutField.objectFields.paddingX,
             padding: layoutField.objectFields.padding,
           },
         },

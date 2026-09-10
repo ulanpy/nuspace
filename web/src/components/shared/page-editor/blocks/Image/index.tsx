@@ -5,6 +5,7 @@ import { ImageIcon } from "lucide-react"
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
 import {
   getComponentStyle,
+  optionsField,
   photoFields,
   styleFields,
   withLayout,
@@ -14,15 +15,45 @@ import {
 } from "@/components/shared/page-editor/blocks/_lib"
 import { useResolvedFileUrl } from "@/components/shared/page-editor/hooks/use-resolved-file-url"
 
-export type ImageProps = WithLayout<PhotoFields & ComponentStyleProps>
+export type ImageSize = "s" | "m" | "l"
+
+export type ImageProps = WithLayout<
+  PhotoFields &
+    ComponentStyleProps & {
+      size?: ImageSize
+      /**
+       * How the picture fits its frame. `cover` fills the frame (cropping, uses
+       * the focal point); `contain` shows the whole picture inside it.
+       */
+      fit?: "cover" | "contain"
+    }
+>
+
+/**
+ * A picture's size maps to the share of its container it may fill. Being
+ * proportional keeps the image consistent on mobile (a fixed px cap shrinks
+ * oddly against narrow screens).
+ */
+const IMAGE_SIZE_WIDTH: Record<ImageSize, string> = {
+  s: "40%",
+  m: "70%",
+  l: "100%",
+}
+
+const imageSizeOptions = [
+  { label: "S", value: "s" },
+  { label: "M", value: "m" },
+  { label: "L", value: "l" },
+] as const
 
 function imageStyle(
   aspectRatio: PhotoFields["aspectRatio"],
-  focalPoint: string
+  focalPoint: string,
+  fit: ImageProps["fit"]
 ): CSSProperties {
   const base: CSSProperties = {
     width: "100%",
-    objectFit: "cover",
+    objectFit: fit ?? "cover",
     objectPosition: focalPoint,
   }
   switch (aspectRatio) {
@@ -43,6 +74,11 @@ function imageStyle(
 const ImageInner: ComponentConfig<ImageProps> = {
   fields: {
     ...photoFields({ limited: true }),
+    size: optionsField<ImageProps["size"]>("Size", imageSizeOptions),
+    fit: optionsField<ImageProps["fit"]>("Fit", [
+      { label: "Cover", value: "cover" },
+      { label: "Contain", value: "contain" },
+    ]),
     ...styleFields({
       font: false,
       text: false,
@@ -54,22 +90,29 @@ const ImageInner: ComponentConfig<ImageProps> = {
     alt: "",
     aspectRatio: "original",
     focalPoint: "50% 50%",
+    size: "m",
+    fit: "cover",
   },
-  render: function ImageBlock({
+render: function ImageBlock({
     image,
     alt,
     aspectRatio,
     focalPoint,
+    size,
+    fit,
     ...style
   }) {
     const imageUrl = useResolvedFileUrl(image)
     const circle = aspectRatio === "circle"
+    const maxWidth = size ? IMAGE_SIZE_WIDTH[size] : undefined
     return (
       <Section>
         <div
           style={{
             ...getComponentStyle(style),
             overflow: "hidden",
+            maxWidth,
+            margin: maxWidth ? "0 auto" : undefined,
             ...(circle ? { borderRadius: "50%" } : {}),
           }}
         >
@@ -77,7 +120,7 @@ const ImageInner: ComponentConfig<ImageProps> = {
             <img
               src={imageUrl}
               alt={alt}
-              style={imageStyle(aspectRatio, focalPoint)}
+              style={imageStyle(aspectRatio, focalPoint, fit)}
             />
           ) : (
             <div

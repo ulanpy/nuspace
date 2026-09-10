@@ -54,8 +54,14 @@ export function Page({
     <UploadContext.Provider
       value={{ entityType: "communities", entityId: community.id }}
     >
-      <div className="h-dvh">
-        <Editor data={pageContent} onPublish={handlePublish} />
+<div className="h-[100dvh]">
+        <Editor
+          data={pageContent}
+          onPublish={handlePublish}
+          onCancel={() =>
+            navigate({ to: "/communities/$slug", params: { slug } })
+          }
+        />
       </div>
     </UploadContext.Provider>
   )

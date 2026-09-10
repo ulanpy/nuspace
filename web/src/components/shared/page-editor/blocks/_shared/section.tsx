@@ -11,8 +11,8 @@ export type SectionProps = {
 
 /**
  * Mirrors the Puck demo's `Section`: a centered, max-width inner container.
- * Horizontal page padding is owned by the root config (see `horizontalPadding`),
- * so this wrapper does not add any itself.
+ * Horizontal page padding is owned by each block's Layout section, so this
+ * wrapper does not add any itself.
  */
 export const Section = forwardRef<HTMLDivElement, SectionProps>(
   ({ children, className, maxWidth = "1280px", style }, ref) => (

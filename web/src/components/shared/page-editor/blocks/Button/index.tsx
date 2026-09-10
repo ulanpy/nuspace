@@ -24,7 +24,7 @@ export type ButtonProps = ComponentStyleProps & {
   iconOnly: boolean
 }
 
-const PRIMARY_TEXT = "var(--nuspace-button-text, #ffffff)"
+const PRIMARY_TEXT = "var(--nuspace-accent-foreground, #ffffff)"
 
 const iconPositionOptions: Option<IconPosition>[] = [
   { label: "Left", value: "left" },
@@ -154,7 +154,7 @@ export const Button: ComponentConfig<ButtonProps> = {
           }
         : {
             backgroundColor: "transparent",
-            color: "var(--nuspace-text, #0f172a)",
+            color: "var(--nuspace-page-text, #0f172a)",
             border: `1px solid ${
               backgroundColor || "var(--nuspace-accent, #1d4ed8)"
             }`,
@@ -169,6 +169,7 @@ export const Button: ComponentConfig<ButtonProps> = {
       fontWeight: 500,
       textDecoration: "none",
       boxSizing: "border-box",
+      maxWidth: "100%",
       ...variantStyle,
       ...(textColor ? { color: textColor } : {}),
       ...(backgroundColor ? { backgroundColor } : {}),
@@ -203,9 +204,11 @@ export const Button: ComponentConfig<ButtonProps> = {
             flexDirection: "column",
             alignItems: "center",
             lineHeight: 1.2,
+            minWidth: 0,
+            overflowWrap: "anywhere",
           }}
         >
-          <span>{label}</span>
+          <span style={{ minWidth: 0 }}>{label}</span>
           {description ? (
             <span
               style={{
@@ -213,6 +216,7 @@ export const Button: ComponentConfig<ButtonProps> = {
                 fontWeight: 400,
                 opacity: 0.85,
                 lineHeight: 1.35,
+                minWidth: 0,
               }}
             >
               {description}
