@@ -86,7 +86,9 @@ export function Page({
     resetTranscriptAudit()
   }, [resetRegistrarAudit, resetTranscriptAudit])
   const resetSensitiveMutationStateRef = useRef(resetSensitiveMutationState)
-  resetSensitiveMutationStateRef.current = resetSensitiveMutationState
+  useEffect(() => {
+    resetSensitiveMutationStateRef.current = resetSensitiveMutationState
+  }, [resetSensitiveMutationState])
 
   const clearSensitiveAuditInput = useCallback(() => {
     pendingAudit.current = null

@@ -76,7 +76,7 @@ function NavLinks({
             aria-current={isActive ? "page" : undefined}
             aria-label={collapsed ? label : undefined}
             className={cn(
-              "relative flex min-h-10 items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color] duration-[var(--duration-fast)]",
+              "relative flex min-h-10 items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color] duration-(--duration-fast)",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
               collapsed && "justify-center px-2",
               isActive
@@ -256,7 +256,7 @@ export function AppSidebar({
       <aside
         id="desktop-navigation"
         className={cn(
-          "hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)] md:fixed md:inset-y-0 md:left-0 md:flex",
+          "hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-(--duration-panel) ease-(--ease-campus-snap) md:fixed md:inset-y-0 md:left-0 md:flex",
           collapsed ? "w-16" : "w-64"
         )}
       >

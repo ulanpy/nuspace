@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
@@ -130,8 +130,10 @@ export function EventForm({
 
   const { errors } = form.formState
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null)
-  const description = form.watch("description")
-  const policy = form.watch("policy")
+  const name = useWatch({ control: form.control, name: "name" })
+  const place = useWatch({ control: form.control, name: "place" })
+  const description = useWatch({ control: form.control, name: "description" })
+  const policy = useWatch({ control: form.control, name: "policy" })
 
   const [files, setFiles] = useState<File[]>([])
   const [removedMedia, setRemovedMedia] = useState<number[]>([])
@@ -203,7 +205,7 @@ export function EventForm({
       <div className="space-y-1">
         <div className="flex items-baseline justify-between gap-2">
           <Label htmlFor="event-name">Name</Label>
-          <CharacterCount value={form.watch("name")} max={MAX_NAME} />
+          <CharacterCount value={name} max={MAX_NAME} />
         </div>
         <Input
           id="event-name"
@@ -217,7 +219,7 @@ export function EventForm({
       <div className="space-y-1">
         <div className="flex items-baseline justify-between gap-2">
           <Label htmlFor="event-place">Place</Label>
-          <CharacterCount value={form.watch("place")} max={MAX_PLACE} />
+          <CharacterCount value={place} max={MAX_PLACE} />
         </div>
         <Input
           id="event-place"

@@ -21,7 +21,7 @@ export const Section = forwardRef<HTMLDivElement, SectionProps>(
       className={["w-full", className].filter(Boolean).join(" ")}
       style={style}
     >
-      <div className="mx-auto h-full w-full" style={{ maxWidth }}>
+      <div className="mx-auto size-full" style={{ maxWidth }}>
         {children}
       </div>
     </div>

@@ -33,8 +33,8 @@ export const Route = createFileRoute("/_app/events/")({
   beforeLoad: ({ search }) => {
     if (search.id !== undefined) {
       throw redirect({
-        to: "/events/$event-id",
-        params: { "event-id": String(search.id) },
+        to: "/events/$eventId",
+        params: { eventId: String(search.id) },
       })
     }
   },
@@ -72,8 +72,8 @@ function EventsListRoute() {
       }}
       onEventCreated={(event) => {
         void navigate({
-          to: "/events/$event-id",
-          params: { "event-id": String(event.id) },
+          to: "/events/$eventId",
+          params: { eventId: String(event.id) },
         })
       }}
     />

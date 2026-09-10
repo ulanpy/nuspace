@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactElement } from "react"
-import type { ComponentConfig, Fields } from "@puckeditor/core"
+import type { ComponentConfig } from "@puckeditor/core"
 
 import {
   getIcon,
@@ -169,7 +169,7 @@ export const Hero: ComponentConfig<HeroProps> = {
           text: false,
           backgroundDefault: "transparent",
         }),
-      } as unknown as Fields<NonNullable<HeroProps["image"]>>,
+      },
     },
     padding: optionsField<string>("Vertical padding", [
       { label: "0px", value: "0px" },

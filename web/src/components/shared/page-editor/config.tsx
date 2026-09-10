@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import type { Config, Field } from "@puckeditor/core"
+import type { Config, CustomField } from "@puckeditor/core"
 
 import {
   ColorField,
@@ -63,6 +63,12 @@ export type PageEditorConfig = Config<
   PageCategories
 >
 
+function rootColorField(
+  label: string
+): CustomField<string | undefined> & { allowReset: boolean } {
+  return { type: "custom", label, render: ColorField, allowReset: false }
+}
+
 export const pageEditorConfig: PageEditorConfig = {
   components: {
     Button: Button,
@@ -90,12 +96,7 @@ export const pageEditorConfig: PageEditorConfig = {
   },
   root: {
     fields: {
-      backgroundColor: {
-        type: "custom",
-        label: "Page background color",
-        render: ColorField,
-        allowReset: false,
-      } as unknown as Field<PageRootProps["backgroundColor"]>,
+      backgroundColor: rootColorField("Page background color"),
       note: {
         type: "custom",
         render: () => (
@@ -111,19 +112,9 @@ export const pageEditorConfig: PageEditorConfig = {
             styles and new ones.
           </p>
         ),
-      } as unknown as Field<PageRootProps["note"]>,
-      textColor: {
-        type: "custom",
-        label: "Text color",
-        render: ColorField,
-        allowReset: false,
-      } as unknown as Field<PageRootProps["textColor"]>,
-      accentColor: {
-        type: "custom",
-        label: "Main color",
-        render: ColorField,
-        allowReset: false,
-      } as unknown as Field<PageRootProps["accentColor"]>,
+      },
+      textColor: rootColorField("Text color"),
+      accentColor: rootColorField("Main color"),
       fontFamily: optionsField<PageRootProps["fontFamily"]>(
         "Default font",
         rootFontOptions

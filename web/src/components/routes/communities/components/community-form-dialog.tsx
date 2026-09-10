@@ -90,10 +90,10 @@ export function CommunityFormDialog({
               const loading = toast.loading(
                 community ? "Saving community…" : "Creating community…"
               )
-              const onError = (error: unknown) => {
+              const onError = (cause: unknown) => {
                 toast.error(
                   apiErrorMessage(
-                    error,
+                    cause,
                     "Could not save the community. Try again."
                   ),
                   { id: loading }

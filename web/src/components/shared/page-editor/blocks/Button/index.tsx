@@ -26,7 +26,7 @@ export type ButtonProps = ComponentStyleProps & {
 
 const PRIMARY_TEXT = "var(--nuspace-button-text, #ffffff)"
 
-const iconPositionOptions: Option[] = [
+const iconPositionOptions: Option<IconPosition>[] = [
   { label: "Left", value: "left" },
   { label: "Right", value: "right" },
   { label: "Top", value: "top" },
@@ -96,8 +96,10 @@ export const Button: ComponentConfig<ButtonProps> = {
   resolveFields: (data) => {
     const icon = data.props.icon
     const showIconControls = !!icon && icon !== "none"
-    const hideText = showIconControls && !!data.props.iconOnly
+    const hideText = showIconControls && data.props.iconOnly
 
+    // Puck allows resolveFields to hide required props without deleting their data.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return {
       ...(hideText ? {} : { label: labelField, description: descriptionField }),
       href: hrefField,

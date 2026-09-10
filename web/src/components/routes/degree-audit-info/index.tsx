@@ -21,6 +21,7 @@ export function Page() {
     <article className="mx-auto max-w-prose space-y-10 py-8">
       <header className="space-y-4">
         <Button
+          nativeButton={false}
           variant="ghost"
           size="sm"
           className="-ml-2.5"
@@ -57,7 +58,7 @@ export function Page() {
         </div>
       </header>
 
-      <section className="space-y-3 rounded-lg border border-border bg-muted/50 p-4 text-sm leading-relaxed">
+      <section className="space-y-3 rounded-lg border border-border bg-muted/50 p-4 text-sm/relaxed">
         <p className="flex items-center gap-2 font-medium">
           <TriangleAlertIcon className="size-4 shrink-0" aria-hidden />
           This is a guide, not a confirmation

@@ -42,6 +42,11 @@ export default defineConfig({
     },
     overrides: [
       {
+        // Puck consumes config objects containing renderers, not refresh boundaries.
+        files: ["src/components/shared/page-editor/blocks/**/*.tsx"],
+        rules: { "react/only-export-components": "off" },
+      },
+      {
         files: ["src/**/*.{ts,tsx}"],
         rules: {
           "better-tailwindcss/enforce-canonical-classes": "error",
@@ -57,6 +62,10 @@ export default defineConfig({
         files: ["src/components/ui/**"],
         rules: {
           "jsx-a11y/label-has-associated-control": "off",
+          // shadcn primitives expose variants/hooks alongside components.
+          "react/only-export-components": "off",
+          // Upstream primitives use ARIA roles without changing their public tag/ref contracts.
+          "jsx-a11y/prefer-tag-over-role": "off",
         },
       },
       {
@@ -148,6 +157,19 @@ export default defineConfig({
      * silently serves an empty directory rather than failing.
      */
     outDir: "out",
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              // Keep the editor's icon catalog separate from its config bundle.
+              name: "editor-icons",
+              test: /page-editor\/blocks\/_lib\/icons\.tsx$/,
+            },
+          ],
+        },
+      },
+    },
   },
   server: {
     host: "0.0.0.0",

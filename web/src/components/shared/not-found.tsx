@@ -19,7 +19,10 @@ export function NotFound() {
           That address doesn&apos;t match anything on Nuspace. It may have
           moved, or the link may be incomplete.
         </p>
-        <Button render={<Link to="/">Go to Nuspace</Link>} />
+        <Button
+          nativeButton={false}
+          render={<Link to="/">Go to Nuspace</Link>}
+        />
       </div>
     </div>
   )

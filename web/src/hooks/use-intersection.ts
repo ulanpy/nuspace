@@ -14,7 +14,9 @@ export function useIntersection<T extends HTMLElement>(
   const ref = useRef<T | null>(null)
   // Kept in a ref so a new closure each render does not re-create the observer.
   const callback = useRef(onIntersect)
-  callback.current = onIntersect
+  useEffect(() => {
+    callback.current = onIntersect
+  }, [onIntersect])
 
   useEffect(() => {
     const element = ref.current

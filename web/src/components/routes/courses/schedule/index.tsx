@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   ClipboardCopy,
@@ -110,20 +110,19 @@ function PlannerView({
     planner.courses[0] ??
     null
 
-  useEffect(() => {
+  const [previousScheduleId, setPreviousScheduleId] = useState(scheduleId)
+  const detailCourse = planner.courses.find(
+    (course) => course.id === detail?.course.id
+  )
+  const detailSection = detailCourse?.sections.find(
+    (section) => section.id === detail?.section.id
+  )
+  if (previousScheduleId !== scheduleId) {
+    setPreviousScheduleId(scheduleId)
     setDetail(null)
-  }, [scheduleId])
-
-  useEffect(() => {
-    if (!detail) return
-    const currentCourse = planner.courses.find(
-      (course) => course.id === detail.course.id
-    )
-    const currentSection = currentCourse?.sections.find(
-      (section) => section.id === detail.section.id
-    )
-    if (!currentSection?.is_selected) setDetail(null)
-  }, [detail, planner.courses])
+  } else if (detail && !detailSection?.is_selected) {
+    setDetail(null)
+  }
 
   const changeCrop = () => {
     const next = !collapseEmptyEdges
@@ -350,6 +349,7 @@ function PlannerView({
             )}
             {syllabusLink(syllabusLinks, detail.course.course_code) && (
               <Button
+                nativeButton={false}
                 size="sm"
                 variant="outline"
                 render={

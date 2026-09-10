@@ -4,14 +4,14 @@ import { validateImage, ACCEPTED_IMAGE_TYPES } from "@/lib/media"
 import { useResolvedFileUrl } from "@/components/shared/page-editor/hooks/use-resolved-file-url"
 import { useUploadContext } from "@/components/shared/page-editor/context"
 
-export function ImageField<T extends string | undefined>({
+export function ImageField({
   field,
   value,
   onChange,
 }: {
   field?: { label?: string }
-  value: T
-  onChange: (val: T) => void
+  value: string | undefined
+  onChange: (val: string) => void
   name: string
 }) {
   const uploadCtx = useUploadContext()
@@ -30,7 +30,7 @@ export function ImageField<T extends string | undefined>({
 
     const targets = await requestUploadUrls([
       {
-        entity_type: uploadCtx.entityType as any,
+        entity_type: uploadCtx.entityType,
         entity_id: uploadCtx.entityId,
         media_format: "carousel",
         media_order: 0,
@@ -39,7 +39,7 @@ export function ImageField<T extends string | undefined>({
     ])
 
     await uploadToSignedUrl(targets[0], file)
-    onChange(targets[0].filename as T)
+    onChange(targets[0].filename)
   }
 
   const accept = ACCEPTED_IMAGE_TYPES.join(",")
@@ -66,7 +66,7 @@ export function ImageField<T extends string | undefined>({
                 className="text-sm text-destructive hover:underline"
                 onClick={(event) => {
                   event.preventDefault()
-                  onChange("" as T)
+                  onChange("")
                 }}
               >
                 Remove
@@ -106,13 +106,13 @@ function countPhotoBlocks(items: any[]): number {
 }
 
 /** Image upload that rejects pages already at the per-page image limit. */
-export function LimitedImageField<T extends string | undefined>({
+export function LimitedImageField({
   value,
   ...rest
 }: {
   field?: { label?: string }
-  value: T
-  onChange: (val: T) => void
+  value: string | undefined
+  onChange: (val: string) => void
   name: string
 }) {
   const puckData = usePuck((s) => s.appState.data)

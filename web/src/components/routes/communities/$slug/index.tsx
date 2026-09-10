@@ -45,7 +45,10 @@ export function CommunityNotFound() {
             We couldn&apos;t find a community at that address. It may have been
             renamed or removed.
           </p>
-          <Button render={<Link to="/communities">Browse communities</Link>} />
+          <Button
+            nativeButton={false}
+            render={<Link to="/communities">Browse communities</Link>}
+          />
         </div>
       </Card>
     </article>
@@ -151,6 +154,7 @@ export function Page({
             <TooltipTrigger
               render={
                 <Button
+                  nativeButton={false}
                   variant="ghost"
                   size="icon"
                   aria-label="Back to communities"
@@ -181,7 +185,7 @@ export function Page({
           </div>
 
           <div className="flex min-w-0 items-center gap-1.5">
-            <h1 className="truncate text-lg leading-tight font-semibold tracking-tight">
+            <h1 className="truncate text-lg/tight font-semibold tracking-tight">
               {community.name}
             </h1>
             {community.verified && (
@@ -237,6 +241,7 @@ export function Page({
                 <TooltipTrigger
                   render={
                     <Button
+                      nativeButton={false}
                       variant="ghost"
                       size="icon"
                       aria-label="Settings"
@@ -259,6 +264,7 @@ export function Page({
                 <TooltipTrigger
                   render={
                     <Button
+                      nativeButton={false}
                       variant="ghost"
                       size="icon"
                       aria-label={`Email ${community.name}`}

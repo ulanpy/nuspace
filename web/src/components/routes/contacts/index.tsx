@@ -61,12 +61,12 @@ function ContactValue({ contact }: { contact: ContactInfo }) {
           href={href}
           title={isWeb ? value : undefined}
           {...(isWeb ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-          className="break-words text-primary hover:underline"
+          className="wrap-break-word text-primary hover:underline"
         >
           {isWeb ? linkText(value, label) : value}
         </a>
       ) : (
-        <span className="break-words text-muted-foreground">{value}</span>
+        <span className="wrap-break-word text-muted-foreground">{value}</span>
       )}
       {extraInfo && (
         <span className="block text-xs text-muted-foreground">{extraInfo}</span>

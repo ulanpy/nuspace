@@ -112,10 +112,11 @@ export function useMediaUpload() {
     },
   })
 
+  const resetMutation = mutation.reset
   const reset = useCallback(() => {
     setStatuses([])
-    mutation.reset()
-  }, [mutation])
+    resetMutation()
+  }, [resetMutation])
 
   return {
     uploadMedia: mutation.mutateAsync,

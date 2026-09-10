@@ -1,7 +1,8 @@
 import { createContext, useContext } from "react"
+import type { EntityType } from "@/lib/media"
 
 export interface UploadContextData {
-  entityType: string
+  entityType: EntityType
   entityId: number
 }
 

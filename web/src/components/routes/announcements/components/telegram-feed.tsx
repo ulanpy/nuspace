@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ExternalLinkIcon } from "lucide-react"
 
 import { telegramPostQueryOptions } from "@/lib/announcements"
-import { useTheme } from "@/components/shared/theme/provider"
+import { useTheme } from "@/components/shared/theme/context"
 import { Skeleton } from "@/components/ui/skeleton"
 
 const CHANNEL = "nuspacechannel"
