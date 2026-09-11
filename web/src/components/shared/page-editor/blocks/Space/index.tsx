@@ -15,6 +15,7 @@ export const Space: ComponentConfig<SpaceProps> = {
     size: optionsField<string>("Size", spacingOptions),
     direction: {
       type: "radio",
+      label: "Direction",
       options: [
         { value: "vertical", label: "Vertical" },
         { value: "horizontal", label: "Horizontal" },

@@ -6,6 +6,7 @@ import {
   iconSelectOptions,
   optionsField,
   resolveRadius,
+  safeHref,
   styleFields,
   type ComponentStyleProps,
   type Option,
@@ -247,7 +248,7 @@ export const Button: ComponentConfig<ButtonProps> = {
 
     return (
       <a
-        href={puck.isEditing ? "#" : href}
+        href={puck.isEditing ? "#" : safeHref(href) || "#"}
         style={style}
         className="w-full sm:w-auto"
         tabIndex={puck.isEditing ? -1 : undefined}
