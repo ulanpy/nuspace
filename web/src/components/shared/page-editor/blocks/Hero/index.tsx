@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactElement } from "react"
+import { type CSSProperties, type ReactElement, type ReactNode } from "react"
 import type { ComponentConfig, Fields, ObjectField } from "@puckeditor/core"
 import { ImageIcon } from "lucide-react"
 
@@ -12,7 +12,8 @@ import {
   spacingOptions,
   safeHref,
   styleFields,
-  textSizePx,
+  TEXT_SIZE_DEFAULT,
+  textSizeField,
   type ComponentStyleProps,
   type LayoutFieldProps,
   type PageButton,
@@ -20,7 +21,6 @@ import {
   type TextSize,
 } from "@/components/shared/page-editor/blocks/_lib"
 import { ImageField } from "@/components/shared/page-editor/blocks/_shared"
-import { SanitizedHtml } from "@/components/shared/page-editor/blocks/_shared/sanitized-html"
 import { useResolvedFileUrl } from "@/components/shared/page-editor/hooks/use-resolved-file-url"
 
 type HeroImage = {
@@ -38,7 +38,7 @@ type VerticalAlign = "top" | "center" | "bottom"
 
 export type HeroProps = ComponentStyleProps & {
   title: string
-  description: string
+  description: ReactNode
   buttons: PageButton[]
   align: "left" | "center" | "right"
   verticalAlign?: VerticalAlign
@@ -146,6 +146,7 @@ function buildHeroFields(image?: HeroImage): Fields<HeroProps> {
       label: "Description",
       contentEditable: true,
     },
+    fontSize: textSizeField,
     buttons: buttonArrayField({ max: 4 }),
     align: {
       type: "radio",
@@ -161,11 +162,6 @@ function buildHeroFields(image?: HeroImage): Fields<HeroProps> {
         { label: "Bottom", value: "bottom" },
       ],
     },
-    fontSize: optionsField<HeroProps["fontSize"]>("Font size", [
-      { label: "S", value: "s" },
-      { label: "M", value: "m" },
-      { label: "L", value: "l" },
-    ]),
     verticalGap: optionsField<HeroProps["verticalGap"]>(
       "Vertical gap",
       gapOptions
@@ -188,7 +184,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     title: "Hero",
     align: "left",
     verticalAlign: "center",
-    fontSize: "m",
+    fontSize: TEXT_SIZE_DEFAULT,
     description: "<p>Description</p>",
     buttons: [
       {
@@ -244,7 +240,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     const headingColor = textColor || (onBackground ? "#ffffff" : undefined)
     const vertical = verticalGap || "24px"
     const horizontal = horizontalGap || "24px"
-    const descriptionFontSize = textSizePx(fontSize)
+    const descriptionFontSize = fontSize ?? TEXT_SIZE_DEFAULT
 
     const contentDivStyle: CSSProperties = {
       display: "flex",
@@ -282,19 +278,20 @@ export const Hero: ComponentConfig<HeroProps> = {
         >
           {title}
         </h1>
-        <SanitizedHtml
-          html={description}
+        <div
           className="nuspace-richtext"
           style={{
+            width: "100%",
             fontSize: `${descriptionFontSize}px`,
             lineHeight: 1.6,
             fontWeight: 300,
-            width: "100%",
             color:
               textColor ||
               (onBackground ? "rgba(255,255,255,0.85)" : undefined),
           }}
-        />
+        >
+          {description}
+        </div>
         {buttons.length > 0 && (
           <div
             className={[

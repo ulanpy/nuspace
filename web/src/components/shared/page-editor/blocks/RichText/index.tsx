@@ -1,14 +1,12 @@
-import { type CSSProperties } from "react"
+import { type CSSProperties, type ReactNode } from "react"
 import type { ComponentConfig } from "@puckeditor/core"
 
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
-import { SanitizedHtml } from "@/components/shared/page-editor/blocks/_shared/sanitized-html"
 import {
-  optionsField,
   resolveRadius,
   styleFields,
-  textSizeOptions,
-  textSizePx,
+  TEXT_SIZE_DEFAULT,
+  textSizeField,
   withLayout,
   type WithLayout,
   type ComponentStyleProps,
@@ -17,7 +15,7 @@ import {
 
 export type RichTextProps = WithLayout<
   ComponentStyleProps & {
-    richtext?: string
+    richtext?: ReactNode
     size?: TextSize
   }
 >
@@ -28,12 +26,12 @@ const RichTextInner: ComponentConfig<RichTextProps> = {
       type: "richtext",
       label: "Content",
     },
-    size: optionsField<RichTextProps["size"]>("Font size", textSizeOptions),
+    size: textSizeField,
     ...styleFields({ backgroundDefault: "transparent" }),
   },
   defaultProps: {
     richtext: "<h2>Heading</h2><p>Body</p>",
-    size: "m",
+    size: TEXT_SIZE_DEFAULT,
   },
   render: ({
     richtext,
@@ -48,17 +46,15 @@ const RichTextInner: ComponentConfig<RichTextProps> = {
       backgroundColor: backgroundColor || undefined,
       borderRadius: resolveRadius(radius),
       fontFamily: fontFamily || undefined,
-      fontSize: `${textSizePx(size)}px`,
+      fontSize: `${size ?? TEXT_SIZE_DEFAULT}px`,
       lineHeight: 1.625,
       fontWeight: 300,
     }
     return (
       <Section>
-        <SanitizedHtml
-          html={richtext}
-          className="nuspace-richtext"
-          style={style}
-        />
+        <div className="nuspace-richtext" style={style}>
+          {richtext}
+        </div>
       </Section>
     )
   },

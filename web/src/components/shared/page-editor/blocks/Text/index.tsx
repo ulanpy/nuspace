@@ -6,8 +6,8 @@ import {
   optionsField,
   resolveRadius,
   styleFields,
-  textSizeOptions,
-  textSizePx,
+  TEXT_SIZE_DEFAULT,
+  textSizeField,
   withLayout,
   type WithLayout,
   type ComponentStyleProps,
@@ -42,7 +42,7 @@ const TextInner: ComponentConfig<TextProps> = {
       label: "Text",
       contentEditable: true,
     },
-    size: optionsField<TextProps["size"]>("Font size", textSizeOptions),
+    size: textSizeField,
     align: {
       type: "radio",
       label: "Align",
@@ -58,7 +58,7 @@ const TextInner: ComponentConfig<TextProps> = {
   defaultProps: {
     align: "left",
     text: "Text",
-    size: "m",
+    size: TEXT_SIZE_DEFAULT,
     maxWidth: "",
   },
   render: ({
@@ -81,7 +81,7 @@ const TextInner: ComponentConfig<TextProps> = {
       lineHeight: 1.625,
       fontWeight: 300,
       textAlign: align,
-      fontSize: `${textSizePx(size)}px`,
+      fontSize: `${size ?? TEXT_SIZE_DEFAULT}px`,
       maxWidth: maxWidth || undefined,
       margin: maxWidth ? "0 auto" : undefined,
       justifyContent:

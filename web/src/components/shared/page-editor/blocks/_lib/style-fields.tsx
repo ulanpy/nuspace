@@ -94,14 +94,12 @@ export type ComponentStyleProps = {
 }
 
 /**
- * Resolves a radius value to a usable CSS border-radius. Accepts both the new
- * "12px" string values and legacy numeric values stored by earlier versions.
+ * Resolves a radius value to a usable CSS border-radius.
  */
 export function resolveRadius(
-  radius?: string | number,
+  radius?: string,
   fallback = "var(--nuspace-radius, 12px)"
 ): string {
-  if (typeof radius === "number") return `${radius}px`
   return radius || fallback
 }
 
@@ -290,20 +288,33 @@ export function ColorField({
 }
 
 /**
- * Body text sizes shared by the Text and RichText blocks. Sizes are plain
- * pixel values; RichText headings scale from the chosen size via `em`.
+ * Body font size controls shared by the Text, RichText, Heading and Hero
+ * blocks. Text-editor-style px presets in a select.
  */
+export const TEXT_SIZE_DEFAULT = 20
+
 export const textSizeOptions = [
-  { label: "S", value: "s" },
-  { label: "M", value: "m" },
-  { label: "L", value: "l" },
+  { label: "12px", value: 12 },
+  { label: "14px", value: 14 },
+  { label: "16px", value: 16 },
+  { label: "18px", value: 18 },
+  { label: "20px", value: 20 },
+  { label: "24px", value: 24 },
+  { label: "28px", value: 28 },
+  { label: "32px", value: 32 },
+  { label: "36px", value: 36 },
+  { label: "40px", value: 40 },
+  { label: "48px", value: 48 },
+  { label: "64px", value: 64 },
+  { label: "72px", value: 72 },
 ] as const
 
-export type TextSize = "s" | "m" | "l"
+export const textSizeField = optionsField<number | undefined>(
+  "Font size",
+  textSizeOptions
+)
 
-export function textSizePx(size?: TextSize): number {
-  return size === "s" ? 16 : size === "l" ? 24 : 20
-}
+export type TextSize = number
 
 /**
  * Focal positions, laid out as a 3x3 plus: top / middle / bottom in the middle
