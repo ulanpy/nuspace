@@ -42,7 +42,7 @@ const TextInner: ComponentConfig<TextProps> = {
       label: "Text",
       contentEditable: true,
     },
-    size: optionsField<TextProps["size"]>("Size", textSizeOptions),
+    size: optionsField<TextProps["size"]>("Font size", textSizeOptions),
     align: {
       type: "radio",
       label: "Align",
@@ -52,10 +52,7 @@ const TextInner: ComponentConfig<TextProps> = {
         { label: "Right", value: "right" },
       ],
     },
-    maxWidth: optionsField<TextProps["maxWidth"]>(
-      "Max width",
-      maxWidthOptions
-    ),
+    maxWidth: optionsField<TextProps["maxWidth"]>("Max width", maxWidthOptions),
     ...styleFields({ backgroundDefault: "transparent" }),
   },
   defaultProps: {

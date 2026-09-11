@@ -1,46 +1,28 @@
 import { type CSSProperties, type ReactElement } from "react"
-import type {
-  ComponentConfig,
-  Fields,
-  ObjectField,
-} from "@puckeditor/core"
+import type { ComponentConfig, ObjectField } from "@puckeditor/core"
 
 import {
+  buttonArrayField,
   getIcon,
-  iconDependentRadioField,
-  iconDependentSelectField,
-  iconSelectOptions,
   layoutField,
   optionsField,
   resolveRadius,
+  safeHref,
   spacingOptions,
   styleFields,
   type ComponentStyleProps,
   type LayoutFieldProps,
+  type PageButton,
 } from "@/components/shared/page-editor/blocks/_lib"
 
-type LinkTreeButton = ComponentStyleProps & {
-  label: string
-  description?: string
-  href: string
-  variant?: "primary" | "secondary"
-  size?: "small" | "large"
-  icon?: string
-  iconPosition?: "left" | "right" | "top" | "bottom"
-  iconOnly?: boolean
-}
-
 export type LinkTreeProps = ComponentStyleProps & {
-  buttons: LinkTreeButton[]
+  buttons: PageButton[]
   /** Vertical gap between the stacked links. */
   verticalGap: string
   layout?: LayoutFieldProps
 }
 
-const gapOptions = [
-  { label: "0px", value: "0px" },
-  ...spacingOptions,
-]
+const gapOptions = [{ label: "0px", value: "0px" }, ...spacingOptions]
 
 /**
  * The link tree only needs the padding part of the shared Layout object (edges
@@ -55,78 +37,17 @@ const linkTreeLayoutField: ObjectField<LayoutFieldProps> = {
   },
 }
 
-const buttonArray: Fields<LinkTreeProps>["buttons"] = {
-  type: "array",
-  label: "Buttons",
-  min: 1,
-  getItemSummary: (item: { label?: string }) =>
-    item.label ? item.label : "Button",
-  defaultItemProps: {
-    label: "Button",
-    description: "",
-    href: "#",
-    variant: "primary",
-    size: "large",
-    icon: "none",
-    iconPosition: "left",
-    iconOnly: false,
-  },
-  arrayFields: {
-    label: { type: "text", label: "Label", contentEditable: true },
-    description: {
-      type: "textarea",
-      label: "Description",
-      placeholder: "Optional text shown below the label",
-    },
-    href: { type: "text", label: "Link" },
-    variant: {
-      type: "radio",
-      label: "Style",
-      options: [
-        { label: "Primary", value: "primary" },
-        { label: "Secondary", value: "secondary" },
-      ],
-    },
-    size: {
-      type: "radio",
-      label: "Size",
-      options: [
-        { label: "Small", value: "small" },
-        { label: "Large", value: "large" },
-      ],
-    },
-    icon: optionsField<LinkTreeButton["icon"]>("Icon", iconSelectOptions),
-    iconPosition: iconDependentSelectField<LinkTreeButton["iconPosition"]>(
-      "Icon position",
-      [
-        { label: "Left", value: "left" },
-        { label: "Right", value: "right" },
-        { label: "Top", value: "top" },
-        { label: "Bottom", value: "bottom" },
-      ]
-    ),
-    iconOnly: iconDependentRadioField<LinkTreeButton["iconOnly"]>("Icon only", [
-      { label: "False", value: false },
-      { label: "True", value: true },
-    ]),
-    ...styleFields({
-      backgroundLabel: "Main color",
-      backgroundDefault: "accent",
-    }),
-  },
-}
-
 export const LinkTree: ComponentConfig<LinkTreeProps> = {
   label: "LinkTree",
   fields: {
-    buttons: buttonArray,
+    buttons: buttonArrayField(),
     verticalGap: optionsField<LinkTreeProps["verticalGap"]>(
       "Vertical gap",
       gapOptions
     ),
     ...styleFields({ backgroundDefault: "transparent" }),
     layout: linkTreeLayoutField,
-  } as unknown as Fields<LinkTreeProps>,
+  },
   defaultProps: {
     buttons: [
       {
@@ -248,9 +169,11 @@ export const LinkTree: ComponentConfig<LinkTreeProps> = {
                 return (
                   <a
                     key={index}
-                    href={puck?.isEditing ? "#" : button.href || "#"}
+                    href={puck?.isEditing ? "#" : safeHref(button.href) || "#"}
                     tabIndex={puck?.isEditing ? -1 : undefined}
-                    aria-label={onlyIcon ? button.label || undefined : undefined}
+                    aria-label={
+                      onlyIcon ? button.label || undefined : undefined
+                    }
                     style={{
                       display: "inline-flex",
                       flexDirection: stacked ? "column" : "row",

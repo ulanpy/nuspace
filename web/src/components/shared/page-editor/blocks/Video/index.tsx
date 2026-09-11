@@ -4,17 +4,33 @@ import { Clapperboard } from "lucide-react"
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
 import {
   getComponentStyle,
+  optionsField,
   styleFields,
   withLayout,
   type ComponentStyleProps,
   type WithLayout,
 } from "@/components/shared/page-editor/blocks/_lib"
 
+export type VideoSize = "s" | "m" | "l"
+
 export type VideoProps = WithLayout<
   ComponentStyleProps & {
     url: string
+    size?: VideoSize
   }
 >
+
+const VIDEO_SIZE_WIDTH: Record<VideoSize, string> = {
+  s: "40%",
+  m: "70%",
+  l: "100%",
+}
+
+const videoSizeOptions = [
+  { label: "S", value: "s" },
+  { label: "M", value: "m" },
+  { label: "L", value: "l" },
+] as const
 
 function parseVideoUrl(url: string): string | null {
   // YouTube
@@ -33,6 +49,7 @@ function parseVideoUrl(url: string): string | null {
 const VideoInner: ComponentConfig<VideoProps> = {
   fields: {
     url: { type: "text", label: "Video URL or embed" },
+    size: optionsField<VideoProps["size"]>("Size", videoSizeOptions),
     ...styleFields({
       font: false,
       text: false,
@@ -41,15 +58,22 @@ const VideoInner: ComponentConfig<VideoProps> = {
   },
   defaultProps: {
     url: "",
+    size: "m",
   },
-  render: ({ url, ...style }) => {
+  render: ({ url, size, ...style }) => {
     const embedUrl = parseVideoUrl(url)
+    const maxWidth = size ? VIDEO_SIZE_WIDTH[size] : undefined
     return (
       <Section>
-        <div style={{ ...getComponentStyle(style), overflow: "hidden" }}>
+        <div
+          style={{
+            ...getComponentStyle(style),
+            overflow: "hidden",
+            maxWidth,
+            margin: maxWidth ? "0 auto" : undefined,
+          }}
+        >
           {embedUrl ? (
-            // parseVideoUrl constructs only third-party YouTube/Vimeo origins.
-            // Their players need scripts and their own origin, never our origin.
             <iframe
               // oxlint-disable-next-line react/iframe-missing-sandbox
               sandbox="allow-scripts allow-same-origin allow-presentation"

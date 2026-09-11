@@ -2,6 +2,7 @@ import { type CSSProperties } from "react"
 import type { ComponentConfig } from "@puckeditor/core"
 
 import { Section } from "@/components/shared/page-editor/blocks/_shared/section"
+import { SanitizedHtml } from "@/components/shared/page-editor/blocks/_shared/sanitized-html"
 import {
   optionsField,
   resolveRadius,
@@ -27,7 +28,7 @@ const RichTextInner: ComponentConfig<RichTextProps> = {
       type: "richtext",
       label: "Content",
     },
-    size: optionsField<RichTextProps["size"]>("Size", textSizeOptions),
+    size: optionsField<RichTextProps["size"]>("Font size", textSizeOptions),
     ...styleFields({ backgroundDefault: "transparent" }),
   },
   defaultProps: {
@@ -53,9 +54,11 @@ const RichTextInner: ComponentConfig<RichTextProps> = {
     }
     return (
       <Section>
-        <div className="nuspace-richtext" style={style}>
-          {richtext}
-        </div>
+        <SanitizedHtml
+          html={richtext}
+          className="nuspace-richtext"
+          style={style}
+        />
       </Section>
     )
   },

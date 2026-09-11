@@ -36,8 +36,13 @@ services:
     depends_on:
       - postgres
       - gcs
-      - nginx
       - cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')\" || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     ports:
       - "127.0.0.1:8000:8000"
 
@@ -60,7 +65,10 @@ services:
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
       - nginx-logs:/var/log/nginx
     depends_on:
-      - pgadmin
+      fastapi:
+        condition: service_healthy
+      web:
+        condition: service_healthy
     command: [
         "/bin/sh",
         "-c",
@@ -158,28 +166,7 @@ services:
       timeout: 10s
       retries: 5
 
-  frontend:
-    build:
-      context: ..
-      dockerfile: frontend/Dockerfile_next
-    restart: always
-    volumes:
-      - ../frontend:/nuros # Mount all project files
-      - /nuros/node_modules # Anonymous volume for dependencies
-    environment:
-      - WATCHPACK_POLLING=true # Enable polling for file changes in Docker
-      - CHOKIDAR_USEPOLLING=true # Enable polling for file changes (Docker-friendly)
-      # Local stack uses the test bot token; keep deeplinks off prod @nuspacebot.
-      - VITE_TELEGRAM_BOT_USERNAME=${VITE_TELEGRAM_BOT_USERNAME:-anonopenspacebot}
-    networks:
-      - nuros
-    ports:
-      - "127.0.0.1:5173:5173"
-    depends_on:
-      - cloudflared
-
-  # The app. Served at http://localhost since the cutover; `frontend` above is
-  # the previous one, kept for one release as a fallback and not routed to.
+  # The app. Served at http://localhost since the cutover.
   web:
     build:
       context: ..
@@ -194,6 +181,12 @@ services:
       - CI=true
     networks:
       - nuros
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:5173/ || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
 
   loki:
     container_name: loki

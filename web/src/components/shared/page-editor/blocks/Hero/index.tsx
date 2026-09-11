@@ -1,27 +1,26 @@
 import { type CSSProperties, type ReactElement } from "react"
-import type {
-  ComponentConfig,
-  Fields,
-  ObjectField,
-} from "@puckeditor/core"
+import type { ComponentConfig, Fields, ObjectField } from "@puckeditor/core"
 import { ImageIcon } from "lucide-react"
 
 import {
+  buttonArrayField,
   getIcon,
-  iconSelectOptions,
-  iconDependentSelectField,
-  iconDependentRadioField,
   layoutField,
   optionsField,
   photoFields,
   resolveRadius,
   spacingOptions,
+  safeHref,
   styleFields,
+  textSizePx,
   type ComponentStyleProps,
   type LayoutFieldProps,
+  type PageButton,
   type PhotoFields,
+  type TextSize,
 } from "@/components/shared/page-editor/blocks/_lib"
 import { ImageField } from "@/components/shared/page-editor/blocks/_shared"
+import { SanitizedHtml } from "@/components/shared/page-editor/blocks/_shared/sanitized-html"
 import { useResolvedFileUrl } from "@/components/shared/page-editor/hooks/use-resolved-file-url"
 
 type HeroImage = {
@@ -35,25 +34,15 @@ type HeroImage = {
   radius?: string
 }
 
-type HeroButton = ComponentStyleProps & {
-  label: string
-  description?: string
-  href: string
-  variant?: "primary" | "secondary"
-  size?: "small" | "large"
-  icon?: string
-  iconPosition?: "left" | "right" | "top" | "bottom"
-  iconOnly?: boolean
-}
-
 type VerticalAlign = "top" | "center" | "bottom"
 
 export type HeroProps = ComponentStyleProps & {
   title: string
   description: string
-  buttons: HeroButton[]
+  buttons: PageButton[]
   align: "left" | "center" | "right"
   verticalAlign?: VerticalAlign
+  fontSize?: TextSize
   /** Vertical gap (row gap): spacing between stacked content, incl. on mobile. */
   verticalGap: string
   /** Horizontal gap (column gap): spacing between columns and within button rows. */
@@ -62,10 +51,7 @@ export type HeroProps = ComponentStyleProps & {
   layout?: LayoutFieldProps
 }
 
-const gapOptions = [
-  { label: "0px", value: "0px" },
-  ...spacingOptions,
-]
+const gapOptions = [{ label: "0px", value: "0px" }, ...spacingOptions]
 
 /**
  * The hero only needs the padding part of the shared Layout object (edges are
@@ -91,77 +77,14 @@ const alignOptions = [
   { label: "Right", value: "right" },
 ]
 
-const buttonArray: Fields<HeroProps>["buttons"] = {
-  type: "array",
-  label: "Buttons",
-  min: 1,
-  max: 4,
-  getItemSummary: (item: { label?: string }) =>
-    item.label ? item.label : "Button",
-  defaultItemProps: {
-    label: "Button",
-    description: "",
-    href: "#",
-    variant: "primary",
-    size: "large",
-    icon: "none",
-    iconPosition: "left",
-    iconOnly: false,
-  },
-  arrayFields: {
-    label: { type: "text", label: "Label", contentEditable: true },
-    description: {
-      type: "textarea",
-      label: "Description",
-      placeholder: "Optional text shown below the label",
-    },
-    href: { type: "text", label: "Link" },
-    variant: {
-      type: "radio",
-      label: "Style",
-      options: [
-        { label: "Primary", value: "primary" },
-        { label: "Secondary", value: "secondary" },
-      ],
-    },
-    size: {
-      type: "radio",
-      label: "Size",
-      options: [
-        { label: "Small", value: "small" },
-        { label: "Large", value: "large" },
-      ],
-    },
-    icon: optionsField<HeroButton["icon"]>("Icon", iconSelectOptions),
-    iconPosition: iconDependentSelectField<HeroButton["iconPosition"]>(
-      "Icon position",
-      [
-        { label: "Left", value: "left" },
-        { label: "Right", value: "right" },
-        { label: "Top", value: "top" },
-        { label: "Bottom", value: "bottom" },
-      ]
-    ),
-    iconOnly: iconDependentRadioField<HeroButton["iconOnly"]>("Icon only", [
-      { label: "False", value: false },
-      { label: "True", value: true },
-    ]),
-    ...styleFields({
-      backgroundLabel: "Main color",
-      backgroundDefault: "accent",
-    }),
-  },
-}
-
-const placementField = optionsField<NonNullable<HeroProps["image"]>["placement"]>(
-  "Placement",
-  [
-    { label: "Top", value: "top" },
-    { label: "Bottom", value: "bottom" },
-    { label: "Left", value: "left" },
-    { label: "Right", value: "right" },
-  ]
-)
+const placementField = optionsField<
+  NonNullable<HeroProps["image"]>["placement"]
+>("Placement", [
+  { label: "Top", value: "top" },
+  { label: "Bottom", value: "bottom" },
+  { label: "Left", value: "left" },
+  { label: "Right", value: "right" },
+])
 
 const modeField = {
   type: "radio" as const,
@@ -223,7 +146,7 @@ function buildHeroFields(image?: HeroImage): Fields<HeroProps> {
       label: "Description",
       contentEditable: true,
     },
-    buttons: buttonArray,
+    buttons: buttonArrayField({ max: 4 }),
     align: {
       type: "radio",
       label: "Horizontal align",
@@ -238,6 +161,11 @@ function buildHeroFields(image?: HeroImage): Fields<HeroProps> {
         { label: "Bottom", value: "bottom" },
       ],
     },
+    fontSize: optionsField<HeroProps["fontSize"]>("Font size", [
+      { label: "S", value: "s" },
+      { label: "M", value: "m" },
+      { label: "L", value: "l" },
+    ]),
     verticalGap: optionsField<HeroProps["verticalGap"]>(
       "Vertical gap",
       gapOptions
@@ -260,6 +188,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     title: "Hero",
     align: "left",
     verticalAlign: "center",
+    fontSize: "m",
     description: "<p>Description</p>",
     buttons: [
       {
@@ -269,6 +198,7 @@ export const Hero: ComponentConfig<HeroProps> = {
         size: "large",
         icon: "none",
         iconPosition: "left",
+        iconOnly: false,
       },
     ],
     image: {
@@ -291,6 +221,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     buttons,
     align,
     verticalAlign,
+    fontSize,
     image,
     verticalGap,
     horizontalGap,
@@ -306,8 +237,6 @@ export const Hero: ComponentConfig<HeroProps> = {
     const photo = !isBackground ? image : undefined
     const placement = image?.placement ?? "right"
     const isRow = placement === "left" || placement === "right"
-    // In background mode the photo fills the section, so the content always
-    // spans the full width of the hero and aligns against it, not a half column.
     const row = isRow && !isBackground
     const photoFirst = placement === "left" || placement === "top"
 
@@ -315,18 +244,9 @@ export const Hero: ComponentConfig<HeroProps> = {
     const headingColor = textColor || (onBackground ? "#ffffff" : undefined)
     const vertical = verticalGap || "24px"
     const horizontal = horizontalGap || "24px"
+    const descriptionFontSize = textSizePx(fontSize)
 
-    const sectionStyle: CSSProperties = {
-      paddingTop: layout?.padding,
-      paddingBottom: layout?.padding,
-      color: headingColor,
-      backgroundColor: backgroundColor || undefined,
-      borderRadius: resolveRadius(radius),
-      fontFamily: fontFamily || undefined,
-      alignItems: "center",
-    }
-
-    const contentStyle: CSSProperties = {
+    const contentDivStyle: CSSProperties = {
       display: "flex",
       flexDirection: "column",
       alignItems: centered
@@ -336,21 +256,20 @@ export const Hero: ComponentConfig<HeroProps> = {
           : "flex-start",
       textAlign: centered ? "center" : align,
       gap: vertical,
+      ...(row ? { flex: "1 1 0" } : {}),
     }
 
     const buttonRowStyle: CSSProperties = {
       display: "flex",
-      // The direction is class-driven (`flex-col` base, `sm:flex-row` above, so
-      // an inline `flex-direction` must not override the responsive behavior).
-      // Column mode relies on default `align-items: stretch` to make every
-      // button span the full width on mobile; at `sm` the `align` field maps to
-      // `justify-content` (horizontal) instead.
       rowGap: vertical,
       columnGap: horizontal,
     }
 
     const content = (
-      <div className={`w-full ${row ? "sm:w-1/2" : ""}`} style={contentStyle}>
+      <div
+        className={`w-full ${row ? "sm:w-1/2" : ""}`}
+        style={contentDivStyle}
+      >
         <h1
           style={{
             margin: 0,
@@ -363,18 +282,19 @@ export const Hero: ComponentConfig<HeroProps> = {
         >
           {title}
         </h1>
-        <div
+        <SanitizedHtml
+          html={description}
           className="nuspace-richtext"
           style={{
+            fontSize: `${descriptionFontSize}px`,
             lineHeight: 1.6,
             fontWeight: 300,
             width: "100%",
             color:
-              textColor || (onBackground ? "rgba(255,255,255,0.85)" : undefined),
+              textColor ||
+              (onBackground ? "rgba(255,255,255,0.85)" : undefined),
           }}
-        >
-          {description}
-        </div>
+        />
         {buttons.length > 0 && (
           <div
             className={[
@@ -448,7 +368,7 @@ export const Hero: ComponentConfig<HeroProps> = {
               return (
                 <a
                   key={index}
-                  href={puck?.isEditing ? "#" : button.href || "#"}
+                  href={puck?.isEditing ? "#" : safeHref(button.href) || "#"}
                   tabIndex={puck?.isEditing ? -1 : undefined}
                   className="w-full sm:w-auto"
                   aria-label={onlyIcon ? button.label || undefined : undefined}
@@ -532,10 +452,23 @@ export const Hero: ComponentConfig<HeroProps> = {
       </div>
     ) : null
 
+    const alignsVertically = verticalAlign && verticalAlign !== "center"
+
     return (
       <section
         className="relative flex w-full overflow-hidden"
-        style={sectionStyle}
+        style={{
+          paddingTop: layout?.padding,
+          paddingBottom: layout?.padding,
+          color: headingColor,
+          backgroundColor: backgroundColor || undefined,
+          borderRadius: resolveRadius(radius),
+          fontFamily: fontFamily || undefined,
+          alignItems: "center",
+          // The vertical align control is only meaningful when the section is
+          // taller than its content, so give those modes a working height.
+          minHeight: !isBackground && alignsVertically ? "60vh" : undefined,
+        }}
       >
         {onBackground && <HeroBackground filename={image?.url ?? ""} />}
         <div
@@ -549,6 +482,7 @@ export const Hero: ComponentConfig<HeroProps> = {
             paddingRight: layout?.paddingX,
             alignItems: row ? flexAlign(verticalAlign) : undefined,
             justifyContent: row ? undefined : flexAlign(verticalAlign),
+            ...(!isBackground && alignsVertically ? { height: "100%" } : {}),
           }}
         >
           {photoFirst ? (
