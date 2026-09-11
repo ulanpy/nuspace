@@ -10,8 +10,8 @@ export {
   resolveRadius,
   contrastColor,
   DEFAULT_TEXT_COLOR,
-  textSizeOptions,
-  textSizePx,
+  TEXT_SIZE_DEFAULT,
+  textSizeField,
   ColorField,
   FocalPointField,
   OptionsField,
@@ -34,4 +34,4 @@ export {
 } from "./dynamic-array-fields"
 export { buttonArrayField } from "./button-fields"
 export type { PageButton } from "./button-fields"
-export { sanitizeHtml, isSafeHref, safeHref } from "./sanitize"
+export { isSafeHref, safeHref } from "./sanitize"

@@ -6,7 +6,7 @@ import {
   optionsField,
   resolveRadius,
   styleFields,
-  textSizeOptions,
+  textSizeField,
   withLayout,
   type WithLayout,
   type ComponentStyleProps,
@@ -60,7 +60,7 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
       contentEditable: true,
     },
     level: optionsField<HeadingProps["level"]>("Level", levelOptions),
-    size: optionsField<HeadingProps["size"]>("Font size", textSizeOptions),
+    size: textSizeField,
     align: {
       type: "radio",
       label: "Align",
@@ -72,7 +72,6 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
     align: "left",
     text: "Heading",
     level: "1",
-    size: "m",
     layout: {
       padding: "8px",
     },
@@ -96,10 +95,9 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
       "6": "h6",
     }
     const Tag = tags[level || "1"]
-    const scale = size === "s" ? 16 / 20 : size === "l" ? 24 / 20 : 1
     const style: CSSProperties = {
       margin: 0,
-      fontSize: Math.round(levelFontSizes[level || "1"] * scale),
+      fontSize: size ?? levelFontSizes[level || "1"],
       fontWeight: 600,
       letterSpacing: "-0.011em",
       lineHeight: 1.15,

@@ -50,8 +50,8 @@ type PageRootProps = {
    */
   accentColor?: string
   fontFamily?: string
-  /** A "12px"-style value; a legacy number is also accepted. Empty means fall back to the default radius. */
-  borderRadius?: string | number
+  /** A "12px"-style value. Empty means fall back to the default radius. */
+  borderRadius?: string
   /** Renders an informational note at the top of the root fields. */
   note?: string
 }
@@ -140,10 +140,7 @@ export const pageEditorConfig: PageEditorConfig = {
       borderRadius,
       children,
     }) => {
-      const radius =
-        typeof borderRadius === "number"
-          ? `${borderRadius}px`
-          : borderRadius || "12px"
+      const radius = borderRadius || "12px"
       const bg = backgroundColor || "#ffffff"
       const accent = accentColor || "#1d4ed8"
       const text = textColor || contrastColor(bg)
