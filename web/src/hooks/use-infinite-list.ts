@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query"
 
 /**
  * The pagination envelope every list endpoint returns — ListEventResponse,
@@ -57,6 +57,10 @@ export function useInfiniteList<T>({
     getNextPageParam: (lastPage) =>
       lastPage.has_next ? lastPage.page + 1 : undefined,
     enabled,
+    // A filter change restarts the query from scratch; keeping the previous
+    // page-set around while the new one loads stops the list from flashing a
+    // skeleton on every keystroke (search boxes feed the query key).
+    placeholderData: keepPreviousData,
   })
 
   const items = useMemo(() => {
