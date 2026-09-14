@@ -227,13 +227,18 @@ export function CommunityForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
-          <Label htmlFor="community-slug">Handle</Label>
+          <Label htmlFor="community-slug">URL</Label>
           <Input
             id="community-slug"
             placeholder="nu-fencing-club"
             disabled={isPending || !editable("slug")}
             {...form.register("slug")}
           />
+          <p className="text-xs text-muted-foreground">
+            Web address for your community, e.g.{" "}
+            <span className="font-medium">/communities/nu-fencing-club</span>.
+            Lowercase letters, digits and single hyphens only.
+          </p>
           <FieldError message={errors.slug?.message} />
         </div>
 

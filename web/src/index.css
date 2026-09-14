@@ -206,6 +206,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    overflow-wrap: anywhere;
   }
 
   html {

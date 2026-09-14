@@ -6,6 +6,7 @@ import {
   optionsField,
   resolveRadius,
   styleFields,
+  TEXT_SIZE_DEFAULT,
   textSizeField,
   withLayout,
   type WithLayout,
@@ -34,16 +35,17 @@ const levelOptions = [
 ]
 
 /**
- * Pixel sizes matching the RichText block's heading scale (headings are `em`
- * multiples of its default M body size).
+ * Level multipliers mirroring the RichText block's heading scale
+ * (`.nuspace-richtext h*` uses the same `em` ramp against the base size), so a
+ * chosen base size renders identically in the Heading and RichText blocks.
  */
-const levelFontSizes: Record<string, number> = {
-  "1": 50,
-  "2": 40,
-  "3": 35,
-  "4": 28,
-  "5": 22,
-  "6": 20,
+const levelScale: Record<string, number> = {
+  "1": 2.5,
+  "2": 2,
+  "3": 1.75,
+  "4": 1.4,
+  "5": 1.1,
+  "6": 1,
 }
 
 const alignOptions = [
@@ -72,6 +74,7 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
     align: "left",
     text: "Heading",
     level: "1",
+    size: TEXT_SIZE_DEFAULT,
     layout: {
       padding: "8px",
     },
@@ -97,7 +100,7 @@ const HeadingInternal: ComponentConfig<HeadingProps> = {
     const Tag = tags[level || "1"]
     const style: CSSProperties = {
       margin: 0,
-      fontSize: size ?? levelFontSizes[level || "1"],
+      fontSize: (size ?? TEXT_SIZE_DEFAULT) * levelScale[level || "1"],
       fontWeight: 600,
       letterSpacing: "-0.011em",
       lineHeight: 1.15,
