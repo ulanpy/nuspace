@@ -8,6 +8,7 @@ interface InfiniteListProps<T> {
   items: T[]
   renderItem: (item: T) => ReactNode
   getKey: (item: T) => string | number
+  itemClassName?: string
   isPending: boolean
   isError: boolean
   error?: unknown
@@ -16,6 +17,7 @@ interface InfiniteListProps<T> {
   isFetchingNextPage: boolean
   fetchNextPage: () => void
   empty?: ReactNode
+  pending?: ReactNode
   /** Wrapper around the rendered items; defaults to a vertical stack. */
   children?: (rendered: ReactNode[]) => ReactNode
 }
@@ -24,6 +26,7 @@ export function InfiniteList<T>({
   items,
   renderItem,
   getKey,
+  itemClassName,
   isPending,
   isError,
   error,
@@ -32,6 +35,7 @@ export function InfiniteList<T>({
   isFetchingNextPage,
   fetchNextPage,
   empty,
+  pending,
   children,
 }: InfiniteListProps<T>) {
   const sentinelRef = useIntersection<HTMLDivElement>(
@@ -41,12 +45,14 @@ export function InfiniteList<T>({
     { enabled: hasNextPage && !isFetchingNextPage }
   )
 
-  if (isPending) return <SkeletonLines count={4} />
+  if (isPending) return pending ?? <SkeletonLines count={4} />
   if (isError) return <QueryError error={error} onRetry={refetch} />
   if (items.length === 0 && empty) return empty
 
   const rendered = items.map((item) => (
-    <div key={getKey(item)}>{renderItem(item)}</div>
+    <div key={getKey(item)} className={itemClassName}>
+      {renderItem(item)}
+    </div>
   ))
 
   return (

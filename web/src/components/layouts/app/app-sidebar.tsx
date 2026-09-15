@@ -4,11 +4,11 @@ import {
   BookOpenIcon,
   BriefcaseIcon,
   CalendarIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   InfoIcon,
+  LogInIcon,
   LogOutIcon,
   MenuIcon,
+  PanelLeftIcon,
   UsersIcon,
 } from "lucide-react"
 import type { LinkProps } from "@tanstack/react-router"
@@ -16,8 +16,9 @@ import type { LucideIcon } from "lucide-react"
 
 import logoUrl from "@/assets/nuspace_logo.svg"
 import { cn } from "@/lib/utils"
-import { useCurrentUser } from "@/hooks/use-session"
+import { useSession } from "@/hooks/use-session"
 import { useLogout } from "@/hooks/use-logout"
+import { beginLogin } from "@/lib/user"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/shared/theme/toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -113,44 +114,57 @@ function NavLinks({
 function Brand({
   collapsed = false,
   onNavigate,
+  onExpand,
 }: {
   collapsed?: boolean
   onNavigate?: () => void
+  onExpand?: () => void
 }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const isActive = pathname === "/announcements"
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <button
+              type="button"
+              onClick={onExpand}
+              aria-label="Expand sidebar"
+              className="group flex items-center justify-center rounded-md p-1 transition-colors hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <img
+                src={logoUrl}
+                alt=""
+                aria-hidden
+                className="size-7 group-hover:hidden"
+              />
+              <PanelLeftIcon
+                className="hidden size-7 group-hover:block"
+                aria-hidden
+              />
+            </button>
+          }
+        />
+        <TooltipContent side="right">Expand sidebar</TooltipContent>
+      </Tooltip>
+    )
+  }
+
   const brand = (
     <Link
       to="/announcements"
       onClick={onNavigate}
       aria-label="Nuspace home"
-      aria-current={isActive ? "page" : undefined}
       className={cn(
         "flex min-w-0 items-center gap-2 rounded-md px-2 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-        isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-        collapsed && "justify-center px-1"
+        "hover:bg-sidebar-accent/60"
       )}
     >
       <img src={logoUrl} alt="" aria-hidden className="size-7" />
-      <span
-        className={cn(
-          "text-lg font-semibold tracking-tight",
-          collapsed && "sr-only"
-        )}
-      >
-        Nuspace
-      </span>
+      <span className="text-lg font-semibold tracking-tight">Nuspace</span>
     </Link>
   )
 
-  if (!collapsed) return brand
-
-  return (
-    <Tooltip>
-      <TooltipTrigger render={brand} />
-      <TooltipContent side="right">Announcements</TooltipContent>
-    </Tooltip>
-  )
+  return brand
 }
 
 function AccountCard({
@@ -160,8 +174,31 @@ function AccountCard({
   collapsed?: boolean
   onNavigate?: () => void
 }) {
-  const user = useCurrentUser()
+  const session = useSession()
   const logout = useLogout()
+  if (!session) {
+    return (
+      <div className="border-t border-sidebar-border pt-3">
+        <Button
+          variant="ghost"
+          size={collapsed ? "icon" : "default"}
+          aria-label={collapsed ? "Sign in" : undefined}
+          onClick={() => {
+            beginLogin()
+          }}
+          className={cn(
+            "text-sidebar-foreground",
+            collapsed ? "mx-auto" : "w-full justify-start gap-3 px-3"
+          )}
+        >
+          <LogInIcon className="size-5 shrink-0" aria-hidden />
+          {!collapsed && "Sign in"}
+        </Button>
+      </div>
+    )
+  }
+
+  const user = session.user
   const initial = user.given_name.charAt(0).toUpperCase()
 
   const profileLink = (
@@ -255,9 +292,23 @@ export function AppSidebar({
       {/* Desktop */}
       <aside
         id="desktop-navigation"
+        title={collapsed ? "Expand sidebar" : undefined}
+        onClick={(event) => {
+          if (!collapsed) return
+
+          // Links and controls retain their own action. The rail itself is a
+          // large, forgiving expand target, rather than a tiny centre handle.
+          if (
+            event.target instanceof Element &&
+            event.target.closest("a, button, input, [role=button]")
+          )
+            return
+
+          onCollapsedChange(false)
+        }}
         className={cn(
           "hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-(--duration-panel) ease-(--ease-campus-snap) md:fixed md:inset-y-0 md:left-0 md:flex",
-          collapsed ? "w-16" : "w-64"
+          collapsed ? "w-16 cursor-e-resize" : "w-64"
         )}
       >
         <div
@@ -266,8 +317,30 @@ export function AppSidebar({
             collapsed ? "flex-col justify-center gap-1 py-2" : "justify-between"
           )}
         >
-          <Brand collapsed={collapsed} />
-          {!collapsed && <ThemeToggle />}
+          <div className="flex min-w-0 items-center gap-1">
+            <Brand
+              collapsed={collapsed}
+              onExpand={() => {
+                onCollapsedChange(false)
+              }}
+            />
+          </div>
+          {!collapsed && (
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+                aria-label="Collapse sidebar"
+                onClick={() => {
+                  onCollapsedChange(true)
+                }}
+              >
+                <PanelLeftIcon className="size-5" aria-hidden />
+              </Button>
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-2">
           <NavLinks collapsed={collapsed} />
@@ -283,32 +356,6 @@ export function AppSidebar({
         <div className="p-2">
           <AccountCard collapsed={collapsed} />
         </div>
-
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <button
-                type="button"
-                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                aria-expanded={!collapsed}
-                aria-controls="desktop-navigation"
-                onClick={() => {
-                  onCollapsedChange(!collapsed)
-                }}
-                className="absolute top-1/2 -right-3 z-10 grid h-11 w-7 -translate-y-1/2 place-items-center rounded-full border border-sidebar-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
-                {collapsed ? (
-                  <ChevronRightIcon className="size-4" aria-hidden />
-                ) : (
-                  <ChevronLeftIcon className="size-4" aria-hidden />
-                )}
-              </button>
-            }
-          />
-          <TooltipContent side="right">
-            {collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          </TooltipContent>
-        </Tooltip>
       </aside>
 
       {/* Mobile */}

@@ -16,7 +16,5 @@ export const Route = createFileRoute("/_public/")({
 })
 
 function LandingRoute() {
-  const { returnTo } = Route.useSearch()
-
-  return <Page returnTo={returnTo} />
+  return <Page />
 }

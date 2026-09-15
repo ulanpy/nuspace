@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { MediaPicker } from "@/components/shared/media/picker"
-import { selectMedia } from "@/lib/media/functions"
+import { EventDatePicker, EventTimePicker } from "@/components/routes/events/components/date-time-picker"
 import {
   EVENT_TAGS,
   EVENT_TYPES,
@@ -134,12 +134,15 @@ export function EventForm({
   const place = useWatch({ control: form.control, name: "place" })
   const description = useWatch({ control: form.control, name: "description" })
   const policy = useWatch({ control: form.control, name: "policy" })
+  const type = useWatch({ control: form.control, name: "type" })
+  const isRecruitment = type === "recruitment"
 
   const [files, setFiles] = useState<File[]>([])
   const [removedMedia, setRemovedMedia] = useState<number[]>([])
 
-  const poster = event ? selectMedia(event.media, "carousel") : undefined
-  const existingMedia = poster ? [poster] : []
+  const existingMedia = (event?.media ?? []).filter(
+    (media) => media.media_format === "carousel"
+  )
 
   // Everything is editable while creating; afterwards the server's list rules.
   const editable = (field: string) => !event || canEditField(event, field)
@@ -202,6 +205,7 @@ export function EventForm({
       }}
       className="space-y-5"
     >
+      <div className="grid gap-4 sm:grid-cols-2">
       <div className="space-y-1">
         <div className="flex items-baseline justify-between gap-2">
           <Label htmlFor="event-name">Name</Label>
@@ -230,24 +234,28 @@ export function EventForm({
         />
         <FieldError message={errors.place?.message} />
       </div>
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
       <fieldset
         className="space-y-2"
         disabled={isPending || !editable("start_datetime")}
       >
-        <legend className="text-sm font-medium">Starts</legend>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            type="date"
-            aria-label="Start date"
-            className="w-auto"
-            {...form.register("startDate")}
+        <legend className="text-sm font-medium">
+          {isRecruitment ? "Opens" : "Starts"}
+        </legend>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <EventDatePicker
+            value={form.watch("startDate")}
+            onChange={(value) => form.setValue("startDate", value, { shouldValidate: true })}
+            disabled={isPending || !editable("start_datetime")}
+            label={isRecruitment ? "Opening date" : "Start date"}
           />
-          <Input
-            type="time"
-            aria-label="Start time"
-            className="w-auto"
-            {...form.register("startTime")}
+          <EventTimePicker
+            value={form.watch("startTime")}
+            onChange={(value) => form.setValue("startTime", value, { shouldValidate: true })}
+            disabled={isPending || !editable("start_datetime")}
+            label={isRecruitment ? "Opening time" : "Start time"}
           />
         </div>
         <FieldError
@@ -259,25 +267,28 @@ export function EventForm({
         className="space-y-2"
         disabled={isPending || !editable("end_datetime")}
       >
-        <legend className="text-sm font-medium">Ends</legend>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            type="date"
-            aria-label="End date"
-            className="w-auto"
-            {...form.register("endDate")}
+        <legend className="text-sm font-medium">
+          {isRecruitment ? "Deadline" : "Ends"}
+        </legend>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <EventDatePicker
+            value={form.watch("endDate")}
+            onChange={(value) => form.setValue("endDate", value, { shouldValidate: true })}
+            disabled={isPending || !editable("end_datetime")}
+            label={isRecruitment ? "Deadline date" : "End date"}
           />
-          <Input
-            type="time"
-            aria-label="End time"
-            className="w-auto"
-            {...form.register("endTime")}
+          <EventTimePicker
+            value={form.watch("endTime")}
+            onChange={(value) => form.setValue("endTime", value, { shouldValidate: true })}
+            disabled={isPending || !editable("end_datetime")}
+            label={isRecruitment ? "Deadline time" : "End time"}
           />
         </div>
         <FieldError
           message={errors.endDate?.message ?? errors.endTime?.message}
         />
       </fieldset>
+      </div>
 
       <p className="text-xs text-muted-foreground">
         Times are campus time (Almaty), whatever timezone your device is in.
@@ -341,7 +352,7 @@ export function EventForm({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="event-policy">Registration</Label>
+          <Label htmlFor="event-policy">How people join</Label>
           <Controller
             control={form.control}
             name="policy"
@@ -355,16 +366,21 @@ export function EventForm({
               >
                 <SelectTrigger id="event-policy" className="w-full">
                   <SelectValue>
-                    {field.value === "open" ? "Just turn up" : "Sign-up needed"}
+                    {field.value === "open" ? "Open entry" : "Registration — external form"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="open">Just turn up</SelectItem>
-                  <SelectItem value="registration">Sign-up needed</SelectItem>
+                  <SelectItem value="open">Open entry</SelectItem>
+                  <SelectItem value="registration">Registration — external form</SelectItem>
                 </SelectContent>
               </Select>
             )}
           />
+          <p className="text-xs text-muted-foreground">
+            {policy === "open"
+              ? "Anyone can join from the event page."
+              : "Students will be sent to your external registration form."}
+          </p>
         </div>
       </div>
 
@@ -378,6 +394,9 @@ export function EventForm({
             disabled={isPending || !editable("registration_link")}
             {...form.register("registrationLink")}
           />
+          <p className="text-xs text-muted-foreground">
+            Paste the form URL students should complete to sign up.
+          </p>
           <FieldError message={errors.registrationLink?.message} />
         </div>
       )}
@@ -420,7 +439,7 @@ export function EventForm({
       <MediaPicker
         label="Poster"
         aspectRatio="portrait"
-        maxFiles={1}
+        maxFiles={5}
         files={files}
         onFilesChange={setFiles}
         existing={existingMedia}
@@ -433,7 +452,7 @@ export function EventForm({
           )
         }}
         disabled={isPending}
-        hint="Shown on the event card and at the top of the event page."
+        hint="Up to 5 posters shown in the event carousel and on its card."
       />
 
       {submitError && (

@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
 import {
   ArrowRightIcon,
   BookOpenCheckIcon,
@@ -23,7 +22,6 @@ import eventPhoto3 from "@/assets/events/3.webp"
 import eventPhoto4 from "@/assets/events/4.webp"
 import eventPhoto5 from "@/assets/events/5.webp"
 import logoUrl from "@/assets/nuspace_logo.svg"
-import { beginLogin, sessionQueryOptions } from "@/lib/user"
 import { EventPhotoCarousel } from "@/components/routes/landing/components/event-photo-carousel"
 import { Button } from "@/components/ui/button"
 import { PageContainer } from "@/components/shared/page/container"
@@ -132,56 +130,26 @@ const EVENT_PHOTOS = [
   eventPhoto5,
 ] as const
 
-function PrimaryCallToAction({
-  isSignedIn,
-  returnTo,
-  final = false,
-}: {
-  isSignedIn: boolean
-  returnTo?: string
-  final?: boolean
-}) {
-  if (isSignedIn) {
-    return (
-      <Button
-        nativeButton={false}
-        size="lg"
-        className="gap-2 px-6"
-        render={
-          <Link to="/announcements">
-            Open Announcements
-            <ArrowRightIcon className="size-5" aria-hidden />
-          </Link>
-        }
-      />
-    )
-  }
-
+function PrimaryCallToAction() {
   return (
     <Button
+      nativeButton={false}
       size="lg"
-      className="gap-2 px-6"
-      onClick={() => {
-        beginLogin(returnTo)
-      }}
-    >
-      {final ? "Sign in with NU account" : "Open Nuspace"}
-      <ArrowRightIcon className="size-5" aria-hidden />
-    </Button>
+      className="h-14 gap-3 px-8 text-lg"
+      render={
+        <Link to="/announcements">
+          Open Nuspace
+          <ArrowRightIcon className="size-5" aria-hidden />
+        </Link>
+      }
+    />
   )
 }
 
-export function Page({ returnTo }: { returnTo?: string }) {
-  const { data: session } = useQuery(sessionQueryOptions)
-  const isSignedIn = session != null
-
+export function Page() {
   return (
     <div className="overflow-hidden">
       <Section className="relative py-20 sm:py-28 lg:py-32">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto h-96 max-w-5xl bg-[radial-gradient(circle_at_center,color-mix(in_oklch,var(--primary),transparent_84%),transparent_68%)]"
-          aria-hidden
-        />
         <PageContainer maxWidth="default" className="text-center">
           <div className="mb-5 inline-flex items-center gap-2.5">
             <img src={logoUrl} alt="" aria-hidden className="size-8" />
@@ -198,7 +166,7 @@ export function Page({ returnTo }: { returnTo?: string }) {
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <PrimaryCallToAction isSignedIn={isSignedIn} returnTo={returnTo} />
+            <PrimaryCallToAction />
             <a
               href="https://github.com/ulanpy/nuspace"
               target="_blank"
@@ -211,6 +179,10 @@ export function Page({ returnTo }: { returnTo?: string }) {
           </div>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
+            <span>3100+ students</span>
+            <span aria-hidden className="text-border">
+              ·
+            </span>
             <span>Open source</span>
             <span aria-hidden className="text-border">
               ·
@@ -386,16 +358,10 @@ export function Page({ returnTo }: { returnTo?: string }) {
             <div>
               <p className="font-bold">Ready when you are.</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {isSignedIn
-                  ? "Catch up on what is happening across campus."
-                  : "Sign in with your NU account to open your workspace."}
+                Catch up on what is happening across campus.
               </p>
             </div>
-            <PrimaryCallToAction
-              isSignedIn={isSignedIn}
-              returnTo={returnTo}
-              final
-            />
+            <PrimaryCallToAction />
           </div>
         </PageContainer>
       </Section>

@@ -10,6 +10,7 @@ import { hasMediaFormat, pollForMedia } from "@/lib/media"
 import { useMediaUpload } from "@/hooks/use-media-upload"
 import { assertValidImageBatch, type MediaFormat } from "@/lib/media"
 import { saveWithMedia } from "@/lib/media"
+import { CAMPUS_TIME_ZONE } from "@/lib/utils"
 import type {
   Event,
   EventCreate,
@@ -22,11 +23,52 @@ import type {
 export type TimeFilter = "upcoming" | "today" | "week" | "month"
 
 export interface EventFilters {
-  time_filter?: TimeFilter
+  from_datetime?: string
+  to_datetime?: string
   event_type?: EventType
   registration_policy?: RegistrationPolicy
   event_status?: EventStatus
   keyword?: string
+}
+
+/** A campus-time range matching the public events filters. */
+export function getEventTimeRange(time: TimeFilter): EventFilters {
+  if (time === "upcoming") return { from_datetime: new Date().toISOString() }
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Almaty",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date())
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value)
+  const year = value("year")
+  const month = value("month")
+  const day = value("day")
+  const campusMidnight = (nextYear: number, nextMonth: number, nextDay: number) =>
+    new Date(Date.UTC(nextYear, nextMonth - 1, nextDay, -5)).toISOString()
+
+  if (time === "today") {
+    return {
+      from_datetime: campusMidnight(year, month, day),
+      to_datetime: campusMidnight(year, month, day + 1),
+    }
+  }
+
+  if (time === "week") {
+    const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+    const mondayOffset = weekday === 0 ? -6 : 1 - weekday
+    return {
+      from_datetime: campusMidnight(year, month, day + mondayOffset),
+      to_datetime: campusMidnight(year, month, day + mondayOffset + 7),
+    }
+  }
+
+  return {
+    from_datetime: campusMidnight(year, month, 1),
+    to_datetime: campusMidnight(year, month + 1, 1),
+  }
 }
 
 /**
@@ -53,26 +95,6 @@ function fetchEvent(eventId: number) {
   return unwrap(
     api.GET("/events/{event_id}", { params: { path: { event_id: eventId } } })
   )
-}
-
-/**
- * A handful of recruitment events for the home page's "Now Recruiting" section.
- *
- * dev's announcements bundle returns only `events`, not a separate recruiting
- * list (the rewrite branch added `recruitment_events`; dev did not), so the
- * home page pulls these through the normal events list with a recruitment type
- * filter instead.
- */
-export function recruitmentEventsQueryOptions(count = 6) {
-  return queryOptions({
-    queryKey: qk.events.list({ type: "recruitment", page: 1, size: count }),
-    queryFn: () =>
-      fetchEventsPage(
-        { time_filter: "upcoming", event_type: "recruitment" },
-        { page: 1, size: count }
-      ),
-    staleTime: 60_000,
-  })
 }
 
 export function eventDetailQueryOptions(eventId: number) {
@@ -252,6 +274,43 @@ export interface EventTiming {
   detail: string
 }
 
+/**
+ * The metadata answers when someone should arrive. A multi-day end date is
+ * essential context, while its end time stays in the live status badge.
+ */
+export function formatEventDateRange(start: string, end: string): string {
+  const parts = (iso: string) => {
+    const values = new Intl.DateTimeFormat("en-GB", {
+      timeZone: CAMPUS_TIME_ZONE,
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).formatToParts(new Date(iso))
+    const value = (type: Intl.DateTimeFormatPartTypes) =>
+      values.find((part) => part.type === type)?.value ?? ""
+
+    return {
+      day: value("day"),
+      month: value("month"),
+      year: value("year"),
+    }
+  }
+
+  const startDate = parts(start)
+  const endDate = parts(end)
+
+  if (startDate.year === endDate.year && startDate.month === endDate.month) {
+    if (startDate.day === endDate.day)
+      return `${startDate.day} ${startDate.month} ${startDate.year}`
+    return `${startDate.day}–${endDate.day} ${endDate.month} ${endDate.year}`
+  }
+
+  if (startDate.year === endDate.year)
+    return `${startDate.day} ${startDate.month} – ${endDate.day} ${endDate.month} ${endDate.year}`
+
+  return `${startDate.day} ${startDate.month} ${startDate.year} – ${endDate.day} ${endDate.month} ${endDate.year}`
+}
+
 function formatDuration(milliseconds: number): string {
   const minutes = Math.max(0, Math.floor(milliseconds / 60_000))
   const days = Math.floor(minutes / (24 * 60))
@@ -271,16 +330,28 @@ function formatDuration(milliseconds: number): string {
 export function getEventTiming(
   start: string,
   end: string,
-  now = Date.now()
+  now = Date.now(),
+  type?: EventType
 ): EventTiming {
   const startTime = new Date(start).getTime()
   const endTime = new Date(end).getTime()
+  const isRecruitment = type === "recruitment"
 
   if (endTime <= now) {
     return {
       kind: "finished",
-      label: "Finished",
-      detail: `Ended ${formatDuration(now - endTime)} ago`,
+      label: isRecruitment ? "Deadline passed" : "Finished",
+      detail: isRecruitment
+        ? `${formatDuration(now - endTime)} ago`
+        : `Ended ${formatDuration(now - endTime)} ago`,
+    }
+  }
+
+  if (isRecruitment) {
+    return {
+      kind: "upcoming",
+      label: "Deadline in",
+      detail: formatDuration(endTime - now),
     }
   }
 

@@ -21,7 +21,7 @@ export function TelegramConnectPrompt({
   if (!session || session.tg_id !== null || dismissed) return null
 
   return (
-    <Card className="flex flex-wrap items-center gap-3 border-primary/30 bg-primary/5 p-4">
+    <Card className="flex w-full flex-row flex-wrap items-center gap-3 border-primary/30 bg-primary/5 p-3">
       <SendIcon className="size-5 text-primary" aria-hidden />
       <div className="min-w-48 flex-1">
         <p className="font-medium">{title}</p>

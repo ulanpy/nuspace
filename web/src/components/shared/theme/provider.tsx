@@ -1,8 +1,6 @@
 import * as React from "react"
 import { ThemeProviderContext, type Theme } from "./context"
 
-type ResolvedTheme = "dark" | "light"
-
 type ThemeProviderProps = {
   children: React.ReactNode
   defaultTheme?: Theme
@@ -10,8 +8,7 @@ type ThemeProviderProps = {
   disableTransitionOnChange?: boolean
 }
 
-const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
-const THEME_VALUES = ["dark", "light", "system"] as const
+const THEME_VALUES = ["dark", "light"] as const
 
 function isTheme(value: string | null): value is Theme {
   if (value === null) {
@@ -19,14 +16,6 @@ function isTheme(value: string | null): value is Theme {
   }
 
   return (THEME_VALUES as readonly string[]).includes(value)
-}
-
-function getSystemTheme(): ResolvedTheme {
-  if (window.matchMedia(COLOR_SCHEME_QUERY).matches) {
-    return "dark"
-  }
-
-  return "light"
 }
 
 function disableTransitionsTemporarily() {
@@ -50,7 +39,7 @@ function disableTransitionsTemporarily() {
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "dark",
   storageKey = "nuspace-ui-theme",
   disableTransitionOnChange = true,
   ...props
@@ -75,14 +64,12 @@ export function ThemeProvider({
   const applyTheme = React.useCallback(
     (nextTheme: Theme) => {
       const root = document.documentElement
-      const resolvedTheme =
-        nextTheme === "system" ? getSystemTheme() : nextTheme
       const restoreTransitions = disableTransitionOnChange
         ? disableTransitionsTemporarily()
         : null
 
       root.classList.remove("light", "dark")
-      root.classList.add(resolvedTheme)
+      root.classList.add(nextTheme)
 
       if (restoreTransitions) {
         restoreTransitions()
@@ -93,21 +80,6 @@ export function ThemeProvider({
 
   React.useEffect(() => {
     applyTheme(theme)
-
-    if (theme !== "system") {
-      return undefined
-    }
-
-    const mediaQuery = window.matchMedia(COLOR_SCHEME_QUERY)
-    const handleChange = () => {
-      applyTheme("system")
-    }
-
-    mediaQuery.addEventListener("change", handleChange)
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleChange)
-    }
   }, [theme, applyTheme])
 
   React.useEffect(() => {

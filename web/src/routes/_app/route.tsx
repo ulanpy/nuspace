@@ -1,16 +1,14 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 
 import { AppLayout } from "@/components/layouts/app"
 import { sessionQueryOptions } from "@/lib/user"
 
 export const Route = createFileRoute("/_app")({
-  beforeLoad: async ({ context, location }) => {
+  beforeLoad: async ({ context }) => {
     const session =
       await context.queryClient.ensureQueryData(sessionQueryOptions)
-    if (!session) {
-      throw redirect({ to: "/", search: { returnTo: location.href } })
-    }
-    // Downstream routes and components read this without re-fetching.
+    // Browsing campus information is public. Mutating controls still enforce
+    // authentication through their own UI and the backend policy.
     return { session }
   },
   component: AppLayout,

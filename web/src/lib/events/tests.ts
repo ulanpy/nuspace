@@ -3,6 +3,7 @@ import test, { describe, it } from "node:test"
 import {
   eventGoogleCalendarUrl,
   eventPolicyLabel,
+  formatEventDateRange,
   getEventTiming,
 } from "./functions"
 
@@ -55,4 +56,35 @@ test("presents a finished event relative to its end", () => {
 test("uses readable registration policy labels", () => {
   assert.equal(eventPolicyLabel("open"), "Open entry")
   assert.equal(eventPolicyLabel("registration"), "Registration required")
+})
+
+test("formats a campus date interval without inventing a daily schedule", () => {
+  assert.equal(
+    formatEventDateRange(
+      "2026-09-23T10:00:00+05:00",
+      "2026-09-23T22:00:00+05:00"
+    ),
+    "23 Sept 2026"
+  )
+  assert.equal(
+    formatEventDateRange(
+      "2026-09-22T10:00:00+05:00",
+      "2026-09-23T22:00:00+05:00"
+    ),
+    "22–23 Sept 2026"
+  )
+  assert.equal(
+    formatEventDateRange(
+      "2026-09-30T10:00:00+05:00",
+      "2026-10-02T22:00:00+05:00"
+    ),
+    "30 Sept – 2 Oct 2026"
+  )
+  assert.equal(
+    formatEventDateRange(
+      "2026-12-31T10:00:00+05:00",
+      "2027-01-02T22:00:00+05:00"
+    ),
+    "31 Dec 2026 – 2 Jan 2027"
+  )
 })

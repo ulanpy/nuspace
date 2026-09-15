@@ -1,4 +1,4 @@
-import { Link, Outlet } from "@tanstack/react-router"
+import { Link, Outlet, useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 
 import logoUrl from "@/assets/nuspace_logo.svg"
@@ -23,31 +23,42 @@ const FOOTER_LINKS = [
  */
 export function PublicLayout() {
   const { data: session } = useQuery(sessionQueryOptions)
+  const isLandingPage = useRouterState({
+    select: (state) => state.location.pathname === "/",
+  })
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <Link
-          to="/"
-          aria-label="Nuspace home"
-          className="flex items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <img src={logoUrl} alt="" aria-hidden className="size-7" />
-          <span className="text-lg font-semibold tracking-tight">Nuspace</span>
-        </Link>
-
-        <div className="ml-auto flex items-center gap-2">
+      {isLandingPage ? (
+        <div className="absolute left-4 top-4 z-10">
           <ThemeToggle />
-          {session && (
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link to="/announcements">Open Nuspace</Link>}
-            />
-          )}
         </div>
-      </header>
+      ) : (
+        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <Link
+            to="/"
+            aria-label="Nuspace home"
+            className="flex items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <img src={logoUrl} alt="" aria-hidden className="size-7" />
+            <span className="text-lg font-semibold tracking-tight">
+              Nuspace
+            </span>
+          </Link>
+
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            {session && (
+              <Button
+                nativeButton={false}
+                variant="outline"
+                size="sm"
+                render={<Link to="/announcements">Open Nuspace</Link>}
+              />
+            )}
+          </div>
+        </header>
+      )}
 
       <main className="flex-1">
         <Outlet />

@@ -1,17 +1,12 @@
-import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
+import { MoonIcon, SunIcon } from "lucide-react"
 
 import { useTheme } from "@/components/shared/theme/context"
 import { Button } from "@/components/ui/button"
 
-/**
- * Cycles light → dark → system. "system" is the default, so it stays reachable
- * rather than being a setting the user can only leave.
- */
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
 
-  const next =
-    theme === "light" ? "dark" : theme === "dark" ? "system" : "light"
+  const next = theme === "light" ? "dark" : "light"
 
   return (
     <Button
@@ -25,10 +20,8 @@ export function ThemeToggle() {
     >
       {theme === "light" ? (
         <SunIcon className="size-5" aria-hidden />
-      ) : theme === "dark" ? (
-        <MoonIcon className="size-5" aria-hidden />
       ) : (
-        <MonitorIcon className="size-5" aria-hidden />
+        <MoonIcon className="size-5" aria-hidden />
       )}
     </Button>
   )

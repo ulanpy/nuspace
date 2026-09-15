@@ -11,9 +11,6 @@ const CHANNEL_URL = `https://t.me/${CHANNEL}`
 
 function useResolvedDark(): boolean {
   const { theme } = useTheme()
-  if (theme === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-  }
   return theme === "dark"
 }
 
@@ -69,7 +66,16 @@ export function TelegramFeed() {
 
       {query.isPending && <Skeleton className="h-96 w-full" />}
 
-      {query.data && <TelegramPost postId={query.data.latest_post_id} />}
+      {query.data && (
+        <div className="max-h-100 space-y-3 overflow-y-auto rounded-xl border border-border bg-card p-3 pr-2">
+          {Array.from({ length: 5 }, (_, index) => (
+            <TelegramPost
+              key={query.data.latest_post_id - index}
+              postId={query.data.latest_post_id - index}
+            />
+          ))}
+        </div>
+      )}
 
       {/* A missing channel feed should not read as a broken page. */}
       {query.isError && (

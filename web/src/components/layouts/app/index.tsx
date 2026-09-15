@@ -7,8 +7,8 @@ import { PageContainer } from "@/components/shared/page/container"
 import { cn } from "@/lib/utils"
 
 /**
- * Authenticated shell. Every route beneath it is guarded in the route's
- * beforeLoad (see routes/_app/route.tsx).
+ * Shared workspace shell. Campus information can be browsed anonymously;
+ * account-specific controls still request sign-in when they are used.
  */
 export function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>

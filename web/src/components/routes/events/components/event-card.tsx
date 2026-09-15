@@ -2,8 +2,6 @@ import { Link } from "@tanstack/react-router"
 import {
   CalendarIcon,
   MapPinIcon,
-  TicketCheckIcon,
-  UserIcon,
 } from "lucide-react"
 
 import type { Event } from "@/lib/events"
@@ -14,7 +12,6 @@ import { formatCampusDateTime } from "@/lib/utils"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 /**
  * `poster` leads with the full flyer and suits browsing /events.
@@ -33,22 +30,24 @@ interface EventCardProps {
 }
 
 function EventMeta({ event }: { event: Event }) {
+  const isRecruitment = event.type === "recruitment"
+
   return (
     <dl className="space-y-1 text-sm text-muted-foreground">
       <div className="flex items-center gap-2">
-        <dt className="sr-only">Starts</dt>
+        <dt className="sr-only">{isRecruitment ? "Deadline" : "Starts"}</dt>
         <CalendarIcon className="size-4 shrink-0" aria-hidden />
-        <dd>{formatCampusDateTime(event.start_datetime)}</dd>
+        <dd>
+          {isRecruitment ? "Deadline: " : ""}
+          {formatCampusDateTime(
+            isRecruitment ? event.end_datetime : event.start_datetime
+          )}
+        </dd>
       </div>
       <div className="flex items-center gap-2">
         <dt className="sr-only">Place</dt>
         <MapPinIcon className="size-4 shrink-0" aria-hidden />
         <dd className="truncate">{event.place}</dd>
-      </div>
-      <div className="flex items-center gap-2">
-        <dt className="sr-only">Entry policy</dt>
-        <TicketCheckIcon className="size-4 shrink-0" aria-hidden />
-        <dd>{eventPolicyLabel(event.policy)}</dd>
       </div>
     </dl>
   )
@@ -57,8 +56,7 @@ function EventMeta({ event }: { event: Event }) {
 export function EventCard({ event, variant = "poster" }: EventCardProps) {
   const poster = selectMedia(event.media, "carousel")
   const now = useMinuteNow()
-  const timing = getEventTiming(event.start_datetime, event.end_datetime, now)
-  const organizerName = `${event.creator.name} ${event.creator.surname}`
+  const timing = getEventTiming(event.start_datetime, event.end_datetime, now, event.type)
 
   const badges = (
     <div className="flex flex-wrap items-center gap-2">
@@ -98,17 +96,6 @@ export function EventCard({ event, variant = "poster" }: EventCardProps) {
             {badges}
             {title}
             <EventMeta event={event} />
-            <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-              <Avatar size="sm">
-                {event.creator.picture && (
-                  <AvatarImage src={event.creator.picture} alt="" />
-                )}
-                <AvatarFallback>
-                  <UserIcon className="size-3" aria-hidden />
-                </AvatarFallback>
-              </Avatar>
-              <span className="truncate">by {organizerName}</span>
-            </div>
           </div>
         </Link>
       </Card>
@@ -116,11 +103,11 @@ export function EventCard({ event, variant = "poster" }: EventCardProps) {
   }
 
   return (
-    <Card className="overflow-hidden p-0 transition-shadow hover:shadow-md">
+    <Card className="h-full overflow-hidden p-0 transition-shadow hover:shadow-md">
       <Link
         to="/events/$eventId"
         params={{ eventId: String(event.id) }}
-        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="flex h-full flex-col focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <div className="relative aspect-3/4 overflow-hidden bg-muted">
           <ResilientImage
@@ -146,24 +133,14 @@ export function EventCard({ event, variant = "poster" }: EventCardProps) {
           >
             {eventPolicyLabel(event.policy)}
           </Badge>
-          <Avatar className="absolute right-2 bottom-2 ring-2 ring-background">
-            {event.creator.picture && (
-              <AvatarImage src={event.creator.picture} alt="" />
-            )}
-            <AvatarFallback>
-              {event.creator.name.charAt(0)}
-              {event.creator.surname.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
         </div>
 
-        <div className="space-y-2 p-4">
+        <div className="flex flex-1 flex-col space-y-2 p-4">
           {badges}
           {title}
-          <p className="truncate text-xs text-muted-foreground">
-            by {organizerName}
-          </p>
-          <EventMeta event={event} />
+          <div className="mt-auto">
+            <EventMeta event={event} />
+          </div>
         </div>
       </Link>
     </Card>
