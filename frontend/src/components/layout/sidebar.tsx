@@ -322,8 +322,11 @@ export function Sidebar() {
     <>
       {/* Mobile hamburger button */}
       <div
-        className="md:hidden fixed top-0 left-0 z-50 p-2"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)" }}
+        className="md:hidden fixed left-0 z-50 p-2"
+        style={{
+          top: "var(--site-notice-height)",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)",
+        }}
       >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
@@ -355,9 +358,13 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r bg-background md:flex transition-all duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
+          "fixed left-0 z-40 hidden flex-col border-r bg-background md:flex transition-all duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
           sidebarWidth,
         )}
+        style={{
+          top: "var(--site-notice-height)",
+          height: "calc(100dvh - var(--site-notice-height))",
+        }}
       >
         {/* Header with logo and theme toggle */}
         <div

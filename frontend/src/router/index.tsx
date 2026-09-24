@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router'
 import { Providers } from '@/providers'
 import { PublicLayout } from '@/layouts/public-layout'
@@ -24,10 +24,66 @@ import CommunityDetailPage from '@/features/communities/pages/single'
 import EventsListPage from '@/features/events/pages/list'
 import EventDetailPage from '@/features/events/pages/single'
 
+function isMourningNoticeVisible() {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Asia/Almaty',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts()
+  const date = Object.fromEntries(
+    parts
+      .filter(({ type }) => type !== 'literal')
+      .map(({ type, value }) => [type, value]),
+  )
+
+  return `${date.year}-${date.month}-${date.day}` <= '2026-09-25'
+}
+
 function RootComponent() {
+  const bannerRef = useRef<HTMLElement>(null)
+  const [bannerHeight, setBannerHeight] = useState(0)
+  const [isNoticeVisible, setIsNoticeVisible] = useState(isMourningNoticeVisible)
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setIsNoticeVisible(isMourningNoticeVisible())
+    }, 60_000)
+
+    return () => window.clearInterval(interval)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!isNoticeVisible) {
+      setBannerHeight(0)
+      return
+    }
+
+    const banner = bannerRef.current
+    if (!banner) return
+
+    const updateHeight = () => setBannerHeight(banner.getBoundingClientRect().height)
+    updateHeight()
+
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(banner)
+    return () => observer.disconnect()
+  }, [isNoticeVisible])
+
   return (
     <Providers>
-      <Outlet />
+      <div style={{ '--site-notice-height': `${bannerHeight}px` } as React.CSSProperties}>
+        {isNoticeVisible && (
+          <aside
+            ref={bannerRef}
+            aria-label="Announcement"
+            className="flex min-h-10 items-center justify-center bg-zinc-950 px-4 py-2 text-center text-xs font-medium leading-5 text-zinc-100 sm:text-sm"
+          >
+            September 25 — National Day of Mourning in the Republic of Kazakhstan
+          </aside>
+        )}
+        <Outlet />
+      </div>
     </Providers>
   )
 }
