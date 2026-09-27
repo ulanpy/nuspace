@@ -11,7 +11,6 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { CommunityForm } from "@/components/routes/communities/components/community-form"
 import type { CommunitySubmitPayload } from "@/components/routes/communities/components/community-form"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 
 export function Page({ community }: { community: Community }) {
   const navigate = useNavigate()
@@ -55,27 +54,25 @@ export function Page({ community }: { community: Community }) {
         title="Details"
         description="How this community appears across the app."
       >
-        <Card className="px-4 sm:px-6">
-          <CommunityForm
-            community={community}
-            isPending={updateCommunity.isPending}
-            submitError={
-              updateCommunity.error
-                ? apiErrorMessage(
-                    updateCommunity.error,
-                    "Could not save. Try again."
-                  )
-                : null
-            }
-            onSubmit={handleDetailsSubmit}
-            onCancel={() => {
-              void navigate({
-                to: "/communities/$slug",
-                params: { slug: community.slug },
-              })
-            }}
-          />
-        </Card>
+        <CommunityForm
+          community={community}
+          isPending={updateCommunity.isPending}
+          submitError={
+            updateCommunity.error
+              ? apiErrorMessage(
+                  updateCommunity.error,
+                  "Could not save. Try again."
+                )
+              : null
+          }
+          onSubmit={handleDetailsSubmit}
+          onCancel={() => {
+            void navigate({
+              to: "/communities/$slug",
+              params: { slug: community.slug },
+            })
+          }}
+        />
       </SettingsSection>
 
       {community.permissions.can_delete ? (

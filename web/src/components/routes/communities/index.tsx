@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { PlusIcon } from "lucide-react"
 
 import type { CommunitiesSearch } from "@/routes/_app/communities"
@@ -16,11 +16,14 @@ import {
 import { useDebounced } from "@/hooks/use-debounced"
 import {
   ChoiceChips,
+  FilterBar,
   SearchFilter,
   type FilterOption,
 } from "@/components/shared/list-filters"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
+import { CardGrid, CardGridSkeleton } from "@/components/shared/page/card-grid"
+import { PageContainer } from "@/components/shared/page/container"
 import { PageHeader } from "@/components/shared/page/header"
 import { Button } from "@/components/ui/button"
 
@@ -39,11 +42,16 @@ export function Page({
   const { category, type, q } = search
   const [searchInput, setSearchInput] = useState(q ?? "")
   const debouncedSearch = useDebounced(searchInput)
-  const filters = {
-    community_category: category,
-    community_type: type,
-    keyword: q,
-  }
+  // The range contains derived values, so memoising keeps a stable query key —
+  // a fresh object per render restarts the infinite query.
+  const filters = useMemo(
+    () => ({
+      community_category: category,
+      community_type: type,
+      keyword: q,
+    }),
+    [category, type, q]
+  )
 
   const [isCreating, setIsCreating] = useState(false)
 
@@ -69,7 +77,7 @@ export function Page({
   })
 
   return (
-    <div className="space-y-6">
+    <PageContainer maxWidth="wide" className="space-y-6">
       <PageHeader
         title="Communities"
         description="Discover clubs, organizations, and campus groups."
@@ -87,7 +95,7 @@ export function Page({
         }
       />
 
-      <div className="space-y-3">
+      <FilterBar>
         <SearchFilter
           value={searchInput}
           onChange={setSearchInput}
@@ -109,13 +117,14 @@ export function Page({
             onSearchChange((previous) => ({ ...previous, type: next }))
           }}
         />
-      </div>
+      </FilterBar>
 
       <InfiniteList
         items={list.items}
         getKey={(community) => community.id}
         renderItem={(community) => <CommunityCard community={community} />}
         isPending={list.isPending}
+        pending={<CardGridSkeleton columns={3} />}
         isError={list.isError}
         error={list.error}
         refetch={() => {
@@ -133,11 +142,7 @@ export function Page({
           />
         }
       >
-        {(rendered) => (
-          <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {rendered}
-          </div>
-        )}
+        {(rendered) => <CardGrid columns={3}>{rendered}</CardGrid>}
       </InfiniteList>
 
       <CommunityFormDialog
@@ -147,7 +152,7 @@ export function Page({
           onCommunityCreated(community.slug)
         }}
       />
-    </div>
+    </PageContainer>
   )
 }
 

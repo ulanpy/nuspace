@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { Loader2Icon } from "lucide-react"
 
 import { useIntersection } from "@/hooks/use-intersection"
+import { cn } from "@/lib/utils"
 import { QueryError, SkeletonLines } from "@/components/shared/query/boundary"
 
 interface InfiniteListProps<T> {
@@ -50,7 +51,9 @@ export function InfiniteList<T>({
   if (items.length === 0 && empty) return empty
 
   const rendered = items.map((item) => (
-    <div key={getKey(item)} className={itemClassName}>
+    // h-full by default: a `CardGrid` stretches its rows, and without this the
+    // card keeps its natural height and the row is left ragged.
+    <div key={getKey(item)} className={cn("h-full", itemClassName)}>
       {renderItem(item)}
     </div>
   ))

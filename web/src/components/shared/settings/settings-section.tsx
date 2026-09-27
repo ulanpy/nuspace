@@ -2,9 +2,21 @@ import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
+const widthClasses = {
+  form: "max-w-2xl",
+  prose: "max-w-3xl",
+  full: "",
+} as const
+
 interface SettingsSectionProps {
   title: string
   description?: string
+  /**
+   * `form` for one-column inputs, `full` for tables and lists that need the
+   * whole page. Defaults to `form` because stretched fields are the common
+   * complaint and the width belongs to the section, not the page.
+   */
+  width?: keyof typeof widthClasses
   className?: string
   children: ReactNode
 }
@@ -20,11 +32,12 @@ interface SettingsSectionProps {
 export function SettingsSection({
   title,
   description,
+  width = "form",
   className,
   children,
 }: SettingsSectionProps) {
   return (
-    <section className={cn("space-y-4", className)}>
+    <section className={cn("space-y-4", widthClasses[width], className)}>
       <div className="space-y-1">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {description ? (
