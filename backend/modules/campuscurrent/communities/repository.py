@@ -200,15 +200,18 @@ class CommunityRepository:
         return result.scalars().first()
 
     async def list_admins_page(
-        self, community_id: int, *, page: int, size: int
+        self, community_id: int, *, page: int, size: int, exclude_sub: str | None = None
     ) -> Tuple[List[CommunityAdmin], int]:
         # created_at alone is not a stable sort: rows promoted in the same
         # transaction share a timestamp, and OFFSET pagination over a
         # non-deterministic order silently drops and repeats rows across
         # page boundaries. user_sub breaks the tie.
+        conditions = [CommunityAdmin.community_id == community_id]
+        if exclude_sub is not None:
+            conditions.append(CommunityAdmin.user_sub != exclude_sub)
         stmt = (
             select(CommunityAdmin)
-            .where(CommunityAdmin.community_id == community_id)
+            .where(*conditions)
             .options(selectinload(CommunityAdmin.user))
             .order_by(CommunityAdmin.created_at.asc(), CommunityAdmin.user_sub.asc())
             .offset((page - 1) * size)
@@ -216,11 +219,7 @@ class CommunityRepository:
         )
         result = await self.db_session.execute(stmt)
         admins = list(result.scalars().all())
-        count_stmt = (
-            select(func.count())
-            .select_from(CommunityAdmin)
-            .where(CommunityAdmin.community_id == community_id)
-        )
+        count_stmt = select(func.count()).select_from(CommunityAdmin).where(*conditions)
         count_result = await self.db_session.execute(count_stmt)
         return admins, count_result.scalar() or 0
 

@@ -185,10 +185,17 @@ async def get_community_admins(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
+    exclude_sub: str | None = None,
     community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.ListCommunityAdmins:
-    """Retrieves a paginated list of a community's admins. Any signed-in user may read."""
-    return await community_service.list_admins(slug=slug, user=user, page=page, size=size)
+    """Retrieves a paginated list of a community's admins. Any signed-in user may read.
+
+    `exclude_sub` drops one user from the rows *and* the count, so a caller
+    rendering that user in a separate pinned row keeps correct page boundaries.
+    """
+    return await community_service.list_admins(
+        slug=slug, user=user, page=page, size=size, exclude_sub=exclude_sub
+    )
 
 
 @router.delete("/communities/{slug}/admins/me", response_model=schemas.CommunityResponse)

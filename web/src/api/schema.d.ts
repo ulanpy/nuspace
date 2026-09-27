@@ -270,6 +270,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/communities/{slug}/admins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Community Admins
+         * @description Retrieves a paginated list of a community's admins. Any signed-in user may read.
+         *
+         *     `exclude_sub` drops one user from the rows *and* the count, so a caller
+         *     rendering that user in a separate pinned row keeps correct page boundaries.
+         */
+        get: operations["get_community_admins_communities__slug__admins_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/communities/{slug}/admins/me": {
         parameters: {
             query?: never;
@@ -2050,8 +2073,6 @@ export interface components {
              */
             updated_at: string;
             owner_user: components["schemas"]["ShortUserResponse"];
-            /** Admins */
-            admins?: components["schemas"]["AdminResponse"][];
             /**
              * Media
              * @default []
@@ -2548,6 +2569,24 @@ export interface components {
         ListCommunity: {
             /** Items */
             items?: components["schemas"]["CommunityResponse"][];
+            /**
+             * Total Pages
+             * @default 1
+             */
+            total_pages: number;
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Has Next */
+            has_next: boolean;
+        };
+        /** ListCommunityAdmins */
+        ListCommunityAdmins: {
+            /** Items */
+            items?: components["schemas"]["AdminResponse"][];
             /**
              * Total Pages
              * @default 1
@@ -3961,6 +4000,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminLinkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_community_admins_communities__slug__admins_get: {
+        parameters: {
+            query?: {
+                size?: number;
+                page?: number;
+                exclude_sub?: string | null;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListCommunityAdmins"];
                 };
             };
             /** @description Validation Error */

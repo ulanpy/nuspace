@@ -404,7 +404,13 @@ class CommunityService:
         return schemas.AdminLinkAcceptResponse(status="granted")
 
     async def list_admins(
-        self, slug: str, user: tuple[dict, dict], *, page: int, size: int
+        self,
+        slug: str,
+        user: tuple[dict, dict],
+        *,
+        page: int,
+        size: int,
+        exclude_sub: str | None = None,
     ) -> schemas.ListCommunityAdmins:
         community, policy = await self._load_community_and_policy(slug, user)
         # READ, not check_manage_admins: a community admin manages the community
@@ -412,7 +418,9 @@ class CommunityService:
         await policy.check_permission(action=ResourceAction.READ, community=community)
         async with self.uow:
             repo = self.uow.get_repo(CommunityRepository)
-            admins, count = await repo.list_admins_page(community.id, page=page, size=size)
+            admins, count = await repo.list_admins_page(
+                community.id, page=page, size=size, exclude_sub=exclude_sub
+            )
         return schemas.ListCommunityAdmins(
             items=self._to_admin_responses(admins),
             total=count,

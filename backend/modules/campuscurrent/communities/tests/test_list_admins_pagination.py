@@ -69,8 +69,21 @@ async def test_list_admins_maps_rows_and_forwards_paging():
 
     result = await service.list_admins("club", USER, page=1, size=2)
 
-    repo.list_admins_page.assert_awaited_once_with(7, page=1, size=2)
+    repo.list_admins_page.assert_awaited_once_with(7, page=1, size=2, exclude_sub=None)
     assert [(i.sub, i.name, i.surname) for i in result.items] == [
         ("a0", "Namea0", "Surname"),
         ("a1", "Namea1", "Surname"),
     ]
+
+
+@pytest.mark.asyncio
+async def test_list_admins_forwards_exclude_sub_so_counts_stay_consistent():
+    # The settings page pins the signed-in admin above the table. The exclusion
+    # has to reach the COUNT query too, or the last page comes back empty.
+    service, repo = _service(total=10, returned=10)
+
+    result = await service.list_admins("club", USER, page=1, size=10, exclude_sub="me")
+
+    repo.list_admins_page.assert_awaited_once_with(7, page=1, size=10, exclude_sub="me")
+    assert result.total == 10
+    assert result.has_next is False
