@@ -9,9 +9,11 @@ export function useSession(): Session | null {
 }
 
 /**
- * The signed-in user. Only valid under the `_app` layout route, whose
- * beforeLoad guard has already redirected anonymous visitors away — so this
- * throws rather than returning null and forcing every caller to re-check.
+ * The signed-in user, throwing when there is no session.
+ *
+ * `_app` deliberately leaves browsing public, so there is no layout-level
+ * guard to rely on: a route must resolve a session itself before calling this.
+ * Use `useSession` where anonymous visitors are legitimate.
  */
 export function useCurrentUser(): CurrentUser {
   const session = useSession()
