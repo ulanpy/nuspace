@@ -23,6 +23,14 @@ export const qk = {
       ["communities", "list", filters] as const,
     detail: (slug: string) => ["communities", "detail", slug] as const,
     mine: () => ["communities", "mine"] as const,
+    /**
+     * The page number is part of the key, not a filter inside it, so that
+     * `invalidateQueries({ queryKey: qk.communities.all() })` after a removal
+     * refreshes every page the user could be looking at — and a single page
+     * can be prefetched or refetched on its own.
+     */
+    admins: (slug: string, page: number) =>
+      ["communities", "admins", slug, page] as const,
   },
 
   /**

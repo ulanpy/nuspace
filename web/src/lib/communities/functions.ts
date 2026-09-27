@@ -224,6 +224,22 @@ export function useUpdateCommunity() {
   })
 }
 
+/** One page of a community's admins. `excludeSub` drops the pinned "You" row. */
+export function fetchCommunityAdminsPage(
+  slug: string,
+  {
+    page,
+    size,
+    excludeSub,
+  }: { page: number; size: number; excludeSub?: string }
+) {
+  return unwrap(
+    api.GET("/communities/{slug}/admins", {
+      params: { path: { slug }, query: { page, size, exclude_sub: excludeSub } },
+    })
+  )
+}
+
 /** Admin only, per `CommunityPolicy` — the owner cannot delete their own club. */
 export function useDeleteCommunity() {
   const queryClient = useQueryClient()
@@ -269,6 +285,31 @@ export function useRotateAdminLink() {
       ),
     onSuccess: (link, slug) => {
       queryClient.setQueryData(qk.adminLink.detail(slug), link)
+    },
+  })
+}
+
+/**
+ * Hands the community to another admin. Owner or site admin only.
+ *
+ * The backend drops the new owner's admin row but does not re-add the old one,
+ * so an owner who transfers away loses access to these settings entirely. The
+ * caller has to navigate out — see `admins-table.tsx`.
+ */
+export function useTransferCommunityOwner() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ slug, ownerSub }: { slug: string; ownerSub: string }) =>
+      unwrap(
+        api.PATCH("/communities/{slug}/owner", {
+          params: { path: { slug } },
+          body: { owner_sub: ownerSub },
+        })
+      ),
+    onSuccess: (community, { slug }) => {
+      queryClient.setQueryData(qk.communities.detail(slug), community)
+      void queryClient.invalidateQueries({ queryKey: qk.communities.all() })
     },
   })
 }
@@ -324,6 +365,41 @@ export function useAcceptCommunityAdminLink() {
       await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
     },
   })
+}
+
+/**
+ * Which controls a single admin row may show.
+ *
+ * The rules are not derivable from role alone, and the server enforces each of
+ * them separately:
+ *  - the owner row is inert — the backend refuses a self-remove (`remove_admin`)
+ *    and a self-transfer would be a no-op, so neither button is offered;
+ *  - you cannot remove or demote yourself, only leave;
+ *  - `can_manage_admins` is the gate, NOT `can_change_owner` — the latter is
+ *    site-admin-only (`get_community_permissions`), which would hide transfer
+ *    from the owner, who is the person who most needs it.
+ */
+export function adminRowActions(
+  row: { isSelf: boolean; isOwner: boolean },
+  canManageAdmins: boolean
+): { canManage: boolean; canLeave: boolean } {
+  return {
+    canManage: canManageAdmins && !row.isOwner && !row.isSelf,
+    canLeave: row.isSelf && !row.isOwner,
+  }
+}
+
+/**
+ * Whether the signed-in user is a community admin (not the owner, not a site
+ * admin) — which is what earns them a pinned "You" row with a Leave button.
+ *
+ * `ResourcePermissions` has no "I am an admin" flag, but the two fields
+ * together are unambiguous: the owner and site admins both get
+ * `can_manage_admins`, an ordinary member gets neither. Written with both
+ * terms so it stays true if the route guard ever loosens.
+ */
+export function isCommunityAdmin(community: Community): boolean {
+  return community.permissions.can_edit && !community.permissions.can_manage_admins
 }
 
 /**

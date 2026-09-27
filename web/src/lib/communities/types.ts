@@ -6,6 +6,7 @@ export type CommunityCategory = components["schemas"]["CommunityCategory"]
 export type CommunityCreate = components["schemas"]["CommunityCreateRequest"]
 export type CommunityUpdate = components["schemas"]["CommunityUpdateRequest"]
 export type CommunityAdmin = components["schemas"]["AdminResponse"]
+export type CommunityAdminPage = components["schemas"]["ListCommunityAdmins"]
 export type AdminLink = components["schemas"]["AdminLinkResponse"]
 export type AdminLinkAcceptResult =
   components["schemas"]["AdminLinkAcceptResponse"]
