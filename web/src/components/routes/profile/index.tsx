@@ -26,7 +26,7 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-4">
+    <div className="flex items-center justify-between gap-4 py-4 last:pb-0">
       <div className="min-w-0">
         <p className="text-sm font-medium">{label}</p>
         {description && (

@@ -40,10 +40,15 @@ export function SearchFilter({
   value,
   onChange,
   placeholder,
+  label,
 }: {
   value: string
   onChange: (value: string) => void
   placeholder: string
+  /** Accessible name. Defaults to the placeholder, which is rarely the right
+   * label when the placeholder is a content hint like "Security, counseling…".
+   */
+  label?: string
 }) {
   return (
     <div className="relative min-w-56 flex-1">
@@ -53,7 +58,7 @@ export function SearchFilter({
       />
       <Input
         value={value}
-        aria-label={placeholder}
+        aria-label={label ?? placeholder}
         onChange={(event) => {
           onChange(event.target.value)
         }}

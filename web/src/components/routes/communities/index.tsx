@@ -42,8 +42,8 @@ export function Page({
   const { category, type, q } = search
   const [searchInput, setSearchInput] = useState(q ?? "")
   const debouncedSearch = useDebounced(searchInput)
-  // The range contains derived values, so memoising keeps a stable query key —
-  // a fresh object per render restarts the infinite query.
+  // Memoised: a fresh object is a new query key, which restarts the infinite
+  // list on every render.
   const filters = useMemo(
     () => ({
       community_category: category,

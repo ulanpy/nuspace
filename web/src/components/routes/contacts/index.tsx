@@ -105,6 +105,7 @@ export function Page({
         <SearchFilter
           value={q}
           onChange={onQChange}
+          label="Search contacts"
           placeholder="Security, counseling, registrar…"
         />
       </FilterBar>
