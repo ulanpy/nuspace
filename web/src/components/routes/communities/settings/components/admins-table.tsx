@@ -1,5 +1,13 @@
 import { useState } from "react"
-import { CrownIcon, LogOutIcon, UserMinusIcon } from "lucide-react"
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  CrownIcon,
+  LogOutIcon,
+  UserMinusIcon,
+} from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { keepPreviousData } from "@tanstack/react-query"
 
@@ -17,14 +25,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
 
 export interface AdminRow {
   sub: string
@@ -37,27 +37,6 @@ const PAGE_SIZE = 10
 
 function initialsOf(name: string, surname: string): string {
   return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase()
-}
-
-function pageItem(
-  text: number,
-  current: number,
-  onPageChange: (page: number) => void
-) {
-  return (
-    <PaginationItem>
-      <PaginationLink
-        href="#"
-        isActive={current === text}
-        onClick={(event) => {
-          event.preventDefault()
-          onPageChange(text)
-        }}
-      >
-        {text}
-      </PaginationLink>
-    </PaginationItem>
-  )
 }
 
 interface AdminsTableProps {
@@ -194,37 +173,51 @@ export function AdminsTable({
           ) : null}
         </p>
 
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                aria-disabled={page === 1 || query.isPlaceholderData}
-                onClick={(event) => {
-                  if (page > 1 && !query.isPlaceholderData)
-                    onPageChange(page - 1)
-                  else event.preventDefault()
-                }}
-              />
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-              (item) => pageItem(item, page, onPageChange)
-            )}
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                aria-disabled={!query.data?.has_next || query.isPlaceholderData}
-                onClick={(event) => {
-                  if (query.data?.has_next && !query.isPlaceholderData) {
-                    onPageChange(page + 1)
-                  } else {
-                    event.preventDefault()
-                  }
-                }}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+        <div className="flex w-full items-center justify-center gap-4 sm:w-fit sm:justify-end">
+          <span className="text-sm font-medium">
+            Page {page} of {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="hidden lg:flex"
+              onClick={() => onPageChange(1)}
+              disabled={page === 1 || query.isPlaceholderData}
+            >
+              <span className="sr-only">Go to first page</span>
+              <ChevronsLeftIcon aria-hidden />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 1 || query.isPlaceholderData}
+            >
+              <span className="sr-only">Go to previous page</span>
+              <ChevronLeftIcon aria-hidden />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onPageChange(page + 1)}
+              disabled={!query.data?.has_next || query.isPlaceholderData}
+            >
+              <span className="sr-only">Go to next page</span>
+              <ChevronRightIcon aria-hidden />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="hidden lg:flex"
+              onClick={() => onPageChange(totalPages)}
+              disabled={!query.data?.has_next || query.isPlaceholderData}
+            >
+              <span className="sr-only">Go to last page</span>
+              <ChevronsRightIcon aria-hidden />
+            </Button>
+          </div>
+        </div>
       </div>
 
       <ConfirmDialog
