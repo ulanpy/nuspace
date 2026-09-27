@@ -28,9 +28,11 @@ export const qk = {
      * `invalidateQueries({ queryKey: qk.communities.all() })` after a removal
      * refreshes every page the user could be looking at — and a single page
      * can be prefetched or refetched on its own.
+     *
+     * `excludeSub` changes which rows come back, so it belongs here too.
      */
-    admins: (slug: string, page: number) =>
-      ["communities", "admins", slug, page] as const,
+    admins: (slug: string, page: number, excludeSub?: string) =>
+      ["communities", "admins", slug, page, excludeSub ?? null] as const,
   },
 
   /**

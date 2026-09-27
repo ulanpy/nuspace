@@ -225,7 +225,7 @@ export function useUpdateCommunity() {
 }
 
 /** One page of a community's admins. `excludeSub` drops the pinned "You" row. */
-export function fetchCommunityAdminsPage(
+export async function fetchCommunityAdminsPage(
   slug: string,
   {
     page,
@@ -233,11 +233,19 @@ export function fetchCommunityAdminsPage(
     excludeSub,
   }: { page: number; size: number; excludeSub?: string }
 ) {
-  return unwrap(
+  const response = await unwrap(
     api.GET("/communities/{slug}/admins", {
-      params: { path: { slug }, query: { page, size, exclude_sub: excludeSub } },
+      params: {
+        path: { slug },
+        query: { page, size, exclude_sub: excludeSub },
+      },
     })
   )
+
+  // `items` is optional in the generated types only because the OpenAPI
+  // generator cannot see `Field(default_factory=list)`. The backend always
+  // sends a list, so normalise it here instead of at every call site.
+  return { ...response, items: response.items ?? [] }
 }
 
 /** Admin only, per `CommunityPolicy` — the owner cannot delete their own club. */
@@ -399,7 +407,9 @@ export function adminRowActions(
  * terms so it stays true if the route guard ever loosens.
  */
 export function isCommunityAdmin(community: Community): boolean {
-  return community.permissions.can_edit && !community.permissions.can_manage_admins
+  return (
+    community.permissions.can_edit && !community.permissions.can_manage_admins
+  )
 }
 
 /**

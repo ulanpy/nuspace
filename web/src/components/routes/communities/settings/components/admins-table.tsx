@@ -1,7 +1,17 @@
 import { useState } from "react"
-import { LogOutIcon, UserMinusIcon } from "lucide-react"
+import { CrownIcon, LogOutIcon, UserMinusIcon } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData } from "@tanstack/react-query"
 
-import { useRemoveCommunityAdmin } from "@/lib/communities"
+import { qk } from "@/api/query-keys"
+import {
+  adminRowActions,
+  fetchCommunityAdminsPage,
+  useLeaveCommunity,
+  useRemoveCommunityAdmin,
+  useTransferCommunityOwner,
+} from "@/lib/communities"
+import { QueryBoundary } from "@/components/shared/query/boundary"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -16,15 +26,13 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 
-export interface AdminTableRow {
+export interface AdminRow {
   sub: string
   name: string
   surname: string
   picture: string | null
-  isOwner: boolean
 }
 
-/** Fixed page size; a community rarely has more than a handful of admins. */
 const PAGE_SIZE = 10
 
 function initialsOf(name: string, surname: string): string {
@@ -54,113 +62,174 @@ function pageItem(
 
 interface AdminsTableProps {
   slug: string
-  rows: AdminTableRow[]
-  meSub: string
-  isOwner: boolean
-  onLeave: () => void
+  page: number
+  onPageChange: (page: number) => void
+  owner: AdminRow
+  /** Present only when the signed-in user is a community admin. */
+  me: AdminRow | null
+  canManageAdmins: boolean
+  /** The signed-in user is the owner, so a transfer costs them these settings. */
+  isCurrentUserOwner: boolean
+  /** Called after a transfer that locks the current user out. */
+  onOwnershipTransferredAway: () => void
 }
 
 export function AdminsTable({
   slug,
-  rows,
-  meSub,
-  isOwner,
-  onLeave,
+  page,
+  onPageChange,
+  owner,
+  me,
+  canManageAdmins,
+  isCurrentUserOwner,
+  onOwnershipTransferredAway,
 }: AdminsTableProps) {
+  const excludeSub = me?.sub
+
+  const query = useQuery({
+    queryKey: qk.communities.admins(slug, page, excludeSub),
+    queryFn: () =>
+      fetchCommunityAdminsPage(slug, {
+        page,
+        size: PAGE_SIZE,
+        // The signed-in admin is pinned above the table, so the server has to
+        // drop them from the rows AND the count or the last page comes back
+        // empty. See `GET /communities/{slug}/admins`.
+        excludeSub,
+      }),
+    placeholderData: keepPreviousData,
+  })
+
   const removeCommunityAdmin = useRemoveCommunityAdmin()
-  const [removingAdmin, setRemovingAdmin] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
+  const transferOwner = useTransferCommunityOwner()
+  const leaveCommunity = useLeaveCommunity()
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const pageRows = rows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const [removingAdmin, setRemovingAdmin] = useState<AdminRow | null>(null)
+  const [transferringTo, setTransferringTo] = useState<AdminRow | null>(null)
+  const [isConfirmingLeave, setIsConfirmingLeave] = useState(false)
 
-  const removedAdmin = rows.find((admin) => admin.sub === removingAdmin)
+  const totalPages = query.data?.total_pages ?? 1
 
   return (
     <div className="space-y-4">
       <Card>
         <div className="divide-y">
-          {pageRows.map((row) => {
-            const isSelf = row.sub === meSub
-            return (
-              <div key={row.sub} className="flex items-center gap-3 p-4">
-                <Avatar>
-                  <AvatarImage
-                    src={row.picture ?? undefined}
-                    alt={`${row.name} ${row.surname}`}
-                  />
-                  <AvatarFallback>
-                    {initialsOf(row.name, row.surname)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <p className="truncate font-medium">
-                    {row.name} {row.surname}
-                  </p>
-                  {row.isOwner ? (
-                    <Badge variant="secondary">Owner</Badge>
-                  ) : null}
-                </div>
-                {row.isOwner ? null : isSelf ? (
-                  <Button variant="outline" size="sm" onClick={onLeave}>
-                    <LogOutIcon aria-hidden />
-                    Leave
-                  </Button>
-                ) : isOwner ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Remove ${row.name} ${row.surname}`}
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => setRemovingAdmin(row.sub)}
-                  >
-                    <UserMinusIcon aria-hidden />
-                  </Button>
-                ) : null}
-              </div>
-            )
-          })}
+          {me ? (
+            <AdminRowView
+              row={me}
+              badge="You"
+              actions={adminRowActions(
+                { isSelf: true, isOwner: false },
+                canManageAdmins
+              )}
+              onLeave={() => setIsConfirmingLeave(true)}
+            />
+          ) : null}
+
+          <AdminRowView
+            row={owner}
+            badge="Owner"
+            actions={adminRowActions(
+              { isSelf: isCurrentUserOwner, isOwner: true },
+              canManageAdmins
+            )}
+          />
+
+          <QueryBoundary
+            query={query}
+            isEmpty={(admins) => admins.items.length === 0}
+            empty={
+              <p className="px-4 py-6 text-sm text-muted-foreground">
+                No other admins.
+              </p>
+            }
+          >
+            {(admins) =>
+              admins.items.map((admin) => (
+                <AdminRowView
+                  key={admin.sub}
+                  row={{
+                    sub: admin.sub,
+                    name: admin.name,
+                    surname: admin.surname,
+                    picture: admin.picture ?? null,
+                  }}
+                  actions={adminRowActions(
+                    { isSelf: false, isOwner: false },
+                    canManageAdmins
+                  )}
+                  onRemove={() =>
+                    setRemovingAdmin({
+                      sub: admin.sub,
+                      name: admin.name,
+                      surname: admin.surname,
+                      picture: admin.picture ?? null,
+                    })
+                  }
+                  onTransfer={() =>
+                    setTransferringTo({
+                      sub: admin.sub,
+                      name: admin.name,
+                      surname: admin.surname,
+                      picture: admin.picture ?? null,
+                    })
+                  }
+                />
+              ))
+            }
+          </QueryBoundary>
         </div>
       </Card>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center sm:justify-end">
+      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+        <p className="text-sm text-muted-foreground">
+          {query.data && query.data.total > 0
+            ? `Showing ${(query.data.page - 1) * query.data.size + 1}\u2013${
+                (query.data.page - 1) * query.data.size +
+                query.data.items.length
+              } of ${query.data.total}`
+            : null}
+          {query.isFetching && !query.isPlaceholderData ? (
+            <span className="ml-2">Updating\u2026</span>
+          ) : null}
+        </p>
+
+        {totalPages > 1 ? (
           <Pagination>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
                   href="#"
-                  aria-disabled={safePage === 1}
+                  aria-disabled={page === 1 || query.isPlaceholderData}
                   onClick={(event) => {
-                    if (safePage === 1) {
-                      event.preventDefault()
-                    } else {
-                      setPage((current) => Math.max(1, current - 1))
-                    }
+                    if (page > 1 && !query.isPlaceholderData)
+                      onPageChange(page - 1)
+                    else event.preventDefault()
                   }}
                 />
               </PaginationItem>
               {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-                (item) => pageItem(item, safePage, setPage)
+                (item) => pageItem(item, page, onPageChange)
               )}
               <PaginationItem>
                 <PaginationNext
                   href="#"
-                  aria-disabled={safePage === totalPages}
+                  aria-disabled={
+                    !query.data?.has_next || query.isPlaceholderData
+                  }
                   onClick={(event) => {
-                    if (safePage === totalPages) {
-                      event.preventDefault()
+                    if (query.data?.has_next && !query.isPlaceholderData) {
+                      onPageChange(page + 1)
                     } else {
-                      setPage((current) => Math.min(totalPages, current + 1))
+                      event.preventDefault()
                     }
                   }}
                 />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-        </div>
-      )}
+        ) : null}
+      </div>
 
       <ConfirmDialog
         open={removingAdmin != null}
@@ -169,8 +238,8 @@ export function AdminsTable({
         }}
         title="Remove this admin?"
         description={
-          removedAdmin
-            ? `${removedAdmin.name} ${removedAdmin.surname} will lose the ability to edit this community.`
+          removingAdmin
+            ? `${removingAdmin.name} ${removingAdmin.surname} will lose the ability to edit this community.`
             : ""
         }
         confirmLabel="Remove admin"
@@ -178,13 +247,154 @@ export function AdminsTable({
         onConfirm={() => {
           if (!removingAdmin) return
           removeCommunityAdmin.mutate(
-            { slug, userSub: removingAdmin },
+            { slug, userSub: removingAdmin.sub },
+            { onSuccess: () => setRemovingAdmin(null) }
+          )
+        }}
+      />
+
+      <ConfirmDialog
+        open={transferringTo != null}
+        onOpenChange={(open) => {
+          if (!open) setTransferringTo(null)
+        }}
+        title="Transfer ownership?"
+        description={
+          transferringTo
+            ? `${transferringTo.name} ${transferringTo.surname} becomes the owner of this community.${
+                isCurrentUserOwner
+                  ? " You will lose admin access, because owners are not also admins — transfer to someone else first if you want to stay on the team."
+                  : ""
+              }`
+            : ""
+        }
+        confirmLabel="Transfer ownership"
+        isPending={transferOwner.isPending}
+        onConfirm={() => {
+          if (!transferringTo) return
+          transferOwner.mutate(
+            { slug, ownerSub: transferringTo.sub },
             {
-              onSuccess: () => setRemovingAdmin(null),
+              onSuccess: () => {
+                setTransferringTo(null)
+                // The backend does not re-add the old owner as an admin, so the
+                // settings route they are standing on is about to redirect them
+                // away. Leaving them there would bounce them on the next refetch.
+                if (isCurrentUserOwner) onOwnershipTransferredAway()
+              },
             }
           )
         }}
       />
+
+      <ConfirmDialog
+        open={isConfirmingLeave}
+        onOpenChange={setIsConfirmingLeave}
+        title="Leave this community?"
+        description="You will lose admin access to this community until someone adds you again."
+        confirmLabel="Leave community"
+        isPending={leaveCommunity.isPending}
+        onConfirm={() => {
+          leaveCommunity.mutate(slug, {
+            onSuccess: () => {
+              setIsConfirmingLeave(false)
+              onOwnershipTransferredAway()
+            },
+          })
+        }}
+      />
+    </div>
+  )
+}
+
+interface AdminRowViewProps {
+  row: AdminRow
+  badge?: string
+  actions: { canManage: boolean; canLeave: boolean }
+  onRemove?: () => void
+  onTransfer?: () => void
+  onLeave?: () => void
+}
+
+function AdminRowView({
+  row,
+  badge,
+  actions,
+  onRemove,
+  onTransfer,
+  onLeave,
+}: AdminRowViewProps) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <Avatar>
+        <AvatarImage
+          src={row.picture ?? undefined}
+          alt={`${row.name} ${row.surname}`}
+        />
+        <AvatarFallback>{initialsOf(row.name, row.surname)}</AvatarFallback>
+      </Avatar>
+
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <p className="truncate font-medium">
+          {row.name} {row.surname}
+        </p>
+        {badge ? <Badge variant="secondary">{badge}</Badge> : null}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
+        {actions.canManage && onTransfer ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:inline-flex"
+            onClick={onTransfer}
+          >
+            <CrownIcon aria-hidden />
+            Make owner
+          </Button>
+        ) : null}
+        {actions.canManage && onTransfer ? (
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-label={`Make ${row.name} ${row.surname} the owner`}
+            className="sm:hidden"
+            onClick={onTransfer}
+          >
+            <CrownIcon aria-hidden />
+          </Button>
+        ) : null}
+
+        {actions.canManage && onRemove ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:inline-flex"
+            onClick={onRemove}
+          >
+            <UserMinusIcon aria-hidden />
+            Remove
+          </Button>
+        ) : null}
+        {actions.canManage && onRemove ? (
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-label={`Remove ${row.name} ${row.surname}`}
+            className="sm:hidden"
+            onClick={onRemove}
+          >
+            <UserMinusIcon aria-hidden />
+          </Button>
+        ) : null}
+
+        {actions.canLeave && onLeave ? (
+          <Button variant="outline" size="sm" onClick={onLeave}>
+            <LogOutIcon aria-hidden />
+            Leave
+          </Button>
+        ) : null}
+      </div>
     </div>
   )
 }

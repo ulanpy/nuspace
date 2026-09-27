@@ -1,25 +1,10 @@
-import { createFileRoute, notFound } from "@tanstack/react-router"
-
-import { ApiError } from "@/api/client"
-import { Page } from "@/components/routes/communities/settings"
-import { communityDetailQueryOptions } from "@/lib/communities"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/_app/communities/$slug/settings/")({
-  loader: async ({ context, params }) => {
-    try {
-      return await context.queryClient.ensureQueryData(
-        communityDetailQueryOptions(params.slug)
-      )
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) throw notFound()
-      throw error
-    }
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/communities/$slug/settings/general",
+      params: { slug: params.slug },
+    })
   },
-  component: CommunitySettingsRoute,
 })
-
-function CommunitySettingsRoute() {
-  const { slug } = Route.useParams()
-
-  return <Page slug={slug} />
-}
