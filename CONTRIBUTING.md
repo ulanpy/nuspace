@@ -201,16 +201,56 @@ Run the checks relevant to your change.
 cd backend
 uv run ruff check .
 uv run black --check .
-uv run pytest
+PYTHONPATH="$(dirname "$PWD")" uv run python -c "
+from dotenv import load_dotenv
+load_dotenv('../infra/.env')
+import pytest, sys
+sys.exit(pytest.main(['-q']))"
 ```
+
+Note the shape of the `pytest` line. A bare `uv run pytest` has never worked on a
+host checkout, for two reasons the container hides:
+
+- the importable package is `backend/` itself, so its **parent** has to be on
+  `PYTHONPATH`. The container sets `PYTHONPATH=/nuros`; the host must be told.
+- `core.configs.Config` requires ~25 variables that live in `infra/.env`. The
+  container mounts that file at `/.env`; the host has to load it.
+
+Load the env in-process rather than `source infra/.env` — two of its values are
+unquoted and abort `zsh` with `command not found`.
+
+You cannot fall back to the container: `backend/Dockerfile` builds with
+`uv sync --frozen --no-dev`, so **pytest, ruff and black are not installed in
+the image** and `docker compose exec fastapi pytest` dies with
+`ModuleNotFoundError: No module named 'pytest'`.
 
 **Frontend:**
 
 ```bash
-cd frontend
-npm run build
-npm run test:url-validation
+cd web
+pnpm api:check     # src/api/schema.d.ts matches the live OpenAPI doc
+pnpm typecheck
+pnpm test
+pnpm lint
+pnpm format:check
+pnpm build
 ```
+
+- `api:check` queries a **running** backend. After changing an endpoint, wait for
+  uvicorn's `--reload` to pick it up (`docker compose logs -f fastapi`), then
+  run `pnpm api:generate` and commit `web/src/api/schema.d.ts` alongside the
+  backend change. The generator defaults to `http://localhost/api/openapi.json`,
+  which resolves through nginx on the host; inside the `web` container
+  `localhost` is the Vite dev server, so it would need
+  `OPENAPI_URL=http://nginx/api/openapi.json`.
+- `pnpm format` rewrites *every* file that has drifted, not just the one you
+  touched. Stage deliberately rather than `git add -A`.
+- `pnpm lint` currently exits 1 on a **pre-existing** baseline of 9 errors in
+  files you are not touching: `layouts/app/app-sidebar.tsx` (jsx-a11y — a click
+  handler on a non-interactive element), `routes/announcements/index.tsx`
+  (`Date.now()` called during render) and `routes/events/` (non-canonical
+  Tailwind classes). Check whether your change added to the count rather than
+  assuming you caused it. `uv run ruff check .` has a similar baseline of 11.
 
 Also verify the changed user flow manually when automated coverage does not exist. Include the commands you ran and the result in the pull request description.
 
@@ -220,7 +260,7 @@ We use `pre-commit` hooks with Ruff and Black for backend code quality.
 
 **Backend (Python/FastAPI):** `uv`, Ruff, Black, pytest, module layering from [backend/README.md](backend/README.md)
 
-**Frontend (TypeScript/React):** npm, TypeScript strict mode, Vite production build
+**Frontend (TypeScript/React):** pnpm (see `web/CONVENTIONS.md`), TypeScript strict mode, Vite production build
 
 **General:** Clear code, meaningful names, small functions, follow existing style
 
