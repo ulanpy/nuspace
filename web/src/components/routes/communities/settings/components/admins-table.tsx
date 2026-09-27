@@ -112,7 +112,7 @@ export function AdminsTable({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="py-0">
         <div className="divide-y">
           {me ? (
             <AdminRowView
@@ -194,41 +194,37 @@ export function AdminsTable({
           ) : null}
         </p>
 
-        {totalPages > 1 ? (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  aria-disabled={page === 1 || query.isPlaceholderData}
-                  onClick={(event) => {
-                    if (page > 1 && !query.isPlaceholderData)
-                      onPageChange(page - 1)
-                    else event.preventDefault()
-                  }}
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-                (item) => pageItem(item, page, onPageChange)
-              )}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  aria-disabled={
-                    !query.data?.has_next || query.isPlaceholderData
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                aria-disabled={page === 1 || query.isPlaceholderData}
+                onClick={(event) => {
+                  if (page > 1 && !query.isPlaceholderData)
+                    onPageChange(page - 1)
+                  else event.preventDefault()
+                }}
+              />
+            </PaginationItem>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (item) => pageItem(item, page, onPageChange)
+            )}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                aria-disabled={!query.data?.has_next || query.isPlaceholderData}
+                onClick={(event) => {
+                  if (query.data?.has_next && !query.isPlaceholderData) {
+                    onPageChange(page + 1)
+                  } else {
+                    event.preventDefault()
                   }
-                  onClick={(event) => {
-                    if (query.data?.has_next && !query.isPlaceholderData) {
-                      onPageChange(page + 1)
-                    } else {
-                      event.preventDefault()
-                    }
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        ) : null}
+                }}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
 
       <ConfirmDialog
