@@ -11,9 +11,13 @@ import { EventFormDialog } from "@/components/routes/events/components/event-for
 import { TelegramConnectPrompt } from "@/components/routes/profile/components/telegram-connect-prompt"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
+import { FilterBar } from "@/components/shared/list-filters"
+import { CardGrid } from "@/components/shared/page/card-grid"
+import { PageContainer } from "@/components/shared/page/container"
 import { PageHeader } from "@/components/shared/page/header"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
+import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
@@ -47,7 +51,7 @@ export function Page({
   })
 
   return (
-    <div className="space-y-6">
+    <PageContainer maxWidth="wide" className="space-y-6">
       <TelegramConnectPrompt
         storageKey="nuspace_events_tg_banner_dismissed"
         title="Connect Telegram for event updates"
@@ -59,7 +63,6 @@ export function Page({
         actions={
           // The backend remains authoritative for event creation.
           <Button
-            className="h-11 px-5 text-base"
             onClick={() => {
               setIsCreating(true)
             }}
@@ -70,13 +73,12 @@ export function Page({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
+      <FilterBar className="flex flex-wrap items-center gap-2 space-y-0">
         <ButtonGroup>
           {TIME_OPTIONS.map((option) => (
             <Button
               key={option.value}
               variant={time === option.value ? "default" : "outline"}
-              className="h-10 px-4 text-base"
               onClick={() => {
                 onSelectTime(option.value)
               }}
@@ -87,10 +89,7 @@ export function Page({
         </ButtonGroup>
         <Button
           variant={type === "recruitment" ? "default" : "outline"}
-          className={cn(
-            "h-10 px-4 text-base",
-            type !== "recruitment" && "bg-background"
-          )}
+          className={cn(type !== "recruitment" && "bg-background")}
           onClick={() => {
             onSearchChange((previous) => ({
               ...previous,
@@ -100,12 +99,11 @@ export function Page({
         >
           <UsersIcon aria-hidden /> Club Recruitments
         </Button>
-      </div>
+      </FilterBar>
 
       <InfiniteList
         items={list.items}
         getKey={(event) => event.id}
-        itemClassName="h-full"
         renderItem={(event) => <EventCard event={event} />}
         isPending={list.isPending}
         pending={<EventGridSkeleton />}
@@ -126,13 +124,7 @@ export function Page({
           />
         }
       >
-        {(rendered) => (
-          /* items-start, or a card with a poster stretches every other card in
-					   its row to the same height and leaves a column of empty space. */
-          <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {rendered}
-          </div>
-        )}
+        {(rendered) => <CardGrid columns={4}>{rendered}</CardGrid>}
       </InfiniteList>
 
       <EventFormDialog
@@ -142,7 +134,7 @@ export function Page({
         // filtered list, and "nothing visibly happened" is the worse outcome.
         onSaved={onEventCreated}
       />
-    </div>
+    </PageContainer>
   )
 }
 
@@ -155,20 +147,17 @@ const TIME_OPTIONS = [
 
 function EventGridSkeleton() {
   return (
-    <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <CardGrid columns={4} aria-hidden>
       {Array.from({ length: 8 }, (_, index) => (
-        <div
-          key={index}
-          className="overflow-hidden rounded-xl border border-border"
-        >
+        <Card key={index} className="gap-0 p-0">
           <Skeleton className="aspect-3/4 w-full rounded-none" />
           <div className="space-y-3 p-4">
             <Skeleton className="h-5 w-2/3" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
           </div>
-        </div>
+        </Card>
       ))}
-    </div>
+    </CardGrid>
   )
 }

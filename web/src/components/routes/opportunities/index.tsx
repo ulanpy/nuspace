@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Building2Icon,
   CalendarClockIcon,
@@ -44,6 +44,7 @@ import {
 import { getDeadlinePresentation } from "@/lib/opportunities"
 import { useDebounced } from "@/hooks/use-debounced"
 import {
+  FilterBar,
   MultiFilter,
   SearchFilter,
   type FilterOption,
@@ -54,6 +55,8 @@ import { Markdown } from "@/components/shared/markdown/renderer"
 import { toPlainText } from "@/lib/markdown"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
+import { CardGrid } from "@/components/shared/page/card-grid"
+import { PageContainer } from "@/components/shared/page/container"
 import { PageHeader } from "@/components/shared/page/header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -167,25 +170,37 @@ function OpportunityCard({
 
       <dl className="flex flex-wrap gap-2 text-xs">
         {opportunity.deadline && (
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
+          <Badge
+            variant="secondary"
+            className="h-auto px-2.5 py-1 text-muted-foreground"
+            render={<div />}
+          >
             <dt className="sr-only">Deadline</dt>
             <CalendarClockIcon className="size-3.5 shrink-0" aria-hidden />
             <dd>{deadline.relative}</dd>
-          </div>
+          </Badge>
         )}
         {opportunity.location && (
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
+          <Badge
+            variant="secondary"
+            className="h-auto px-2.5 py-1 text-muted-foreground"
+            render={<div />}
+          >
             <dt className="sr-only">Location</dt>
             <MapPinIcon className="size-3.5 shrink-0" aria-hidden />
             <dd>{opportunity.location}</dd>
-          </div>
+          </Badge>
         )}
         {opportunity.funding && (
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
+          <Badge
+            variant="secondary"
+            className="h-auto px-2.5 py-1 text-muted-foreground"
+            render={<div />}
+          >
             <dt className="sr-only">Funding</dt>
             <WalletIcon className="size-3.5 shrink-0" aria-hidden />
             <dd>{opportunity.funding}</dd>
-          </div>
+          </Badge>
         )}
       </dl>
 
@@ -375,14 +390,19 @@ export function Page({
   } = search
   const [searchInput, setSearchInput] = useState(q ?? "")
   const debouncedSearch = useDebounced(searchInput)
-  const filters = {
-    type: type.length > 0 ? type : undefined,
-    majors: majors.length > 0 ? majors : undefined,
-    education_level: education.length > 0 ? education : undefined,
-    years: years.length > 0 ? years : undefined,
-    q,
-    hide_expired: hideExpired,
-  }
+  // Derived per render, so memoise: a fresh object is a new query key and
+  // restarts the infinite list.
+  const filters = useMemo(
+    () => ({
+      type: type.length > 0 ? type : undefined,
+      majors: majors.length > 0 ? majors : undefined,
+      education_level: education.length > 0 ? education : undefined,
+      years: years.length > 0 ? years : undefined,
+      q,
+      hide_expired: hideExpired,
+    }),
+    [type, majors, education, years, q, hideExpired]
+  )
 
   const { canManageOpportunities } = usePermissions()
 
@@ -427,7 +447,7 @@ export function Page({
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer maxWidth="prose" className="space-y-6">
       <PageHeader
         title="Opportunities Digest"
         description="Research, internships, grants and scholarships for NU students."
@@ -446,7 +466,7 @@ export function Page({
         }
       />
 
-      <div className="space-y-3 rounded-lg border border-border p-3">
+      <FilterBar>
         <SearchFilter
           value={searchInput}
           onChange={setSearchInput}
@@ -513,7 +533,7 @@ export function Page({
             {hideExpired ? "Show expired" : "Hide expired"}
           </Button>
         </div>
-      </div>
+      </FilterBar>
 
       <InfiniteList
         items={list.items}
@@ -555,9 +575,7 @@ export function Page({
           />
         }
       >
-        {(rendered) => (
-          <div className="mx-auto grid max-w-4xl gap-4">{rendered}</div>
-        )}
+        {(rendered) => <CardGrid columns={1}>{rendered}</CardGrid>}
       </InfiniteList>
 
       <Dialog
@@ -644,7 +662,7 @@ export function Page({
           )}
         </p>
       )}
-    </div>
+    </PageContainer>
   )
 }
 
