@@ -1,5 +1,16 @@
 import { cn } from "@/lib/utils"
 
+/** Shared pill styling for `ToggleChip` and the single-select `ChoiceChips` group. */
+export function chipClass(active: boolean) {
+  return cn(
+    "rounded-full border px-3 py-1 text-sm transition-colors",
+    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+    active
+      ? "border-primary bg-primary/10 font-medium"
+      : "text-muted-foreground hover:bg-muted/60"
+  )
+}
+
 interface ToggleChipProps {
   label: string
   isActive: boolean
@@ -30,12 +41,8 @@ export function ToggleChip({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1 text-sm transition-colors",
-        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        chipClass(isActive),
         "disabled:cursor-not-allowed disabled:opacity-50",
-        isActive
-          ? "border-primary bg-primary/10 font-medium"
-          : "text-muted-foreground hover:bg-muted/60",
         className
       )}
     >

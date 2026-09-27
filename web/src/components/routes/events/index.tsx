@@ -51,7 +51,7 @@ export function Page({
   })
 
   return (
-    <PageContainer maxWidth="wide" className="space-y-6">
+    <PageContainer maxWidth="wide" padding="none" className="space-y-6">
       <TelegramConnectPrompt
         storageKey="nuspace_events_tg_banner_dismissed"
         title="Connect Telegram for event updates"

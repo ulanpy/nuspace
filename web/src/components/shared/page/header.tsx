@@ -7,7 +7,6 @@ interface PageHeaderProps {
   description?: ReactNode
   eyebrow?: ReactNode
   actions?: ReactNode
-  as?: "h1" | "h2"
   className?: string
 }
 
@@ -16,7 +15,6 @@ export function PageHeader({
   description,
   eyebrow,
   actions,
-  as: Heading = "h1",
   className,
 }: PageHeaderProps) {
   return (
@@ -32,9 +30,9 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <Heading className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           {title}
-        </Heading>
+        </h1>
         {description && (
           <div className="mt-2 leading-relaxed text-muted-foreground">
             {description}

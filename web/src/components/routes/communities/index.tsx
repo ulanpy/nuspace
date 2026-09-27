@@ -77,7 +77,7 @@ export function Page({
   })
 
   return (
-    <PageContainer maxWidth="wide" className="space-y-6">
+    <PageContainer maxWidth="wide" padding="none" className="space-y-6">
       <PageHeader
         title="Communities"
         description="Discover clubs, organizations, and campus groups."

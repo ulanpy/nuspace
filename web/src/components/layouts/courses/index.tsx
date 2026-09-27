@@ -1,5 +1,6 @@
 import { Outlet } from "@tanstack/react-router"
 
+import { PageContainer } from "@/components/shared/page/container"
 import { PageHeader } from "@/components/shared/page/header"
 import { TabsNav } from "@/components/shared/tabs-nav"
 
@@ -20,7 +21,7 @@ const TABS = [
 
 export function CoursesLayout() {
   return (
-    <div className="space-y-6">
+    <PageContainer maxWidth="wide" padding="none" className="space-y-6">
       <PageHeader
         title="Courses"
         description="Manage your classes, assignments, GPA and semester planning."
@@ -29,6 +30,6 @@ export function CoursesLayout() {
       <TabsNav label="Courses sections" tabs={TABS} />
 
       <Outlet />
-    </div>
+    </PageContainer>
   )
 }

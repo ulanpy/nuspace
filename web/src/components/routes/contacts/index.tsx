@@ -1,5 +1,4 @@
 import { useMemo } from "react"
-import { SearchIcon } from "lucide-react"
 
 import {
   CATEGORY_LABELS,
@@ -14,9 +13,9 @@ import { PageContainer } from "@/components/shared/page/container"
 import { PageHeader } from "@/components/shared/page/header"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { Section } from "@/components/shared/page/section"
+import { CardGrid } from "@/components/shared/page/card-grid"
+import { FilterBar, SearchFilter } from "@/components/shared/list-filters"
 import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
 /**
  * A web link's visible text.
@@ -102,25 +101,13 @@ export function Page({
         description="In an emergency, call campus security or local services immediately."
       />
 
-      <Card className="space-y-2 p-4 sm:p-5">
-        <Label htmlFor="contacts-search">Search contacts</Label>
-        <div className="relative">
-          <SearchIcon
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            id="contacts-search"
-            type="search"
-            value={q}
-            placeholder="Security, counseling, registrar…"
-            className="pl-9"
-            onChange={(event) => {
-              onQChange(event.target.value)
-            }}
-          />
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchFilter
+          value={q}
+          onChange={onQChange}
+          placeholder="Security, counseling, registrar…"
+        />
+      </FilterBar>
 
       {matches.length === 0 ? (
         <EmptyState
@@ -136,7 +123,7 @@ export function Page({
                   {CATEGORY_LABELS[category]}
                 </h2>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <CardGrid columns={2}>
                   {(byCategory.get(category) ?? []).map(
                     ({ service, contacts }) => {
                       const Icon = ICONS[service.icon]
@@ -169,7 +156,7 @@ export function Page({
                       )
                     }
                   )}
-                </div>
+                </CardGrid>
               </Section>
             )
           )}

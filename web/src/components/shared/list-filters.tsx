@@ -4,6 +4,7 @@ import { SearchIcon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { chipClass } from "@/components/shared/toggle-chip"
 import {
   Popover,
   PopoverContent,
@@ -102,16 +103,6 @@ export function ChoiceChips<T extends string>({
         </button>
       ))}
     </fieldset>
-  )
-}
-
-function chipClass(active: boolean) {
-  return cn(
-    "rounded-full border px-3 py-1 text-sm transition-colors",
-    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-    active
-      ? "border-primary bg-primary/10 font-medium"
-      : "text-muted-foreground hover:bg-muted/60"
   )
 }
 

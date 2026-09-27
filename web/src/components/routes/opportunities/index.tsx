@@ -447,7 +447,7 @@ export function Page({
   }
 
   return (
-    <PageContainer maxWidth="prose" className="space-y-6">
+    <PageContainer maxWidth="prose" padding="none" className="space-y-6">
       <PageHeader
         title="Opportunities Digest"
         description="Research, internships, grants and scholarships for NU students."

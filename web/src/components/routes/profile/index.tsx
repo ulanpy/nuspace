@@ -8,14 +8,12 @@ import { myCommunitiesQueryOptions } from "@/lib/communities"
 import type { Community } from "@/lib/communities"
 import { selectMedia } from "@/lib/media"
 import { TelegramLink } from "@/components/routes/profile/components/telegram-link"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
+import { SettingsShell } from "@/components/layouts/settings"
+import { SettingsSection } from "@/components/shared/settings/settings-section"
 import { EmptyState, QueryBoundary } from "@/components/shared/query/boundary"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
-import { Section } from "@/components/shared/page/section"
 import { ThemeToggle } from "@/components/shared/theme/toggle"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 function Row({
@@ -28,7 +26,7 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-border p-4">
+    <div className="flex items-center justify-between gap-4 py-4">
       <div className="min-w-0">
         <p className="text-sm font-medium">{label}</p>
         {description && (
@@ -84,18 +82,18 @@ function MyCommunities() {
       pending={<Skeleton className="h-12 w-full" />}
       isEmpty={(data) => (data.items ?? []).length === 0}
       empty={
-        <div className="space-y-3">
-          <EmptyState
-            title="You don't own any community"
-            description="Communities you own show up here."
-          />
-          <Button
-            nativeButton={false}
-            variant="outline"
-            className="w-full"
-            render={<Link to="/communities">Create a community</Link>}
-          />
-        </div>
+        <EmptyState
+          title="You don't own any community"
+          description="Communities you own show up here."
+          action={
+            <Button
+              nativeButton={false}
+              variant="outline"
+              className="w-full"
+              render={<Link to="/communities">Create a community</Link>}
+            />
+          }
+        />
       }
     >
       {(data) => (
@@ -121,67 +119,68 @@ export function Page() {
   const { user } = session
 
   return (
-    <PageContainer maxWidth="prose" padding="none" className="space-y-6">
-      <PageHeader
-        eyebrow="Your account"
-        title="Profile"
-        description="Manage your campus identity, notifications, and appearance."
-      />
-
-      <Card className="gap-0 p-0">
-        <div className="flex items-center gap-4 p-4">
-          <ResilientImage
-            src={user.picture}
-            alt=""
-            aria-hidden
-            eager
-            containerClassName="size-12 shrink-0 rounded-full"
-            fallback={
-              <span
-                aria-hidden
-                className="grid size-full place-items-center bg-muted text-lg font-medium text-muted-foreground"
-              >
-                {user.given_name.charAt(0).toUpperCase()}
-              </span>
-            }
-          />
-
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold">{user.name}</p>
-            <p className="truncate text-sm text-muted-foreground">
-              {user.email}
-            </p>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={logout.isPending}
-            onClick={() => {
-              logout.mutate()
-            }}
-          >
-            <LogOutIcon className="size-4" aria-hidden />
-            {logout.isPending ? "Logging out…" : "Log out"}
-          </Button>
-        </div>
-
-        <Row
-          label="Telegram"
-          description="Nuspace delivers every notification through the bot."
+    <SettingsShell
+      title="Profile"
+      description="Manage your campus identity, notifications, and appearance."
+      actions={
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={logout.isPending}
+          onClick={() => {
+            logout.mutate()
+          }}
         >
-          <TelegramLink sub={user.sub} isLinked={session.tg_id !== null} />
-        </Row>
+          <LogOutIcon className="size-4" aria-hidden />
+          {logout.isPending ? "Logging out…" : "Log out"}
+        </Button>
+      }
+    >
+      <div className="space-y-10">
+        <SettingsSection title="Account">
+          <div className="divide-y divide-border">
+            <div className="flex items-center gap-4 py-4 first:pt-0">
+              <ResilientImage
+                src={user.picture}
+                alt=""
+                aria-hidden
+                eager
+                containerClassName="size-12 shrink-0 rounded-full"
+                fallback={
+                  <span
+                    aria-hidden
+                    className="grid size-full place-items-center bg-muted text-lg font-medium text-muted-foreground"
+                  >
+                    {user.given_name.charAt(0).toUpperCase()}
+                  </span>
+                }
+              />
 
-        <Row label="Appearance">
-          <ThemeToggle />
-        </Row>
-      </Card>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{user.name}</p>
+                <p className="truncate text-sm text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
+            </div>
 
-      <Section spacing="none" className="space-y-3">
-        <h2 className="text-lg font-semibold">My communities</h2>
-        <MyCommunities />
-      </Section>
-    </PageContainer>
+            <Row
+              label="Telegram"
+              description="Nuspace delivers every notification through the bot."
+            >
+              <TelegramLink sub={user.sub} isLinked={session.tg_id !== null} />
+            </Row>
+
+            <Row label="Appearance">
+              <ThemeToggle />
+            </Row>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection title="My communities">
+          <MyCommunities />
+        </SettingsSection>
+      </div>
+    </SettingsShell>
   )
 }

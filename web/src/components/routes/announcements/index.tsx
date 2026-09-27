@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { ArrowRightIcon, CalendarIcon } from "lucide-react"
+import { ArrowRightIcon } from "lucide-react"
 
 import { announcementsBundleQueryOptions } from "@/lib/announcements"
+import { PageContainer } from "@/components/shared/page/container"
+import { PageHeader } from "@/components/shared/page/header"
+import { EmptyState } from "@/components/shared/query/boundary"
 import { TelegramFeed } from "@/components/routes/announcements/components/telegram-feed"
 import { AnnouncementFeaturedEvent } from "@/components/routes/announcements/components/featured-event"
 import { EventPosterStrip } from "@/components/routes/announcements/components/event-poster-strip"
@@ -28,15 +31,11 @@ export function Page() {
   const remainingEvents = events.filter((event) => event.id !== featured?.id)
 
   return (
-    <div className="space-y-8">
-      <header className="min-w-0 space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-balance sm:text-3xl">
-          {greeting()}, there!
-        </h1>
-        <p className="text-muted-foreground">
-          Here&apos;s what&apos;s happening at Nuspace
-        </p>
-      </header>
+    <PageContainer maxWidth="wide" padding="none" className="space-y-8">
+      <PageHeader
+        title={`${greeting()}, there!`}
+        description="Here's what's happening at Nuspace."
+      />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <section className="space-y-5">
@@ -64,24 +63,22 @@ export function Page() {
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
-              <CalendarIcon
-                className="size-8 text-muted-foreground"
-                aria-hidden
-              />
-              <p className="text-muted-foreground">No upcoming announcements</p>
-              <Link
-                to="/events"
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Browse all events
-              </Link>
-            </div>
+            <EmptyState
+              title="No upcoming announcements"
+              action={
+                <Link
+                  to="/events"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Browse all events
+                </Link>
+              }
+            />
           )}
         </section>
 
         <TelegramFeed />
       </div>
-    </div>
+    </PageContainer>
   )
 }

@@ -51,7 +51,9 @@ export function AppLayout() {
         {shouldHideSidebar ? (
           <Outlet />
         ) : (
-          <PageContainer className="py-4 sm:py-6">
+          // Padding and vertical rhythm only. Each page owns its own width via
+          // its own PageContainer, so nothing here caps it.
+          <PageContainer maxWidth="full" className="py-4 sm:py-6">
             <Outlet />
           </PageContainer>
         )}
