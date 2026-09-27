@@ -114,15 +114,7 @@ export function AdminsTable({
             )}
           />
 
-          <QueryBoundary
-            query={query}
-            isEmpty={(admins) => admins.items.length === 0}
-            empty={
-              <p className="px-4 py-6 text-sm text-muted-foreground">
-                No other admins.
-              </p>
-            }
-          >
+          <QueryBoundary query={query}>
             {(admins) =>
               admins.items.map((admin) => (
                 <AdminRowView
