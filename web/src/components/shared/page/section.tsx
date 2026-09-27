@@ -2,11 +2,10 @@ import type { ComponentPropsWithoutRef, ElementType } from "react"
 
 import { cn } from "@/lib/utils"
 
-export type SectionSpacing = "default" | "compact" | "none"
+export type SectionSpacing = "default" | "none"
 
 const spacingClasses: Record<SectionSpacing, string> = {
   default: "py-14 sm:py-18 lg:py-22",
-  compact: "py-8 sm:py-10",
   none: "",
 }
 
