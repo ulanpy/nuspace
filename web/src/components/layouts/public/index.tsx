@@ -30,7 +30,7 @@ export function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col">
       {isLandingPage ? (
-        <div className="absolute left-4 top-4 z-10">
+        <div className="absolute top-4 left-4 z-10">
           <ThemeToggle />
         </div>
       ) : (

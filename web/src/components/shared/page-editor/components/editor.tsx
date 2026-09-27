@@ -19,8 +19,10 @@ export function Editor({ data, onPublish, onCancel }: EditorProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [templateOpen, setTemplateOpen] = useState(false)
   const [replaceOpen, setReplaceOpen] = useState(false)
-  const [pendingTemplate, setPendingTemplate] =
-    useState<Record<string, unknown> | null>(null)
+  const [pendingTemplate, setPendingTemplate] = useState<Record<
+    string,
+    unknown
+  > | null>(null)
 
   const [design, setDesign] = useState(data)
   // Remounting Puck with a fresh key resets its internal state, the only

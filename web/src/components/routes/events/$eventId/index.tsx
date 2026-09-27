@@ -1,6 +1,10 @@
 import { useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -52,7 +56,12 @@ export function Page({ eventId }: { eventId: number }) {
   const posters = (event.media ?? [])
     .filter((media) => media.media_format === "carousel")
     .map((media) => media.url)
-  const timing = getEventTiming(event.start_datetime, event.end_datetime, now, event.type)
+  const timing = getEventTiming(
+    event.start_datetime,
+    event.end_datetime,
+    now,
+    event.type
+  )
   const finished = timing.kind === "finished"
   const isRecruitment = event.type === "recruitment"
   const dateRange = isRecruitment
@@ -105,7 +114,10 @@ export function Page({ eventId }: { eventId: number }) {
             <div className="aspect-3/4 overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10">
               <span className="grid size-full place-items-center text-center text-muted-foreground">
                 <span className="space-y-3">
-                  <CalendarIcon className="mx-auto size-14 opacity-60" aria-hidden />
+                  <CalendarIcon
+                    className="mx-auto size-14 opacity-60"
+                    aria-hidden
+                  />
                   <span className="block">No poster available</span>
                 </span>
               </span>
@@ -116,22 +128,40 @@ export function Page({ eventId }: { eventId: number }) {
         <div className="min-w-0 space-y-6">
           <header className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">{event.type}</Badge>
-                <Badge variant="outline">{eventPolicyLabel(event.policy)}</Badge>
-                {event.tag !== "regular" && <Badge>{event.tag}</Badge>}
-                <Badge variant={timing.kind === "ongoing" ? "default" : "outline"}>
-                  {timing.kind === "upcoming" ? `${timing.label} ${timing.detail}` : `${timing.label} · ${timing.detail}`}
-                </Badge>
-              <Button className="ml-auto shrink-0" variant="outline" size="icon" onClick={() => {
-                const share = async () => {
-                  if (navigator.share) await navigator.share({ title: event.name, text: `Check out this event: ${event.name}`, url: window.location.href })
-                  else {
-                    await navigator.clipboard.writeText(window.location.href)
-                    toast.success("Event link copied")
+              <Badge variant="secondary">{event.type}</Badge>
+              <Badge variant="outline">{eventPolicyLabel(event.policy)}</Badge>
+              {event.tag !== "regular" && <Badge>{event.tag}</Badge>}
+              <Badge
+                variant={timing.kind === "ongoing" ? "default" : "outline"}
+              >
+                {timing.kind === "upcoming"
+                  ? `${timing.label} ${timing.detail}`
+                  : `${timing.label} · ${timing.detail}`}
+              </Badge>
+              <Button
+                className="ml-auto shrink-0"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const share = async () => {
+                    if (navigator.share)
+                      await navigator.share({
+                        title: event.name,
+                        text: `Check out this event: ${event.name}`,
+                        url: window.location.href,
+                      })
+                    else {
+                      await navigator.clipboard.writeText(window.location.href)
+                      toast.success("Event link copied")
+                    }
                   }
-                }
-                void share().catch(() => toast.error("Could not share this event"))
-              }} aria-label="Share event" title="Share event">
+                  void share().catch(() =>
+                    toast.error("Could not share this event")
+                  )
+                }}
+                aria-label="Share event"
+                title="Share event"
+              >
                 <Share2Icon aria-hidden />
               </Button>
             </div>
@@ -142,60 +172,83 @@ export function Page({ eventId }: { eventId: number }) {
               </h1>
             </div>
 
-            {event.policy === "open" && !finished && event.type !== "recruitment" && (
-              <section className="space-y-2">
-                <div className="space-y-1">
-                  <p className="font-medium">
-                    {event.is_going ? "You’re going" : "Planning to attend?"}
-                  </p>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Marking that you’re going helps organizers plan seats and materials.
-                  </p>
-                </div>
-                <Button
-                  size="lg"
-                  className={
-                    event.is_going
-                      ? "group h-12 px-6 transition-colors hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      : "h-12 px-6"
-                  }
-                  disabled={toggleGoing.isPending}
-                  onClick={() => {
-                    if (!session) {
-                      beginLogin()
-                      return
+            {event.policy === "open" &&
+              !finished &&
+              event.type !== "recruitment" && (
+                <section className="space-y-2">
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      {event.is_going ? "You’re going" : "Planning to attend?"}
+                    </p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      Marking that you’re going helps organizers plan seats and
+                      materials.
+                    </p>
+                  </div>
+                  <Button
+                    size="lg"
+                    className={
+                      event.is_going
+                        ? "group h-12 px-6 transition-colors hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        : "h-12 px-6"
                     }
-                    toggleGoing.mutate()
-                  }}
-                >
-                  {event.is_going && <CheckIcon className="group-hover:hidden" aria-hidden />}
-                  <span className={event.is_going ? "group-hover:hidden" : undefined}>{event.is_going ? "Going" : "I’m going"}</span>
-                  {event.is_going && <span className="hidden group-hover:inline">Not going</span>}
-                </Button>
-              </section>
-            )}
+                    disabled={toggleGoing.isPending}
+                    onClick={() => {
+                      if (!session) {
+                        beginLogin()
+                        return
+                      }
+                      toggleGoing.mutate()
+                    }}
+                  >
+                    {event.is_going && (
+                      <CheckIcon className="group-hover:hidden" aria-hidden />
+                    )}
+                    <span
+                      className={
+                        event.is_going ? "group-hover:hidden" : undefined
+                      }
+                    >
+                      {event.is_going ? "Going" : "I’m going"}
+                    </span>
+                    {event.is_going && (
+                      <span className="hidden group-hover:inline">
+                        Not going
+                      </span>
+                    )}
+                  </Button>
+                </section>
+              )}
 
-            {event.policy === "registration" && event.registration_link && !finished && (
-              <Card className="space-y-3 border-border/60 bg-muted/25 p-4">
-                <div className="space-y-1">
-                  <p className="font-medium">External registration required</p>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Registration is handled externally by the organizer.
-                  </p>
-                </div>
-                <Button
-                  nativeButton={false}
-                  size="lg"
-                  className="h-12 px-6"
-                  render={
-                    <a href={event.registration_link} target="_blank" rel="noopener noreferrer">
-                      <ExternalLinkIcon aria-hidden />
-                      Register
-                    </a>
-                  }
-                />
-              </Card>
-            )}
+            {event.policy === "registration" &&
+              event.registration_link &&
+              !finished && (
+                <Card className="space-y-3 border-border/60 bg-muted/25 p-4">
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      External registration required
+                    </p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      Registration is handled externally by the organizer.
+                    </p>
+                  </div>
+                  <Button
+                    nativeButton={false}
+                    size="lg"
+                    className="h-12 px-6"
+                    render={
+                      <a
+                        href={event.registration_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLinkIcon aria-hidden />
+                        Register
+                      </a>
+                    }
+                  />
+                </Card>
+              )}
 
             <div className="flex flex-wrap gap-2.5">
               {!finished && event.type !== "recruitment" && (
@@ -294,9 +347,7 @@ export function Page({ eventId }: { eventId: number }) {
                 />
                 <div>
                   <dt className="text-sm font-medium">Date</dt>
-                  <dd className="text-sm text-muted-foreground">
-                    {dateRange}
-                  </dd>
+                  <dd className="text-sm text-muted-foreground">{dateRange}</dd>
                 </div>
               </div>
             )}
@@ -321,9 +372,7 @@ export function Page({ eventId }: { eventId: number }) {
               />
               <div>
                 <dt className="text-sm font-medium">Location</dt>
-                <dd className="text-sm text-muted-foreground">
-                  {event.place}
-                </dd>
+                <dd className="text-sm text-muted-foreground">{event.place}</dd>
               </div>
             </div>
           </dl>
@@ -336,7 +385,6 @@ export function Page({ eventId }: { eventId: number }) {
               </Markdown>
             </section>
           )}
-
         </div>
       </div>
 

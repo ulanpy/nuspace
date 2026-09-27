@@ -46,8 +46,11 @@ export function getEventTimeRange(time: TimeFilter): EventFilters {
   const year = value("year")
   const month = value("month")
   const day = value("day")
-  const campusMidnight = (nextYear: number, nextMonth: number, nextDay: number) =>
-    new Date(Date.UTC(nextYear, nextMonth - 1, nextDay, -5)).toISOString()
+  const campusMidnight = (
+    nextYear: number,
+    nextMonth: number,
+    nextDay: number
+  ) => new Date(Date.UTC(nextYear, nextMonth - 1, nextDay, -5)).toISOString()
 
   if (time === "today") {
     return {

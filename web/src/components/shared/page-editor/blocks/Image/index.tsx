@@ -93,7 +93,7 @@ const ImageInner: ComponentConfig<ImageProps> = {
     size: "m",
     fit: "cover",
   },
-render: function ImageBlock({
+  render: function ImageBlock({
     image,
     alt,
     aspectRatio,

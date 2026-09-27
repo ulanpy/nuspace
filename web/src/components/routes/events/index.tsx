@@ -48,7 +48,10 @@ export function Page({
 
   return (
     <div className="space-y-6">
-      <TelegramConnectPrompt storageKey="nuspace_events_tg_banner_dismissed" title="Connect Telegram for event updates" />
+      <TelegramConnectPrompt
+        storageKey="nuspace_events_tg_banner_dismissed"
+        title="Connect Telegram for event updates"
+      />
 
       <PageHeader
         title="Events"
@@ -70,15 +73,30 @@ export function Page({
       <div className="flex flex-wrap items-center gap-2">
         <ButtonGroup>
           {TIME_OPTIONS.map((option) => (
-            <Button key={option.value} variant={time === option.value ? "default" : "outline"} className="h-10 px-4 text-base" onClick={() => { onSelectTime(option.value) }}>
+            <Button
+              key={option.value}
+              variant={time === option.value ? "default" : "outline"}
+              className="h-10 px-4 text-base"
+              onClick={() => {
+                onSelectTime(option.value)
+              }}
+            >
               {option.label}
             </Button>
           ))}
         </ButtonGroup>
         <Button
           variant={type === "recruitment" ? "default" : "outline"}
-          className={cn("h-10 px-4 text-base", type !== "recruitment" && "bg-background")}
-          onClick={() => { onSearchChange((previous) => ({ ...previous, type: previous.type === "recruitment" ? undefined : "recruitment" })) }}
+          className={cn(
+            "h-10 px-4 text-base",
+            type !== "recruitment" && "bg-background"
+          )}
+          onClick={() => {
+            onSearchChange((previous) => ({
+              ...previous,
+              type: previous.type === "recruitment" ? undefined : "recruitment",
+            }))
+          }}
         >
           <UsersIcon aria-hidden /> Club Recruitments
         </Button>
@@ -139,7 +157,10 @@ function EventGridSkeleton() {
   return (
     <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 8 }, (_, index) => (
-        <div key={index} className="overflow-hidden rounded-xl border border-border">
+        <div
+          key={index}
+          className="overflow-hidden rounded-xl border border-border"
+        >
           <Skeleton className="aspect-3/4 w-full rounded-none" />
           <div className="space-y-3 p-4">
             <Skeleton className="h-5 w-2/3" />

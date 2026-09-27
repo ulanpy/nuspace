@@ -80,7 +80,9 @@ function slotKeysOf(fields: unknown): string[] {
 function transformBlock(block: TemplateBlock, config: Config): TemplateBlock {
   const components = config.components as Record<string, ComponentConfig>
   const component = components[block.type]
-  const defaults = component?.defaultProps as Record<string, unknown> | undefined
+  const defaults = component?.defaultProps as
+    | Record<string, unknown>
+    | undefined
   if (!defaults) return block
 
   let props: Record<string, unknown> = { ...block.props }
@@ -92,7 +94,10 @@ function transformBlock(block: TemplateBlock, config: Config): TemplateBlock {
   for (const key of slotKeysOf(component.fields)) {
     const slot = props[key]
     if (Array.isArray(slot)) {
-      props = { ...props, [key]: transformBlocks(slot as TemplateBlock[], config) }
+      props = {
+        ...props,
+        [key]: transformBlocks(slot as TemplateBlock[], config),
+      }
     }
   }
   return { ...block, props }

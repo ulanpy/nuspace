@@ -16,14 +16,15 @@ function greeting(hour = new Date().getHours()): string {
 export function Page() {
   const { data: bundle } = useSuspenseQuery(announcementsBundleQueryOptions)
   const events = bundle.events.items ?? []
-  const featured = events.find((event) => {
-    const now = Date.now()
-    return (
-      event.type !== "recruitment" &&
-      new Date(event.start_datetime).getTime() <= now &&
-      new Date(event.end_datetime).getTime() > now
-    )
-  }) ?? events[0]
+  const featured =
+    events.find((event) => {
+      const now = Date.now()
+      return (
+        event.type !== "recruitment" &&
+        new Date(event.start_datetime).getTime() <= now &&
+        new Date(event.end_datetime).getTime() > now
+      )
+    }) ?? events[0]
   const remainingEvents = events.filter((event) => event.id !== featured?.id)
 
   return (
@@ -64,9 +65,15 @@ export function Page() {
             </>
           ) : (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
-              <CalendarIcon className="size-8 text-muted-foreground" aria-hidden />
+              <CalendarIcon
+                className="size-8 text-muted-foreground"
+                aria-hidden
+              />
               <p className="text-muted-foreground">No upcoming announcements</p>
-              <Link to="/events" className="text-sm font-medium text-primary hover:underline">
+              <Link
+                to="/events"
+                className="text-sm font-medium text-primary hover:underline"
+              >
                 Browse all events
               </Link>
             </div>

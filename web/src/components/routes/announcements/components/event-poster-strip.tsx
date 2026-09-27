@@ -29,7 +29,7 @@ export function EventPosterStrip({ events }: { events: Event[] }) {
                 </span>
               }
             />
-            <p className="line-clamp-2 font-medium leading-snug group-hover:text-primary">
+            <p className="line-clamp-2 leading-snug font-medium group-hover:text-primary">
               {event.name}
             </p>
             <p className="text-xs text-muted-foreground">

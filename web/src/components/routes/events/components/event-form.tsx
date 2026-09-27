@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { MediaPicker } from "@/components/shared/media/picker"
-import { EventDatePicker, EventTimePicker } from "@/components/routes/events/components/date-time-picker"
+import {
+  EventDatePicker,
+  EventTimePicker,
+} from "@/components/routes/events/components/date-time-picker"
 import {
   EVENT_TAGS,
   EVENT_TYPES,
@@ -206,88 +209,96 @@ export function EventForm({
       className="space-y-5"
     >
       <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <Label htmlFor="event-name">Name</Label>
-          <CharacterCount value={name} max={MAX_NAME} />
+        <div className="space-y-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <Label htmlFor="event-name">Name</Label>
+            <CharacterCount value={name} max={MAX_NAME} />
+          </div>
+          <Input
+            id="event-name"
+            maxLength={MAX_NAME}
+            disabled={isPending || !editable("name")}
+            {...form.register("name")}
+          />
+          <FieldError message={errors.name?.message} />
         </div>
-        <Input
-          id="event-name"
-          maxLength={MAX_NAME}
-          disabled={isPending || !editable("name")}
-          {...form.register("name")}
-        />
-        <FieldError message={errors.name?.message} />
-      </div>
 
-      <div className="space-y-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <Label htmlFor="event-place">Place</Label>
-          <CharacterCount value={place} max={MAX_PLACE} />
+        <div className="space-y-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <Label htmlFor="event-place">Place</Label>
+            <CharacterCount value={place} max={MAX_PLACE} />
+          </div>
+          <Input
+            id="event-place"
+            placeholder="Block 7, room 7.202"
+            maxLength={MAX_PLACE}
+            disabled={isPending || !editable("place")}
+            {...form.register("place")}
+          />
+          <FieldError message={errors.place?.message} />
         </div>
-        <Input
-          id="event-place"
-          placeholder="Block 7, room 7.202"
-          maxLength={MAX_PLACE}
-          disabled={isPending || !editable("place")}
-          {...form.register("place")}
-        />
-        <FieldError message={errors.place?.message} />
-      </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-      <fieldset
-        className="space-y-2"
-        disabled={isPending || !editable("start_datetime")}
-      >
-        <legend className="text-sm font-medium">
-          {isRecruitment ? "Opens" : "Starts"}
-        </legend>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <EventDatePicker
-            value={form.watch("startDate")}
-            onChange={(value) => form.setValue("startDate", value, { shouldValidate: true })}
-            disabled={isPending || !editable("start_datetime")}
-            label={isRecruitment ? "Opening date" : "Start date"}
+        <fieldset
+          className="space-y-2"
+          disabled={isPending || !editable("start_datetime")}
+        >
+          <legend className="text-sm font-medium">
+            {isRecruitment ? "Opens" : "Starts"}
+          </legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <EventDatePicker
+              value={form.watch("startDate")}
+              onChange={(value) =>
+                form.setValue("startDate", value, { shouldValidate: true })
+              }
+              disabled={isPending || !editable("start_datetime")}
+              label={isRecruitment ? "Opening date" : "Start date"}
+            />
+            <EventTimePicker
+              value={form.watch("startTime")}
+              onChange={(value) =>
+                form.setValue("startTime", value, { shouldValidate: true })
+              }
+              disabled={isPending || !editable("start_datetime")}
+              label={isRecruitment ? "Opening time" : "Start time"}
+            />
+          </div>
+          <FieldError
+            message={errors.startDate?.message ?? errors.startTime?.message}
           />
-          <EventTimePicker
-            value={form.watch("startTime")}
-            onChange={(value) => form.setValue("startTime", value, { shouldValidate: true })}
-            disabled={isPending || !editable("start_datetime")}
-            label={isRecruitment ? "Opening time" : "Start time"}
-          />
-        </div>
-        <FieldError
-          message={errors.startDate?.message ?? errors.startTime?.message}
-        />
-      </fieldset>
+        </fieldset>
 
-      <fieldset
-        className="space-y-2"
-        disabled={isPending || !editable("end_datetime")}
-      >
-        <legend className="text-sm font-medium">
-          {isRecruitment ? "Deadline" : "Ends"}
-        </legend>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <EventDatePicker
-            value={form.watch("endDate")}
-            onChange={(value) => form.setValue("endDate", value, { shouldValidate: true })}
-            disabled={isPending || !editable("end_datetime")}
-            label={isRecruitment ? "Deadline date" : "End date"}
+        <fieldset
+          className="space-y-2"
+          disabled={isPending || !editable("end_datetime")}
+        >
+          <legend className="text-sm font-medium">
+            {isRecruitment ? "Deadline" : "Ends"}
+          </legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <EventDatePicker
+              value={form.watch("endDate")}
+              onChange={(value) =>
+                form.setValue("endDate", value, { shouldValidate: true })
+              }
+              disabled={isPending || !editable("end_datetime")}
+              label={isRecruitment ? "Deadline date" : "End date"}
+            />
+            <EventTimePicker
+              value={form.watch("endTime")}
+              onChange={(value) =>
+                form.setValue("endTime", value, { shouldValidate: true })
+              }
+              disabled={isPending || !editable("end_datetime")}
+              label={isRecruitment ? "Deadline time" : "End time"}
+            />
+          </div>
+          <FieldError
+            message={errors.endDate?.message ?? errors.endTime?.message}
           />
-          <EventTimePicker
-            value={form.watch("endTime")}
-            onChange={(value) => form.setValue("endTime", value, { shouldValidate: true })}
-            disabled={isPending || !editable("end_datetime")}
-            label={isRecruitment ? "Deadline time" : "End time"}
-          />
-        </div>
-        <FieldError
-          message={errors.endDate?.message ?? errors.endTime?.message}
-        />
-      </fieldset>
+        </fieldset>
       </div>
 
       <p className="text-xs text-muted-foreground">
@@ -366,12 +377,16 @@ export function EventForm({
               >
                 <SelectTrigger id="event-policy" className="w-full">
                   <SelectValue>
-                    {field.value === "open" ? "Open entry" : "Registration — external form"}
+                    {field.value === "open"
+                      ? "Open entry"
+                      : "Registration — external form"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="open">Open entry</SelectItem>
-                  <SelectItem value="registration">Registration — external form</SelectItem>
+                  <SelectItem value="registration">
+                    Registration — external form
+                  </SelectItem>
                 </SelectContent>
               </Select>
             )}

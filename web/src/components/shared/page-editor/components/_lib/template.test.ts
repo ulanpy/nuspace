@@ -7,7 +7,11 @@ function fakeConfig(): Config {
   return {
     components: {
       Text: {
-        defaultProps: { text: "Body text", align: "left", textColor: "#0f172a" },
+        defaultProps: {
+          text: "Body text",
+          align: "left",
+          textColor: "#0f172a",
+        },
         fields: {},
       },
       Hero: {
@@ -31,7 +35,14 @@ test("replaces authored text, keeps layout and style", () => {
   const source = {
     root: {},
     content: [
-      { type: "Text", props: { text: "Our real blurb", align: "center", textColor: "#123456" } },
+      {
+        type: "Text",
+        props: {
+          text: "Our real blurb",
+          align: "center",
+          textColor: "#123456",
+        },
+      },
     ],
   }
   const result = applyTemplate(source, fakeConfig())
@@ -73,7 +84,9 @@ test("walks nested Flex/Grid slots", () => {
         type: "Flex",
         props: {
           gap: 16,
-          items: [{ type: "Text", props: { text: "inner words", align: "right" } }],
+          items: [
+            { type: "Text", props: { text: "inner words", align: "right" } },
+          ],
         },
       },
     ],
@@ -104,9 +117,13 @@ test("does not mutate the source data", () => {
 })
 
 test("handles empty and missing content", () => {
-  assert.deepEqual(applyTemplate({ root: {}, content: [] }, fakeConfig()).content, [])
   assert.deepEqual(
-    (applyTemplate({ root: {} }, fakeConfig()) as Record<string, unknown>).content,
+    applyTemplate({ root: {}, content: [] }, fakeConfig()).content,
+    []
+  )
+  assert.deepEqual(
+    (applyTemplate({ root: {} }, fakeConfig()) as Record<string, unknown>)
+      .content,
     []
   )
 })

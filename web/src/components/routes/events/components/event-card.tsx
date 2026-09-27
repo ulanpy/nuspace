@@ -1,8 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import {
-  CalendarIcon,
-  MapPinIcon,
-} from "lucide-react"
+import { CalendarIcon, MapPinIcon } from "lucide-react"
 
 import type { Event } from "@/lib/events"
 import { eventPolicyLabel, getEventTiming } from "@/lib/events"
@@ -56,7 +53,12 @@ function EventMeta({ event }: { event: Event }) {
 export function EventCard({ event, variant = "poster" }: EventCardProps) {
   const poster = selectMedia(event.media, "carousel")
   const now = useMinuteNow()
-  const timing = getEventTiming(event.start_datetime, event.end_datetime, now, event.type)
+  const timing = getEventTiming(
+    event.start_datetime,
+    event.end_datetime,
+    now,
+    event.type
+  )
 
   const badges = (
     <div className="flex flex-wrap items-center gap-2">
