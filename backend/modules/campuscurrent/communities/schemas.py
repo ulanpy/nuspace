@@ -72,7 +72,6 @@ class BaseCommunity(BaseModel):
 
 class CommunityResponse(BaseCommunity):
     owner_user: ShortUserResponse
-    admins: List["AdminResponse"] = Field(default_factory=list)
     media: List[MediaResponse] = []
     permissions: ResourcePermissions = ResourcePermissions()
 
@@ -173,6 +172,15 @@ class CommunityVerifiedUpdateRequest(BaseModel):
 
 class ListCommunity(BaseModel):
     items: List[CommunityResponse] = Field(default_factory=list)
+    total_pages: int = Field(default=1, ge=1)
+    total: int
+    page: int
+    size: int
+    has_next: bool
+
+
+class ListCommunityAdmins(BaseModel):
+    items: List[AdminResponse] = Field(default_factory=list)
     total_pages: int = Field(default=1, ge=1)
     total: int
     page: int

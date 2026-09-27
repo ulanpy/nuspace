@@ -15,6 +15,7 @@ from backend.modules.campuscurrent.communities.repository import CommunityReposi
 from backend.modules.campuscurrent.communities.utils import get_community_permissions
 from backend.modules.campuscurrent.models.community import (
     Community,
+    CommunityAdmin,
     CommunityCategory,
     CommunityType,
 )
@@ -288,10 +289,22 @@ class CommunityService:
         )
         return await self._build_community_response(community, infra, user)
 
+    @staticmethod
+    def _to_admin_responses(admins: List[CommunityAdmin]) -> List[schemas.AdminResponse]:
+        return [
+            schemas.AdminResponse(
+                sub=admin.user_sub,
+                name=admin.user.name,
+                surname=admin.user.surname,
+                picture=admin.user.picture,
+                created_at=admin.created_at,
+            )
+            for admin in admins
+        ]
+
     async def _build_community_response(
         self, community: Community, infra: Infra, user: tuple[dict, dict]
     ) -> schemas.CommunityResponse:
-        admin_rows = []
         user_is_admin = False
         async with self.uow:
             repo = self.uow.get_repo(CommunityRepository)
@@ -301,8 +314,7 @@ class CommunityService:
                     status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
                 )
             await repo.load_relations(community, ["owner_user"])
-            admin_rows = await repo.list_admins(community.id)
-            user_is_admin = any(admin.user_sub == user[0]["sub"] for admin in admin_rows)
+            user_is_admin = await repo.is_admin(community.id, user[0]["sub"])
             media_objs: List[Media] = await repo.list_media(
                 community_ids=[community.id],
                 media_formats=[MediaFormat.profile, MediaFormat.banner],
@@ -313,23 +325,12 @@ class CommunityService:
             )
         )
 
-        admins = [
-            schemas.AdminResponse(
-                sub=admin.user_sub,
-                name=admin.user.name,
-                surname=admin.user.surname,
-                picture=admin.user.picture,
-                created_at=admin.created_at,
-            )
-            for admin in admin_rows
-        ]
         admin_community_ids = {community.id} if user_is_admin else set()
 
         return response_builder.build_schema(
             schemas.CommunityResponse,
             schemas.CommunityResponse.model_validate(community),
             owner_user=ShortUserResponse.model_validate(community.owner_user),
-            admins=admins,
             media=media_results[0] if media_results else [],
             permissions=get_community_permissions(
                 community, user, admin_community_ids=admin_community_ids
@@ -401,6 +402,25 @@ class CommunityService:
                 return schemas.AdminLinkAcceptResponse(status="already_admin")
             await repo.add_admin(link.community_id, user_sub)
         return schemas.AdminLinkAcceptResponse(status="granted")
+
+    async def list_admins(
+        self, slug: str, user: tuple[dict, dict], *, page: int, size: int
+    ) -> schemas.ListCommunityAdmins:
+        community, policy = await self._load_community_and_policy(slug, user)
+        # READ, not check_manage_admins: a community admin manages the community
+        # but must still be able to see who else is on the team.
+        await policy.check_permission(action=ResourceAction.READ, community=community)
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            admins, count = await repo.list_admins_page(community.id, page=page, size=size)
+        return schemas.ListCommunityAdmins(
+            items=self._to_admin_responses(admins),
+            total=count,
+            page=page,
+            size=size,
+            total_pages=response_builder.calculate_pages(count, size),
+            has_next=page * size < count,
+        )
 
     async def remove_admin(
         self, infra: Infra, slug: str, user_sub: str, user: tuple[dict, dict]

@@ -178,6 +178,19 @@ async def rotate_community_admin_link(
     return await community_service.rotate_admin_link(infra=infra, slug=slug, user=user)
 
 
+@router.get("/communities/{slug}/admins", response_model=schemas.ListCommunityAdmins)
+async def get_community_admins(
+    request: Request,
+    slug: str,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.ListCommunityAdmins:
+    """Retrieves a paginated list of a community's admins. Any signed-in user may read."""
+    return await community_service.list_admins(slug=slug, user=user, page=page, size=size)
+
+
 @router.delete("/communities/{slug}/admins/me", response_model=schemas.CommunityResponse)
 async def leave_community_admin(
     request: Request,
