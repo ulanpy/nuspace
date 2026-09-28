@@ -2,10 +2,11 @@ from typing import Annotated
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
 from jose import JWTError
 from redis.asyncio import Redis
+from sqlalchemy.exc import IntegrityError
 
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
@@ -17,18 +18,24 @@ from backend.modules.auth.cookies import (
 )
 from backend.modules.auth.dependencies import (
     get_creds_or_401,
+    get_creds_or_guest,
     mark_access_actor,
     set_request_access_actor,
 )
 from backend.modules.auth.models import UserRole
+from backend.modules.auth.profiles import UserPageService
 from backend.modules.auth.schemas import (
     CurrentUserResponse,
     Sub,
+    UserPageList,
+    UserPageResponse,
+    UserPageUpdateRequest,
     UserScopeResponse,
     UserScopeUpdateRequest,
 )
 from backend.modules.auth.service import AuthService
 from backend.modules.bot.utils.telegram_link_tokens import issue_telegram_link_token
+from backend.modules.shared.slug import raise_slug_taken
 
 router = APIRouter(tags=["Auth Routes"])
 # Auth-flow routes must not call get_creds_* (refresh-token rotation / pre-login).
@@ -201,3 +208,41 @@ async def update_user_scope(
         target_sub=sub, new_scope=body.scope, admin_sub=user[0]["sub"]
     )
     return UserScopeResponse(sub=updated.sub, scope=updated.scope)
+
+
+@router.get("/u/{slug}", response_model=UserPageResponse)
+async def get_user_page(
+    slug: str,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    user_page_service: UserPageService = Depends(deps.get_user_page_service),
+) -> UserPageResponse:
+    """A public profile page. Guests included; 404 on a private or banned one."""
+    viewer_sub = None if user[1].get("is_guest") else user[0].get("sub")
+    return await user_page_service.get_page(slug=slug, viewer_sub=viewer_sub)
+
+
+@router.get("/users", response_model=UserPageList)
+async def get_users(
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
+    keyword: str | None = Query(default=None, description="Search keyword for name or surname"),
+    user_page_service: UserPageService = Depends(deps.get_user_page_service),
+) -> UserPageList:
+    """The directory of published profile pages. There is no way to widen the
+    visibility filter — `is_page_public` and `scope` are a hard WHERE."""
+    return await user_page_service.list_pages(page=page, size=size, keyword=keyword)
+
+
+@router.patch("/users/me", response_model=UserPageResponse)
+async def update_my_profile(
+    new_data: UserPageUpdateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    user_page_service: UserPageService = Depends(deps.get_user_page_service),
+) -> UserPageResponse:
+    """Edit the signed-in user's own profile page. There is no target sub: the
+    only account this can touch is the one in the session."""
+    try:
+        return await user_page_service.update_me(new_data=new_data, session_sub=user[0]["sub"])
+    except IntegrityError:
+        raise_slug_taken()

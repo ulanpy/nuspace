@@ -1,7 +1,22 @@
 import re
 
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# The only unique, user-writable column on Community and on User is `slug`, so
+# an IntegrityError raised while creating or updating one of them means the
+# handle is already taken. Surface that to the caller instead of leaking the
+# raw database message.
+SLUG_TAKEN_DETAIL = "That handle is already taken. Choose a different one."
+
+
+def raise_slug_taken() -> None:
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=SLUG_TAKEN_DETAIL,
+    )
+
 
 RESERVED_SLUGS = {
     "edit",

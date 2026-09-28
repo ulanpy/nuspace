@@ -1,5 +1,6 @@
 import logging
 import secrets
+from typing import List
 from urllib.parse import urljoin, urlparse
 
 from authlib.integrations.base_client.errors import MismatchingStateError, OAuthError
@@ -23,6 +24,9 @@ from backend.modules.auth.models import User, UserRole, UserScope
 from backend.modules.auth.oauth import exchange_code_for_credentials
 from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.schemas import CurrentUserResponse, UserSchema
+from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
+from backend.modules.media.models import MediaFormat
+from backend.modules.media.schemas import MediaResponse
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +39,12 @@ class AuthService:
         uow: UnitOfWork,
         kc_manager: KeyCloakManager,
         app_token_manager: AppTokenManager,
+        media_attachment_resolver: MediaAttachmentResolver | None = None,
     ):
         self.uow = uow
         self.kc_manager = kc_manager
         self.app_token_manager = app_token_manager
+        self.media_attachment_resolver = media_attachment_resolver
 
     async def ensure_login_state(
         self,
@@ -364,6 +370,7 @@ class AuthService:
             )
 
         # открываем короткую транзакцию, чтобы получить пользователя из базы данных
+        media: List[MediaResponse] = []
         async with self.uow:
             user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized
             user: User | None = await user_repo.get_by_sub(sub)
@@ -372,12 +379,29 @@ class AuthService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="User not found",
                 )
+            # The General tab reads the session and nothing else, so /me is the
+            # only read endpoint it needs. Media is signed in the same short
+            # transaction rather than a second round trip.
+            if self.media_attachment_resolver is not None:
+                media_objs = await user_repo.list_media(
+                    user_ids=[user.id],
+                    media_formats=[MediaFormat.profile, MediaFormat.banner],
+                )
+                media = (
+                    await self.media_attachment_resolver.map_to_resources(
+                        media_objects=media_objs, resources=[user]
+                    )
+                )[0]
 
         user_data_for_response = {
             **kc_principal,
             "role": app_principal.get("role"),
             "communities": app_principal.get("communities"),
             "department_id": user.department_id,
+            "slug": user.slug,
+            "page_content": user.page_content,
+            "is_page_public": user.is_page_public,
+            "media": media,
         }
         return CurrentUserResponse(user=user_data_for_response, tg_id=user.telegram_id)
 

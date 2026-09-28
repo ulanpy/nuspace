@@ -1,7 +1,7 @@
 # PROGRESS — Puck editor for user profile pages
 
-**Status:** phase 0 landed — the login landmine is defused, everything after
-it is now safe
+**Status:** phases 0 and 1 landed — the login landmine is defused and the
+three profile endpoints are live and verified against the dev database
 **Scope:** `backend/` and `web/`. This is the one plan here that is not
 frontend-only: it adds a migration, three endpoints, an `EntityType` value and
 an upload authorizer.
@@ -186,16 +186,16 @@ Do this phase first and alone. Everything after it is unsafe without 0.2.
 
 ### Phase 1 — backend profile read/write
 
-- [ ] 1.1 New `backend/modules/auth/profiles.py` holding the service and
+- [x] 1.1 New `backend/modules/auth/profiles.py` holding the service and
       policy for profile pages, so `service.py` does not grow. It needs a
       `UserRepository.get_by_id` and a `list_public` alongside the existing
       methods.
-- [ ] 1.2 `GET /api/u/{slug}` → `UserPageResponse { sub, name, surname, slug,
+- [x] 1.2 `GET /api/u/{slug}` → `UserPageResponse { sub, name, surname, slug,
       picture, page_content, media[] }`. **404** when not found, when
       `is_page_public` is false, or when `scope == banned` — *unless* the
       viewer's `sub` matches, so the owner can always preview their own page.
       `get_creds_or_guest`, mirroring `communities/api.py:89`.
-- [ ] 1.3 `GET /api/users?keyword=&page=&size=` → the same
+- [x] 1.3 `GET /api/users?keyword=&page=&size=` → the same
       `{items, total_pages, total, page, size, has_next}` shape as
       `communities/schemas.py:173-188`.
       - **Filter on `is_page_public` and `scope == allowed` as a hard `WHERE`,
@@ -203,7 +203,7 @@ Do this phase first and alone. Everything after it is unsafe without 0.2.
         anyone enumerate private pages.
       - `keyword` → `ILIKE` over `name`/`surname`.
       - `ORDER BY name, surname, sub` — see "What exists to reuse".
-- [ ] 1.4 `PATCH /api/users/me` — body `{ slug?, page_content?,
+- [x] 1.4 `PATCH /api/users/me` — body `{ slug?, page_content?,
       is_page_public?, media_ids_to_delete? }`, self only
       (`get_creds_or_401`, compare against the session `sub`). Generic
       `setattr` loop like `communities/repository.py:37-50`. Media deletion
@@ -211,17 +211,17 @@ Do this phase first and alone. Everything after it is unsafe without 0.2.
       `entity_type` + `entity_id` before deleting.
       `IntegrityError` → **409** with `SLUG_TAKEN_DETAIL`
       (`communities/api.py:20-27`).
-- [ ] 1.5 Extend `/api/me` (`auth/api.py:151`) to also return `slug`,
+- [x] 1.5 Extend `/api/me` (`auth/api.py:151`) to also return `slug`,
       `page_content`, `is_page_public` and `media` — one dict in
       `service.py:376-381`. The General tab reads the session, so this is the
       only read endpoint it needs.
-- [ ] 1.6 Backend tests (see "Verification"):
+- [x] 1.6 Backend tests (see "Verification"):
       - `upsert` on an existing user **preserves** `page_content` and
         `is_page_public`. This is the regression that silently destroys work.
       - `PATCH /users/me` rejects a duplicate slug with 409, and rejects
         another user's `sub` with 403.
       - `GET /users` never returns a private or a banned user.
-- [ ] 1.7 Verify: ruff + black + the new pytest cases pass.
+- [x] 1.7 Verify: ruff + black + the new pytest cases pass.
 
 ### Phase 2 — media uploads for users
 
@@ -472,3 +472,28 @@ Before declaring done, confirm all of these:
    Added as specified anyway; it is free and survives a future relaxation of
    the minimum length. The plpgsql copy was left alone deliberately, because
    for this one value the two are already in agreement.
+
+### Phase 1
+
+4. **A body carrying someone else's `sub` is a 422, not a 403.** `PATCH
+   /users/me` has no target sub to compare against — the route writes the
+   session's own account and nothing else — so a `sub` in the body is
+   `extra="forbid"`ed rather than compared. A 403 would have meant adding a
+   `sub` field with exactly one legal value, and a comparison that can never
+   fail. 422 is also the more honest answer: the plan's 403 assumed the field
+   was accepted and then rejected, and silently dropping an unknown field is
+   how a caller ends up believing they changed something they did not.
+   `UserPagePolicy.check_self` was dropped for the same reason — dead code.
+5. **`raise_slug_taken` moved from `communities/api.py` to
+   `modules/shared/slug.py`**, next to `validate_slug`, and both routers import
+   it. Copying eight lines into `auth/api.py` would have been the only other
+   option, and the two 409 paths have to say the same thing.
+6. **The media-ownership check is now `shared/media_ownership.py`**, not a
+   second copy. `CommunityService._delete_community_media` and
+   `UserPageService` were going to need the identical "these ids exist, and
+   they belong to *this* entity" check; the community one is 15 lines and its
+   403 detail is now generic, since it is no longer community-specific.
+7. **`GET /users` items are a `UserSummaryResponse`, not a `UserPageResponse`.**
+   A directory of people needs a name, a slug and an avatar, not a rendered
+   page's `page_content` and signed GCS media URLs. Two small types beat one
+   type that lies about what a list row carries.

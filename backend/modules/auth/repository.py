@@ -1,8 +1,11 @@
-from sqlalchemy import or_, select
+from typing import List, Tuple
+
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.auth.models import User, UserScope
 from backend.modules.auth.schemas import UserSchema
+from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.shared.slug import generate_unique_slug
 
 # Owned by the user, not by Keycloak. UserSchema defaults page_content={} and
@@ -49,6 +52,53 @@ class UserRepository:
     async def get_by_sub(self, sub: str) -> User | None:
         result = await self.db_session.execute(select(User).where(User.sub == sub))
         return result.scalars().first()
+
+    async def get_by_id(self, user_id: int) -> User | None:
+        result = await self.db_session.execute(select(User).where(User.id == user_id))
+        return result.scalars().first()
+
+    async def get_by_slug(self, slug: str) -> User | None:
+        result = await self.db_session.execute(select(User).where(User.slug == slug))
+        return result.scalars().first()
+
+    async def list_public(
+        self, *, page: int, size: int, keyword: str | None = None
+    ) -> Tuple[List[User], int]:
+        """Users whose profile page is published, for the public directory.
+
+        The visibility filter is a hard WHERE, never a caller-supplied
+        parameter: making it one would let anyone enumerate private pages.
+        """
+        conditions = [User.is_page_public.is_(True), User.scope == UserScope.allowed]
+        if keyword:
+            pattern = f"%{keyword}%"
+            conditions.append(or_(User.name.ilike(pattern), User.surname.ilike(pattern)))
+
+        # name alone is not a stable sort — siblings share a first name, and
+        # OFFSET over a non-deterministic order drops and repeats rows across
+        # page boundaries. surname and sub break the ties all the way down.
+        stmt = (
+            select(User)
+            .where(*conditions)
+            .order_by(User.name.asc(), User.surname.asc(), User.sub.asc())
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        result = await self.db_session.execute(stmt)
+        users = list(result.scalars().all())
+        count_stmt = select(func.count()).select_from(User).where(*conditions)
+        count_result = await self.db_session.execute(count_stmt)
+        return users, count_result.scalar() or 0
+
+    async def list_media(
+        self, user_ids: List[int], media_formats: List[MediaFormat] | None = None
+    ) -> List[Media]:
+        filters = [Media.entity_id.in_(user_ids), Media.entity_type == EntityType.users]
+        if media_formats:
+            filters.append(Media.media_format.in_(media_formats))
+        stmt = select(Media).where(*filters)
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
     async def update_scope(self, sub: str, scope: UserScope) -> User | None:
         user = await self.get_by_sub(sub)

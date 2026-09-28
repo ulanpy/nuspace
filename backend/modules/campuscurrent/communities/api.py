@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.exc import IntegrityError
 
 from backend.common.dependencies import get_infra
@@ -13,21 +13,9 @@ from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
     CommunityType,
 )
+from backend.modules.shared.slug import raise_slug_taken
 
 router = APIRouter(tags=["Community Routes"])
-
-# The only unique, user-writable column on Community is `slug`, so an
-# IntegrityError raised while creating or updating a community means the handle
-# is already taken. Surface that to the caller instead of leaking the raw
-# database message.
-SLUG_TAKEN_DETAIL = "That handle is already taken. Choose a different one."
-
-
-def _raise_slug_taken() -> None:
-    raise HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail=SLUG_TAKEN_DETAIL,
-    )
 
 
 @router.post("/communities", response_model=schemas.CommunityResponse)
@@ -50,7 +38,7 @@ async def add_community(
             infra=infra, community_data=community_data, user=user
         )
     except IntegrityError:
-        _raise_slug_taken()
+        raise_slug_taken()
 
 
 @router.get("/communities", response_model=schemas.ListCommunity)
@@ -109,7 +97,7 @@ async def update_community(
             infra=infra, slug=slug, new_data=new_data, user=user
         )
     except IntegrityError:
-        _raise_slug_taken()
+        raise_slug_taken()
 
 
 @router.delete("/communities/{slug}", status_code=status.HTTP_204_NO_CONTENT)

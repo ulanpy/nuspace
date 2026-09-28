@@ -21,6 +21,7 @@ from backend.modules.campuscurrent.models.community import (
 )
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.media.schemas import MediaResponse
+from backend.modules.shared.media_ownership import delete_owned_media
 
 
 class CommunityService:
@@ -127,24 +128,9 @@ class CommunityService:
         community: Community,
         media_ids: List[int],
     ) -> None:
-        media_objects = await self.media_attachment_resolver.list_by_ids(media_ids)
-
-        found_ids = {media.id for media in media_objects}
-        missing = set(media_ids) - found_ids
-        if missing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Media not found: {sorted(missing)}",
-            )
-
-        for media in media_objects:
-            if media.entity_type != EntityType.communities or media.entity_id != community.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Media does not belong to this community",
-                )
-
-        await self.media_attachment_resolver.delete_many(media_objects)
+        await delete_owned_media(
+            self.media_attachment_resolver, media_ids, EntityType.communities, community.id
+        )
 
     async def delete_community(self, infra: Infra, slug: str, user: tuple[dict, dict]) -> None:
         async with self.uow:
