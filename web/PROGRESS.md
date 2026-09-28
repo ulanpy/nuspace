@@ -225,28 +225,28 @@ Do this phase first and alone. Everything after it is unsafe without 0.2.
 
 ### Phase 2 — media uploads for users
 
-- [ ] 2.1 `CampusCurrentMediaUploadAuthorizer`
+- [x] 2.1 `CampusCurrentMediaUploadAuthorizer`
       (`backend/modules/google_bucket/service.py:11-39`) — add a `users` branch
       → `authorize_user_media_upload(entity_id, user)`: load the user by `id`,
       require `user.sub == session_sub` and `scope != banned`. Wire it in
       `google_bucket/dependencies.py:33-37`.
-- [ ] 2.2 Web: `toUserUploadItems`, mirroring `toCommunityUploadItems`
+- [x] 2.2 Web: `toUserUploadItems`, mirroring `toCommunityUploadItems`
       (`lib/communities/functions.ts:106-122`) — same `profile`/`banner`
       formats, per-format `mediaOrder` counters.
-- [ ] 2.3 Web: `useUpdateMe()` in `web/src/lib/user/functions.ts`, routed
+- [x] 2.3 Web: `useUpdateMe()` in `web/src/lib/user/functions.ts`, routed
       through `saveWithMedia` (`lib/media/functions.ts:150`) so a failed upload
       batch does not discard the form. Extend `CurrentUser` in
       `lib/user/types.ts` with the four fields from 1.5.
-- [ ] 2.4 `pnpm api:generate` against a running backend; commit
+- [x] 2.4 `pnpm api:generate` against a running backend; commit
       `web/src/api/schema.d.ts` **in the same commit** as the backend change.
-- [ ] 2.5 Verify: `pnpm api:check && pnpm typecheck && pnpm test && pnpm lint`
+- [x] 2.5 Verify: `pnpm api:check && pnpm typecheck && pnpm test && pnpm lint`
 
 ### Phase 3 — frontend API layer
 
-- [ ] 3.1 `qk.users = { all, list(filters), detail(slug), mine }` in
+- [x] 3.1 `qk.users = { all, list(filters), detail(slug), mine }` in
       `web/src/api/query-keys.ts`. `page` belongs **in the key**, not inside
       it — the comment at `:26-36` is the rule.
-- [ ] 3.2 `web/src/lib/user/functions.ts` — `fetchUsersPage`, `fetchUserPage`,
+- [x] 3.2 `web/src/lib/user/functions.ts` — `fetchUsersPage`, `fetchUserPage`,
       `useUpdateMe`. Types come from the regenerated `schema.d.ts`; do not
       hand-write them.
 - [ ] 3.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
@@ -497,3 +497,34 @@ Before declaring done, confirm all of these:
    A directory of people needs a name, a slug and an avatar, not a rendered
    page's `page_content` and signed GCS media URLs. Two small types beat one
    type that lies about what a list row carries.
+
+### Phase 2
+
+8. **`/me` now carries the surrogate `users.id`.** Media uploads address the
+   user by `users.id` — that is what phase 0's column is for and what
+   `authorize_user_media_upload` compares — but nothing in the API handed that
+   number to the client. `sub` is not an option: `Media.entity_id` is an
+   integer column shared with communities and events. So `/me` sends `id`
+   alongside `slug`/`is_page_public`/`page_content`/`media`. It is
+   session-only and deliberately absent from the public `UserPageResponse`: the
+   public page is a shareable artifact and its owner id is nobody else's
+   business.
+9. **`UserPageResponse.media` declares a plain `= []` default**, matching
+   `CommunityResponse`, instead of `Field(default_factory=list)`. Pydantic emits
+   a `default` for the former, which is what makes codegen emit
+   `media: MediaResponse[]` instead of `media?: MediaResponse[]`. The optional
+   form forced `?? 0` at every read site — including `isReady` in the upload
+   refresh, where a silent `0` would have meant "the media already landed".
+
+### Phase 3
+
+10. **3.1 and 3.2 landed with phase 2, not after it.** `useUpdateMe`'s
+    post-upload refresh has to re-read the page it just wrote — that is the
+    whole reason `refreshWhenMediaLands` exists (see the warning in
+    `lib/media/functions.ts`) — so `fetchUserPage` and `qk.users.detail` are
+    inputs to 2.3, not a follow-up. Splitting them across two commits would
+    have meant committing a media upload that silently never refreshes.
+11. **`qk.users.mine()` is deferred to phase 7.** The public directory has no
+    "owned by me" filter to key it by, and an unused query key is the exact
+    kind of speculative surface the rest of this plan is trying to delete. Add
+    it with "My Nuspace", which is the first thing that reads it.

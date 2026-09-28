@@ -13,7 +13,12 @@ from backend.modules.auth.api import update_my_profile
 from backend.modules.auth.models import UserRole, UserScope
 from backend.modules.auth.profiles import UserPageService
 from backend.modules.auth.repository import UserRepository
-from backend.modules.auth.schemas import UserPageUpdateRequest, UserSchema
+from backend.modules.auth.schemas import (
+    UserPageResponse,
+    UserPageUpdateRequest,
+    UserSchema,
+)
+from backend.modules.auth.service import AuthService
 from backend.modules.media.models import EntityType
 from fastapi import HTTPException
 from sqlalchemy.dialects import postgresql
@@ -56,10 +61,11 @@ def _session_returning(user):
     return session
 
 
-def _service(user, list_public=None):
+def _uow_for(user, list_public=None):
     repo = MagicMock(spec=UserRepository)
     repo.get_by_sub = _async_return(user)
     repo.get_by_slug = _async_return(user)
+    repo.get_by_id = _async_return(user)
     repo.list_media = _async_return([])
     repo.list_public = _async_return(list_public or ([], 0))
 
@@ -67,6 +73,11 @@ def _service(user, list_public=None):
     uow.get_repo = MagicMock(return_value=repo)
     uow.__aenter__ = _async_return(None)
     uow.__aexit__ = _async_return(False)
+    return uow, repo
+
+
+def _service(user, list_public=None):
+    uow, repo = _uow_for(user, list_public)
     resolver = MagicMock()
     resolver.map_to_resources = AsyncMock(
         side_effect=lambda media_objects, resources: [[] for _ in resources]
@@ -228,5 +239,59 @@ async def test_duplicate_slug_surfaces_as_409() -> None:
     assert "already taken" in excinfo.value.detail
 
 
+@pytest.mark.asyncio
+async def test_authorize_user_media_upload_requires_ownership() -> None:
+    service, _ = _service(_user(id=7, sub="user-1"))
+
+    await service.authorize_user_media_upload(7, ({"sub": "user-1"}, {}))
+
+    with pytest.raises(HTTPException) as excinfo:
+        await service.authorize_user_media_upload(7, ({"sub": "user-2"}, {}))
+    assert excinfo.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_authorize_user_media_upload_rejects_banned_and_unknown() -> None:
+    banned, _ = _service(_user(id=7, sub="user-1", scope=UserScope.banned))
+    with pytest.raises(HTTPException) as excinfo:
+        await banned.authorize_user_media_upload(7, ({"sub": "user-1"}, {}))
+    assert excinfo.value.status_code == 403
+
+    missing, _ = _service(None)
+    with pytest.raises(HTTPException) as excinfo:
+        await missing.authorize_user_media_upload(7, ({"sub": "user-1"}, {}))
+    assert excinfo.value.status_code == 404
+
+
 def test_entity_type_has_a_users_value() -> None:
     assert EntityType.users.value == "users"
+
+
+# --------------------------------------------------------------------------
+# 2.3 — the session has to carry the surrogate id
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_me_carries_the_surrogate_user_id() -> None:
+    """Media uploads address the user by `users.id`; `/me` is the only place
+    the web client can learn it, and the public page must not expose it."""
+    user = _user(id=42, department_id=3, telegram_id=None)
+    uow, _ = _uow_for(user)
+    service = AuthService(
+        uow=uow,
+        kc_manager=MagicMock(),
+        app_token_manager=MagicMock(),
+    )
+
+    response = await service.get_current_user(
+        {"sub": "user-1", "email": "u1@example.com"},
+        {"sub": "user-1", "role": "default", "communities": []},
+    )
+
+    assert response.user["id"] == 42
+    assert response.user["slug"] == "ada-lovelace"
+    # Not leaked anywhere public.
+    assert (
+        "id" not in UserPageResponse(sub="user-1", name="Ada", surname="", slug="ada").model_dump()
+    )

@@ -57,7 +57,10 @@ class UserPageResponse(BaseModel):
     slug: str
     picture: str | None = None
     page_content: Dict[str, Any] = Field(default_factory=dict)
-    media: List[MediaResponse] = Field(default_factory=list)
+    # Plain default, not default_factory: this is what CommunityResponse does,
+    # and the generated client type comes out `media: Media[]` rather than
+    # `media?: Media[]`, which is what the pickers and the upload refresh need.
+    media: List[MediaResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

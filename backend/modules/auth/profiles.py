@@ -55,6 +55,27 @@ class UserPageService:
             media_objects=media_objs, resources=users
         )
 
+    async def authorize_user_media_upload(self, user_id: int, user: tuple[dict, dict]) -> None:
+        """Gate a GCS upload for `entity_type=users`.
+
+        `entity_id` here is the surrogate `users.id`, not the Keycloak sub —
+        that is the whole reason phase 0 added the column.
+        """
+        async with self.uow:
+            target = await self.uow.get_repo(UserRepository).get_by_id(user_id)
+        if target is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        if target.sub != user[0].get("sub"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload media to your own profile",
+            )
+        if target.scope == UserScope.banned:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your account has been banned",
+            )
+
     async def get_page(self, slug: str, viewer_sub: str | None) -> schemas.UserPageResponse:
         async with self.uow:
             user = await self.uow.get_repo(UserRepository).get_by_slug(slug)

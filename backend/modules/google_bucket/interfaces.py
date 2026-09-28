@@ -28,6 +28,10 @@ class CommunityMediaUploadAccess(Protocol):
     async def authorize_media_upload(self, community_id: int, user: tuple[dict, dict]) -> None: ...
 
 
+class UserMediaUploadAccess(Protocol):
+    async def authorize_user_media_upload(self, user_id: int, user: tuple[dict, dict]) -> None: ...
+
+
 @dataclass(frozen=True)
 class ScheduleCatalogFinalizeOutcome:
     """Caller-owned DTO for catalog finalize (maps from registrar result)."""

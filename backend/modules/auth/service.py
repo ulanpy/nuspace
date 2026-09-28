@@ -398,6 +398,11 @@ class AuthService:
             "role": app_principal.get("role"),
             "communities": app_principal.get("communities"),
             "department_id": user.department_id,
+            # The surrogate id, not the Keycloak sub: media uploads address the
+            # user by `users.id` (see UserPageService.authorize_user_media_upload),
+            # and the web client has no other way to learn it. Session-only, so
+            # it never appears in the public `/u/{slug}` payload.
+            "id": user.id,
             "slug": user.slug,
             "page_content": user.page_content,
             "is_page_public": user.is_page_public,

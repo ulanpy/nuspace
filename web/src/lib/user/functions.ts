@@ -1,9 +1,20 @@
-import { queryOptions } from "@tanstack/react-query"
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query"
 
 import { ApiError, api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
+import { useMediaUpload, type UploadItem } from "@/hooks/use-media-upload"
+import {
+  assertValidImageBatch,
+  pollForMedia,
+  saveWithMedia,
+} from "@/lib/media"
 import { sessionSchema } from "./constants"
-import type { Session } from "./types"
+import type { Session, UserPageUpdate } from "./types"
 
 /**
  * The session query. Resolves to null when nobody is signed in, rather than
@@ -56,6 +67,142 @@ export function beginReauthentication() {
 export async function beginLogout() {
   await requestLogout()
   window.location.replace("/")
+}
+
+/**
+ * Profile picture and banner, in one list.
+ *
+ * The same pairing `toCommunityUploadItems` does, and for the same reason: both
+ * zones are `entity_type: users`, told apart only by their format.
+ */
+export function toUserUploadItems(
+  profile: readonly File[],
+  banner: readonly File[]
+): UploadItem[] {
+  return [
+    ...profile.map((file, index) => ({
+      file,
+      mediaFormat: "profile" as const,
+      mediaOrder: index,
+    })),
+    ...banner.map((file, index) => ({
+      file,
+      mediaFormat: "banner" as const,
+      mediaOrder: index,
+    })),
+  ]
+}
+
+/** One page of the public directory. Used by useInfiniteList. */
+export function fetchUsersPage(
+  filters: { keyword?: string },
+  { page, size }: { page: number; size: number }
+) {
+  return unwrap(
+    api.GET("/users", {
+      params: { query: { page, size, ...filters } },
+    })
+  )
+}
+
+/** A public profile page. Private pages 404 for everyone but their owner. */
+export function fetchUserPage(slug: string) {
+  return unwrap(
+    api.GET("/u/{slug}", {
+      params: { path: { slug } },
+    })
+  )
+}
+
+export function userPageQueryOptions(slug: string) {
+  return queryOptions({
+    queryKey: qk.users.detail(slug),
+    queryFn: () => fetchUserPage(slug),
+  })
+}
+
+/**
+ * Refreshes once the newly uploaded images exist server-side.
+ *
+ * Not awaited, for the reasons in `lib/media/functions.ts`: the PUT resolves
+ * before GCS notifies Pub/Sub and the `Media` row exists.
+ */
+function refreshWhenMediaLands(
+  queryClient: QueryClient,
+  slug: string,
+  expected: number
+) {
+  void pollForMedia({
+    fetch: () => fetchUserPage(slug),
+    isReady: (page) => page.media.length >= expected,
+  }).then(async (page) => {
+    if (page) {
+      await queryClient.invalidateQueries({ queryKey: qk.users.all() })
+    }
+  })
+}
+
+/**
+ * Saving one's own profile page.
+ *
+ * The durable PATCH runs first and the images follow, exactly as for
+ * communities: the user's row already exists, so a failed upload after a
+ * successful PATCH is a partial save and must not reject — re-submitting the
+ * form would not fix the images, it would just repeat the PATCH.
+ */
+export function useUpdateMe() {
+  const queryClient = useQueryClient()
+  const { uploadMedia } = useMediaUpload()
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      body,
+      items,
+    }: {
+      /** Surrogate `users.id` from the session — media uploads are keyed on it. */
+      userId: number
+      body: UserPageUpdate
+      items: UploadItem[]
+    }) => {
+      return saveWithMedia({
+        validate: () => {
+          assertValidImageBatch(items.map((item) => item.file))
+        },
+        saveEntity: () =>
+          unwrap(
+            api.PATCH("/users/me", {
+              body,
+            })
+          ),
+        uploadMedia:
+          items.length > 0
+            ? async () => {
+                const uploaded = await uploadMedia({
+                  entityType: "users",
+                  entityId: userId,
+                  items,
+                })
+                return uploaded.length
+              }
+            : undefined,
+      })
+    },
+    onSuccess: async (result) => {
+      // The session holds this user's slug, page content and media, and the
+      // General tab reads the session and nothing else.
+      await queryClient.invalidateQueries({ queryKey: qk.session() })
+      if (result.successfulUploadCount > 0) {
+        // Counted from what survived the PATCH, so images deleted in the same
+        // request are not waited for on top of the ones being added.
+        refreshWhenMediaLands(
+          queryClient,
+          result.entity.slug,
+          result.entity.media.length + result.successfulUploadCount
+        )
+      }
+    },
+  })
 }
 
 type BrowserLocation = Pick<Location, "origin" | "pathname" | "search" | "hash">

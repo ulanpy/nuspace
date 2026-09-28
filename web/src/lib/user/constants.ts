@@ -15,6 +15,33 @@ export const USER_ROLES = [
 
 export const userRoleSchema = z.enum(USER_ROLES)
 
+/**
+ * Backend EntityType and MediaFormat, for the same reason: inside the opaque
+ * `/me` dict nothing carries the generated types, so the media array is
+ * described here. Both lists are checked against `lib/media/types.ts`.
+ */
+const ENTITY_TYPES = [
+  "community_events",
+  "communities",
+  "grade_reports",
+  "courses",
+  "tickets",
+  "messages",
+  "users",
+] as const
+
+const MEDIA_FORMATS = ["banner", "carousel", "profile"] as const
+
+const mediaSchema = z.object({
+  id: z.number(),
+  url: z.string(),
+  mime_type: z.string(),
+  entity_type: z.enum(ENTITY_TYPES),
+  entity_id: z.number(),
+  media_format: z.enum(MEDIA_FORMATS),
+  media_order: z.number(),
+})
+
 export const currentUserSchema = z.object({
   sub: z.string(),
   email: z.email(),
@@ -32,6 +59,22 @@ export const currentUserSchema = z.object({
   communities: z.array(z.number()).default([]),
   /** Academic department id from the backend User model. */
   department_id: z.number().nullable().default(null),
+  /**
+   * The user's own profile page. Present on `/me` so the General tab and the
+   * editor need exactly one read endpoint — there is no other session-scoped
+   * profile read in the API.
+   *
+   * `page_content` is Puck's own data shape, so it is passed through as a JSON
+   * record rather than described: the editor validates it, and a second copy of
+   * Puck's schema here would only be able to disagree with it.
+   */
+  /** Surrogate `users.id`, not the Keycloak sub. Media uploads address the
+   * user by it, and the session is the only place the client can learn it. */
+  id: z.number(),
+  slug: z.string(),
+  page_content: z.record(z.string(), z.unknown()).default({}),
+  is_page_public: z.boolean().default(false),
+  media: z.array(mediaSchema).default([]),
 })
 
 export const sessionSchema = z.object({

@@ -10,6 +10,12 @@
 export const qk = {
   session: () => ["session"] as const,
 
+  users: {
+    all: () => ["users"] as const,
+    list: (filters: Record<string, unknown>) => ["users", "list", filters] as const,
+    detail: (slug: string) => ["users", "detail", slug] as const,
+  },
+
   events: {
     all: () => ["events"] as const,
     list: (filters: Record<string, unknown>) =>

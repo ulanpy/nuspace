@@ -134,6 +134,68 @@ export interface paths {
         patch: operations["update_user_scope_users__sub__scope_patch"];
         trace?: never;
     };
+    "/u/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Page
+         * @description A public profile page. Guests included; 404 on a private or banned one.
+         */
+        get: operations["get_user_page_u__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Users
+         * @description The directory of published profile pages. There is no way to widen the
+         *     visibility filter — `is_page_public` and `scope` are a hard WHERE.
+         */
+        get: operations["get_users_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update My Profile
+         * @description Edit the signed-in user's own profile page. There is no target sub: the
+         *     only account this can touch is the one in the session.
+         */
+        patch: operations["update_my_profile_users_me_patch"];
+        trace?: never;
+    };
     "/communities": {
         parameters: {
             query?: never;
@@ -2247,7 +2309,7 @@ export interface components {
          *     Alembic cannot auto-detect enum value changes, so manual migration is required!
          * @enum {string}
          */
-        EntityType: "community_events" | "communities" | "grade_reports" | "courses" | "tickets" | "messages";
+        EntityType: "community_events" | "communities" | "grade_reports" | "courses" | "tickets" | "messages" | "users";
         /** EventAccessInviteAcceptRequest */
         EventAccessInviteAcceptRequest: {
             /** Token */
@@ -3387,6 +3449,59 @@ export interface components {
             /** Mm */
             mm: number;
         };
+        /** UserPageList */
+        UserPageList: {
+            /** Items */
+            items?: components["schemas"]["UserSummaryResponse"][];
+            /**
+             * Total Pages
+             * @default 1
+             */
+            total_pages: number;
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Has Next */
+            has_next: boolean;
+        };
+        /** UserPageResponse */
+        UserPageResponse: {
+            /** Sub */
+            sub: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /** Slug */
+            slug: string;
+            /** Picture */
+            picture?: string | null;
+            /** Page Content */
+            page_content?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Media
+             * @default []
+             */
+            media: components["schemas"]["MediaResponse"][];
+        };
+        /** UserPageUpdateRequest */
+        UserPageUpdateRequest: {
+            /** Slug */
+            slug?: string | null;
+            /** Page Content */
+            page_content?: {
+                [key: string]: unknown;
+            } | null;
+            /** Is Page Public */
+            is_page_public?: boolean | null;
+            /** Media Ids To Delete */
+            media_ids_to_delete?: number[];
+        };
         /** UserScheduleItem */
         UserScheduleItem: {
             /** Label */
@@ -3418,6 +3533,22 @@ export interface components {
         UserScopeUpdateRequest: {
             /** @description New scope: 'allowed' or 'banned' */
             scope: components["schemas"]["UserScope"];
+        };
+        /**
+         * UserSummaryResponse
+         * @description One row of the public profile directory. Carries no page content.
+         */
+        UserSummaryResponse: {
+            /** Sub */
+            sub: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /** Slug */
+            slug: string;
+            /** Picture */
+            picture?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -3666,6 +3797,116 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserScopeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_page_u__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_users_users_get: {
+        parameters: {
+            query?: {
+                size?: number;
+                page?: number;
+                /** @description Search keyword for name or surname */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPageList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_my_profile_users_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPageUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPageResponse"];
                 };
             };
             /** @description Validation Error */

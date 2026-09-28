@@ -4,6 +4,7 @@ from backend.modules.google_bucket.interfaces import (
     CommunityMediaUploadAccess,
     EventMediaUploadAccess,
     MediaUploadAuthorizer,
+    UserMediaUploadAccess,
 )
 from backend.modules.media.models import EntityType
 
@@ -16,9 +17,11 @@ class CampusCurrentMediaUploadAuthorizer(MediaUploadAuthorizer):
         *,
         events: EventMediaUploadAccess,
         communities: CommunityMediaUploadAccess,
+        users: UserMediaUploadAccess,
     ) -> None:
         self._events = events
         self._communities = communities
+        self._users = users
 
     async def authorize_media_upload(
         self,
@@ -32,6 +35,9 @@ class CampusCurrentMediaUploadAuthorizer(MediaUploadAuthorizer):
             return
         if entity_type == EntityType.communities:
             await self._communities.authorize_media_upload(entity_id, user)
+            return
+        if entity_type == EntityType.users:
+            await self._users.authorize_user_media_upload(entity_id, user)
             return
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

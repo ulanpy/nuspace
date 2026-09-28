@@ -6,7 +6,8 @@ from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token
 
 from backend.core.configs.config import Config
-from backend.modules.auth.dependencies import set_request_access_actor
+from backend.modules.auth.dependencies import get_user_page_service, set_request_access_actor
+from backend.modules.auth.profiles import UserPageService
 from backend.modules.campuscurrent.communities.dependencies import get_community_service
 from backend.modules.campuscurrent.communities.service import CommunityService
 from backend.modules.campuscurrent.events.dependencies import get_event_service
@@ -33,8 +34,9 @@ class ScheduleCatalogFinalizeFailed(Exception):
 async def get_media_upload_authorizer(
     events: EventService = Depends(get_event_service),
     communities: CommunityService = Depends(get_community_service),
+    users: UserPageService = Depends(get_user_page_service),
 ) -> MediaUploadAuthorizer:
-    return CampusCurrentMediaUploadAuthorizer(events=events, communities=communities)
+    return CampusCurrentMediaUploadAuthorizer(events=events, communities=communities, users=users)
 
 
 class _ScheduleCatalogOnFinalizeAdapter:
