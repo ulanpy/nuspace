@@ -4,7 +4,8 @@ import { PageHeader } from "@/components/shared/page/header"
 import { cn } from "@/lib/utils"
 
 interface PageProps {
-  title: ReactNode
+  /** Omit on a page that brings its own heading, e.g. the landing hero. */
+  title?: ReactNode
   description?: ReactNode
   eyebrow?: ReactNode
   actions?: ReactNode
@@ -44,16 +45,26 @@ export function Page({
   className,
   children,
 }: PageProps) {
+  const hasHeader = Boolean(title ?? description ?? eyebrow ?? actions)
+
   return (
     <div className={cn("mx-auto w-full max-w-7xl", className)}>
-      <PageHeader
-        title={title}
-        description={description}
-        eyebrow={eyebrow}
-        actions={actions}
-        className={headerClassName}
-      />
-      <div className={cn("mt-6 space-y-6", width === "prose" && "max-w-3xl")}>
+      {hasHeader && (
+        <PageHeader
+          title={title}
+          description={description}
+          eyebrow={eyebrow}
+          actions={actions}
+          className={headerClassName}
+        />
+      )}
+      <div
+        className={cn(
+          "space-y-6",
+          hasHeader && "mt-6",
+          width === "prose" && "max-w-3xl"
+        )}
+      >
         {children}
       </div>
     </div>

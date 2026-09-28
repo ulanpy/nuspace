@@ -50,9 +50,8 @@ export function AppLayout() {
         {shouldHideSidebar ? (
           <Outlet />
         ) : (
-          // The only place horizontal padding lives. Pages used to wrap
-          // themselves in a `PageContainer` on top of this one and land up
-          // padded twice; now they cannot set padding at all.
+          // The only place horizontal padding lives. Pages used to set their
+          // own on top of this one and land up padded twice; now they cannot.
           <div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
             <Outlet />
           </div>

@@ -11,7 +11,7 @@ export const router = createRouter({
   // Query owns caching; the router should not keep a second copy.
   defaultPreloadStaleTime: 0,
   scrollRestoration: true,
-  defaultNotFoundComponent: NotFound,
+  defaultNotFoundComponent: () => <NotFound />,
 })
 
 declare module "@tanstack/react-router" {

@@ -1,7 +1,8 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
 import { ApiError } from "@/api/client"
-import { CommunityNotFound, Page } from "@/components/routes/communities/$slug"
+import { Page } from "@/components/routes/communities/$slug"
+import { NotFound } from "@/components/shared/not-found"
 import { communityDetailQueryOptions } from "@/lib/communities"
 
 export const Route = createFileRoute("/_app/communities/$slug/")({
@@ -20,7 +21,14 @@ export const Route = createFileRoute("/_app/communities/$slug/")({
       throw error
     }
   },
-  notFoundComponent: CommunityNotFound,
+  notFoundComponent: () => (
+    <NotFound
+      title="Community not found"
+      description="We couldn’t find a community at that address. It may have been renamed or removed."
+      to="/communities"
+      actionLabel="Browse communities"
+    />
+  ),
   component: CommunityDetailRoute,
 })
 

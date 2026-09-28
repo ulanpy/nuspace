@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 interface PageHeaderProps {
-  title: ReactNode
+  title?: ReactNode
   description?: ReactNode
   eyebrow?: ReactNode
   actions?: ReactNode
@@ -24,7 +24,7 @@ export function PageHeader({
         className
       )}
     >
-      <div className="max-w-3xl">
+      <div>
         {eyebrow && (
           <p className="mb-2 text-sm font-semibold tracking-wider text-primary uppercase">
             {eyebrow}

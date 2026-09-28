@@ -1,6 +1,6 @@
 # PROGRESS — Standardize page layout & primitives
 
-**Status:** in progress — phases 1–3 landed
+**Status:** done — all six phases landed and the standard is documented in `CONVENTIONS.md`
 **Scope:** `web/src` only. No backend, no infra, no API changes.
 
 This file is a self-contained brief. An agent picking this up cold should not
@@ -268,65 +268,65 @@ Do these in order. Each is independent; tick as you go.
 
 ### Phase 4 — public routes
 
-- [ ] 4.1 **`shared/legal/legal-page.tsx`** — `PageContainer` →
+- [x] 4.1 **`shared/legal/legal-page.tsx`** — `PageContainer` →
       `Page width="prose"`; the two `Section spacing="none"` → `<section>`.
-- [ ] 4.2 **`routes/about`** — `Page` (this is what removes the doubled
+- [x] 4.2 **`routes/about`** — `Page` (this is what removes the doubled
       padding). Keep the centred header via `PageHeader`'s `className`
       escape hatch; it is the only app page that uses it besides landing.
-- [ ] 4.3 **`routes/landing`** — swap the four `PageContainer`s for `Page`
+- [x] 4.3 **`routes/landing`** — swap the four `PageContainer`s for `Page`
       where it is a plain section, keep the per-section `py-*`. It is the only
       real user of large section spacing. Drop its `space-y-*` overrides that
       now duplicate the standard.
-- [ ] 4.4 Verify: `pnpm typecheck && pnpm lint && pnpm build`
+- [x] 4.4 Verify: `pnpm typecheck && pnpm lint && pnpm build`
 
 ### Phase 5 — deletions
 
 Only after every consumer is migrated. Grep before each delete.
 
-- [ ] 5.1 `shared/page/section.tsx` — **delete.** All 8 call sites pass
+- [x] 5.1 `shared/page/section.tsx` — **delete.** All 8 call sites pass
       `spacing="none"`, i.e. a no-op `<section>`. The one `spacing="default"`
       user (landing) overrides it with its own `py-*`, so both sets of classes
       end up in the same class list and Tailwind's cascade order, not source
       order, decides the winner. That is the bug this removes.
-- [ ] 5.2 `shared/page/container.tsx` — **delete.** Width classes moved into
+- [x] 5.2 `shared/page/container.tsx` — **delete.** Width classes moved into
       `Page`; padding moved to the shell. `PagePadding`'s `dense` branch had
       zero call sites and `none` existed only to undo the shell.
-- [ ] 5.3 `shared/tabs-nav.tsx` — **delete**, replaced by `route-tabs.tsx`.
-- [ ] 5.4 In `shared/list-filters.tsx` — **delete `FilterBar` and
+- [x] 5.3 `shared/tabs-nav.tsx` — **delete**, replaced by `route-tabs.tsx`.
+- [x] 5.4 In `shared/list-filters.tsx` — **delete `FilterBar` and
       `ChoiceChips`.** `FilterBar` is the "unnecessary container" the user
       called out; `ChoiceChips` had one consumer.
-- [ ] 5.5 In `shared/toggle-chip.tsx` — make `chipClass` private. After
+- [x] 5.5 In `shared/toggle-chip.tsx` — make `chipClass` private. After
       `ChoiceChips` is gone it has no external consumer. `ToggleChip` itself
       stays: two pages use it (degree audit, opportunity form).
 - [x] 5.6 In `shared/page/card-grid.tsx` — add a `banner` variant to
       `CardGridSkeleton` (the `aspect-3/4 rounded-none p-0` shape events
       needs) and delete events' private `EventGridSkeleton`. One skeleton
       primitive, two pages — this is what gets it over the two-page bar.
-- [ ] 5.7 `shared/settings/settings-section.tsx` — **delete the `width`
+- [x] 5.7 `shared/settings/settings-section.tsx` — **delete the `width`
       prop** and its `widthClasses`. `prose` had zero call sites; `form` and
       `full` are the cause of the ragged-left settings pages. Page-level
       width governs now.
-- [ ] 5.8 Collapse `CommunityNotFound` (`routes/communities/$slug/index.tsx`)
+- [x] 5.8 Collapse `CommunityNotFound` (`routes/communities/$slug/index.tsx`)
       into `shared/not-found.tsx`; keep the shared one used by
       `app/router.tsx`.
-- [ ] 5.9 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] 5.9 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
 ### Phase 6 — document the standard
 
 The drift happened because nothing said what the standard _was_. This phase is
 what stops it recurring — do not skip it.
 
-- [ ] 6.1 Add a **Page layout** section to `web/CONVENTIONS.md`: the
+- [x] 6.1 Add a **Page layout** section to `web/CONVENTIONS.md`: the
       always-7xl box, the two body widths, header spans the box, the width
       assignment table above, and the rule that a page never sets padding.
-- [ ] 6.2 Update the `shared/` directory-roles list: `page/` is now
+- [x] 6.2 Update the `shared/` directory-roles list: `page/` is now
       `page` + `header` + `card-grid` (container and section are gone);
       `route-tabs` joins the flat shared primitives; `tabs-nav` is removed.
-- [ ] 6.3 Note the `ui/` rule explicitly where it matters: recurring styled
+- [x] 6.3 Note the `ui/` rule explicitly where it matters: recurring styled
       behaviour shadcn does not ship belongs in `shared/`, never upstreamed
       into `ui/`.
-- [ ] 6.4 Final: `pnpm typecheck && pnpm test && pnpm lint && pnpm format && pnpm build`
-- [ ] 6.5 Commit. Suggested message:
+- [x] 6.4 Final: `pnpm typecheck && pnpm test && pnpm lint && pnpm format && pnpm build`
+- [x] 6.5 Commit. Suggested message:
       `refactor(web): standardize page layout, tabs and filter primitives`
 
 ---
@@ -351,19 +351,19 @@ Do not touch these. They were considered and explicitly deferred.
 
 Before declaring done, confirm all of these:
 
-- [ ] No page sets horizontal padding. Only `layouts/app` and `layouts/public` do.
-- [ ] Every page is a `Page`. The only exceptions are community detail and the
+- [x] No page sets horizontal padding. Only `layouts/app` and `layouts/public` do.
+- [x] Every page is a `Page`. The only exceptions are community detail and the
       editor (decision #7).
-- [ ] Exactly two width values exist in the app: `max-w-7xl` (the box) and
+- [x] Exactly two width values exist in the app: `max-w-7xl` (the box) and
       `max-w-3xl` (the `prose` body).
-- [ ] No raw `mx-auto max-w-*` in any route page. `grep` for it.
-- [ ] No `FilterBar`, no bordered filter box, anywhere.
-- [ ] `ui/tabs`, `ui/toggle`, `ui/item`, `ui/checkbox` are all in use.
-- [ ] `shared/tabs-nav.tsx` and `shared/page/section.tsx` are gone.
-- [ ] `grep -rn "chipClass" src` returns only `shared/toggle-chip.tsx`.
-- [ ] Every page-header action button is default size.
-- [ ] "Campus directory" and the profile `divide-y` separators are gone.
-- [ ] `CONVENTIONS.md` documents the standard.
+- [x] No raw `mx-auto max-w-*` in any route page. `grep` for it.
+- [x] No `FilterBar`, no bordered filter box, anywhere.
+- [x] `ui/tabs`, `ui/toggle`, `ui/item`, `ui/checkbox` are all in use.
+- [x] `shared/tabs-nav.tsx` and `shared/page/section.tsx` are gone.
+- [x] `grep -rn "chipClass" src` returns only `shared/toggle-chip.tsx`.
+- [x] Every page-header action button is default size.
+- [x] "Campus directory" and the profile `divide-y` separators are gone.
+- [x] `CONVENTIONS.md` documents the standard.
 
 ---
 
@@ -379,7 +379,34 @@ Before declaring done, confirm all of these:
 ## Deviations
 
 - **`pnpm lint` is red before this work starts.** `layouts/app/app-sidebar.tsx:293`
-  trips `jsx-a11y/no-noninteractive-element-interactions` on the deliberate
-  click-to-expand collapsed rail. Pre-existing on `f0b8acb`, unrelated to layout.
-  The bar used here is "no _new_ findings from the files this plan touches"
-  rather than a green lint run.
+  trips `jsx-a11y/no-noninteractive-element-interactions` and
+  `jsx-a11y(click-events-have-key-events)` on the deliberate click-to-expand
+  collapsed rail. Pre-existing on `f0b8acb`, unrelated to layout. The bar used
+  here is "no _new_ findings from the files this plan touches" rather than a
+  green lint run. Verified by diffing the full finding list before and after each
+  phase; the count went 9 → 8, the one that went being the `max-w-[90rem]` on
+  `/events/$eventId` that 3.10 removed. Also pre-existing and untouched:
+  `Date.now()` during render in `routes/announcements`, and four
+  `text-sm leading-relaxed` class-order nits in `routes/events/$eventId`.
+
+- **The landing page's bands are no longer full-bleed.** `layouts/public` now
+  owns the same gutter as the app shell, so `/`'s bordered sections sit inset by
+  1.5rem instead of running edge to edge, and the hero box grew from the old
+  `max-w-5xl` to the standard `max-w-7xl`. Both follow from decisions #2 and
+  "a page never sets padding"; the alternative was a negative-margin escape
+  hatch that re-couples the page to the shell's breakpoints. Revisit only if
+  someone says the bands should be full-bleed again.
+
+- **`Page`'s `title` is optional.** 4.3 needed a box with no header for the
+  landing hero and its last two sections. Rather than give `Page` a
+  `headerClassName`-style escape hatch or fake a title, the header is skipped
+  when there is nothing to put in it and the `mt-6` comes with it.
+
+- **`PageHeader` lost its inner `max-w-3xl`.** It contradicted decision #3
+  ("no inner `max-w-*` on the header") — the h1 element spanned the box but
+  wrapped at 3xl, so a long title was narrower than the list below it.
+
+- **The community 404 lost its `Card`.** 5.8 collapsed it into
+  `shared/not-found.tsx`, which is uncontained and `min-h-screen`. The two were
+  near-identical and the Card was decoration; the copy (title, body, destination)
+  is now props. `app/router.tsx` passes no props and keeps its old look.

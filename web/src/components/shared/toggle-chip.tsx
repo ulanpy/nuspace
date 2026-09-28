@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 
-/** Shared pill styling for `ToggleChip` and the single-select `ChoiceChips` group. */
-export function chipClass(active: boolean) {
+/** The pill look shared by every `ToggleChip`. */
+function chipClass(active: boolean) {
   return cn(
     "rounded-full border px-3 py-1 text-sm transition-colors",
     "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",

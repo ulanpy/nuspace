@@ -27,7 +27,7 @@ The layers have a strict dependency direction. `routes/` imports from
 
 ## File naming
 
-- **Component and module files are `kebab-case`**: `page-container.tsx`,
+- **Component and module files are `kebab-case`**: `route-tabs.tsx`,
   `resilient-image.tsx`, `query-boundary.tsx`.
 - **Compound components are a folder with an `index.tsx`**: `layouts/app/`
   holding `index.tsx` + `app-sidebar.tsx`, `routes/communities/` holding the
@@ -73,8 +73,8 @@ that goes in `lib/`, and the Page calls through to it.
 
 ### `src/components/layouts/` — app shells
 
-`app/` is the authenticated shell (sidebar, `PageContainer` wrapper), plus
-`courses/` and `public/` for those layout groups.
+`app/` is the authenticated shell (sidebar and the one place horizontal padding
+lives), plus `courses/` and `public/` for those layout groups.
 
 ### `src/components/shared/` — cross-page UI, grouped by domain
 
@@ -82,23 +82,73 @@ Cohesive domains live in subfolders:
 
 - `markdown/` — renderer, toolbar
 - `theme/` — provider, toggle
-- `page/` — container, header, section
+- `page/` — `index.tsx` (the `Page` box), `header.tsx`, `card-grid.tsx`
 - `media/` — picker, resilient-image
 - `legal/` — legal-page + `data.ts`
 - `query/` — boundary, infinite-list
 - `page-editor/` — self-contained Puck editor; never split up
 
 Generic primitives that belong to no group stay flat at the shared root
-(`confirm-dialog`, `list-filters`, `not-found`, `toggle-chip`). A new shared
-component lands in the matching subfolder or flat at root — not inside a route
-mirror.
+(`confirm-dialog`, `list-filters`, `not-found`, `route-tabs`, `toggle-chip`). A
+new shared component lands in the matching subfolder or flat at root — not
+inside a route mirror.
 
 ### `src/components/ui/` — shadcn primitives
 
 Owned by shadcn and treated as vendor code: consume them, don't add
 project-specific props or styles by hand. Recurring styled behavior that shadcn
-does not already ship (the filter `ToggleChip`, the legal page) belongs in
-`shared/`, not upstreamed into `ui/`.
+does not already ship belongs in `shared/`, never upstreamed into `ui/` — the
+`ToggleChip`, the filter `FilterTabs`, `SearchFilter` and `MultiFilter`, and the
+legal page are all `shared/`. Two ways of rendering the same thing is the signal
+that the primitive is wrong: the old `tabs-nav.tsx` and `FilterTabs` were the
+same tab strip written twice, so `tabs-nav` is gone and `route-tabs` is the only
+one.
+
+## Page layout
+
+Every page is a `Page` from `shared/page`. The whole standard is one box, one
+header, one body:
+
+```
+<div className="mx-auto w-full max-w-7xl">   the box — always
+  <PageHeader …/>                             the title, spanning the box
+  <div className="mt-6 space-y-6 max-w-3xl?">  the body
+```
+
+- **The box is always `max-w-7xl`.** There is no per-page box width. Pages used
+  to ship their own `mx-auto max-w-*`, so two pages of the same kind had
+  different left edges.
+- **Exactly two body widths**, chosen per page and never invented: `wide`
+  (uncapped — lists and grids you scan) and `prose` (`max-w-3xl` — pages you
+  read). The body is capped, the box is not, so a `prose` page's title still
+  lines up with the header above the `wide` list next to it.
+- **The title always spans the box.** No `max-w-*` inside `PageHeader`; a
+  `prose` page's title is as wide as a `wide` page's.
+- **The gap below the header is `Page`'s job**, not the page's.
+- **A page never sets padding.** `layouts/app` and `layouts/public` own it, so a
+  page cannot end up padded twice. Nor does a page set a box width.
+- **Page-header action buttons are default size** — `Button`'s default is
+  `h-8`, matching `TabsList`, so the header and the tab bar under it line up.
+- Omit `title` only when the page brings its own heading (the landing hero).
+
+Which width a page gets is not a per-page judgement call. The assignment:
+
+| `wide` (body uncapped)                                                   | `prose` (body `max-w-3xl`)                                     |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| `/events`, `/events/$eventId`                                            | `/opportunities`                                               |
+| `/communities`                                                           | `/contacts`                                                    |
+| `/announcements`                                                         | `/profile`                                                     |
+| `/courses`, `/courses/statistics`, `/courses/schedule`, `/courses/audit` | `/communities/$slug/settings` + `/general` + `/admin-controls` |
+| `/about`, `/` (public)                                                   | `/sgotinish`, `/degree-audit-info`                             |
+|                                                                          | `/privacy-policy`, `/terms-of-service` (public)                |
+
+Two routes are deliberately outside this: community detail
+(`/communities/$slug`) and the page editor bypass the app shell entirely for
+their full-bleed canvas. Leave them alone.
+
+Route-level tab strips are `shared/route-tabs`; a page that filters itself
+reuses the same `ui/tabs` primitives through `FilterTabs` instead of hand-rolled
+chips. Filter rows sit directly in the page body — there is no filter box.
 
 ### `src/lib/<module>/` — bounded capabilities
 

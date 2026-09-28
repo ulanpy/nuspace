@@ -1,7 +1,5 @@
-import type { ComponentPropsWithoutRef } from "react"
 import { SearchIcon, XIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -9,7 +7,6 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
-import { chipClass } from "@/components/shared/toggle-chip"
 import {
   Popover,
   PopoverContent,
@@ -20,26 +17,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export interface FilterOption<T extends string> {
   value: T
   label: string
-}
-
-/**
- * The container every filter row sits in.
- *
- * Pages were shipping this three ways — a bare flex div, a bordered div, and a
- * whole `Card` — which made "where are the filters" a per-page question. This
- * is the one box, and `SearchFilter` + `ChoiceChips` + `MultiFilter` all fit
- * inside it unchanged.
- */
-export function FilterBar({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<"div">) {
-  return (
-    <div
-      className={cn("space-y-3 rounded-lg border border-border p-3", className)}
-      {...props}
-    />
-  )
 }
 
 export function SearchFilter({
@@ -117,47 +94,6 @@ export function FilterTabs<T extends string>({
         ))}
       </TabsList>
     </Tabs>
-  )
-}
-
-export function ChoiceChips<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string
-  value?: T
-  options: readonly FilterOption<T>[]
-  onChange: (value: T | undefined) => void
-}) {
-  return (
-    <fieldset className="flex flex-wrap gap-1">
-      <legend className="sr-only">{label}</legend>
-      <button
-        type="button"
-        aria-pressed={value === undefined}
-        onClick={() => {
-          onChange(undefined)
-        }}
-        className={chipClass(value === undefined)}
-      >
-        All
-      </button>
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={value === option.value}
-          onClick={() => {
-            onChange(option.value)
-          }}
-          className={chipClass(value === option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </fieldset>
   )
 }
 

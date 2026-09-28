@@ -43,7 +43,6 @@ export function Page({
       <SettingsSection
         title="Admins"
         description="People who can edit this community, design its page and manage its events."
-        width="full"
       >
         <AdminsTable
           slug={community.slug}

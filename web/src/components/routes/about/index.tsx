@@ -1,10 +1,8 @@
 import { ExternalLinkIcon, LifeBuoyIcon } from "lucide-react"
 
 import { TEAM, type TeamMember } from "./data"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
-import { Section } from "@/components/shared/page/section"
+import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
@@ -56,22 +54,17 @@ function MemberCard({ member }: { member: TeamMember }) {
 
 export function Page() {
   return (
-    <PageContainer maxWidth="default" className="space-y-12 py-10">
-      <PageHeader
-        eyebrow="Built for NU"
-        title={
-          <>
-            About <span className="text-primary">Nuspace</span>
-          </>
-        }
-        description="Your campus platform for Nazarbayev University"
-        className="justify-center text-center [&>div]:mx-auto"
-      />
-
-      <Section
-        spacing="none"
-        className="space-y-4 rounded-2xl border border-border bg-card p-6 sm:p-8"
-      >
+    <PageLayout
+      eyebrow="Built for NU"
+      title={
+        <>
+          About <span className="text-primary">Nuspace</span>
+        </>
+      }
+      description="Your campus platform for Nazarbayev University"
+      headerClassName="justify-center text-center [&>div]:mx-auto"
+    >
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-6 sm:p-8">
         <h2 className="text-2xl font-bold">Mission</h2>
         <p className="leading-relaxed text-muted-foreground">
           Nuspace brings together everything a Nazarbayev University student
@@ -82,9 +75,9 @@ export function Page() {
           track academics, find events worth attending, and reach the right
           office without guessing who to contact.
         </p>
-      </Section>
+      </section>
 
-      <Section spacing="none" className="space-y-6">
+      <section className="space-y-6">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold">The team</h2>
           <p className="text-muted-foreground">
@@ -100,12 +93,9 @@ export function Page() {
             </li>
           ))}
         </ul>
-      </Section>
+      </section>
 
-      <Section
-        spacing="none"
-        className="space-y-4 rounded-2xl border border-border bg-card p-6 sm:p-8"
-      >
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-6 sm:p-8">
         <div className="flex items-center gap-3">
           <LifeBuoyIcon className="size-6 shrink-0 text-primary" aria-hidden />
           <h2 className="text-2xl font-bold">Need help?</h2>
@@ -126,7 +116,7 @@ export function Page() {
             </a>
           }
         />
-      </Section>
-    </PageContainer>
+      </section>
+    </PageLayout>
   )
 }

@@ -23,10 +23,8 @@ import eventPhoto4 from "@/assets/events/4.webp"
 import eventPhoto5 from "@/assets/events/5.webp"
 import logoUrl from "@/assets/nuspace_logo.svg"
 import { EventPhotoCarousel } from "@/components/routes/landing/components/event-photo-carousel"
+import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
-import { Section } from "@/components/shared/page/section"
 import { cn } from "@/lib/utils"
 
 interface Product {
@@ -149,8 +147,8 @@ function PrimaryCallToAction() {
 export function Page() {
   return (
     <div className="overflow-hidden">
-      <Section className="relative py-20 sm:py-28 lg:py-32">
-        <PageContainer maxWidth="default" className="text-center">
+      <section className="relative py-20 sm:py-28 lg:py-32">
+        <PageLayout className="text-center">
           <div className="mb-5 inline-flex items-center gap-2.5">
             <img src={logoUrl} alt="" aria-hidden className="size-8" />
             <span className="text-xl font-bold tracking-tight">Nuspace</span>
@@ -189,18 +187,19 @@ export function Page() {
             </span>
             <span>Web &amp; Telegram</span>
           </div>
-        </PageContainer>
-      </Section>
+        </PageLayout>
+      </section>
 
-      <Section id="features" className="border-y border-border bg-card/35">
-        <PageContainer>
-          <PageHeader
-            eyebrow="Campus toolkit"
-            title="The useful parts of NU, brought together"
-            description="Start with what you need now. Every tool uses the same navigation and account."
-          />
-
-          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <section
+        id="features"
+        className="border-y border-border bg-card/35 py-14 sm:py-18 lg:py-22"
+      >
+        <PageLayout
+          eyebrow="Campus toolkit"
+          title="The useful parts of NU, brought together"
+          description="Start with what you need now. Every tool uses the same navigation and account."
+        >
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {PRODUCTS.map((product) => {
               const Icon = product.icon
 
@@ -254,11 +253,11 @@ export function Page() {
               )
             })}
           </div>
-        </PageContainer>
-      </Section>
+        </PageLayout>
+      </section>
 
-      <Section>
-        <PageContainer>
+      <section className="py-14 sm:py-18 lg:py-22">
+        <PageLayout>
           <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
             <div>
               <div className="mb-5 flex items-center gap-3">
@@ -308,11 +307,11 @@ export function Page() {
               />
             </div>
           </div>
-        </PageContainer>
-      </Section>
+        </PageLayout>
+      </section>
 
-      <Section className="border-t border-border bg-card/35">
-        <PageContainer>
+      <section className="border-t border-border bg-card/35 py-14 sm:py-18 lg:py-22">
+        <PageLayout>
           <div className="grid gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:items-start lg:gap-16">
             <div>
               <div className="mb-5 flex items-center gap-3">
@@ -363,8 +362,8 @@ export function Page() {
             </div>
             <PrimaryCallToAction />
           </div>
-        </PageContainer>
-      </Section>
+        </PageLayout>
+      </section>
     </div>
   )
 }

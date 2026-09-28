@@ -20,7 +20,6 @@ import { PageRenderer } from "@/components/shared/page-editor/components/page-re
 import { contrastColor } from "@/components/shared/page-editor/blocks/_lib"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import {
   Popover,
   PopoverContent,
@@ -31,29 +30,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-
-export function CommunityNotFound() {
-  return (
-    <article className="mx-auto max-w-5xl space-y-6">
-      <Card className="grid min-h-[40vh] place-items-center p-6">
-        <div className="max-w-md space-y-4 text-center">
-          <p className="text-sm font-medium text-muted-foreground">404</p>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Community not found
-          </h1>
-          <p className="text-muted-foreground">
-            We couldn&apos;t find a community at that address. It may have been
-            renamed or removed.
-          </p>
-          <Button
-            nativeButton={false}
-            render={<Link to="/communities">Browse communities</Link>}
-          />
-        </div>
-      </Card>
-    </article>
-  )
-}
 
 /** Messages for each idempotent redemption outcome. */
 const REDEMPTION_MESSAGES = {
