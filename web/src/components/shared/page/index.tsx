@@ -27,12 +27,14 @@ interface PageProps {
  * The box is *always* `max-w-7xl` and only the body is capped. Two pages
  * used to ship their own width for the whole thing, so two pages of the same
  * kind had different left edges and the header on a `prose` page sat 30rem
- * further left than the header above the list next to it.
+ * further left than the header above the list next to it. The title always
+ * spans the full box; capping the body keeps the reading measure without moving
+ * the page's face.
  *
- * A `prose` page centres its body column, but the header stays at the left of
- * the box so the title does not move when a page switches between the two
- * widths. On a screen narrower than the box that centring is a no-op; it only
- * moves the reading column off the left edge of a very wide screen.
+ * A `prose` page centres its column — header included, so the title does not
+ * hang off to the left of the text it belongs to. On a screen narrower than the
+ * box that centring is a no-op; it only moves the reading column off the left
+ * edge of a very wide screen.
  *
  * The gap below the header lives here too, so it is the same on every screen.
  *
@@ -50,6 +52,7 @@ export function Page({
   children,
 }: PageProps) {
   const hasHeader = Boolean(title ?? description ?? eyebrow ?? actions)
+  const column = width === "prose" && "mx-auto max-w-3xl"
 
   return (
     <div className={cn("mx-auto w-full max-w-7xl", className)}>
@@ -59,16 +62,10 @@ export function Page({
           description={description}
           eyebrow={eyebrow}
           actions={actions}
-          className={headerClassName}
+          className={cn(headerClassName, column)}
         />
       )}
-      <div
-        className={cn(
-          "space-y-6",
-          hasHeader && "mt-6",
-          width === "prose" && "mx-auto max-w-3xl"
-        )}
-      >
+      <div className={cn("space-y-6", hasHeader && "mt-6", column)}>
         {children}
       </div>
     </div>

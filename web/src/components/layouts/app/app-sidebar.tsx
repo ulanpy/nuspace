@@ -188,7 +188,10 @@ function AccountCard({
           }}
           className={cn(
             "text-sidebar-foreground",
-            collapsed ? "mx-auto" : "w-full justify-start gap-3 px-3"
+            // `flex` is load-bearing: `Button` is `inline-flex`, and auto margins
+            // are inert on an inline-level box, so `mx-auto` alone left this pinned
+            // to the left of the collapsed rail.
+            collapsed ? "mx-auto flex" : "w-full justify-start gap-3 px-3"
           )}
         >
           <LogInIcon className="size-5 shrink-0" aria-hidden />
@@ -237,7 +240,10 @@ function AccountCard({
       }}
       className={cn(
         "text-sidebar-foreground",
-        collapsed ? "mx-auto" : "w-full justify-start gap-3 px-3"
+        // `flex` is load-bearing: `Button` is `inline-flex`, and auto margins
+        // are inert on an inline-level box, so `mx-auto` alone left this pinned
+        // to the left of the collapsed rail.
+        collapsed ? "mx-auto flex" : "w-full justify-start gap-3 px-3"
       )}
     >
       <LogOutIcon className="size-5 shrink-0" aria-hidden />

@@ -59,16 +59,16 @@ own kingdom. Specifically:
 
 These were decided with the user. Change them only if asked.
 
-| #   | Decision                                                                                                                                                                            |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Exactly two body widths**: `wide` (uncapped) and `prose` (`max-w-3xl`). No middle tier.                                                                                           |
-| 2   | The page box is **always** `max-w-7xl`. The `wide`/`prose` choice caps the **body only**, not the box.                                                                              |
-| 3   | **The title always spans the full 80rem box.** Its placement is never affected by the body width. A `prose` page centres its _body_ only; the title does not move.                  |
-| 4   | Page-header action buttons are **default size everywhere**. `Button`'s default is `h-8`, which matches `TabsList`'s `h-8`, so header and tab bar line up.                           |
-| 5   | `MultiFilter` **stays in shared** and is rebased on `ui/checkbox`.                                                                                                                  |
-| 6   | `degree-audit-info` gets a **layout fix only** — do not merge it into `LegalPage`, do not reshape its data.                                                                         |
-| 7   | Community detail (`/communities/$slug`) and the page editor keep **bypassing the app shell entirely**. Their full-bleed canvas is deliberate. Leave them alone.                     |
-| 8   | `ui/` is vendor code per CONVENTIONS. Consume it; never add project props or hand-written styles to a file in `ui/`. Anything recurring that shadcn doesn't ship goes in `shared/`. |
+| #   | Decision                                                                                                                                                                                      |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Exactly two body widths**: `wide` (uncapped) and `prose` (`max-w-3xl`). No middle tier.                                                                                                     |
+| 2   | The page box is **always** `max-w-7xl`. The `wide`/`prose` choice caps the **body only**, not the box.                                                                                        |
+| 3   | **The title spans the page's own column.** On a `wide` page that is the full 80rem box; on a `prose` page it is the centred 3xl column, so the title never hangs to the left of its own text. |
+| 4   | Page-header action buttons are **default size everywhere**. `Button`'s default is `h-8`, which matches `TabsList`'s `h-8`, so header and tab bar line up.                                     |
+| 5   | `MultiFilter` **stays in shared** and is rebased on `ui/checkbox`.                                                                                                                            |
+| 6   | `degree-audit-info` gets a **layout fix only** — do not merge it into `LegalPage`, do not reshape its data.                                                                                   |
+| 7   | Community detail (`/communities/$slug`) and the page editor keep **bypassing the app shell entirely**. Their full-bleed canvas is deliberate. Leave them alone.                               |
+| 8   | `ui/` is vendor code per CONVENTIONS. Consume it; never add project props or hand-written styles to a file in `ui/`. Anything recurring that shadcn doesn't ship goes in `shared/`.           |
 
 ---
 
@@ -88,10 +88,10 @@ AppLayout
 - `PageContainer`, `PagePadding`, `PageWidth` as _page_ types all go away.
 - A page cannot accidentally get double padding, because it never sets padding.
 
-A `prose` page **centres its body**; a `wide` page's body fills the box. The
-header is untouched either way, so decision #3 still holds. Capping the text
-without centring it left prose pages hugging the left edge of an 80rem box with
-a void beside them.
+A `prose` page **centres** its column (header included); a `wide` page's body
+fills the box. This supersedes the original decision #3, which pinned the title
+to the full box on every page: capping the text without centring it left prose
+pages hugging the left edge of an 80rem box with a void beside them.
 
 ### Width assignment (do not reassign without asking)
 
@@ -410,17 +410,13 @@ Before declaring done, confirm all of these:
 - **`PageHeader` lost its inner `max-w-3xl`.** The h1 element spanned the box
   but wrapped at 3xl, so a long title was narrower than the list below it.
 
-- **`prose` pages now centre their body** (asked for after the work landed).
-  One `mx-auto max-w-3xl` on the body div in `Page`, keyed off `width`, so all
-  nine prose pages moved together — `/profile` included, through
-  `SettingsShell` — and no page opted in individually.
-
-  The header was briefly centred with it and reverted: the title was not meant
-  to move, and a stable page face is worth more than the title lining up with
-  the text under it. So on a wide screen a `prose` page has its title at the
-  left of the 80rem box and its reading column centred below it. That reads as
-  intentional, but if it looks like a mistake on a real screen, the fix is
-  centring the header too — one class on the `PageHeader` call in `Page`.
+- **`prose` pages now centre, and the title centres with them** (asked for after
+  the work landed). Two `mx-auto max-w-3xl`s in `Page`, one on the body and one
+  passed to `PageHeader` as its class, so the header stays the full box on a
+  `wide` page. Centring the body alone was rejected: the title would then start
+  ~16rem left of the text under it. No page opted in individually — it is keyed
+  off `width`, so all nine prose pages moved together, `/profile` included
+  through `SettingsShell`.
 
 - **The community 404 lost its `Card`.** 5.8 collapsed it into
   `shared/not-found.tsx`, which is uncontained and `min-h-screen`. The two were

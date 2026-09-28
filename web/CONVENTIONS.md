@@ -121,11 +121,11 @@ header, one body:
 - **Exactly two body widths**, chosen per page and never invented: `wide`
   (uncapped — lists and grids you scan) and `prose` (`max-w-3xl` — pages you
   read). The body is capped, the box is not.
-- **A `prose` page centres its body**, capping the text without centring it left
-  the column hugging the left edge of a 7xl box with a void beside it. Its
-  **header stays at the left of the box**: the title must not move when a page
-  picks a width, and a page's face is a stable thing. A `wide` page's body fills
-  the box, so there is nothing to centre.
+- **A `prose` page centres its column**, header included — capping the body
+  without centring it left the text hugging the left edge of a 7xl box with a
+  void beside it, and centring only the body left the title hanging off to the
+  left of its own text. A `wide` page's body fills the box, so there is nothing
+  to centre.
 - **The gap below the header is `Page`'s job**, not the page's.
 - **A page never sets padding.** `layouts/app` and `layouts/public` own it, so a
   page cannot end up padded twice. Nor does a page set a box width.
