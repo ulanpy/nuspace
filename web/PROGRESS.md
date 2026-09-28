@@ -323,15 +323,15 @@ routes/_app/profile/editor/index.tsx     Puck editor
 
 ### Phase 6 — template dialog
 
-- [ ] 6.1 `shared/page-editor/components/template-dialog.tsx` — add a section
+- [x] 6.1 `shared/page-editor/components/template-dialog.tsx` — add a section
       switch above the list, driven by one shared `keyword` box. The people
       source calls `fetchUsersPage`; the community source is unchanged and
       **unfiltered** (decision #2). Reuse the existing `hasDesign()` check for
       both shapes, and the existing empty/pending/error copy per source.
-- [ ] 6.2 `applyTemplate` and its 6 tests in
+- [x] 6.2 `applyTemplate` and its 6 tests in
       `shared/page-editor/components/_lib/template.test.ts` are **untouched** —
       it already takes `(page_content, config)`. They must stay green.
-- [ ] 6.3 Verify: `pnpm test && pnpm typecheck && pnpm lint`
+- [x] 6.3 Verify: `pnpm test && pnpm typecheck && pnpm lint`
 
 ### Phase 7 — "My Nuspace" sidebar page
 
@@ -574,3 +574,18 @@ Before declaring done, confirm all of these:
     of the page content; `qk.users` holds the public `/u/{slug}` copy everyone
     else reads. Invalidating only the session would leave a published page
     invisible to the people it was published for.
+
+### Phase 6
+
+21. **`UserSummaryResponse` gained `has_design: bool`.** 6.1 asks the dialog to
+    reuse the existing "No design" check for people, and a summary has no
+    `page_content` to check — so the choice was a boolean in the list or a
+    per-row fetch to find out. The boolean keeps deviation #7 intact: a
+    directory row still carries no page content, it just says whether there is
+    any. Applying a person's design still costs one `GET /u/{slug}`, which is
+    the same request the row's own link would make.
+22. **The dialog branches once, on `source`, into two `InfiniteList`s** rather
+    than unifying the two item shapes. A `TemplateSource` union would have to
+    carry `page_content` on the community arm and `has_design` on the user arm
+    and then narrow at every read — for two lists that share a search box, a
+    chip row, and an empty state each.

@@ -3549,6 +3549,11 @@ export interface components {
             slug: string;
             /** Picture */
             picture?: string | null;
+            /**
+             * Has Design
+             * @default false
+             */
+            has_design: boolean;
         };
         /** ValidationError */
         ValidationError: {

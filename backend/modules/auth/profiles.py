@@ -20,6 +20,17 @@ from backend.modules.media.schemas import MediaResponse
 from backend.modules.shared.media_ownership import delete_owned_media
 
 
+def has_design(page_content: dict | None) -> bool:
+    """Whether a saved page has blocks in it, and so can be used as a template.
+
+    Puck writes an empty page as `{"root": {...}, "content": []}`, so the
+    content array is the only thing that says whether there is a design — the
+    root is always there and always carries a title.
+    """
+    content = (page_content or {}).get("content")
+    return isinstance(content, list) and len(content) > 0
+
+
 class UserPagePolicy:
     """Who may see a profile page, and who may write one."""
 
@@ -105,7 +116,17 @@ class UserPageService:
 
         total_pages = calculate_pages(count=count, size=size)
         return schemas.UserPageList(
-            items=[schemas.UserSummaryResponse.model_validate(user) for user in users],
+            items=[
+                schemas.UserSummaryResponse(
+                    sub=user.sub,
+                    name=user.name,
+                    surname=user.surname,
+                    slug=user.slug,
+                    picture=user.picture,
+                    has_design=has_design(user.page_content),
+                )
+                for user in users
+            ],
             total=count,
             page=page,
             size=size,

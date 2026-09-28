@@ -46,6 +46,11 @@ class UserSummaryResponse(BaseModel):
     surname: str
     slug: str
     picture: str | None = None
+    # Whether there is anything to copy. A boolean rather than the content
+    # itself: the template dialog has to grey out a row with no design, and
+    # shipping every row's whole page blob to do that is not a trade worth
+    # making for a list of twenty names.
+    has_design: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -198,6 +198,21 @@ async def test_list_pages_envelope() -> None:
     assert not hasattr(result.items[0], "page_content")
 
 
+@pytest.mark.asyncio
+async def test_list_pages_reports_whether_a_design_exists() -> None:
+    """The template dialog greys out a row with no design, and the list is the
+    only thing it has to decide that from."""
+    designed = _user(sub="a")
+    designed.page_content = {"root": {"props": {"title": "Hi"}}, "content": [{"type": "Hero"}]}
+    empty = _user(sub="b")
+    empty.page_content = {"root": {"props": {"title": "Hi"}}, "content": []}
+    service, _ = _service(_user(), list_public=([designed, empty], 2))
+
+    result = await service.list_pages(page=1, size=10)
+
+    assert [item.has_design for item in result.items] == [True, False]
+
+
 # --------------------------------------------------------------------------
 # 1.4 — PATCH /users/me
 # --------------------------------------------------------------------------
