@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import type { UploadItem } from "@/hooks/use-media-upload"
 import { MediaPicker } from "@/components/shared/media/picker"
+import { slugSchema } from "@/lib/slug"
 import { toCommunityUploadItems } from "@/lib/communities"
 import {
   COMMUNITY_CATEGORIES,
@@ -24,31 +25,6 @@ import {
   type CommunityCreate,
   type CommunityUpdate,
 } from "@/lib/communities"
-
-/** Reserved words the server rejects as slugs — must match the backend list. */
-const RESERVED_SLUGS: string[] = [
-  "edit",
-  "admin",
-  "new",
-  "create",
-  "api",
-  "settings",
-  "about",
-  "terms-of-service",
-  "privacy-policy",
-  "communities",
-  "users",
-  "events",
-  "courses",
-  "announcements",
-  "contacts",
-  "opportunities",
-  "profile",
-  "sgotinish",
-]
-
-/** Lowercase letters, digits and single hyphens — the server's `validate_slug` shape. */
-const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 const communitySchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -60,15 +36,7 @@ const communitySchema = z.object({
     .refine((value) => value === "" || z.email().safeParse(value).success, {
       message: "Enter a valid email address",
     }),
-  slug: z
-    .string()
-    .trim()
-    .min(3, "Slug must be 3-50 characters")
-    .max(50, "Slug must be 3-50 characters")
-    .regex(SLUG_PATTERN, "Use lowercase letters, digits and single hyphens")
-    .refine((value) => !RESERVED_SLUGS.includes(value), {
-      message: "That slug is reserved",
-    }),
+  slug: slugSchema(),
 })
 
 type CommunityFormValues = z.infer<typeof communitySchema>

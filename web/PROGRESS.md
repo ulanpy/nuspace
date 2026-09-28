@@ -265,14 +265,14 @@ routes/_app/profile/communities/index.tsx
 routes/_app/profile/editor/index.tsx     Puck editor
 ```
 
-- [ ] 4.1 `routes/_app/profile/route.tsx` — keep the existing
+- [x] 4.1 `routes/_app/profile/route.tsx` — keep the existing
       redirect-to-`/` guard from `routes/_app/profile/index.tsx:8-12` verbatim.
       `SettingsLayout` with the two tabs. Actions: **Design page**
       (`PaletteIcon` → `/profile/editor`, copying `settings/route.tsx:54-62`)
       and the existing **Log out**.
-- [ ] 4.2 `routes/_app/profile/index.tsx` — redirect to `/profile/general`,
+- [x] 4.2 `routes/_app/profile/index.tsx` — redirect to `/profile/general`,
       as `communities/$slug/settings/index.tsx:3-4` does.
-- [ ] 4.3 **General tab**, an `ItemGroup` per decision #5:
+- [x] 4.3 **General tab**, an `ItemGroup` per decision #5:
       - Account row — `ItemMedia variant="image"`, uploaded avatar with the
         Keycloak `picture` claim as the `ResilientImage` fallback, name +
         email.
@@ -291,7 +291,7 @@ routes/_app/profile/editor/index.tsx     Puck editor
         the collapsed rail, `:388` in the mobile sheet. All three are chrome;
         the profile row was the only content-level copy. The row and its now-
         unused `ThemeToggle` import both go.
-- [ ] 4.4 **My communities tab** — no new backend endpoint.
+- [x] 4.4 **My communities tab** — no new backend endpoint.
       `fetchCommunitiesPage({ owner_sub: "me" }, { page, size })` already
       paginates. `page` in the URL via `validateSearch`
       (`.min(1).catch(1)`, per `admin-controls/index.tsx:8-17`). Rows mirror
@@ -299,7 +299,7 @@ routes/_app/profile/editor/index.tsx     Puck editor
       - Extract the footer at `admins-table.tsx:155-213` into one shared
         `TablePagination` component. Do not duplicate 60 lines of pagination
         markup into a third file.
-- [ ] 4.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] 4.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
 ### Phase 5 — editor + public page
 
@@ -528,3 +528,28 @@ Before declaring done, confirm all of these:
     "owned by me" filter to key it by, and an unused query key is the exact
     kind of speculative surface the rest of this plan is trying to delete. Add
     it with "My Nuspace", which is the first thing that reads it.
+
+### Phase 4
+
+12. **`MediaPicker`'s `label` is now optional.** The two upload zones sit in
+    `Item` rows that already carry "Profile picture" and "Banner" as their
+    titles, and an empty `<Label>` is worse than no label. The counter and the
+    aspect hint still render, so the zone is never unlabelled — the file input
+    keeps its own generated id.
+13. **The pagination footer is two files: `pagination.tsx` and
+    `page-range.ts`.** The component is TSX and `node --test` cannot import
+    TSX, so the pure `pageRangeSummary` — the part with an off-by-one in it —
+    lives next door where it can be tested. Vite and `tsc` both resolve
+    `.ts` before `.tsx`, so they could not share one name.
+14. **`/profile/editor` and its component landed in phase 4.** The "Design
+    page" action is part of 4.1's actions, and a `Link` to a route that does
+    not exist fails `tsc` against the generated route tree. The editor itself
+    is the community editor with the upload context pointed at `users`; phase
+    5 still owns the public page and the template source.
+15. **`CommunityFilters` gained `owner_sub`.** `myCommunitiesQueryOptions` had
+    to spell its filter out inline because the shared `fetchCommunitiesPage`
+    could not express it. The My-communities tab wants the paginated fetcher,
+    so the filter moved into the type rather than into a second fetch function.
+16. **The old `components/routes/profile/index.tsx` is gone**, and with it the
+    Appearance row and its `ThemeToggle` import, as 4.3 asks. Nothing imported
+    it but the route that is now a redirect.

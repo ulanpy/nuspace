@@ -1,13 +1,5 @@
 import { useState } from "react"
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
-  CrownIcon,
-  LogOutIcon,
-  UserMinusIcon,
-} from "lucide-react"
+import { CrownIcon, LogOutIcon, UserMinusIcon } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { keepPreviousData } from "@tanstack/react-query"
 
@@ -25,6 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { TablePagination } from "@/components/shared/table/pagination"
+import { pageRangeSummary } from "@/components/shared/table/page-range"
 
 export interface AdminRow {
   sub: string
@@ -152,65 +146,15 @@ export function AdminsTable({
         </div>
       </Card>
 
-      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-        <p className="text-sm text-muted-foreground">
-          {query.data && query.data.total > 0
-            ? `Showing ${(query.data.page - 1) * query.data.size + 1}\u2013${
-                (query.data.page - 1) * query.data.size +
-                query.data.items.length
-              } of ${query.data.total}`
-            : null}
-          {query.isFetching && !query.isPlaceholderData ? (
-            <span className="ml-2">Updating\u2026</span>
-          ) : null}
-        </p>
-
-        <div className="flex w-full items-center justify-center gap-4 sm:w-fit sm:justify-end">
-          <span className="text-sm font-medium">
-            Page {page} of {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="hidden lg:flex"
-              onClick={() => onPageChange(1)}
-              disabled={page === 1 || query.isPlaceholderData}
-            >
-              <span className="sr-only">Go to first page</span>
-              <ChevronsLeftIcon aria-hidden />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onPageChange(page - 1)}
-              disabled={page === 1 || query.isPlaceholderData}
-            >
-              <span className="sr-only">Go to previous page</span>
-              <ChevronLeftIcon aria-hidden />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onPageChange(page + 1)}
-              disabled={!query.data?.has_next || query.isPlaceholderData}
-            >
-              <span className="sr-only">Go to next page</span>
-              <ChevronRightIcon aria-hidden />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="hidden lg:flex"
-              onClick={() => onPageChange(totalPages)}
-              disabled={!query.data?.has_next || query.isPlaceholderData}
-            >
-              <span className="sr-only">Go to last page</span>
-              <ChevronsRightIcon aria-hidden />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        hasNext={query.data?.has_next ?? false}
+        summary={pageRangeSummary(query.data)}
+        isFetching={query.isFetching && !query.isPlaceholderData}
+        disabled={query.isPlaceholderData}
+        onPageChange={onPageChange}
+      />
 
       <ConfirmDialog
         open={removingAdmin != null}

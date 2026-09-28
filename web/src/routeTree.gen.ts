@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
+import { Route as AppProfileRouteRouteImport } from './routes/_app/profile/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as AppAnnouncementsIndexRouteImport } from './routes/_app/announcements/index'
 import { Route as AppCommunitiesIndexRouteImport } from './routes/_app/communities/index'
@@ -31,6 +32,9 @@ import { Route as AppCoursesAuditIndexRouteImport } from './routes/_app/courses/
 import { Route as AppCoursesScheduleIndexRouteImport } from './routes/_app/courses/schedule/index'
 import { Route as AppCoursesStatisticsIndexRouteImport } from './routes/_app/courses/statistics/index'
 import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$eventId/index'
+import { Route as AppProfileCommunitiesIndexRouteImport } from './routes/_app/profile/communities/index'
+import { Route as AppProfileEditorIndexRouteImport } from './routes/_app/profile/editor/index'
+import { Route as AppProfileGeneralIndexRouteImport } from './routes/_app/profile/general/index'
 import { Route as AppCommunitiesSlugEditorIndexRouteImport } from './routes/_app/communities/$slug/editor/index'
 import { Route as AppCommunitiesSlugSettingsIndexRouteImport } from './routes/_app/communities/$slug/settings/index'
 import { Route as AppCommunitiesSlugSettingsAdminControlsIndexRouteImport } from './routes/_app/communities/$slug/settings/admin-controls/index'
@@ -47,6 +51,11 @@ const PublicRouteRoute = PublicRouteRouteImport.update({
 const AppCoursesRouteRoute = AppCoursesRouteRouteImport.update({
   id: '/courses',
   path: '/courses',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProfileRouteRoute = AppProfileRouteRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
@@ -90,9 +99,9 @@ const AppOpportunitiesIndexRoute = AppOpportunitiesIndexRouteImport.update({
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppProfileIndexRoute = AppProfileIndexRouteImport.update({
-  id: '/profile/',
-  path: '/profile/',
-  getParentRoute: () => AppRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppProfileRouteRoute,
 } as any)
 const AppSgotinishIndexRoute = AppSgotinishIndexRouteImport.update({
   id: '/sgotinish/',
@@ -148,6 +157,22 @@ const AppEventsEventIdIndexRoute = AppEventsEventIdIndexRouteImport.update({
   path: '/events/$eventId/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppProfileCommunitiesIndexRoute =
+  AppProfileCommunitiesIndexRouteImport.update({
+    id: '/communities/',
+    path: '/communities/',
+    getParentRoute: () => AppProfileRouteRoute,
+  } as any)
+const AppProfileEditorIndexRoute = AppProfileEditorIndexRouteImport.update({
+  id: '/editor/',
+  path: '/editor/',
+  getParentRoute: () => AppProfileRouteRoute,
+} as any)
+const AppProfileGeneralIndexRoute = AppProfileGeneralIndexRouteImport.update({
+  id: '/general/',
+  path: '/general/',
+  getParentRoute: () => AppProfileRouteRoute,
+} as any)
 const AppCommunitiesSlugEditorIndexRoute =
   AppCommunitiesSlugEditorIndexRouteImport.update({
     id: '/communities/$slug/editor/',
@@ -176,6 +201,7 @@ const AppCommunitiesSlugSettingsGeneralIndexRoute =
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/courses': typeof AppCoursesRouteRouteWithChildren
+  '/profile': typeof AppProfileRouteRouteWithChildren
   '/announcements/': typeof AppAnnouncementsIndexRoute
   '/communities/': typeof AppCommunitiesIndexRoute
   '/contacts/': typeof AppContactsIndexRoute
@@ -194,6 +220,9 @@ export interface FileRoutesByFullPath {
   '/courses/schedule/': typeof AppCoursesScheduleIndexRoute
   '/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
   '/events/$eventId/': typeof AppEventsEventIdIndexRoute
+  '/profile/communities/': typeof AppProfileCommunitiesIndexRoute
+  '/profile/editor/': typeof AppProfileEditorIndexRoute
+  '/profile/general/': typeof AppProfileGeneralIndexRoute
   '/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
   '/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
   '/communities/$slug/settings/admin-controls/': typeof AppCommunitiesSlugSettingsAdminControlsIndexRoute
@@ -218,6 +247,9 @@ export interface FileRoutesByTo {
   '/courses/schedule': typeof AppCoursesScheduleIndexRoute
   '/courses/statistics': typeof AppCoursesStatisticsIndexRoute
   '/events/$eventId': typeof AppEventsEventIdIndexRoute
+  '/profile/communities': typeof AppProfileCommunitiesIndexRoute
+  '/profile/editor': typeof AppProfileEditorIndexRoute
+  '/profile/general': typeof AppProfileGeneralIndexRoute
   '/communities/$slug/editor': typeof AppCommunitiesSlugEditorIndexRoute
   '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsIndexRoute
   '/communities/$slug/settings/admin-controls': typeof AppCommunitiesSlugSettingsAdminControlsIndexRoute
@@ -228,6 +260,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteRouteWithChildren
   '/_public': typeof PublicRouteRouteWithChildren
   '/_app/courses': typeof AppCoursesRouteRouteWithChildren
+  '/_app/profile': typeof AppProfileRouteRouteWithChildren
   '/_public/': typeof PublicIndexRoute
   '/_app/announcements/': typeof AppAnnouncementsIndexRoute
   '/_app/communities/': typeof AppCommunitiesIndexRoute
@@ -247,6 +280,9 @@ export interface FileRoutesById {
   '/_app/courses/schedule/': typeof AppCoursesScheduleIndexRoute
   '/_app/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
   '/_app/events/$eventId/': typeof AppEventsEventIdIndexRoute
+  '/_app/profile/communities/': typeof AppProfileCommunitiesIndexRoute
+  '/_app/profile/editor/': typeof AppProfileEditorIndexRoute
+  '/_app/profile/general/': typeof AppProfileGeneralIndexRoute
   '/_app/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
   '/_app/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
   '/_app/communities/$slug/settings/admin-controls/': typeof AppCommunitiesSlugSettingsAdminControlsIndexRoute
@@ -257,6 +293,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/courses'
+    | '/profile'
     | '/announcements/'
     | '/communities/'
     | '/contacts/'
@@ -275,6 +312,9 @@ export interface FileRouteTypes {
     | '/courses/schedule/'
     | '/courses/statistics/'
     | '/events/$eventId/'
+    | '/profile/communities/'
+    | '/profile/editor/'
+    | '/profile/general/'
     | '/communities/$slug/editor/'
     | '/communities/$slug/settings/'
     | '/communities/$slug/settings/admin-controls/'
@@ -299,6 +339,9 @@ export interface FileRouteTypes {
     | '/courses/schedule'
     | '/courses/statistics'
     | '/events/$eventId'
+    | '/profile/communities'
+    | '/profile/editor'
+    | '/profile/general'
     | '/communities/$slug/editor'
     | '/communities/$slug/settings'
     | '/communities/$slug/settings/admin-controls'
@@ -308,6 +351,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_public'
     | '/_app/courses'
+    | '/_app/profile'
     | '/_public/'
     | '/_app/announcements/'
     | '/_app/communities/'
@@ -327,6 +371,9 @@ export interface FileRouteTypes {
     | '/_app/courses/schedule/'
     | '/_app/courses/statistics/'
     | '/_app/events/$eventId/'
+    | '/_app/profile/communities/'
+    | '/_app/profile/editor/'
+    | '/_app/profile/general/'
     | '/_app/communities/$slug/editor/'
     | '/_app/communities/$slug/settings/'
     | '/_app/communities/$slug/settings/admin-controls/'
@@ -359,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/courses'
       fullPath: '/courses'
       preLoaderRoute: typeof AppCoursesRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_public/': {
@@ -419,10 +473,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/profile/': {
       id: '/_app/profile/'
-      path: '/profile'
+      path: '/'
       fullPath: '/profile/'
       preLoaderRoute: typeof AppProfileIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppProfileRouteRoute
     }
     '/_app/sgotinish/': {
       id: '/_app/sgotinish/'
@@ -494,6 +548,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEventsEventIdIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/profile/communities/': {
+      id: '/_app/profile/communities/'
+      path: '/communities'
+      fullPath: '/profile/communities/'
+      preLoaderRoute: typeof AppProfileCommunitiesIndexRouteImport
+      parentRoute: typeof AppProfileRouteRoute
+    }
+    '/_app/profile/editor/': {
+      id: '/_app/profile/editor/'
+      path: '/editor'
+      fullPath: '/profile/editor/'
+      preLoaderRoute: typeof AppProfileEditorIndexRouteImport
+      parentRoute: typeof AppProfileRouteRoute
+    }
+    '/_app/profile/general/': {
+      id: '/_app/profile/general/'
+      path: '/general'
+      fullPath: '/profile/general/'
+      preLoaderRoute: typeof AppProfileGeneralIndexRouteImport
+      parentRoute: typeof AppProfileRouteRoute
+    }
     '/_app/communities/$slug/editor/': {
       id: '/_app/communities/$slug/editor/'
       path: '/communities/$slug/editor'
@@ -543,6 +618,24 @@ const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
   AppCoursesRouteRouteChildren,
 )
 
+interface AppProfileRouteRouteChildren {
+  AppProfileIndexRoute: typeof AppProfileIndexRoute
+  AppProfileCommunitiesIndexRoute: typeof AppProfileCommunitiesIndexRoute
+  AppProfileEditorIndexRoute: typeof AppProfileEditorIndexRoute
+  AppProfileGeneralIndexRoute: typeof AppProfileGeneralIndexRoute
+}
+
+const AppProfileRouteRouteChildren: AppProfileRouteRouteChildren = {
+  AppProfileIndexRoute: AppProfileIndexRoute,
+  AppProfileCommunitiesIndexRoute: AppProfileCommunitiesIndexRoute,
+  AppProfileEditorIndexRoute: AppProfileEditorIndexRoute,
+  AppProfileGeneralIndexRoute: AppProfileGeneralIndexRoute,
+}
+
+const AppProfileRouteRouteWithChildren = AppProfileRouteRoute._addFileChildren(
+  AppProfileRouteRouteChildren,
+)
+
 interface AppCommunitiesSlugSettingsRouteRouteChildren {
   AppCommunitiesSlugSettingsIndexRoute: typeof AppCommunitiesSlugSettingsIndexRoute
   AppCommunitiesSlugSettingsAdminControlsIndexRoute: typeof AppCommunitiesSlugSettingsAdminControlsIndexRoute
@@ -565,13 +658,13 @@ const AppCommunitiesSlugSettingsRouteRouteWithChildren =
 
 interface AppRouteRouteChildren {
   AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
+  AppProfileRouteRoute: typeof AppProfileRouteRouteWithChildren
   AppAnnouncementsIndexRoute: typeof AppAnnouncementsIndexRoute
   AppCommunitiesIndexRoute: typeof AppCommunitiesIndexRoute
   AppContactsIndexRoute: typeof AppContactsIndexRoute
   AppDegreeAuditInfoIndexRoute: typeof AppDegreeAuditInfoIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
   AppOpportunitiesIndexRoute: typeof AppOpportunitiesIndexRoute
-  AppProfileIndexRoute: typeof AppProfileIndexRoute
   AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
   AppCommunitiesSlugSettingsRouteRoute: typeof AppCommunitiesSlugSettingsRouteRouteWithChildren
   AppCommunitiesSlugIndexRoute: typeof AppCommunitiesSlugIndexRoute
@@ -581,13 +674,13 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppCoursesRouteRoute: AppCoursesRouteRouteWithChildren,
+  AppProfileRouteRoute: AppProfileRouteRouteWithChildren,
   AppAnnouncementsIndexRoute: AppAnnouncementsIndexRoute,
   AppCommunitiesIndexRoute: AppCommunitiesIndexRoute,
   AppContactsIndexRoute: AppContactsIndexRoute,
   AppDegreeAuditInfoIndexRoute: AppDegreeAuditInfoIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,
   AppOpportunitiesIndexRoute: AppOpportunitiesIndexRoute,
-  AppProfileIndexRoute: AppProfileIndexRoute,
   AppSgotinishIndexRoute: AppSgotinishIndexRoute,
   AppCommunitiesSlugSettingsRouteRoute:
     AppCommunitiesSlugSettingsRouteRouteWithChildren,

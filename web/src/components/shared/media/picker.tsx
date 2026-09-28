@@ -22,7 +22,11 @@ const ASPECT_LABEL: Record<AspectRatio, string> = {
 }
 
 export interface MediaPickerProps {
-  label: string
+  /**
+   * Omit when the zone already has a title in its row — the counter and the
+   * aspect hint still render, so the zone is not left unlabelled.
+   */
+  label?: string
   /** Images the entity already has, in this zone's format. */
   existing?: readonly Media[]
   /** Ids of `existing` the user has marked for removal. */
@@ -103,7 +107,7 @@ export function MediaPicker({
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
-        <Label htmlFor={inputId}>{label}</Label>
+        {label ? <Label htmlFor={inputId}>{label}</Label> : null}
         <span className="text-xs text-muted-foreground">
           {String(keptCount + files.length)} of {String(maxFiles)} ·{" "}
           {ASPECT_LABEL[aspectRatio]}

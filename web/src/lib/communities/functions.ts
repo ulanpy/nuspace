@@ -24,6 +24,8 @@ export interface CommunityFilters {
   community_type?: CommunityType
   community_category?: CommunityCategory
   keyword?: string
+  /** `"me"` resolves to the caller server-side; `myCommunitiesQueryOptions` uses it. */
+  owner_sub?: string
 }
 
 /** One page of the communities list. Used by useInfiniteList. */
