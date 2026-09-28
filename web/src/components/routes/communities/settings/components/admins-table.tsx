@@ -16,7 +16,14 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item"
 import { TablePagination } from "@/components/shared/table/pagination"
 import { pageRangeSummary } from "@/components/shared/table/page-range"
 
@@ -85,66 +92,64 @@ export function AdminsTable({
 
   return (
     <div className="space-y-4">
-      <Card className="py-0">
-        <div className="divide-y">
-          {me ? (
-            <AdminRowView
-              row={me}
-              badge="You"
-              actions={adminRowActions(
-                { isSelf: true, isOwner: false },
-                canManageAdmins
-              )}
-              onLeave={() => setIsConfirmingLeave(true)}
-            />
-          ) : null}
-
+      <ItemGroup className="gap-2">
+        {me ? (
           <AdminRowView
-            row={owner}
-            badge="Owner"
+            row={me}
+            badge="You"
             actions={adminRowActions(
-              { isSelf: isCurrentUserOwner, isOwner: true },
+              { isSelf: true, isOwner: false },
               canManageAdmins
             )}
+            onLeave={() => setIsConfirmingLeave(true)}
           />
+        ) : null}
 
-          <QueryBoundary query={query}>
-            {(admins) =>
-              admins.items.map((admin) => (
-                <AdminRowView
-                  key={admin.sub}
-                  row={{
+        <AdminRowView
+          row={owner}
+          badge="Owner"
+          actions={adminRowActions(
+            { isSelf: isCurrentUserOwner, isOwner: true },
+            canManageAdmins
+          )}
+        />
+
+        <QueryBoundary query={query}>
+          {(admins) =>
+            admins.items.map((admin) => (
+              <AdminRowView
+                key={admin.sub}
+                row={{
+                  sub: admin.sub,
+                  name: admin.name,
+                  surname: admin.surname,
+                  picture: admin.picture ?? null,
+                }}
+                actions={adminRowActions(
+                  { isSelf: false, isOwner: false },
+                  canManageAdmins
+                )}
+                onRemove={() =>
+                  setRemovingAdmin({
                     sub: admin.sub,
                     name: admin.name,
                     surname: admin.surname,
                     picture: admin.picture ?? null,
-                  }}
-                  actions={adminRowActions(
-                    { isSelf: false, isOwner: false },
-                    canManageAdmins
-                  )}
-                  onRemove={() =>
-                    setRemovingAdmin({
-                      sub: admin.sub,
-                      name: admin.name,
-                      surname: admin.surname,
-                      picture: admin.picture ?? null,
-                    })
-                  }
-                  onTransfer={() =>
-                    setTransferringTo({
-                      sub: admin.sub,
-                      name: admin.name,
-                      surname: admin.surname,
-                      picture: admin.picture ?? null,
-                    })
-                  }
-                />
-              ))
-            }
-          </QueryBoundary>
-        </div>
-      </Card>
+                  })
+                }
+                onTransfer={() =>
+                  setTransferringTo({
+                    sub: admin.sub,
+                    name: admin.name,
+                    surname: admin.surname,
+                    picture: admin.picture ?? null,
+                  })
+                }
+              />
+            ))
+          }
+        </QueryBoundary>
+      </ItemGroup>
 
       <TablePagination
         page={page}
@@ -250,23 +255,26 @@ function AdminRowView({
   onLeave,
 }: AdminRowViewProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <Avatar>
-        <AvatarImage
-          src={row.picture ?? undefined}
-          alt={`${row.name} ${row.surname}`}
-        />
-        <AvatarFallback>{initialsOf(row.name, row.surname)}</AvatarFallback>
-      </Avatar>
+    <Item variant="muted" size="sm">
+      <ItemMedia variant="image" className="rounded-full">
+        <Avatar className="size-10 rounded-full">
+          <AvatarImage
+            src={row.picture ?? undefined}
+            alt={`${row.name} ${row.surname}`}
+          />
+          <AvatarFallback>{initialsOf(row.name, row.surname)}</AvatarFallback>
+        </Avatar>
+      </ItemMedia>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <p className="truncate font-medium">
+      <ItemContent>
+        <ItemTitle className="w-auto min-w-0 flex-1">
           {row.name} {row.surname}
-        </p>
-        {badge ? <Badge variant="secondary">{badge}</Badge> : null}
-      </div>
+        </ItemTitle>
+      </ItemContent>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <ItemActions className="ml-auto">
+        {badge ? <Badge variant="secondary">{badge}</Badge> : null}
+
         {actions.canManage && onTransfer ? (
           <Button
             variant="outline"
@@ -319,7 +327,7 @@ function AdminRowView({
             Leave
           </Button>
         ) : null}
-      </div>
-    </div>
+      </ItemActions>
+    </Item>
   )
 }

@@ -11,6 +11,13 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { CommunityForm } from "@/components/routes/communities/components/community-form"
 import type { CommunitySubmitPayload } from "@/components/routes/communities/components/community-form"
 import { Button } from "@/components/ui/button"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item"
 
 export function Page({ community }: { community: Community }) {
   const navigate = useNavigate()
@@ -77,23 +84,28 @@ export function Page({ community }: { community: Community }) {
 
       {community.permissions.can_delete ? (
         <SettingsSection title="Danger zone">
-          <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="space-y-1">
-              <p className="font-medium">Delete this community</p>
-              <p className="text-sm text-muted-foreground">
+          <Item
+            variant="outline"
+            className="border-destructive/30 bg-destructive/5"
+          >
+            <ItemContent>
+              <ItemTitle>Delete this community</ItemTitle>
+              <ItemDescription>
                 The community and its images will be removed for everyone. Its
                 events are not deleted with it.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              className="shrink-0 text-destructive hover:text-destructive"
-              onClick={() => setIsConfirmingDelete(true)}
-            >
-              <Trash2Icon aria-hidden />
-              Delete community
-            </Button>
-          </div>
+              </ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                variant="outline"
+                className="shrink-0 text-destructive hover:text-destructive"
+                onClick={() => setIsConfirmingDelete(true)}
+              >
+                <Trash2Icon aria-hidden />
+                Delete community
+              </Button>
+            </ItemActions>
+          </Item>
         </SettingsSection>
       ) : null}
 

@@ -11,6 +11,13 @@ import {
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item"
 
 /** The link body only — the page wraps this in a `SettingsSection`. */
 export function AdminAccessLink({ slug }: { slug: string }) {
@@ -36,14 +43,21 @@ export function AdminAccessLink({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Input
-          readOnly
-          value={url}
-          aria-label="Admin access link"
-          placeholder="Loading link\u2026"
-        />
-        <div className="flex gap-2">
+      <Item variant="muted">
+        <ItemContent>
+          <ItemTitle>Admin access link</ItemTitle>
+          <ItemDescription>
+            Anyone with this link who is signed in becomes an admin. Treat it
+            like a password.
+          </ItemDescription>
+          <Input
+            readOnly
+            value={url}
+            aria-label="Admin access link"
+            placeholder="Loading link\u2026"
+          />
+        </ItemContent>
+        <ItemActions>
           <Button
             variant="outline"
             size="icon"
@@ -60,8 +74,8 @@ export function AdminAccessLink({ slug }: { slug: string }) {
           >
             <RotateCwIcon aria-hidden />
           </Button>
-        </div>
-      </div>
+        </ItemActions>
+      </Item>
       {rotateAdminLink.isError && (
         <p className="text-sm text-destructive" role="alert">
           {apiErrorMessage(

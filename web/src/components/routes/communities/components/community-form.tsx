@@ -5,7 +5,14 @@ import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item"
 import {
   Select,
   SelectContent,
@@ -157,61 +164,82 @@ export function CommunityForm({
           })
         })(submitEvent)
       }}
-      className="space-y-5"
+      className="space-y-4"
     >
-      <div className="space-y-1">
-        <Label htmlFor="community-name">Name</Label>
-        <Input
-          id="community-name"
-          placeholder="NU Fencing Club"
-          disabled={isPending || !editable("name")}
-          {...form.register("name")}
-        />
-        <FieldError message={errors.name?.message} />
-      </div>
+      <ItemGroup>
+        <FieldRow label="Name" error={errors.name?.message}>
+          <Input
+            id="community-name"
+            placeholder="NU Fencing Club"
+            disabled={isPending || !editable("name")}
+            {...form.register("name")}
+          />
+        </FieldRow>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FieldSelect
-          label="Type"
-          id="community-type"
-          options={COMMUNITY_TYPES}
-          editable={!community || canEditField(community, "type")}
-          displayValue={community?.type}
-          disabled={isPending}
-          control={form.control}
-          name="type"
-        />
-        <FieldSelect
-          label="Category"
-          id="community-category"
-          options={COMMUNITY_CATEGORIES}
-          editable={!community || canEditField(community, "category")}
-          displayValue={community?.category}
-          disabled={isPending}
-          control={form.control}
-          name="category"
-        />
-      </div>
+        <Item variant="muted">
+          <ItemContent>
+            <ItemTitle>Type</ItemTitle>
+            <ItemDescription>
+              {editable("type")
+                ? "What kind of group this is."
+                : "Only the owner can change this."}
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <FieldSelect
+              id="community-type"
+              options={COMMUNITY_TYPES}
+              editable={!community || canEditField(community, "type")}
+              displayValue={community?.type}
+              disabled={isPending}
+              control={form.control}
+              name="type"
+            />
+          </ItemActions>
+        </Item>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Label htmlFor="community-slug">URL</Label>
+        <Item variant="muted">
+          <ItemContent>
+            <ItemTitle>Category</ItemTitle>
+            <ItemDescription>
+              {editable("category")
+                ? "Where this community belongs."
+                : "Only the owner can change this."}
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <FieldSelect
+              id="community-category"
+              options={COMMUNITY_CATEGORIES}
+              editable={!community || canEditField(community, "category")}
+              displayValue={community?.category}
+              disabled={isPending}
+              control={form.control}
+              name="category"
+            />
+          </ItemActions>
+        </Item>
+
+        <FieldRow
+          label="URL"
+          description={
+            <>
+              Web address for your community, e.g.{" "}
+              <span className="font-medium">/communities/nu-fencing-club</span>.
+              Lowercase letters, digits and single hyphens only.
+            </>
+          }
+          error={errors.slug?.message}
+        >
           <Input
             id="community-slug"
             placeholder="nu-fencing-club"
             disabled={isPending || !editable("slug")}
             {...form.register("slug")}
           />
-          <p className="text-xs text-muted-foreground">
-            Web address for your community, e.g.{" "}
-            <span className="font-medium">/communities/nu-fencing-club</span>.
-            Lowercase letters, digits and single hyphens only.
-          </p>
-          <FieldError message={errors.slug?.message} />
-        </div>
+        </FieldRow>
 
-        <div className="space-y-1">
-          <Label htmlFor="community-email">Email</Label>
+        <FieldRow label="Email" error={errors.email?.message}>
           <Input
             id="community-email"
             type="email"
@@ -219,35 +247,34 @@ export function CommunityForm({
             disabled={isPending || !editable("email")}
             {...form.register("email")}
           />
-          <FieldError message={errors.email?.message} />
-        </div>
-      </div>
+        </FieldRow>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <MediaPicker
-          label="Profile picture"
-          aspectRatio="square"
-          maxFiles={1}
-          files={profileFiles}
-          onFilesChange={setProfileFiles}
-          existing={existingProfile}
-          markedForDeletion={removedMedia}
-          onToggleDeletion={toggleRemoval}
-          disabled={isPending}
-        />
+        <FieldRow label="Profile picture">
+          <MediaPicker
+            aspectRatio="square"
+            maxFiles={1}
+            files={profileFiles}
+            onFilesChange={setProfileFiles}
+            existing={existingProfile}
+            markedForDeletion={removedMedia}
+            onToggleDeletion={toggleRemoval}
+            disabled={isPending}
+          />
+        </FieldRow>
 
-        <MediaPicker
-          label="Banner"
-          aspectRatio="video"
-          maxFiles={1}
-          files={bannerFiles}
-          onFilesChange={setBannerFiles}
-          existing={existingBanner}
-          markedForDeletion={removedMedia}
-          onToggleDeletion={toggleRemoval}
-          disabled={isPending}
-        />
-      </div>
+        <FieldRow label="Banner">
+          <MediaPicker
+            aspectRatio="video"
+            maxFiles={1}
+            files={bannerFiles}
+            onFilesChange={setBannerFiles}
+            existing={existingBanner}
+            markedForDeletion={removedMedia}
+            onToggleDeletion={toggleRemoval}
+            disabled={isPending}
+          />
+        </FieldRow>
+      </ItemGroup>
 
       {submitError && (
         <p className="text-sm text-destructive" role="alert">
@@ -272,13 +299,40 @@ export function CommunityForm({
   )
 }
 
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null
-  return <p className="text-xs text-destructive">{message}</p>
+/**
+ * A field that spans the row: the title, then the control underneath, per
+ * decision #5. The `Label` is `sr-only` because the `ItemTitle` beside the
+ * control already names it, and a screen reader hearing both would hear the
+ * field twice.
+ */
+function FieldRow({
+  label,
+  description,
+  error,
+  children,
+}: {
+  label: string
+  description?: React.ReactNode
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <Item variant="muted">
+      <ItemContent>
+        <ItemTitle>{label}</ItemTitle>
+        {description ? <ItemDescription>{description}</ItemDescription> : null}
+        {children}
+        {error ? (
+          <p className="text-xs text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </ItemContent>
+    </Item>
+  )
 }
 
 function FieldSelect({
-  label,
   id,
   options,
   editable,
@@ -287,7 +341,6 @@ function FieldSelect({
   control,
   name,
 }: {
-  label: string
   id: string
   options: readonly string[]
   editable: boolean
@@ -298,45 +351,39 @@ function FieldSelect({
 }) {
   if (!editable) {
     return (
-      <div className="space-y-1">
-        <Label htmlFor={id}>{label}</Label>
-        <p
-          id={id}
-          className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground capitalize"
-        >
-          {displayValue}
-        </p>
-      </div>
+      <p
+        id={id}
+        className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground capitalize"
+      >
+        {displayValue}
+      </p>
     )
   }
 
   return (
-    <div className="space-y-1">
-      <Label htmlFor={id}>{label}</Label>
-      <Controller
-        control={control}
-        name={name}
-        render={({ field }) => (
-          <Select
-            value={field.value}
-            onValueChange={(value) => {
-              if (value) field.onChange(value)
-            }}
-            disabled={disabled}
-          >
-            <SelectTrigger id={id} className="w-full capitalize">
-              <SelectValue>{field.value}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option} value={option} className="capitalize">
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      />
-    </div>
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <Select
+          value={field.value}
+          onValueChange={(value) => {
+            if (value) field.onChange(value)
+          }}
+          disabled={disabled}
+        >
+          <SelectTrigger id={id} className="w-36 capitalize">
+            <SelectValue>{field.value}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option} value={option} className="capitalize">
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    />
   )
 }

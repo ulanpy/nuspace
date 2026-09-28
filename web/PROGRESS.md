@@ -351,7 +351,7 @@ routes/_app/profile/editor/index.tsx     Puck editor
 
 Decision #6: everything, not just the fields.
 
-- [ ] 8.1 **Community General** — name, type, category, slug, email → `Item`
+- [x] 8.1 **Community General** — name, type, category, slug, email → `Item`
       rows, mixed layout per decision #5. `MediaPicker` rows. The 2-column
       grid goes to one column, **not** replaced for Type + Category
       (decision #7). The danger zone (`general/index.tsx:78-98`) is already
@@ -359,12 +359,12 @@ Decision #6: everything, not just the fields.
       `<Item variant="outline">` keeping the destructive classes.
       `CommunityForm` is shared with `CommunityFormDialog`, so the create
       dialog restyles too (decision #8).
-- [ ] 8.2 **Admin access link** — `settings/components/admin-access-link.tsx`
+- [x] 8.2 **Admin access link** — `settings/components/admin-access-link.tsx`
       → `Item` rows. Read-only `Input` + copy + rotate, both
       `ConfirmDialog`-gated. Logic unchanged; markup only. Leave the
       `qk.adminLink` key out of the `communities` prefix as its comment
       (`query-keys.ts:38-46`) requires.
-- [ ] 8.3 **Admins table rows** — `AdminRowView`
+- [x] 8.3 **Admins table rows** — `AdminRowView`
       (`admins-table.tsx:300-381`) → `Item` with `ItemMedia variant="image"`,
       `ItemTitle` + `Badge`, actions in `ItemActions`. The
       `<Card><div className="divide-y">` wrapper becomes an `ItemGroup`.
@@ -372,8 +372,8 @@ Decision #6: everything, not just the fields.
       the responsive labelled/icon-only button pair are unchanged. The
       `excludeSub` reasoning at `:74-78` must survive verbatim — the pinned
       "You" row is why the server drops them from the rows *and* the count.
-- [ ] 8.4 Pagination footer untouched beyond the phase 4.4 extraction.
-- [ ] 8.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] 8.4 Pagination footer untouched beyond the phase 4.4 extraction.
+- [x] 8.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
 ### Phase 9 — final
 
