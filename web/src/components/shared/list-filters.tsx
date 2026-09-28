@@ -3,13 +3,19 @@ import { SearchIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import { chipClass } from "@/components/shared/toggle-chip"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export interface FilterOption<T extends string> {
   value: T
@@ -51,22 +57,66 @@ export function SearchFilter({
   label?: string
 }) {
   return (
-    <div className="relative min-w-56 flex-1">
-      <SearchIcon
-        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-        aria-hidden
-      />
-      <Input
+    <InputGroup className="min-w-56 flex-1">
+      <InputGroupAddon>
+        <SearchIcon aria-hidden />
+      </InputGroupAddon>
+      <InputGroupInput
         value={value}
         aria-label={label ?? placeholder}
         onChange={(event) => {
           onChange(event.target.value)
         }}
         placeholder={placeholder}
-        className="pl-9"
         autoComplete="off"
       />
-    </div>
+    </InputGroup>
+  )
+}
+
+/** Base UI's `Tabs` wants a value on every Tab, so "no filter" gets one. */
+const ALL = "__all__"
+
+/**
+ * A single-choice filter: one tab lit, everything else not.
+ *
+ * The same `ui/tabs` primitives as `RouteTabs` with no panels behind them —
+ * these single out one value in the URL rather than navigating to a route, and
+ * the tab strip is what every page already used for that. `undefined` means "no
+ * filter", which the `All` chip carries.
+ */
+export function FilterTabs<T extends string>({
+  label,
+  value,
+  options,
+  showAll = true,
+  onChange,
+}: {
+  label: string
+  value: T | undefined
+  options: readonly FilterOption<T>[]
+  /** Off for a filter that always has a value, e.g. the events time range. */
+  showAll?: boolean
+  onChange: (value: T | undefined) => void
+}) {
+  return (
+    <Tabs
+      className="w-fit max-w-full overflow-x-auto"
+      value={value ?? ALL}
+      onValueChange={(next: string) => {
+        // "All" matches no option, which is exactly the "no filter" it means.
+        onChange(options.find((option) => option.value === next)?.value)
+      }}
+    >
+      <TabsList aria-label={label}>
+        {showAll && <TabsTrigger value={ALL}>All</TabsTrigger>}
+        {options.map((option) => (
+          <TabsTrigger key={option.value} value={option.value}>
+            {option.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   )
 }
 
@@ -144,21 +194,22 @@ export function MultiFilter<T extends string>({
           {options.map((option) => {
             const checked = selected.includes(option.value)
             return (
+              // The native <label> wraps the checkbox, which Base UI's span
+              // control relies on for both its accessible name and its
+              // click-anywhere hit area.
               <label
                 key={option.value}
-                className="flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={checked}
-                  onChange={() => {
+                  onCheckedChange={() => {
                     onChange(
                       checked
                         ? selected.filter((item) => item !== option.value)
                         : [...selected, option.value]
                     )
                   }}
-                  className="mt-0.5"
                 />
                 <span>{option.label}</span>
               </label>
