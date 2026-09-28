@@ -21,6 +21,7 @@ import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index
 import { Route as AppDegreeAuditInfoIndexRouteImport } from './routes/_app/degree-audit-info/index'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppOpportunitiesIndexRouteImport } from './routes/_app/opportunities/index'
+import { Route as AppPeopleIndexRouteImport } from './routes/_app/people/index'
 import { Route as AppProfileIndexRouteImport } from './routes/_app/profile/index'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
 import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/index'
@@ -97,6 +98,11 @@ const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
 const AppOpportunitiesIndexRoute = AppOpportunitiesIndexRouteImport.update({
   id: '/opportunities/',
   path: '/opportunities/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppPeopleIndexRoute = AppPeopleIndexRouteImport.update({
+  id: '/people/',
+  path: '/people/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppProfileIndexRoute = AppProfileIndexRouteImport.update({
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/degree-audit-info/': typeof AppDegreeAuditInfoIndexRoute
   '/events/': typeof AppEventsIndexRoute
   '/opportunities/': typeof AppOpportunitiesIndexRoute
+  '/people/': typeof AppPeopleIndexRoute
   '/profile/': typeof AppProfileIndexRoute
   '/sgotinish/': typeof AppSgotinishIndexRoute
   '/about/': typeof PublicAboutIndexRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/degree-audit-info': typeof AppDegreeAuditInfoIndexRoute
   '/events': typeof AppEventsIndexRoute
   '/opportunities': typeof AppOpportunitiesIndexRoute
+  '/people': typeof AppPeopleIndexRoute
   '/profile': typeof AppProfileIndexRoute
   '/sgotinish': typeof AppSgotinishIndexRoute
   '/about': typeof PublicAboutIndexRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/_app/degree-audit-info/': typeof AppDegreeAuditInfoIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/opportunities/': typeof AppOpportunitiesIndexRoute
+  '/_app/people/': typeof AppPeopleIndexRoute
   '/_app/profile/': typeof AppProfileIndexRoute
   '/_app/sgotinish/': typeof AppSgotinishIndexRoute
   '/_public/about/': typeof PublicAboutIndexRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/degree-audit-info/'
     | '/events/'
     | '/opportunities/'
+    | '/people/'
     | '/profile/'
     | '/sgotinish/'
     | '/about/'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/degree-audit-info'
     | '/events'
     | '/opportunities'
+    | '/people'
     | '/profile'
     | '/sgotinish'
     | '/about'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/_app/degree-audit-info/'
     | '/_app/events/'
     | '/_app/opportunities/'
+    | '/_app/people/'
     | '/_app/profile/'
     | '/_app/sgotinish/'
     | '/_public/about/'
@@ -481,6 +493,13 @@ declare module '@tanstack/react-router' {
       path: '/opportunities'
       fullPath: '/opportunities/'
       preLoaderRoute: typeof AppOpportunitiesIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/people/': {
+      id: '/_app/people/'
+      path: '/people'
+      fullPath: '/people/'
+      preLoaderRoute: typeof AppPeopleIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/profile/': {
@@ -684,6 +703,7 @@ interface AppRouteRouteChildren {
   AppDegreeAuditInfoIndexRoute: typeof AppDegreeAuditInfoIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
   AppOpportunitiesIndexRoute: typeof AppOpportunitiesIndexRoute
+  AppPeopleIndexRoute: typeof AppPeopleIndexRoute
   AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
   AppCommunitiesSlugSettingsRouteRoute: typeof AppCommunitiesSlugSettingsRouteRouteWithChildren
   AppCommunitiesSlugIndexRoute: typeof AppCommunitiesSlugIndexRoute
@@ -701,6 +721,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDegreeAuditInfoIndexRoute: AppDegreeAuditInfoIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,
   AppOpportunitiesIndexRoute: AppOpportunitiesIndexRoute,
+  AppPeopleIndexRoute: AppPeopleIndexRoute,
   AppSgotinishIndexRoute: AppSgotinishIndexRoute,
   AppCommunitiesSlugSettingsRouteRoute:
     AppCommunitiesSlugSettingsRouteRouteWithChildren,

@@ -9,6 +9,7 @@ import {
   LogOutIcon,
   MenuIcon,
   PanelLeftIcon,
+  UserIcon,
   UsersIcon,
 } from "lucide-react"
 import type { LinkProps } from "@tanstack/react-router"
@@ -51,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/events", label: "Events", icon: CalendarIcon },
   { to: "/courses", label: "Courses", icon: BookOpenIcon },
   { to: "/communities", label: "Communities", icon: UsersIcon },
+  { to: "/people", label: "My Nuspace", icon: UserIcon },
   { to: "/opportunities", label: "Opportunities Digest", icon: BriefcaseIcon },
   { to: "/contacts", label: "Contacts", icon: InfoIcon },
 ]

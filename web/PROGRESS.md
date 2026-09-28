@@ -335,17 +335,17 @@ routes/_app/profile/editor/index.tsx     Puck editor
 
 ### Phase 7 — "My Nuspace" sidebar page
 
-- [ ] 7.1 `{ to: "/people", label: "My Nuspace", icon: UserIcon }` in
+- [x] 7.1 `{ to: "/people", label: "My Nuspace", icon: UserIcon }` in
       `NAV_ITEMS` (`web/src/components/layouts/app/app-sidebar.tsx:50-56`).
       `to` is typed `LinkProps["to"]`, so the route must exist before the
       entry does or the build fails.
-- [ ] 7.2 `routes/_app/people/index.tsx` + component — `communities/index.tsx`
+- [x] 7.2 `routes/_app/people/index.tsx` + component — `communities/index.tsx`
       minus the two `FilterTabs`. `SearchFilter` stays, `useInfiniteList` +
       `InfiniteList` + `CardGrid` stay, `UserCard` replaces `CommunityCard`,
       empty state included. No filters.
-- [ ] 7.3 Cards link to `/u/$slug`; avatar falls back to initials, the way
+- [x] 7.3 Cards link to `/u/$slug`; avatar falls back to initials, the way
       `profile/index.tsx:157-165` does.
-- [ ] 7.4 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] 7.4 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
 ### Phase 8 — `Item` across both settings areas
 
