@@ -303,7 +303,7 @@ routes/_app/profile/editor/index.tsx     Puck editor
 
 ### Phase 5 — editor + public page
 
-- [ ] 5.1 `routes/_app/profile/editor/index.tsx` — copy
+- [x] 5.1 `routes/_app/profile/editor/index.tsx` — copy
       `components/routes/communities/editor/index.tsx:54-66`: loader ensures
       the session, `UploadContext.Provider` with `entityType: "users"` and
       `entityId: user.id` (the new int from phase 0), publish through
@@ -311,7 +311,7 @@ routes/_app/profile/editor/index.tsx     Puck editor
       - `UploadContextData.entityId` is typed `number`
         (`shared/page-editor/context.tsx:4-12`). Phase 0 is what makes this
         legal.
-- [ ] 5.2 `routes/_app/u/$slug/index.tsx` + its component — the public
+- [x] 5.2 `routes/_app/u/$slug/index.tsx` + its component — the public
       profile. `PageRenderer` on `page_content`, mirroring
       `components/routes/communities/$slug/index.tsx:57-86` (root bg/text tint
       on the app header) and `:263`. Keep the optional-viewer pattern.
@@ -319,7 +319,7 @@ routes/_app/profile/editor/index.tsx     Puck editor
         `communities/$slug/index.tsx:8-40` uses.
       - Lives under `_app`, not `_public`: `routes/_app/route.tsx:6-15`
         deliberately leaves browsing anonymous, which is what decision #4 needs.
-- [ ] 5.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] 5.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
 ### Phase 6 — template dialog
 
@@ -553,3 +553,24 @@ Before declaring done, confirm all of these:
 16. **The old `components/routes/profile/index.tsx` is gone**, and with it the
     Appearance row and its `ThemeToggle` import, as 4.3 asks. Nothing imported
     it but the route that is now a redirect.
+
+### Phase 5
+
+17. **The root-colour tint is `pageChromeStyle`, not a second copy.** The
+    twenty-odd lines that turn a page's root colour into sidebar and border CSS
+    variables now live in `blocks/_lib/root-style.ts` and are shared by the
+    community and profile pages. Two copies of a colour-mix palette is how the
+    header on one page ends up disagreeing with the other.
+18. **`contrastColor` moved to its own `contrast.ts`.** It is the one pure
+    function in that directory that callers outside the editor need, and
+    `node --test` cannot import a `.tsx` file — so keeping it in
+    `style-fields.tsx` would have left `pageRootColors` untested.
+19. **The editor route has no loader of its own.** 5.1 asks for one that
+    ensures the session, but `/profile`'s `beforeLoad` has already resolved it
+    into the router context and redirected if it was absent; a second
+    `ensureQueryData` would fetch nothing. `useCurrentUser` suspends on the same
+    query, so the editor still cannot render without a session.
+20. **Publishing invalidates two caches.** The session holds the owner's copy
+    of the page content; `qk.users` holds the public `/u/{slug}` copy everyone
+    else reads. Invalidating only the session would leave a published page
+    invisible to the people it was published for.

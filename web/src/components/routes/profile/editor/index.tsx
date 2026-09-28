@@ -32,9 +32,14 @@ export function Page({ queryClient }: { queryClient: QueryClient }) {
         body: { page_content: data },
       })
     )
-      .then(() => {
+      .then(async () => {
         toast.success("Page published.", { id: loading })
-        void queryClient.invalidateQueries({ queryKey: qk.session() })
+        // Two caches: the session holds the owner's own copy of the page, and
+        // `qk.users` holds the public one every other reader sees.
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: qk.session() }),
+          queryClient.invalidateQueries({ queryKey: qk.users.all() }),
+        ])
         void navigate({ to: "/profile/general" })
       })
       .catch((error) => {

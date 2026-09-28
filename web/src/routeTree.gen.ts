@@ -35,6 +35,7 @@ import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/
 import { Route as AppProfileCommunitiesIndexRouteImport } from './routes/_app/profile/communities/index'
 import { Route as AppProfileEditorIndexRouteImport } from './routes/_app/profile/editor/index'
 import { Route as AppProfileGeneralIndexRouteImport } from './routes/_app/profile/general/index'
+import { Route as AppUSlugIndexRouteImport } from './routes/_app/u/$slug/index'
 import { Route as AppCommunitiesSlugEditorIndexRouteImport } from './routes/_app/communities/$slug/editor/index'
 import { Route as AppCommunitiesSlugSettingsIndexRouteImport } from './routes/_app/communities/$slug/settings/index'
 import { Route as AppCommunitiesSlugSettingsAdminControlsIndexRouteImport } from './routes/_app/communities/$slug/settings/admin-controls/index'
@@ -173,6 +174,11 @@ const AppProfileGeneralIndexRoute = AppProfileGeneralIndexRouteImport.update({
   path: '/general/',
   getParentRoute: () => AppProfileRouteRoute,
 } as any)
+const AppUSlugIndexRoute = AppUSlugIndexRouteImport.update({
+  id: '/u/$slug/',
+  path: '/u/$slug/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppCommunitiesSlugEditorIndexRoute =
   AppCommunitiesSlugEditorIndexRouteImport.update({
     id: '/communities/$slug/editor/',
@@ -223,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/profile/communities/': typeof AppProfileCommunitiesIndexRoute
   '/profile/editor/': typeof AppProfileEditorIndexRoute
   '/profile/general/': typeof AppProfileGeneralIndexRoute
+  '/u/$slug/': typeof AppUSlugIndexRoute
   '/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
   '/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
   '/communities/$slug/settings/admin-controls/': typeof AppCommunitiesSlugSettingsAdminControlsIndexRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/profile/communities': typeof AppProfileCommunitiesIndexRoute
   '/profile/editor': typeof AppProfileEditorIndexRoute
   '/profile/general': typeof AppProfileGeneralIndexRoute
+  '/u/$slug': typeof AppUSlugIndexRoute
   '/communities/$slug/editor': typeof AppCommunitiesSlugEditorIndexRoute
   '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsIndexRoute
   '/communities/$slug/settings/admin-controls': typeof AppCommunitiesSlugSettingsAdminControlsIndexRoute
@@ -283,6 +291,7 @@ export interface FileRoutesById {
   '/_app/profile/communities/': typeof AppProfileCommunitiesIndexRoute
   '/_app/profile/editor/': typeof AppProfileEditorIndexRoute
   '/_app/profile/general/': typeof AppProfileGeneralIndexRoute
+  '/_app/u/$slug/': typeof AppUSlugIndexRoute
   '/_app/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
   '/_app/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
   '/_app/communities/$slug/settings/admin-controls/': typeof AppCommunitiesSlugSettingsAdminControlsIndexRoute
@@ -315,6 +324,7 @@ export interface FileRouteTypes {
     | '/profile/communities/'
     | '/profile/editor/'
     | '/profile/general/'
+    | '/u/$slug/'
     | '/communities/$slug/editor/'
     | '/communities/$slug/settings/'
     | '/communities/$slug/settings/admin-controls/'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/profile/communities'
     | '/profile/editor'
     | '/profile/general'
+    | '/u/$slug'
     | '/communities/$slug/editor'
     | '/communities/$slug/settings'
     | '/communities/$slug/settings/admin-controls'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/_app/profile/communities/'
     | '/_app/profile/editor/'
     | '/_app/profile/general/'
+    | '/_app/u/$slug/'
     | '/_app/communities/$slug/editor/'
     | '/_app/communities/$slug/settings/'
     | '/_app/communities/$slug/settings/admin-controls/'
@@ -569,6 +581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileGeneralIndexRouteImport
       parentRoute: typeof AppProfileRouteRoute
     }
+    '/_app/u/$slug/': {
+      id: '/_app/u/$slug/'
+      path: '/u/$slug'
+      fullPath: '/u/$slug/'
+      preLoaderRoute: typeof AppUSlugIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/communities/$slug/editor/': {
       id: '/_app/communities/$slug/editor/'
       path: '/communities/$slug/editor'
@@ -669,6 +688,7 @@ interface AppRouteRouteChildren {
   AppCommunitiesSlugSettingsRouteRoute: typeof AppCommunitiesSlugSettingsRouteRouteWithChildren
   AppCommunitiesSlugIndexRoute: typeof AppCommunitiesSlugIndexRoute
   AppEventsEventIdIndexRoute: typeof AppEventsEventIdIndexRoute
+  AppUSlugIndexRoute: typeof AppUSlugIndexRoute
   AppCommunitiesSlugEditorIndexRoute: typeof AppCommunitiesSlugEditorIndexRoute
 }
 
@@ -686,6 +706,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
     AppCommunitiesSlugSettingsRouteRouteWithChildren,
   AppCommunitiesSlugIndexRoute: AppCommunitiesSlugIndexRoute,
   AppEventsEventIdIndexRoute: AppEventsEventIdIndexRoute,
+  AppUSlugIndexRoute: AppUSlugIndexRoute,
   AppCommunitiesSlugEditorIndexRoute: AppCommunitiesSlugEditorIndexRoute,
 }
 
