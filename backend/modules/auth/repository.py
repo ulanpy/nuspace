@@ -5,6 +5,12 @@ from backend.modules.auth.models import User, UserScope
 from backend.modules.auth.schemas import UserSchema
 from backend.modules.shared.slug import generate_unique_slug
 
+# Owned by the user, not by Keycloak. UserSchema defaults page_content={} and
+# is_page_public=False, and both are non-None, so copying them onto an existing
+# row would wipe a designed profile page on every login. `slug` is claimed from
+# the user's own name, not from a token claim, and is generated below.
+LOCAL_FIELDS = {"page_content", "is_page_public", "slug"}
+
 
 class UserRepository:
     def __init__(self, db_session: AsyncSession):
@@ -18,7 +24,7 @@ class UserRepository:
 
         if user_db:
             for key, value in user_schema.model_dump().items():
-                if key not in ("role", "scope") and value is not None:
+                if key not in ("role", "scope") and key not in LOCAL_FIELDS and value is not None:
                     setattr(user_db, key, value)
         else:
             data = user_schema.model_dump()

@@ -1,7 +1,10 @@
-# PROGRESS — Standardize page layout & primitives
+# PROGRESS — Puck editor for user profile pages
 
-**Status:** done — all six phases landed and the standard is documented in `CONVENTIONS.md`
-**Scope:** `web/src` only. No backend, no infra, no API changes.
+**Status:** phase 0 landed — the login landmine is defused, everything after
+it is now safe
+**Scope:** `backend/` and `web/`. This is the one plan here that is not
+frontend-only: it adds a migration, three endpoints, an `EntityType` value and
+an upload authorizer.
 
 This file is a self-contained brief. An agent picking this up cold should not
 need any of the conversation that produced it.
@@ -10,345 +13,401 @@ need any of the conversation that produced it.
 
 ## How to use this file
 
-1. Read `web/CONVENTIONS.md` in full before touching anything. It is binding.
+1. Read `web/CONVENTIONS.md` in full before touching anything frontend. It is
+   binding.
 2. Read the "Decisions locked" section below. They are settled — do not
    re-litigate them, and do not substitute your own.
-3. Work the phases top to bottom. Each phase leaves the tree green.
-4. **Tick a checkbox `[x]` the moment that item is done and verified.** Not
+3. **Read "Corrections to the original brief" before writing a line of code.**
+   Two of the plan's premises are wrong, and one of them will silently destroy
+   user data if you miss it.
+4. Work the phases top to bottom. Each phase leaves the tree green.
+5. **Tick a checkbox `[x]` the moment that item is done and verified.** Not
    when you start it.
-5. Before resuming after a break, run the verification command in
+6. Before resuming after a break, run the verification commands in
    "Resume protocol" and then `git diff` to see what actually landed.
-6. If reality forces a change to this plan, edit this file in the same commit
+7. If reality forces a change to this plan, edit this file in the same commit
    and note it under "Deviations" at the bottom. Do not silently diverge.
 
-**Commands** (run from `web/`):
+**Commands.**
 
 ```sh
+# backend — from backend/
+uv run ruff check .
+uv run black --check .
+PYTHONPATH="$(dirname "$PWD")" uv run python -c "
+from dotenv import load_dotenv
+load_dotenv('../infra/.env')
+import pytest, sys
+sys.exit(pytest.main(['-q']))"
+```
+
+```sh
+# web — from web/
+pnpm api:check        # requires a running backend
 pnpm typecheck
 pnpm test
 pnpm lint
-pnpm build        # also regenerates routeTree.gen.ts — required after any move
-pnpm format
+pnpm format:check
+pnpm build            # also regenerates routeTree.gen.ts
 ```
 
-All five must be green before you call any phase done.
+The `pytest` invocation is deliberately awkward — `backend/` itself is the
+importable package so its **parent** must be on `PYTHONPATH`, and
+`core.configs.Config` needs ~25 variables out of `infra/.env`. Load the env
+in-process; do **not** `source infra/.env`, two of its values are unquoted and
+abort `zsh`. The container is not a fallback: `backend/Dockerfile` runs
+`uv sync --frozen --no-dev`, so pytest/ruff/black are not in the image.
+
+**Lint is red before you start.** `pnpm lint` exits 1 on a pre-existing
+baseline of **9** errors in `layouts/app/app-sidebar.tsx`,
+`routes/announcements/index.tsx` and `routes/events/`. `uv run ruff check .`
+has a baseline of **11**. The bar here is *no new findings from the files this
+plan touches*, not a green run. Diff the finding list before and after.
 
 ---
 
-## The problem
+## Corrections to the original brief
 
-Layout and page primitives were built page by page, so every screen became its
-own kingdom. Specifically:
+The request assumed two new columns on `users`. They already exist.
 
-- **Two nested containers.** `layouts/app/index.tsx` wraps every route in a
-  `PageContainer` that owns padding; then each page opens a _second_
-  `PageContainer` that owns only the width cap. Pages that forget
-  `padding="none"` (about, legal, landing) get the padding twice.
-- **Widths were picked ad hoc per page**: 32rem, 48rem, 64rem, 80rem, 90rem.
-- **Headers** share `PageHeader` but the action button is three different
-  things, and the gap below the header is `space-y-6` / `space-y-8` /
-  `space-y-12` depending on the page.
-- **Filters have seven designs** (see "Current filter zoo" below).
-- **Tabs** are a hand-rolled pill `<nav>`; the shadcn `ui/tabs.tsx` primitive
-  exists and has zero usages.
-- Several one-off primitives survive on a single page.
+1. **`users.page_content` (JSONB) and `users.is_page_public` (bool) are
+   already in the model** — `backend/modules/auth/models.py:37-38`, added by
+   migration `8b32e85c3697`. **Do not add them and do not write a migration
+   that adds them.**
+
+2. **They are destroyed on every login, and this is the load-bearing bug of
+   the whole plan.** `UserRepository.upsert`
+   (`backend/modules/auth/repository.py:20-22`) copies every `UserSchema` field
+   onto an existing row, and `UserSchema` (`schemas.py:17-18`) defaults
+   `page_content={}` / `is_page_public=False`. `{}` and `False` are both
+   non-`None`, so they pass the `value is not None` guard and get written onto
+   the row on **every Keycloak callback**. Without the phase 0 fix, a user
+   designs their page, signs in, and finds it wiped and unpublished. Phase 0
+   ships first for this reason.
+
+3. **There is no `PATCH /users/me`.** `backend/modules/auth/api.py` exposes
+   `GET /me` (`:151`) and an admin-only `PATCH /users/{sub}/scope` (`:187`).
+   Nothing can currently write a user's slug, page or visibility.
+
+4. **There is no public profile route.** No `/u/$slug`, nothing. The only page
+   rendering `page_content` is `/communities/$slug`.
+
+5. **Avatar and banner upload is the one part that is not "straightforward
+   reusing the existing things."** `media.entity_id` is `BigInteger`
+   (`backend/modules/media/models.py:45`), `get_media_metadata` does
+   `int(...)` on the GCS metadata (`google_bucket/dependencies.py:129`),
+   `EntityType` has no `users` value, and there is no users upload authorizer
+   — while `users.sub` is a Keycloak UUID string. Decision #1 resolves it.
+
+Everything else *does* reuse cleanly: `MediaPicker`, `selectMedia`,
+`saveWithMedia`, and `MediaAttachmentResolver.map_to_resources` all key off
+`getattr(resource, "id")`, which is exactly what the surrogate column provides.
 
 ---
 
 ## Decisions locked
 
-These were decided with the user. Change them only if asked.
+Decided with the user. Change them only if asked.
 
-| #   | Decision                                                                                                                                                                                      |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Exactly two body widths**: `wide` (uncapped) and `prose` (`max-w-3xl`). No middle tier.                                                                                                     |
-| 2   | The page box is **always** `max-w-7xl`. The `wide`/`prose` choice caps the **body only**, not the box.                                                                                        |
-| 3   | **The title spans the page's own column.** On a `wide` page that is the full 80rem box; on a `prose` page it is the centred 3xl column, so the title never hangs to the left of its own text. |
-| 4   | Page-header action buttons are **default size everywhere**. `Button`'s default is `h-8`, which matches `TabsList`'s `h-8`, so header and tab bar line up.                                     |
-| 5   | `MultiFilter` **stays in shared** and is rebased on `ui/checkbox`.                                                                                                                            |
-| 6   | `degree-audit-info` gets a **layout fix only** — do not merge it into `LegalPage`, do not reshape its data.                                                                                   |
-| 7   | Community detail (`/communities/$slug`) and the page editor keep **bypassing the app shell entirely**. Their full-bleed canvas is deliberate. Leave them alone.                               |
-| 8   | `ui/` is vendor code per CONVENTIONS. Consume it; never add project props or hand-written styles to a file in `ui/`. Anything recurring that shadcn doesn't ship goes in `shared/`.           |
-
----
-
-## Target architecture
-
-```
-AppLayout
-└── <div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6">   padding only
-    └── Page  maxWidth="wide"                              always max-w-7xl
-        ├── <PageHeader …/>                                full 80rem
-        └── <div className="mt-6 [max-w-3xl]">{children}</div>   body: wide | prose
-```
-
-- Padding lives in exactly one place: the app shell.
-- Width lives in exactly one place: the `Page` box.
-- The rhythm between header and body lives in exactly one place: `Page`.
-- `PageContainer`, `PagePadding`, `PageWidth` as _page_ types all go away.
-- A page cannot accidentally get double padding, because it never sets padding.
-
-A `prose` page **centres** its column (header included); a `wide` page's body
-fills the box. This supersedes the original decision #3, which pinned the title
-to the full box on every page: capping the text without centring it left prose
-pages hugging the left edge of an 80rem box with a void beside them.
-
-### Width assignment (do not reassign without asking)
-
-| `wide` (body uncapped)                                                  | `prose` (body `max-w-3xl`)                                     |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `/events`                                                               | `/opportunities`                                               |
-| `/communities`                                                          | `/contacts`                                                    |
-| `/announcements`                                                        | `/profile`                                                     |
-| `/courses` + `/courses/statistics` `/courses/schedule` `/courses/audit` | `/communities/$slug/settings` + `/general` + `/admin-controls` |
-| `/events/$eventId`                                                      | `/sgotinish`                                                   |
-| `/about` (public)                                                       | `/degree-audit-info`                                           |
-| `/` landing (public)                                                    | `/privacy-policy`, `/terms-of-service` (public)                |
-
-Untouched: `/communities/$slug` detail, `/communities/$slug/editor`.
+| #   | Decision                                                                                                                                                                            |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **User media keys off a surrogate `users.id` BigInteger**, sequence-backed, unique, backfilled. `sub` stays the PK and every FK to `users.sub` is untouched. The alternative — widening `media.entity_id` to `Text` — was rejected because every existing media consumer compares `entity_id` against an int. |
+| 2   | **The template dialog gains a second source: public people.** Communities stay listed **unfiltered**, because communities have no public/private flag at all and adding one is a separate feature nobody asked for. |
+| 3   | **The sidebar page is a directory of public profiles, and its label is literally "My Nuspace."** The name was flagged as confusing for a list of other people; the user chose to keep it. Do not rename. |
+| 4   | **Public profiles live at `/u/$slug`.** Non-owners — guests included — get a **404** on a private page, never a redirect to login. `/profile/*` keeps its existing redirect-to-`/` guard. |
+| 5   | **Settings fields use a mixed `Item` layout:** text inputs (`name`, `slug`, `email`) go full-width in `ItemContent` under the title and description; small controls (`Switch`, `Select`, `Button`) go in `ItemActions`. `ItemActions` is a bare `flex items-center gap-2`, so a full-width `Input` dropped in there looks cramped. |
+| 6   | **`Item` conversion covers everything**: form fields, the admin access link, the danger zone, and the admins table rows. The danger zone and the admin table are both already label-left/control-right, so both are near-mechanical swaps. |
+| 7   | **Community General goes single-column.** The current 2-column grid is dropped and is **not** replaced for Type + Category. Full-width inputs, one column. |
+| 8   | **`CommunityForm` is restyled for both consumers.** It is shared with `CommunityFormDialog` on `/communities`, so the create dialog changes too. Splitting the markup was considered and rejected — it would duplicate a 374-line form for no product gain. |
 
 ---
 
-## Current filter zoo (the thing being unified)
+## What exists to reuse
 
-| Where                              | Today                                                                                                          | Becomes                                                                         |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| events                             | `FilterBar` box → `ButtonGroup` of `variant`-switched `Button`s, plus a stray toggle `Button`                  | bare flex row → `FilterTabs` (time) + `ui/toggle` (recruitment)                 |
-| communities                        | `FilterBar` → `SearchFilter` + 2× `ChoiceChips`                                                                | bare flex row → `SearchFilter` + 2× `FilterTabs` (with "All")                   |
-| opportunities                      | `FilterBar` → `SearchFilter` + 4× `MultiFilter` (raw `<input type="checkbox">`) + `variant="secondary"` Button | bare flex row → `SearchFilter` + 4× `MultiFilter` (`ui/checkbox`) + `ui/toggle` |
-| contacts                           | `FilterBar` → `SearchFilter`                                                                                   | bare flex row → `SearchFilter`                                                  |
-| `/courses/statistics`              | hand-rolled `fieldset` with `chipClass` **copy-pasted inline**                                                 | `FilterTabs`                                                                    |
-| `/courses/audit`, opportunity form | `ToggleChip` groups (multi-select)                                                                             | **unchanged** — correct already                                                 |
-| every filter input                 | `SearchFilter` hand-rolls an absolutely-positioned `SearchIcon` + `pl-9`                                       | `ui/input-group` (`InputGroup` + `InputGroupAddon` + `InputGroupInput`)         |
+Read these before writing anything. Most of this plan is assembly, not
+invention.
 
----
+| Need                          | Reuse                                                                                          |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| Puck editor shell             | `shared/page-editor/components/editor.tsx` — no change at all                                     |
+| Template apply + its 6 tests  | `shared/page-editor/components/_lib/template.ts` — takes `(page_content, config)`, unchanged     |
+| Template picker chrome        | `shared/page-editor/components/template-dialog.tsx` — add a source switch                        |
+| Editor route wiring           | `components/routes/communities/editor/index.tsx:54-66` — copy, swap the upload context          |
+| Pagination footer             | `components/routes/communities/settings/components/admins-table.tsx:155-213` — extract, do not copy |
+| Page param in the URL         | `routes/_app/communities/$slug/settings/admin-controls/index.tsx:8-17` — `.min(1)` before `.catch(1)` |
+| Page in the query key         | `web/src/api/query-keys.ts:26-36` — the comment there is the rule                                    |
+| Slug-taken 409                | `backend/modules/campuscurrent/communities/api.py:20-27`                                           |
+| Generic `setattr` update loop | `backend/modules/campuscurrent/communities/repository.py:37-50`                                     |
+| Media delete + attach         | `MediaAttachmentResolver`, `communities/service.py:106-107, 240-270`                                |
+| Public-page rendering         | `components/routes/communities/$slug/index.tsx:57-86` (root colour tint) and `:263` (`PageRenderer`) |
+| Settings layout + tabs        | `routes/_app/communities/$slug/settings/route.tsx` + `components/layouts/settings/index.tsx`       |
+| `saveWithMedia`               | `web/src/lib/media/functions.ts:150` — an upload failure must not lose the form                     |
+| Two-zone upload items         | `toCommunityUploadItems`, `web/src/lib/communities/functions.ts:106-122`                             |
+| Shared validation to extract   | `SLUG_PATTERN` + `RESERVED_SLUGS` at `components/routes/communities/components/community-form.tsx:28-72` and `backend/modules/shared/slug.py:6-25` |
 
-## The two new shared components
-
-### 1. `shared/route-tabs.tsx` → `RouteTabs`
-
-Replaces `shared/tabs-nav.tsx`. Route-driven section tabs, built on
-`ui/tabs` + TanStack `Link`.
-
-```tsx
-export interface RouteTab {
-  to: LinkProps["to"]
-  label: string
-  /** Index route needs exact matching or it stays lit on every child. */
-  exact?: boolean
-}
-
-export function RouteTabs({
-  label,
-  tabs,
-  className,
-}: {
-  label: string
-  tabs: readonly RouteTab[]
-  className?: string
-})
-```
-
-Mechanics:
-
-- `Tabs value={activeTabValue} onValueChange={(v) => navigate({ to: v })}`
-  where `v` is the tab's `to`. Keep the `Link` in `render` so the href is
-  real (middle-click, copy link, prefetch).
-- Base UI renders `Tabs.Tab` as a `<button>`; pass
-  `nativeButton={false} render={<Link to=… />}` to get an anchor.
-- Active value from `useMatchRoute()` per tab, same fuzzy/exact logic as
-  today's `TabsNav`.
-- Keep `label` → `aria-label` on the list.
-
-Rationale that must survive into a JSDoc comment: tabs are real child routes,
-not `useState`, so each section stays linkable, back-button-able and
-separately code-split. `/courses/schedule` and `/courses/audit` are the two
-heaviest screens in the app.
-
-### 2. `shared/list-filters.tsx` → `FilterTabs`
-
-Same `ui/tabs` primitives, but local/controlled state, no panels.
-
-```tsx
-export function FilterTabs<T extends string>({
-  label,
-  value,          // T | undefined
-  options,        // readonly FilterOption<T>[]
-  showAll,        // default true; renders an "All" chip that maps to undefined
-  onChange,       // (value: T | undefined) => void
-}: { … })
-```
-
-Mechanics:
-
-- `ui/tabs` `Tabs` + `TabsList` + `TabsTrigger`, plain button triggers
-  (no `render`), controlled via `value` / `onValueChange`.
-- Base UI requires a non-null `value` on a Tab, so `undefined` is mapped to an
-  internal sentinel (e.g. `"__all__"`) for the "All" chip and back out in
-  `onValueChange`. Keep the sentinel private to this file.
-- `label` → `<legend className="sr-only">`-equivalent: the existing
-  `ChoiceChips` wrapped chips in a `fieldset` + `sr-only` `legend`. Preserve
-  that accessible name.
-
-This file keeps `SearchFilter` and `MultiFilter`, and **loses** `FilterBar`
-and `ChoiceChips` (see Deletions).
+**Deterministic ordering matters for the new user list.** There is no
+Meilisearch index for users, so it is plain SQL. `ORDER BY name, surname, sub`
+is required, not cosmetic — OFFSET over a non-deterministic order drops and
+repeats rows across page boundaries. See the comment at
+`communities/repository.py:202-224` for the same reasoning on the admins query.
 
 ---
 
 ## Phases
 
-### Phase 1 — primitives
+### Phase 0 — migration + the login landmine
 
-- [x] 1.1 Create `shared/route-tabs.tsx` with `RouteTabs` (see above).
-- [x] 1.2 Create `shared/page/index.tsx` with the `Page` primitive:
-      props `title`, `description?`, `eyebrow?`, `actions?`,
-      `width?: "wide" | "prose"` (default `"wide"`), `className?`, `children`.
-      Renders `mx-auto w-full max-w-7xl` → `PageHeader` → body
-      `<div className="mt-6">` + `max-w-3xl` when `width === "prose"`.
-      Add a JSDoc explaining _why_ the box is always 7xl and only the body
-      is capped (decision #2/#3), so it does not get "fixed" back.
-- [x] 1.3 Add `FilterTabs` to `shared/list-filters.tsx`.
-- [x] 1.4 Rebase `SearchFilter` on `ui/input-group`; delete the manual
-      `SearchIcon` + `pl-9`. Preserve the `label` → `aria-label` behaviour
-      added in c8b4b6f (the placeholder is a content hint, not a label).
-- [x] 1.5 Rebase `MultiFilter`'s checkboxes on `ui/checkbox`.
-- [x] 1.6 `ui/tabs` is vendor code — do **not** edit it. If a project-specific
-      style is needed, pass `className` from `shared/`.
-- [x] 1.7 Verify: `pnpm typecheck && pnpm lint && pnpm build`
+Do this phase first and alone. Everything after it is unsafe without 0.2.
 
-### Phase 2 — layouts
+- [x] 0.1 Migration `backend/migrations/versions/b3c4d5e6f7a8_user_page_owner.py`,
+      `down_revision = "a1b2c3d4e5f6"` (current head,
+      `a1b2c3d4e5f6_community_admins.py`). Confirm the head is still that with a
+      grep over `migrations/versions/*.py` before writing it.
+      - `users.id` — `BigInteger`, sequence-backed, `NOT NULL`, unique.
+        Existing rows backfilled with `nextval`.
+      - `ALTER TYPE entity_type ADD VALUE 'users'`. Alembic cannot detect enum
+        value changes; this line is manual by design
+        (`media/models.py:13-20`).
+      - **PG caveat:** `ALTER TYPE ... ADD VALUE` cannot run inside a
+        transaction block on PG < 12. If the target PG is older, wrap it in
+        `op.get_context().autocommit_block()`. The value is not read in this
+        migration, so on PG 12+ it is safe in-transaction.
+- [x] 0.2 **`backend/modules/auth/repository.py:20-22` — the actual bug.**
+      Exclude locally-owned fields from the upsert copy loop:
+      `LOCAL_FIELDS = {"page_content", "is_page_public", "slug"}`. `slug` is
+      already handled specially at `:33-37` and must not be clobbered either.
+      Add a comment saying *why*: these are user-owned, not Keycloak claims.
+- [x] 0.3 `backend/modules/media/models.py` — add `users = "users"` to
+      `EntityType`; add `id: Mapped[int]` to `User` (`models.py:26`).
+- [x] 0.4 `backend/modules/shared/slug.py:6-25` — add `"u"` to
+      `RESERVED_SLUGS` so no profile slug can shadow `/u/$slug`.
+- [x] 0.5 Verify: `uv run ruff check .` shows no new findings; migration
+      applies and downgrades cleanly against a real database.
 
-- [x] 2.1 `layouts/app/index.tsx`: replace the `PageContainer maxWidth="full"`
-      with a plain `<div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6">`
-      (keep the `className` that encodes the padding, drop the import).
-- [x] 2.2 `layouts/courses/index.tsx`: `PageContainer`+`PageHeader` → `Page`,
-      `TabsNav` → `RouteTabs`. Keep the TABS const and its JSDoc.
-- [x] 2.3 `layouts/settings/index.tsx`: same swap in `SettingsShell`.
-      Keep the `sections` prop (2 consumers — it earns its place) and keep
-      `SettingsShell` vs `SettingsLayout` split (documented in its JSDoc:
-      profile is a leaf route with no `Outlet`).
-- [x] 2.4 Verify: `pnpm typecheck && pnpm lint && pnpm build`
+### Phase 1 — backend profile read/write
 
-### Phase 3 — app routes (the visible work)
+- [ ] 1.1 New `backend/modules/auth/profiles.py` holding the service and
+      policy for profile pages, so `service.py` does not grow. It needs a
+      `UserRepository.get_by_id` and a `list_public` alongside the existing
+      methods.
+- [ ] 1.2 `GET /api/u/{slug}` → `UserPageResponse { sub, name, surname, slug,
+      picture, page_content, media[] }`. **404** when not found, when
+      `is_page_public` is false, or when `scope == banned` — *unless* the
+      viewer's `sub` matches, so the owner can always preview their own page.
+      `get_creds_or_guest`, mirroring `communities/api.py:89`.
+- [ ] 1.3 `GET /api/users?keyword=&page=&size=` → the same
+      `{items, total_pages, total, page, size, has_next}` shape as
+      `communities/schemas.py:173-188`.
+      - **Filter on `is_page_public` and `scope == allowed` as a hard `WHERE`,
+        never as a caller-supplied query parameter.** A parameter would let
+        anyone enumerate private pages.
+      - `keyword` → `ILIKE` over `name`/`surname`.
+      - `ORDER BY name, surname, sub` — see "What exists to reuse".
+- [ ] 1.4 `PATCH /api/users/me` — body `{ slug?, page_content?,
+      is_page_public?, media_ids_to_delete? }`, self only
+      (`get_creds_or_401`, compare against the session `sub`). Generic
+      `setattr` loop like `communities/repository.py:37-50`. Media deletion
+      reuses `communities/service.py:124-147`, which already checks
+      `entity_type` + `entity_id` before deleting.
+      `IntegrityError` → **409** with `SLUG_TAKEN_DETAIL`
+      (`communities/api.py:20-27`).
+- [ ] 1.5 Extend `/api/me` (`auth/api.py:151`) to also return `slug`,
+      `page_content`, `is_page_public` and `media` — one dict in
+      `service.py:376-381`. The General tab reads the session, so this is the
+      only read endpoint it needs.
+- [ ] 1.6 Backend tests (see "Verification"):
+      - `upsert` on an existing user **preserves** `page_content` and
+        `is_page_public`. This is the regression that silently destroys work.
+      - `PATCH /users/me` rejects a duplicate slug with 409, and rejects
+        another user's `sub` with 403.
+      - `GET /users` never returns a private or a banned user.
+- [ ] 1.7 Verify: ruff + black + the new pytest cases pass.
 
-Do these in order. Each is independent; tick as you go.
+### Phase 2 — media uploads for users
 
-- [x] 3.1 **`routes/events`** — `Page`; `FilterBar` → bare
-      `flex flex-wrap items-center gap-2`; `ButtonGroup` → `FilterTabs`;
-      "Club Recruitments" → `ui/toggle` (drop the
-      `cn(type !== "recruitment" && "bg-background")` variant-fight);
-      delete the local `EventGridSkeleton` (see 5.6).
-- [x] 3.2 **`routes/communities`** — `Page`; `FilterBar` → bare flex row;
-      2× `ChoiceChips` → 2× `FilterTabs`; `CardGridSkeleton` stays.
-- [x] 3.3 **`routes/opportunities`** — `Page width="prose"`; `FilterBar` →
-      bare flex row; "Hide expired" `variant="secondary"` → `ui/toggle`.
-- [x] 3.4 **`routes/contacts`** — `Page width="prose"`; drop
-      `eyebrow="Campus directory"`; `FilterBar` → bare flex row;
-      `Section spacing="none"` → plain `<section>`;
-      `CardGrid columns={2}` **unchanged** (48rem body wants 2 columns).
-- [x] 3.5 **`routes/announcements`** — `Page`; `space-y-8` → the standard
-      body gap.
-- [x] 3.6 **`routes/profile`** — comes free via `SettingsShell`; separately
-      replace the hand-rolled `Row` + `divide-y divide-border` with
-      `ui/item` (`ItemGroup` / `Item` / `ItemContent` / `ItemTitle` /
-      `ItemDescription` / `ItemActions`). Drop the separators.
-- [x] 3.7 **`routes/communities/settings/general`** and
-      **`…/admin-controls`** — inherit the new shell; drop their own
-      `space-y-10` wrappers so the shell's rhythm governs.
-- [x] 3.8 **`routes/sgotinish`** — replace raw `mx-auto max-w-lg` div with
-      `Page width="prose"`. Keep the `eyebrow="Student Government"` (it
-      carries real meaning, unlike "Campus directory").
-- [x] 3.9 **`routes/degree-audit-info`** — replace raw
-      `<article className="mx-auto max-w-prose …">` with `Page width="prose"`.
-      Layout only (decision #6): keep the byline, the disclaimer block, the
-      hand-rolled content. It is a sibling of the courses tabs, not a fifth tab.
-- [x] 3.10 **`routes/events/$eventId`** — replace raw
-      `mx-auto max-w-[90rem]` with `Page width="wide"`. It is currently the
-      widest page in the app; this is a bug, not a design.
-- [x] 3.11 **`routes/courses/statistics`** — replace the inline
-      `chipClass` copy-paste with `FilterTabs`. (`/courses/index`,
-      `/schedule`, `/audit` need no change — they render inside
-      `CoursesLayout`.)
-- [x] 3.12 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [ ] 2.1 `CampusCurrentMediaUploadAuthorizer`
+      (`backend/modules/google_bucket/service.py:11-39`) — add a `users` branch
+      → `authorize_user_media_upload(entity_id, user)`: load the user by `id`,
+      require `user.sub == session_sub` and `scope != banned`. Wire it in
+      `google_bucket/dependencies.py:33-37`.
+- [ ] 2.2 Web: `toUserUploadItems`, mirroring `toCommunityUploadItems`
+      (`lib/communities/functions.ts:106-122`) — same `profile`/`banner`
+      formats, per-format `mediaOrder` counters.
+- [ ] 2.3 Web: `useUpdateMe()` in `web/src/lib/user/functions.ts`, routed
+      through `saveWithMedia` (`lib/media/functions.ts:150`) so a failed upload
+      batch does not discard the form. Extend `CurrentUser` in
+      `lib/user/types.ts` with the four fields from 1.5.
+- [ ] 2.4 `pnpm api:generate` against a running backend; commit
+      `web/src/api/schema.d.ts` **in the same commit** as the backend change.
+- [ ] 2.5 Verify: `pnpm api:check && pnpm typecheck && pnpm test && pnpm lint`
 
-### Phase 4 — public routes
+### Phase 3 — frontend API layer
 
-- [x] 4.1 **`shared/legal/legal-page.tsx`** — `PageContainer` →
-      `Page width="prose"`; the two `Section spacing="none"` → `<section>`.
-- [x] 4.2 **`routes/about`** — `Page` (this is what removes the doubled
-      padding). Keep the centred header via `PageHeader`'s `className`
-      escape hatch; it is the only app page that uses it besides landing.
-- [x] 4.3 **`routes/landing`** — swap the four `PageContainer`s for `Page`
-      where it is a plain section, keep the per-section `py-*`. It is the only
-      real user of large section spacing. Drop its `space-y-*` overrides that
-      now duplicate the standard.
-- [x] 4.4 Verify: `pnpm typecheck && pnpm lint && pnpm build`
+- [ ] 3.1 `qk.users = { all, list(filters), detail(slug), mine }` in
+      `web/src/api/query-keys.ts`. `page` belongs **in the key**, not inside
+      it — the comment at `:26-36` is the rule.
+- [ ] 3.2 `web/src/lib/user/functions.ts` — `fetchUsersPage`, `fetchUserPage`,
+      `useUpdateMe`. Types come from the regenerated `schema.d.ts`; do not
+      hand-write them.
+- [ ] 3.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
-### Phase 5 — deletions
+### Phase 4 — `/profile` becomes a two-tab settings area
 
-Only after every consumer is migrated. Grep before each delete.
+`/profile` is currently a leaf route using `SettingsShell` *because* it has no
+child routes. It gets a layout, mirroring
+`routes/_app/communities/$slug/settings/route.tsx`.
 
-- [x] 5.1 `shared/page/section.tsx` — **delete.** All 8 call sites pass
-      `spacing="none"`, i.e. a no-op `<section>`. The one `spacing="default"`
-      user (landing) overrides it with its own `py-*`, so both sets of classes
-      end up in the same class list and Tailwind's cascade order, not source
-      order, decides the winner. That is the bug this removes.
-- [x] 5.2 `shared/page/container.tsx` — **delete.** Width classes moved into
-      `Page`; padding moved to the shell. `PagePadding`'s `dense` branch had
-      zero call sites and `none` existed only to undo the shell.
-- [x] 5.3 `shared/tabs-nav.tsx` — **delete**, replaced by `route-tabs.tsx`.
-- [x] 5.4 In `shared/list-filters.tsx` — **delete `FilterBar` and
-      `ChoiceChips`.** `FilterBar` is the "unnecessary container" the user
-      called out; `ChoiceChips` had one consumer.
-- [x] 5.5 In `shared/toggle-chip.tsx` — make `chipClass` private. After
-      `ChoiceChips` is gone it has no external consumer. `ToggleChip` itself
-      stays: two pages use it (degree audit, opportunity form).
-- [x] 5.6 In `shared/page/card-grid.tsx` — add a `banner` variant to
-      `CardGridSkeleton` (the `aspect-3/4 rounded-none p-0` shape events
-      needs) and delete events' private `EventGridSkeleton`. One skeleton
-      primitive, two pages — this is what gets it over the two-page bar.
-- [x] 5.7 `shared/settings/settings-section.tsx` — **delete the `width`
-      prop** and its `widthClasses`. `prose` had zero call sites; `form` and
-      `full` are the cause of the ragged-left settings pages. Page-level
-      width governs now.
-- [x] 5.8 Collapse `CommunityNotFound` (`routes/communities/$slug/index.tsx`)
-      into `shared/not-found.tsx`; keep the shared one used by
-      `app/router.tsx`.
-- [x] 5.9 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+```
+routes/_app/profile/route.tsx            SettingsLayout, tabs General / My communities
+routes/_app/profile/index.tsx            → redirect /profile/general
+routes/_app/profile/general/index.tsx
+routes/_app/profile/communities/index.tsx
+routes/_app/profile/editor/index.tsx     Puck editor
+```
 
-### Phase 6 — document the standard
+- [ ] 4.1 `routes/_app/profile/route.tsx` — keep the existing
+      redirect-to-`/` guard from `routes/_app/profile/index.tsx:8-12` verbatim.
+      `SettingsLayout` with the two tabs. Actions: **Design page**
+      (`PaletteIcon` → `/profile/editor`, copying `settings/route.tsx:54-62`)
+      and the existing **Log out**.
+- [ ] 4.2 `routes/_app/profile/index.tsx` — redirect to `/profile/general`,
+      as `communities/$slug/settings/index.tsx:3-4` does.
+- [ ] 4.3 **General tab**, an `ItemGroup` per decision #5:
+      - Account row — `ItemMedia variant="image"`, uploaded avatar with the
+        Keycloak `picture` claim as the `ResilientImage` fallback, name +
+        email.
+      - Avatar upload — `MediaPicker`, `aspectRatio="square"`, `maxFiles={1}`.
+      - Banner upload — `MediaPicker`, `aspectRatio="video"`, `maxFiles={1}`.
+      - URL row — full-width `Input` in `ItemContent`; the description
+        previews `/u/{slug}`. Extract the `SLUG_PATTERN` + reserved-word
+        validation into a shared module rather than copying
+        `community-form.tsx:28-72`. Add `"u"` to the frontend copy.
+      - Public page row — `Switch` in `ItemActions`, description explaining
+        that the page is only reachable at `/u/{slug}` while it is off.
+      - Edit page button row.
+      - **Delete the Appearance row** (`components/routes/profile/index.tsx:180-182`).
+        The `ThemeToggle` is redundant here: `app-sidebar.tsx` already renders
+        it in **three** places — `:336` in the header when expanded, `:357` on
+        the collapsed rail, `:388` in the mobile sheet. All three are chrome;
+        the profile row was the only content-level copy. The row and its now-
+        unused `ThemeToggle` import both go.
+- [ ] 4.4 **My communities tab** — no new backend endpoint.
+      `fetchCommunitiesPage({ owner_sub: "me" }, { page, size })` already
+      paginates. `page` in the URL via `validateSearch`
+      (`.min(1).catch(1)`, per `admin-controls/index.tsx:8-17`). Rows mirror
+      `AdminRowView`; **no share link**, actions limited to "Open".
+      - Extract the footer at `admins-table.tsx:155-213` into one shared
+        `TablePagination` component. Do not duplicate 60 lines of pagination
+        markup into a third file.
+- [ ] 4.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
-The drift happened because nothing said what the standard _was_. This phase is
-what stops it recurring — do not skip it.
+### Phase 5 — editor + public page
 
-- [x] 6.1 Add a **Page layout** section to `web/CONVENTIONS.md`: the
-      always-7xl box, the two body widths, header spans the box, the width
-      assignment table above, and the rule that a page never sets padding.
-- [x] 6.2 Update the `shared/` directory-roles list: `page/` is now
-      `page` + `header` + `card-grid` (container and section are gone);
-      `route-tabs` joins the flat shared primitives; `tabs-nav` is removed.
-- [x] 6.3 Note the `ui/` rule explicitly where it matters: recurring styled
-      behaviour shadcn does not ship belongs in `shared/`, never upstreamed
-      into `ui/`.
-- [x] 6.4 Final: `pnpm typecheck && pnpm test && pnpm lint && pnpm format && pnpm build`
-- [x] 6.5 Commit. Suggested message:
-      `refactor(web): standardize page layout, tabs and filter primitives`
+- [ ] 5.1 `routes/_app/profile/editor/index.tsx` — copy
+      `components/routes/communities/editor/index.tsx:54-66`: loader ensures
+      the session, `UploadContext.Provider` with `entityType: "users"` and
+      `entityId: user.id` (the new int from phase 0), publish through
+      `PATCH /users/me`, invalidate `qk.users.all()`, navigate back.
+      - `UploadContextData.entityId` is typed `number`
+        (`shared/page-editor/context.tsx:4-12`). Phase 0 is what makes this
+        legal.
+- [ ] 5.2 `routes/_app/u/$slug/index.tsx` + its component — the public
+      profile. `PageRenderer` on `page_content`, mirroring
+      `components/routes/communities/$slug/index.tsx:57-86` (root bg/text tint
+      on the app header) and `:263`. Keep the optional-viewer pattern.
+      - `404` maps from the API 404 via the same `ApiError` handling
+        `communities/$slug/index.tsx:8-40` uses.
+      - Lives under `_app`, not `_public`: `routes/_app/route.tsx:6-15`
+        deliberately leaves browsing anonymous, which is what decision #4 needs.
+- [ ] 5.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+
+### Phase 6 — template dialog
+
+- [ ] 6.1 `shared/page-editor/components/template-dialog.tsx` — add a section
+      switch above the list, driven by one shared `keyword` box. The people
+      source calls `fetchUsersPage`; the community source is unchanged and
+      **unfiltered** (decision #2). Reuse the existing `hasDesign()` check for
+      both shapes, and the existing empty/pending/error copy per source.
+- [ ] 6.2 `applyTemplate` and its 6 tests in
+      `shared/page-editor/components/_lib/template.test.ts` are **untouched** —
+      it already takes `(page_content, config)`. They must stay green.
+- [ ] 6.3 Verify: `pnpm test && pnpm typecheck && pnpm lint`
+
+### Phase 7 — "My Nuspace" sidebar page
+
+- [ ] 7.1 `{ to: "/people", label: "My Nuspace", icon: UserIcon }` in
+      `NAV_ITEMS` (`web/src/components/layouts/app/app-sidebar.tsx:50-56`).
+      `to` is typed `LinkProps["to"]`, so the route must exist before the
+      entry does or the build fails.
+- [ ] 7.2 `routes/_app/people/index.tsx` + component — `communities/index.tsx`
+      minus the two `FilterTabs`. `SearchFilter` stays, `useInfiniteList` +
+      `InfiniteList` + `CardGrid` stay, `UserCard` replaces `CommunityCard`,
+      empty state included. No filters.
+- [ ] 7.3 Cards link to `/u/$slug`; avatar falls back to initials, the way
+      `profile/index.tsx:157-165` does.
+- [ ] 7.4 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+
+### Phase 8 — `Item` across both settings areas
+
+Decision #6: everything, not just the fields.
+
+- [ ] 8.1 **Community General** — name, type, category, slug, email → `Item`
+      rows, mixed layout per decision #5. `MediaPicker` rows. The 2-column
+      grid goes to one column, **not** replaced for Type + Category
+      (decision #7). The danger zone (`general/index.tsx:78-98`) is already
+      label-left/button-right, so it is a near-mechanical swap to
+      `<Item variant="outline">` keeping the destructive classes.
+      `CommunityForm` is shared with `CommunityFormDialog`, so the create
+      dialog restyles too (decision #8).
+- [ ] 8.2 **Admin access link** — `settings/components/admin-access-link.tsx`
+      → `Item` rows. Read-only `Input` + copy + rotate, both
+      `ConfirmDialog`-gated. Logic unchanged; markup only. Leave the
+      `qk.adminLink` key out of the `communities` prefix as its comment
+      (`query-keys.ts:38-46`) requires.
+- [ ] 8.3 **Admins table rows** — `AdminRowView`
+      (`admins-table.tsx:300-381`) → `Item` with `ItemMedia variant="image"`,
+      `ItemTitle` + `Badge`, actions in `ItemActions`. The
+      `<Card><div className="divide-y">` wrapper becomes an `ItemGroup`.
+      `adminRowActions()` gating (`lib/communities/functions.ts:390-398`) and
+      the responsive labelled/icon-only button pair are unchanged. The
+      `excludeSub` reasoning at `:74-78` must survive verbatim — the pinned
+      "You" row is why the server drops them from the rows *and* the count.
+- [ ] 8.4 Pagination footer untouched beyond the phase 4.4 extraction.
+- [ ] 8.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+
+### Phase 9 — final
+
+- [ ] 9.1 Full backend suite + ruff + black.
+- [ ] 9.2 Full web suite: `pnpm api:check && pnpm typecheck && pnpm test &&
+      pnpm lint && pnpm format:check && pnpm build`.
+- [ ] 9.3 Walk the self-check below by hand in a browser, not just by reading
+      the diff: design a page as a user, log out, log back in, confirm the
+      design survived. That round trip is the one thing no automated test here
+      covers end to end, and it is the bug that motivated phase 0.
+- [ ] 9.4 Commit. Suggested message:
+      `feat(web,backend): Puck page editor for user profile pages`
 
 ---
 
 ## Not in scope
 
-Do not touch these. They were considered and explicitly deferred.
+Considered and explicitly deferred. Do not pick these up.
 
-- Merging `degree-audit-info` into `LegalPage` (needs a data reshape — a
-  content refactor, not a layout one).
-- The community detail landing page and the Puck editor. They bypass the shell
-  on purpose.
-- `MultiFilter` moving under `routes/opportunities/` — it stays shared.
-- Any backend, API schema, or `api:generate` change.
-- `SettingsSection`'s "uncontainered" design (heading owns itself, caller
-  chooses `Card` / bare / danger zone). It is deliberate; only the `width`
-  prop goes.
+- **A `pages` table.** The JSONB-on-owner pattern already works and is what
+  communities do.
+- **A users Meilisearch index.** Nobody searches users by keyword yet.
+  `ILIKE` is fine at campus scale; revisit if `/people` gets slow.
+- **A public/private flag on communities.** Communities are fully public
+  today (`CommunityPolicy` grants READ to guests, and there is no visibility
+  column). Decision #2 keeps the community list in the template dialog
+  unfiltered because of this.
+- **An `Appearance` row anywhere.** The app header owns the theme toggle.
+- **Modifying `editor.tsx` or `template.ts`.** The Puck remount-on-apply dance
+  (`editor.tsx:28-30, 90-107`) is deliberate — Puck does not reload its `data`
+  prop after first mount. Do not "clean it up".
+- **Editing `web/src/components/ui/item.tsx`.** Per `CONVENTIONS.md`, `ui/` is
+  vendor code: consume it, never add project props or hand-written styles to it.
+  If `Item` cannot express something, wrap it in `shared/`.
 
 ---
 
@@ -356,69 +415,60 @@ Do not touch these. They were considered and explicitly deferred.
 
 Before declaring done, confirm all of these:
 
-- [x] No page sets horizontal padding. Only `layouts/app` and `layouts/public` do.
-- [x] Every page is a `Page`. The only exceptions are community detail and the
-      editor (decision #7).
-- [x] Exactly two width values exist in the app: `max-w-7xl` (the box) and
-      `max-w-3xl` (the `prose` body).
-- [x] No raw `mx-auto max-w-*` in any route page. `grep` for it.
-- [x] No `FilterBar`, no bordered filter box, anywhere.
-- [x] `ui/tabs`, `ui/toggle`, `ui/item`, `ui/checkbox` are all in use.
-- [x] `shared/tabs-nav.tsx` and `shared/page/section.tsx` are gone.
-- [x] `grep -rn "chipClass" src` returns only `shared/toggle-chip.tsx`.
-- [x] Every page-header action button is default size.
-- [x] "Campus directory" and the profile `divide-y` separators are gone.
-- [x] `CONVENTIONS.md` documents the standard.
+- [ ] `grep -n "^- \[ \]" PROGRESS.md` returns nothing.
+- [ ] Every `Item` has a `data-slot` and the `ItemGroup` gap rule still works —
+      i.e. rows that are `size="sm"`/`xs` tighten the group. `item.tsx:9-21`.
+- [ ] No `theme toggle` / `ThemeToggle` import left under `components/routes/profile/`.
+- [ ] `grep -rn "page_content" backend/modules/auth/repository.py` shows the
+      upsert loop cannot write it.
+- [ ] `GET /api/users` has no query parameter that can widen the visibility
+      filter.
+- [ ] `media.entity_id` is still `BigInteger` — nothing was widened to `Text`.
+- [ ] A private profile returns 404 to a guest, and the page renders to its
+      owner.
+- [ ] `/u/$slug` and `/people` work with no session.
+- [ ] `pnpm api:check` passes — `schema.d.ts` was regenerated and committed with
+      its backend change, not left behind.
+- [ ] Lint/ruff finding counts did not grow.
 
 ---
 
 ## Resume protocol
 
-1. `cd web && pnpm typecheck && pnpm lint` — confirm the tree is green.
+1. `cd backend && uv run ruff check .` and `cd web && pnpm typecheck && pnpm
+   lint` — confirm the tree is at least as green as the documented baselines
+   (ruff 11, pnpm lint 9).
 2. `git diff` + `git status` — see what actually landed.
-3. `grep -n "^- \[ \]" PROGRESS.md | head -1` — the first unticked box is
-   where you resume.
+3. `grep -n "^- \[ \]" PROGRESS.md | head -1` — the first unticked box is where
+   you resume.
 4. Read the phase header for context, do the item, tick it, run that phase's
    verify command.
+5. Check the Alembic head before adding a migration — 0.1 names a revision, and
+   someone may have landed another one.
+
+---
 
 ## Deviations
 
-- **`pnpm lint` is red before this work starts.** `layouts/app/app-sidebar.tsx:293`
-  trips `jsx-a11y/no-noninteractive-element-interactions` and
-  `jsx-a11y(click-events-have-key-events)` on the deliberate click-to-expand
-  collapsed rail. Pre-existing on `f0b8acb`, unrelated to layout. The bar used
-  here is "no _new_ findings from the files this plan touches" rather than a
-  green lint run. Verified by diffing the full finding list before and after each
-  phase; the count went 9 → 8, the one that went being the `max-w-[90rem]` on
-  `/events/$eventId` that 3.10 removed. Also pre-existing and untouched:
-  `Date.now()` during render in `routes/announcements`, and four
-  `text-sm leading-relaxed` class-order nits in `routes/events/$eventId`.
+### Phase 0
 
-- **The landing page's bands are no longer full-bleed.** `layouts/public` now
-  owns the same gutter as the app shell, so `/`'s bordered sections sit inset by
-  1.5rem instead of running edge to edge, and the hero box grew from the old
-  `max-w-5xl` to the standard `max-w-7xl`. Both follow from decisions #2 and
-  "a page never sets padding"; the alternative was a negative-margin escape
-  hatch that re-couples the page to the shell's breakpoints. Revisit only if
-  someone says the bands should be full-bleed again.
-
-- **`Page`'s `title` is optional.** 4.3 needed a box with no header for the
-  landing hero and its last two sections. Rather than give `Page` a
-  `headerClassName`-style escape hatch or fake a title, the header is skipped
-  when there is nothing to put in it and the `mt-6` comes with it.
-
-- **`PageHeader` lost its inner `max-w-3xl`.** The h1 element spanned the box
-  but wrapped at 3xl, so a long title was narrower than the list below it.
-
-- **`prose` pages now centre, and the title centres with them** (asked for after
-  the work landed). Two `mx-auto max-w-3xl`s in `Page`, one on the body and one
-  passed to `PageHeader` as its class, so the header stays the full box on a
-  `wide` page. Centring the body alone was rejected: the title would then start
-  ~16rem left of the text under it. No page opted in individually — it is keyed
-  off `width`, so all nine prose pages moved together, `/profile` included
-  through `SettingsShell`.
-
-- **The community 404 lost its `Card`.** 5.8 collapsed it into
-  `shared/not-found.tsx`, which is uncontained and `min-h-screen`. The two were
-  near-identical and the Card was decoration; the copy (title, body, destination)
-  is now props. `app/router.tsx` passes no props and keeps its old look.
+1. **`users.id` is added with `GENERATED BY DEFAULT AS IDENTITY`, not the
+   add-nullable / backfill / set-not-null dance.** On PG 10+ the single
+   `ALTER TABLE` is sequence-backed, `NOT NULL` and backfills every existing
+   row with a distinct `nextval()` value. Verified against the dev PG 17: three
+   pre-existing users came back as ids 1, 2, 3. The model declares it as
+   `mapped_column(BigInteger, Identity(), nullable=False, unique=True)`, which
+   `alembic check` reports as no diff.
+2. **The `ALTER TYPE ... ADD VALUE 'users'` is wrapped in an idempotent
+   `DO` block checking `pg_enum`.** PG has no `ALTER TYPE ... DROP VALUE`, so
+   the value outlives `downgrade()` and a plain re-upgrade fails with
+   `DuplicateObject: enum label "users" already exists`. The guard is what makes
+   0.5's "applies and downgrades cleanly" true in both directions. The
+   downgrade still leaves the value in place, with a comment saying so.
+3. **"u" in `RESERVED_SLUGS` cannot actually fire.** `validate_slug` already
+   rejects anything under 3 characters, and the mirror-image `validate_slug()`
+   plpgsql CHECK constraint the migration `8b32e85c3697` installed does the
+   same — so neither the API nor the database will ever accept `u` as a slug.
+   Added as specified anyway; it is free and survives a future relaxation of
+   the minimum length. The plpgsql copy was left alone deliberately, because
+   for this one value the two are already in agreement.

@@ -22,6 +22,7 @@ RESERVED_SLUGS = {
     "opportunities",
     "profile",
     "sgotinish",
+    "u",
 }
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")

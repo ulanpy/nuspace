@@ -1,6 +1,6 @@
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Text
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Identity, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -27,6 +27,9 @@ class User(Base):
     __tablename__ = "users"
 
     sub: Mapped[str] = mapped_column(primary_key=True, nullable=False, unique=True)
+    # Surrogate key, sequence-backed in the database. User media hangs off this
+    # int; `sub` stays the primary key and every FK to it is untouched.
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole, name="userrole"), nullable=False)
     scope: Mapped[UserScope] = mapped_column(SQLEnum(UserScope, name="userscope"), nullable=False)

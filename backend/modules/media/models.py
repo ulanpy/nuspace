@@ -26,6 +26,7 @@ class EntityType(str, PyEnum):
     courses = "courses"
     tickets = "tickets"
     messages = "messages"
+    users = "users"
 
 
 class MediaFormat(PyEnum):
