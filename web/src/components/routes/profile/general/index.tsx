@@ -206,8 +206,8 @@ export function Page() {
               />
               <ItemDescription>
                 Your page is at{" "}
-                <span className="font-medium">/u/{slug || "your-handle"}</span>
-                . Lowercase letters, digits and single hyphens only.
+                <span className="font-medium">/u/{slug || "your-handle"}</span>.
+                Lowercase letters, digits and single hyphens only.
               </ItemDescription>
               {slugError ? (
                 <p className="text-xs text-destructive">{slugError}</p>
@@ -241,7 +241,6 @@ export function Page() {
               }
             />
           </Row>
-
         </ItemGroup>
 
         <div className="flex justify-end">

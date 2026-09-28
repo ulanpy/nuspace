@@ -21,10 +21,11 @@ export function pageRootColors(
     textColor?: unknown
   }
 
-  const rawBackground =
-    root.props?.backgroundColor ?? root.backgroundColor
+  const rawBackground = root.props?.backgroundColor ?? root.backgroundColor
   const background =
-    typeof rawBackground === "string" && rawBackground ? rawBackground : "#ffffff"
+    typeof rawBackground === "string" && rawBackground
+      ? rawBackground
+      : "#ffffff"
 
   const rawText = root.props?.textColor ?? root.textColor
   const foreground =

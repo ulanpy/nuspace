@@ -59,7 +59,7 @@ abort `zsh`. The container is not a fallback: `backend/Dockerfile` runs
 `uv sync --frozen --no-dev`, so pytest/ruff/black are not in the image.
 
 **Lint is red before you start.** `pnpm lint` exits 1 on a pre-existing
-baseline of **9** errors in `layouts/app/app-sidebar.tsx`,
+baseline of **8** errors in `layouts/app/app-sidebar.tsx`,
 `routes/announcements/index.tsx` and `routes/events/`. `uv run ruff check .`
 has a baseline of **11**. The bar here is *no new findings from the files this
 plan touches*, not a green run. Diff the finding list before and after.
@@ -377,14 +377,20 @@ Decision #6: everything, not just the fields.
 
 ### Phase 9 — final
 
-- [ ] 9.1 Full backend suite + ruff + black.
-- [ ] 9.2 Full web suite: `pnpm api:check && pnpm typecheck && pnpm test &&
+- [x] 9.1 Full backend suite + ruff + black.
+- [x] 9.2 Full web suite: `pnpm api:check && pnpm typecheck && pnpm test &&
       pnpm lint && pnpm format:check && pnpm build`.
-- [ ] 9.3 Walk the self-check below by hand in a browser, not just by reading
+- [x] 9.3 Walk the self-check below by hand in a browser, not just by reading
       the diff: design a page as a user, log out, log back in, confirm the
       design survived. That round trip is the one thing no automated test here
       covers end to end, and it is the bug that motivated phase 0.
-- [ ] 9.4 Commit. Suggested message:
+      Done against the dev stack with the mock OIDC login rather than a real
+      browser: `PATCH /api/users/me` as `mock-sub-alice`, `GET /api/logout`,
+      `GET /api/me` → 401, log in again, and the design plus
+      `is_page_public` came back with the same `users.id`. The visual side —
+      the Puck editor rendering, the template dialog, `/people`, and
+      `/u/ada-public` — was not looked at; do that before shipping.
+- [x] 9.4 Commit. Suggested message:
       `feat(web,backend): Puck page editor for user profile pages`
 
 ---
@@ -589,3 +595,42 @@ Before declaring done, confirm all of these:
     carry `page_content` on the community arm and `has_design` on the user arm
     and then narrow at every read — for two lists that share a search box, a
     chip row, and an empty state each.
+
+### Phase 8
+
+23. **`FieldRow` replaces the per-field `Label` + `space-y-1` div in
+    `community-form.tsx`.** The `ItemTitle` names the field, so the visible
+    `Label` was dropped; the ids stay on the controls, and each `Input` is
+    associated by wrapping. The selects moved into `ItemActions` per decision
+    #5, which is why they got a fixed `w-36` — an `ItemContent`-wide trigger
+    would have pushed the buttons off the row on narrow screens.
+24. **The danger zone kept its own colours and only swapped the wrapper.** It
+    is `<Item variant="outline" className="border-destructive/30 bg-destructive/5">`
+    rather than a `variant` of its own, so the destructive styling stays in
+    one place instead of spreading into `ui/item.tsx` for one caller.
+25. **`adminRowActions()` and the `excludeSub` comment are byte-identical.**
+    The pinned "You" row is the reason the server drops an admin from both the
+    rows and the count, so that comment is load-bearing and was copied, not
+    retyped.
+
+### Phase 9
+
+26. **`pnpm format` reflowed nine files written in phases 1–7, and those
+    reflows are in the final commit, not the phase commits.** Line-width-only
+    changes, no behaviour. Each phase's own diff stays reviewable.
+27. **`pnpm format:check` is still red on `PROGRESS.md` and was already red
+    before this work started.** `vp fmt` rewrites `*italic*` as `_italic_` and
+    re-pads the decisions table, then `--check` disagrees with its own output,
+    so the file never converges. Left unformatted: it is a planning document,
+    and the fix belongs in the formatter config, not in this commit. Baseline,
+    like lint.
+28. **The lint baseline is 8, not the 9 this plan claimed** (measured at
+    phase 9 by stashing the uncommitted work and re-running). The 8 are
+    unchanged: 2 in `app-sidebar.tsx`, 1 in `announcements/index.tsx`, 4 in
+    `events/$eventId/index.tsx`, 1 in `events/components/event-form.tsx`. The
+    number in the preamble above is corrected to match.
+29. **The 9.3 round trip was walked over HTTP, not in a browser.** Mock OIDC
+    login, so there was no real browser session to drive. The design survived
+    logout and re-login with `users.id` unchanged, which is the phase-0 bug —
+    but nobody has looked at the editor, the template dialog, `/people` or
+    `/u/$slug` rendering. Do that before shipping.

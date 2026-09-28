@@ -20,10 +20,7 @@ function PeopleListRoute() {
   const navigate = Route.useNavigate()
 
   const onSearchChange = useCallback(
-    (
-      updater: (previous: PeopleSearch) => PeopleSearch,
-      replace = false
-    ) => {
+    (updater: (previous: PeopleSearch) => PeopleSearch, replace = false) => {
       void navigate({
         search: updater,
         replace,

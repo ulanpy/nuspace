@@ -14,10 +14,10 @@ describe("pageRootColors", () => {
   })
 
   it("reads the flat shape older saves have", () => {
-    assert.deepEqual(
-      pageRootColors({ root: { backgroundColor: "#101010" } }),
-      { background: "#101010", foreground: "#f8fafc" }
-    )
+    assert.deepEqual(pageRootColors({ root: { backgroundColor: "#101010" } }), {
+      background: "#101010",
+      foreground: "#f8fafc",
+    })
   })
 
   it("falls back to white with a contrasting foreground", () => {

@@ -50,9 +50,7 @@ export function Page({ queryClient }: { queryClient: QueryClient }) {
   }
 
   return (
-    <UploadContext.Provider
-      value={{ entityType: "users", entityId: user.id }}
-    >
+    <UploadContext.Provider value={{ entityType: "users", entityId: user.id }}>
       <div className="h-dvh">
         <Editor
           data={pageContent}

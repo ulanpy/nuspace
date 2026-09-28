@@ -22,6 +22,9 @@ describe("pageRangeSummary", () => {
 
   it("says nothing rather than claiming an empty range", () => {
     assert.equal(pageRangeSummary(undefined), null)
-    assert.equal(pageRangeSummary({ page: 1, size: 10, total: 0, items: [] }), null)
+    assert.equal(
+      pageRangeSummary({ page: 1, size: 10, total: 0, items: [] }),
+      null
+    )
   })
 })

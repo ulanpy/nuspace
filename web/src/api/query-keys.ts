@@ -12,7 +12,8 @@ export const qk = {
 
   users: {
     all: () => ["users"] as const,
-    list: (filters: Record<string, unknown>) => ["users", "list", filters] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["users", "list", filters] as const,
     detail: (slug: string) => ["users", "detail", slug] as const,
   },
 

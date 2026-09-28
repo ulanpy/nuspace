@@ -84,10 +84,7 @@ export function TemplateDialog({
     onOpenChange(false)
     setInput("")
     onApply(
-      applyTemplate(
-        pageContent as Record<string, unknown>,
-        pageEditorConfig
-      )
+      applyTemplate(pageContent as Record<string, unknown>, pageEditorConfig)
     )
   }
 
@@ -273,9 +270,7 @@ export function TemplateDialog({
               }}
               empty={
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  {keyword
-                    ? "No people found"
-                    : "Start typing to search"}
+                  {keyword ? "No people found" : "Start typing to search"}
                 </p>
               }
             />

@@ -8,11 +8,7 @@ import {
 import { ApiError, api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
 import { useMediaUpload, type UploadItem } from "@/hooks/use-media-upload"
-import {
-  assertValidImageBatch,
-  pollForMedia,
-  saveWithMedia,
-} from "@/lib/media"
+import { assertValidImageBatch, pollForMedia, saveWithMedia } from "@/lib/media"
 import { sessionSchema } from "./constants"
 import type { Session, UserPageUpdate } from "./types"
 
