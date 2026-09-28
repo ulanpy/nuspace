@@ -6,6 +6,7 @@ import {
 } from "lucide-react"
 
 import { DEGREE_AUDIT_INFO } from "./data"
+import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
 
 /**
@@ -18,45 +19,46 @@ export function Page() {
     DEGREE_AUDIT_INFO
 
   return (
-    <article className="mx-auto max-w-prose space-y-10 py-8">
-      <header className="space-y-4">
-        <Button
-          nativeButton={false}
-          variant="ghost"
-          size="sm"
-          className="-ml-2.5"
-          render={
-            <Link to="/courses/audit">
-              <ArrowLeftIcon aria-hidden />
-              Back to Degree Audit
-            </Link>
-          }
-        />
-
-        <div className="flex items-start gap-3">
+    <PageLayout
+      title={
+        <span className="flex items-start gap-3">
           <BookOpenCheckIcon className="mt-1 size-8 shrink-0" aria-hidden />
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-balance">
-              {DEGREE_AUDIT_INFO.title}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              By{" "}
-              <a
-                href={author.telegram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-3 hover:text-foreground"
-              >
-                {author.name}
-              </a>
-              , {author.role}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Last updated: {DEGREE_AUDIT_INFO.lastUpdated}
-            </p>
-          </div>
-        </div>
-      </header>
+          {DEGREE_AUDIT_INFO.title}
+        </span>
+      }
+      description={
+        <span className="flex flex-col">
+          <span>
+            By{" "}
+            <a
+              href={author.telegram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-3 hover:text-foreground"
+            >
+              {author.name}
+            </a>
+            , {author.role}
+          </span>
+          <span className="text-xs">
+            Last updated: {DEGREE_AUDIT_INFO.lastUpdated}
+          </span>
+        </span>
+      }
+      width="prose"
+    >
+      <Button
+        nativeButton={false}
+        variant="ghost"
+        size="sm"
+        className="-ml-2.5 self-start"
+        render={
+          <Link to="/courses/audit">
+            <ArrowLeftIcon aria-hidden />
+            Back to Degree Audit
+          </Link>
+        }
+      />
 
       <section className="space-y-3 rounded-lg border border-border bg-muted/50 p-4 text-sm/relaxed">
         <p className="flex items-center gap-2 font-medium">
@@ -112,6 +114,6 @@ export function Page() {
           </section>
         ))}
       </div>
-    </article>
+    </PageLayout>
   )
 }

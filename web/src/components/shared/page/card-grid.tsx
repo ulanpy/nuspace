@@ -48,15 +48,36 @@ export function CardGrid({
  *
  * Shape matters more than detail: a stack of full-width lines inside a
  * three-column grid is what this replaces, and it read as a broken layout
- * rather than a loading one.
+ * rather than a loading one. `banner` is the events card — an image on top,
+ * lines under it — so a loading events page does not resize when the posters
+ * arrive.
  */
 export function CardGridSkeleton({
   columns = 3,
   count = 6,
+  variant = "default",
 }: {
   columns?: keyof typeof columnClasses
   count?: number
+  variant?: "default" | "banner"
 }) {
+  if (variant === "banner") {
+    return (
+      <CardGrid columns={columns} aria-hidden>
+        {Array.from({ length: count }, (_, index) => (
+          <Card key={index} className="gap-0 p-0">
+            <Skeleton className="aspect-3/4 w-full rounded-none" />
+            <div className="space-y-3 p-4">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </Card>
+        ))}
+      </CardGrid>
+    )
+  }
+
   return (
     <CardGrid columns={columns} aria-hidden>
       {Array.from({ length: count }, (_, index) => (

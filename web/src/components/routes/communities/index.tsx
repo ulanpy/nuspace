@@ -15,16 +15,14 @@ import {
 } from "@/lib/communities"
 import { useDebounced } from "@/hooks/use-debounced"
 import {
-  ChoiceChips,
-  FilterBar,
+  FilterTabs,
   SearchFilter,
   type FilterOption,
 } from "@/components/shared/list-filters"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
 import { CardGrid, CardGridSkeleton } from "@/components/shared/page/card-grid"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
+import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
 
 export function Page({
@@ -77,31 +75,29 @@ export function Page({
   })
 
   return (
-    <PageContainer maxWidth="wide" padding="none" className="space-y-6">
-      <PageHeader
-        title="Communities"
-        description="Discover clubs, organizations, and campus groups."
-        actions={
-          // Open to any signed-in user, as on the server: creating a community
-          // makes you its owner, and admins verify it afterwards.
-          <Button
-            onClick={() => {
-              setIsCreating(true)
-            }}
-          >
-            <PlusIcon aria-hidden />
-            Create community
-          </Button>
-        }
-      />
-
-      <FilterBar>
+    <PageLayout
+      title="Communities"
+      description="Discover clubs, organizations, and campus groups."
+      actions={
+        // Open to any signed-in user, as on the server: creating a community
+        // makes you its owner, and admins verify it afterwards.
+        <Button
+          onClick={() => {
+            setIsCreating(true)
+          }}
+        >
+          <PlusIcon aria-hidden />
+          Create community
+        </Button>
+      }
+    >
+      <div className="flex flex-wrap items-center gap-2">
         <SearchFilter
           value={searchInput}
           onChange={setSearchInput}
           placeholder="Search communities"
         />
-        <ChoiceChips
+        <FilterTabs
           label="Community category"
           value={category}
           options={CATEGORY_OPTIONS}
@@ -109,7 +105,7 @@ export function Page({
             onSearchChange((previous) => ({ ...previous, category: next }))
           }}
         />
-        <ChoiceChips
+        <FilterTabs
           label="Community type"
           value={type}
           options={TYPE_OPTIONS}
@@ -117,7 +113,7 @@ export function Page({
             onSearchChange((previous) => ({ ...previous, type: next }))
           }}
         />
-      </FilterBar>
+      </div>
 
       <InfiniteList
         items={list.items}
@@ -152,7 +148,7 @@ export function Page({
           onCommunityCreated(community.slug)
         }}
       />
-    </PageContainer>
+    </PageLayout>
   )
 }
 

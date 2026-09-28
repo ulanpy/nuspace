@@ -44,7 +44,6 @@ import {
 import { getDeadlinePresentation } from "@/lib/opportunities"
 import { useDebounced } from "@/hooks/use-debounced"
 import {
-  FilterBar,
   MultiFilter,
   SearchFilter,
   type FilterOption,
@@ -56,11 +55,11 @@ import { toPlainText } from "@/lib/markdown"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
 import { CardGrid } from "@/components/shared/page/card-grid"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
+import { Page as PageLayout } from "@/components/shared/page"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Toggle } from "@/components/ui/toggle"
 import {
   Dialog,
   DialogContent,
@@ -447,93 +446,92 @@ export function Page({
   }
 
   return (
-    <PageContainer maxWidth="prose" padding="none" className="space-y-6">
-      <PageHeader
-        title="Opportunities Digest"
-        description="Research, internships, grants and scholarships for NU students."
-        actions={
-          // Only people the backend will actually let through see this action.
-          canManageOpportunities ? (
-            <Button
-              onClick={() => {
-                setEditing({})
-              }}
-            >
-              <PlusIcon aria-hidden />
-              Add opportunity
-            </Button>
-          ) : undefined
-        }
-      />
-
-      <FilterBar>
+    <PageLayout
+      title="Opportunities Digest"
+      description="Research, internships, grants and scholarships for NU students."
+      actions={
+        // Only people the backend will actually let through see this action.
+        canManageOpportunities ? (
+          <Button
+            onClick={() => {
+              setEditing({})
+            }}
+          >
+            <PlusIcon aria-hidden />
+            Add opportunity
+          </Button>
+        ) : undefined
+      }
+      width="prose"
+    >
+      <div className="flex flex-wrap items-center gap-2">
         <SearchFilter
           value={searchInput}
           onChange={setSearchInput}
           placeholder="Search opportunities"
         />
-        <div className="flex flex-wrap gap-2">
-          <MultiFilter
-            label="Types"
-            selected={type}
-            options={TYPE_OPTIONS}
-            onChange={(next) => {
-              onSearchChange((previous) => ({
-                ...previous,
-                type: next.length > 0 ? next : undefined,
-              }))
-            }}
-          />
-          <MultiFilter
-            label="Education"
-            selected={education}
-            options={EDUCATION_OPTIONS}
-            onChange={(next) => {
-              onSearchChange((previous) => ({
-                ...previous,
-                education: next.length > 0 ? next : undefined,
-              }))
-            }}
-          />
-          <MultiFilter
-            label="Years"
-            selected={years.map(String)}
-            options={YEAR_OPTIONS}
-            onChange={(next) => {
-              onSearchChange((previous) => ({
-                ...previous,
-                years:
-                  next.length > 0
-                    ? next.map((value) => Number(value))
-                    : undefined,
-              }))
-            }}
-          />
-          <MultiFilter
-            label="Majors"
-            selected={majors}
-            options={MAJOR_OPTIONS}
-            onChange={(next) => {
-              onSearchChange((previous) => ({
-                ...previous,
-                majors: next.length > 0 ? next : undefined,
-              }))
-            }}
-          />
-          <Button
-            variant={hideExpired ? "secondary" : "outline"}
-            size="sm"
-            onClick={() => {
-              onSearchChange((previous) => ({
-                ...previous,
-                hideExpired: !hideExpired,
-              }))
-            }}
-          >
-            {hideExpired ? "Show expired" : "Hide expired"}
-          </Button>
-        </div>
-      </FilterBar>
+        <Toggle
+          variant="outline"
+          pressed={hideExpired}
+          onPressedChange={(pressed) => {
+            onSearchChange((previous) => ({
+              ...previous,
+              hideExpired: pressed,
+            }))
+          }}
+        >
+          {hideExpired ? "Show expired" : "Hide expired"}
+        </Toggle>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <MultiFilter
+          label="Types"
+          selected={type}
+          options={TYPE_OPTIONS}
+          onChange={(next) => {
+            onSearchChange((previous) => ({
+              ...previous,
+              type: next.length > 0 ? next : undefined,
+            }))
+          }}
+        />
+        <MultiFilter
+          label="Education"
+          selected={education}
+          options={EDUCATION_OPTIONS}
+          onChange={(next) => {
+            onSearchChange((previous) => ({
+              ...previous,
+              education: next.length > 0 ? next : undefined,
+            }))
+          }}
+        />
+        <MultiFilter
+          label="Years"
+          selected={years.map(String)}
+          options={YEAR_OPTIONS}
+          onChange={(next) => {
+            onSearchChange((previous) => ({
+              ...previous,
+              years:
+                next.length > 0
+                  ? next.map((value) => Number(value))
+                  : undefined,
+            }))
+          }}
+        />
+        <MultiFilter
+          label="Majors"
+          selected={majors}
+          options={MAJOR_OPTIONS}
+          onChange={(next) => {
+            onSearchChange((previous) => ({
+              ...previous,
+              majors: next.length > 0 ? next : undefined,
+            }))
+          }}
+        />
+      </div>
 
       <InfiniteList
         items={list.items}
@@ -662,7 +660,7 @@ export function Page({
           )}
         </p>
       )}
-    </PageContainer>
+    </PageLayout>
   )
 }
 

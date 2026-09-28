@@ -30,7 +30,7 @@ export function Page({
   const pinnedSelf = isCommunityAdmin(community)
 
   return (
-    <div className="space-y-10">
+    <>
       {community.permissions.can_view_admin_link ? (
         <SettingsSection
           title="Admin access link"
@@ -80,6 +80,6 @@ export function Page({
           }}
         />
       </SettingsSection>
-    </div>
+    </>
   )
 }

@@ -3,7 +3,7 @@ import { MessagesSquareIcon } from "lucide-react"
 import { useSession } from "@/hooks/use-session"
 import { OtinishStats } from "@/components/routes/sgotinish/components/otinish-stats"
 import { TelegramConnectPrompt } from "@/components/routes/profile/components/telegram-connect-prompt"
-import { PageHeader } from "@/components/shared/page/header"
+import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
@@ -34,13 +34,12 @@ export function Page() {
   const session = useSession()
 
   return (
-    <div className="mx-auto max-w-lg space-y-10">
-      <PageHeader
-        eyebrow="Student Government"
-        title="SG otinish"
-        description="Ask Student Government anonymously in Telegram — they see the issue, not who you are, and reply in the same chat."
-      />
-
+    <PageLayout
+      eyebrow="Student Government"
+      title="SG otinish"
+      description="Ask Student Government anonymously in Telegram — they see the issue, not who you are, and reply in the same chat."
+      width="prose"
+    >
       <OtinishStats />
 
       <ol className="relative space-y-0">
@@ -88,6 +87,6 @@ export function Page() {
           @{BOT_USERNAME} · category, then one message
         </p>
       </Card>
-    </div>
+    </PageLayout>
   )
 }

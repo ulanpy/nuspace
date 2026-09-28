@@ -3,8 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { ArrowRightIcon } from "lucide-react"
 
 import { announcementsBundleQueryOptions } from "@/lib/announcements"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
+import { Page as PageLayout } from "@/components/shared/page"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { TelegramFeed } from "@/components/routes/announcements/components/telegram-feed"
 import { AnnouncementFeaturedEvent } from "@/components/routes/announcements/components/featured-event"
@@ -31,12 +30,10 @@ export function Page() {
   const remainingEvents = events.filter((event) => event.id !== featured?.id)
 
   return (
-    <PageContainer maxWidth="wide" padding="none" className="space-y-8">
-      <PageHeader
-        title={`${greeting()}, there!`}
-        description="Here's what's happening at Nuspace."
-      />
-
+    <PageLayout
+      title={`${greeting()}, there!`}
+      description="Here's what's happening at Nuspace."
+    >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <section className="space-y-5">
           <div className="flex items-center justify-between gap-4">
@@ -79,6 +76,6 @@ export function Page() {
 
         <TelegramFeed />
       </div>
-    </PageContainer>
+    </PageLayout>
   )
 }

@@ -9,12 +9,10 @@ import {
   type ServiceCategory,
 } from "./data"
 import { findMatchingContacts } from "./search"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
+import { Page as PageLayout } from "@/components/shared/page"
 import { EmptyState } from "@/components/shared/query/boundary"
-import { Section } from "@/components/shared/page/section"
 import { CardGrid } from "@/components/shared/page/card-grid"
-import { FilterBar, SearchFilter } from "@/components/shared/list-filters"
+import { SearchFilter } from "@/components/shared/list-filters"
 import { Card } from "@/components/ui/card"
 
 /**
@@ -94,21 +92,17 @@ export function Page({
   }, [matches])
 
   return (
-    <PageContainer maxWidth="default" padding="none" className="space-y-8">
-      <PageHeader
-        eyebrow="Campus directory"
-        title="Find the right office or service"
-        description="In an emergency, call campus security or local services immediately."
+    <PageLayout
+      title="Find the right office or service"
+      description="In an emergency, call campus security or local services immediately."
+      width="prose"
+    >
+      <SearchFilter
+        value={q}
+        onChange={onQChange}
+        label="Search contacts"
+        placeholder="Security, counseling, registrar…"
       />
-
-      <FilterBar>
-        <SearchFilter
-          value={q}
-          onChange={onQChange}
-          label="Search contacts"
-          placeholder="Security, counseling, registrar…"
-        />
-      </FilterBar>
 
       {matches.length === 0 ? (
         <EmptyState
@@ -119,7 +113,7 @@ export function Page({
         <div className="space-y-8">
           {CATEGORY_ORDER.filter((category) => byCategory.has(category)).map(
             (category) => (
-              <Section key={category} spacing="none" className="space-y-3">
+              <section key={category} className="space-y-3">
                 <h2 className="text-xl font-semibold">
                   {CATEGORY_LABELS[category]}
                 </h2>
@@ -158,11 +152,11 @@ export function Page({
                     }
                   )}
                 </CardGrid>
-              </Section>
+              </section>
             )
           )}
         </div>
       )}
-    </PageContainer>
+    </PageLayout>
   )
 }

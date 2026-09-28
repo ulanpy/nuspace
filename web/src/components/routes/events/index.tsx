@@ -11,15 +11,11 @@ import { EventFormDialog } from "@/components/routes/events/components/event-for
 import { TelegramConnectPrompt } from "@/components/routes/profile/components/telegram-connect-prompt"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
-import { FilterBar } from "@/components/shared/list-filters"
-import { CardGrid } from "@/components/shared/page/card-grid"
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
+import { FilterTabs, type FilterOption } from "@/components/shared/list-filters"
+import { CardGrid, CardGridSkeleton } from "@/components/shared/page/card-grid"
+import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
-import { Card } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { Toggle } from "@/components/ui/toggle"
 
 export function Page({
   search,
@@ -51,62 +47,54 @@ export function Page({
   })
 
   return (
-    <PageContainer maxWidth="wide" padding="none" className="space-y-6">
+    <PageLayout
+      title="Events"
+      description="Find what's happening across campus."
+      actions={
+        // The backend remains authoritative for event creation.
+        <Button
+          onClick={() => {
+            setIsCreating(true)
+          }}
+        >
+          <PlusIcon aria-hidden />
+          Create event
+        </Button>
+      }
+    >
       <TelegramConnectPrompt
         storageKey="nuspace_events_tg_banner_dismissed"
         title="Connect Telegram for event updates"
       />
 
-      <PageHeader
-        title="Events"
-        description="Find what's happening across campus."
-        actions={
-          // The backend remains authoritative for event creation.
-          <Button
-            onClick={() => {
-              setIsCreating(true)
-            }}
-          >
-            <PlusIcon aria-hidden />
-            Create event
-          </Button>
-        }
-      />
-
-      <FilterBar className="flex flex-wrap items-center gap-2 space-y-0">
-        <ButtonGroup>
-          {TIME_OPTIONS.map((option) => (
-            <Button
-              key={option.value}
-              variant={time === option.value ? "default" : "outline"}
-              onClick={() => {
-                onSelectTime(option.value)
-              }}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </ButtonGroup>
-        <Button
-          variant={type === "recruitment" ? "default" : "outline"}
-          className={cn(type !== "recruitment" && "bg-background")}
-          onClick={() => {
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterTabs
+          label="Event time range"
+          value={time}
+          options={TIME_OPTIONS}
+          showAll={false}
+          onChange={onSelectTime}
+        />
+        <Toggle
+          variant="outline"
+          pressed={type === "recruitment"}
+          onPressedChange={(pressed) => {
             onSearchChange((previous) => ({
               ...previous,
-              type: previous.type === "recruitment" ? undefined : "recruitment",
+              type: pressed ? "recruitment" : undefined,
             }))
           }}
         >
           <UsersIcon aria-hidden /> Club Recruitments
-        </Button>
-      </FilterBar>
+        </Toggle>
+      </div>
 
       <InfiniteList
         items={list.items}
         getKey={(event) => event.id}
         renderItem={(event) => <EventCard event={event} />}
         isPending={list.isPending}
-        pending={<EventGridSkeleton />}
+        pending={<CardGridSkeleton columns={4} count={8} variant="banner" />}
         isError={list.isError}
         error={list.error}
         refetch={() => {
@@ -134,7 +122,7 @@ export function Page({
         // filtered list, and "nothing visibly happened" is the worse outcome.
         onSaved={onEventCreated}
       />
-    </PageContainer>
+    </PageLayout>
   )
 }
 
@@ -143,21 +131,4 @@ const TIME_OPTIONS = [
   { value: "today", label: "Today" },
   { value: "week", label: "This week" },
   { value: "month", label: "This month" },
-] as const
-
-function EventGridSkeleton() {
-  return (
-    <CardGrid columns={4} aria-hidden>
-      {Array.from({ length: 8 }, (_, index) => (
-        <Card key={index} className="gap-0 p-0">
-          <Skeleton className="aspect-3/4 w-full rounded-none" />
-          <div className="space-y-3 p-4">
-            <Skeleton className="h-5 w-2/3" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-        </Card>
-      ))}
-    </CardGrid>
-  )
-}
+] satisfies FilterOption<NonNullable<EventsListSearch["time"]>>[]

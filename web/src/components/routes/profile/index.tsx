@@ -14,6 +14,15 @@ import { EmptyState, QueryBoundary } from "@/components/shared/query/boundary"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
 import { ThemeToggle } from "@/components/shared/theme/toggle"
 import { Button } from "@/components/ui/button"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item"
 import { Skeleton } from "@/components/ui/skeleton"
 
 function Row({
@@ -26,15 +35,13 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-4 last:pb-0">
-      <div className="min-w-0">
-        <p className="text-sm font-medium">{label}</p>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
-      {children}
-    </div>
+    <Item variant="muted">
+      <ItemContent>
+        <ItemTitle>{label}</ItemTitle>
+        {description && <ItemDescription>{description}</ItemDescription>}
+      </ItemContent>
+      <ItemActions>{children}</ItemActions>
+    </Item>
   )
 }
 
@@ -136,33 +143,32 @@ export function Page() {
         </Button>
       }
     >
-      <div className="space-y-10">
+      <div>
         <SettingsSection title="Account">
-          <div className="divide-y divide-border">
-            <div className="flex items-center gap-4 py-4 first:pt-0">
-              <ResilientImage
-                src={user.picture}
-                alt=""
-                aria-hidden
-                eager
-                containerClassName="size-12 shrink-0 rounded-full"
-                fallback={
-                  <span
-                    aria-hidden
-                    className="grid size-full place-items-center bg-muted text-lg font-medium text-muted-foreground"
-                  >
-                    {user.given_name.charAt(0).toUpperCase()}
-                  </span>
-                }
-              />
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{user.name}</p>
-                <p className="truncate text-sm text-muted-foreground">
-                  {user.email}
-                </p>
-              </div>
-            </div>
+          <ItemGroup>
+            <Item variant="muted">
+              <ItemMedia>
+                <ResilientImage
+                  src={user.picture}
+                  alt=""
+                  aria-hidden
+                  eager
+                  containerClassName="size-12 shrink-0 rounded-full"
+                  fallback={
+                    <span
+                      aria-hidden
+                      className="grid size-full place-items-center bg-muted text-lg font-medium text-muted-foreground"
+                    >
+                      {user.given_name.charAt(0).toUpperCase()}
+                    </span>
+                  }
+                />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>{user.name}</ItemTitle>
+                <ItemDescription>{user.email}</ItemDescription>
+              </ItemContent>
+            </Item>
 
             <Row
               label="Telegram"
@@ -174,7 +180,7 @@ export function Page() {
             <Row label="Appearance">
               <ThemeToggle />
             </Row>
-          </div>
+          </ItemGroup>
         </SettingsSection>
 
         <SettingsSection title="My communities">

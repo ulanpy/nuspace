@@ -49,7 +49,7 @@ export function Page({ community }: { community: Community }) {
   }
 
   return (
-    <div className="space-y-10">
+    <>
       <SettingsSection
         title="Details"
         description="How this community appears across the app."
@@ -113,6 +113,6 @@ export function Page({ community }: { community: Community }) {
           })
         }}
       />
-    </div>
+    </>
   )
 }

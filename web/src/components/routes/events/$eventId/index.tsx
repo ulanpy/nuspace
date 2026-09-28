@@ -36,6 +36,7 @@ import { beginLogin } from "@/lib/user"
 import { cn, formatCampusDate, formatCampusTime } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Markdown } from "@/components/shared/markdown/renderer"
+import { Page as PageLayout } from "@/components/shared/page"
 import { EventFormDialog } from "@/components/routes/events/components/event-form-dialog"
 import { EventMediaCarousel } from "@/components/routes/events/components/event-media-carousel"
 import { Badge } from "@/components/ui/badge"
@@ -92,19 +93,61 @@ export function Page({ eventId }: { eventId: number }) {
     },
   })
 
+  const share = async () => {
+    if (navigator.share)
+      await navigator.share({
+        title: event.name,
+        text: `Check out this event: ${event.name}`,
+        url: window.location.href,
+      })
+    else {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.success("Event link copied")
+    }
+  }
+
   return (
-    <article className="mx-auto max-w-[90rem] space-y-6">
-      <Button
-        nativeButton={false}
-        variant="ghost"
-        size="sm"
-        render={
-          <Link to="/events" search={{ time: "upcoming" }}>
-            <ArrowLeftIcon aria-hidden />
-            Back to events
-          </Link>
-        }
-      />
+    <PageLayout
+      title={event.name}
+      width="wide"
+      actions={
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            void share().catch(() => toast.error("Could not share this event"))
+          }}
+          aria-label="Share event"
+          title="Share event"
+        >
+          <Share2Icon aria-hidden />
+        </Button>
+      }
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          nativeButton={false}
+          variant="ghost"
+          size="sm"
+          className="-ml-2.5"
+          render={
+            <Link to="/events" search={{ time: "upcoming" }}>
+              <ArrowLeftIcon aria-hidden />
+              Back to events
+            </Link>
+          }
+        />
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{event.type}</Badge>
+          <Badge variant="outline">{eventPolicyLabel(event.policy)}</Badge>
+          {event.tag !== "regular" && <Badge>{event.tag}</Badge>}
+          <Badge variant={timing.kind === "ongoing" ? "default" : "outline"}>
+            {timing.kind === "upcoming"
+              ? `${timing.label} ${timing.detail}`
+              : `${timing.label} · ${timing.detail}`}
+          </Badge>
+        </div>
+      </div>
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] lg:gap-12">
         <div className="lg:sticky lg:top-20">
@@ -126,183 +169,132 @@ export function Page({ eventId }: { eventId: number }) {
         </div>
 
         <div className="min-w-0 space-y-6">
-          <header className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{event.type}</Badge>
-              <Badge variant="outline">{eventPolicyLabel(event.policy)}</Badge>
-              {event.tag !== "regular" && <Badge>{event.tag}</Badge>}
-              <Badge
-                variant={timing.kind === "ongoing" ? "default" : "outline"}
-              >
-                {timing.kind === "upcoming"
-                  ? `${timing.label} ${timing.detail}`
-                  : `${timing.label} · ${timing.detail}`}
-              </Badge>
-              <Button
-                className="ml-auto shrink-0"
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  const share = async () => {
-                    if (navigator.share)
-                      await navigator.share({
-                        title: event.name,
-                        text: `Check out this event: ${event.name}`,
-                        url: window.location.href,
-                      })
-                    else {
-                      await navigator.clipboard.writeText(window.location.href)
-                      toast.success("Event link copied")
-                    }
+          {event.policy === "open" &&
+            !finished &&
+            event.type !== "recruitment" && (
+              <section className="space-y-2">
+                <div className="space-y-1">
+                  <p className="font-medium">
+                    {event.is_going ? "You’re going" : "Planning to attend?"}
+                  </p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Marking that you’re going helps organizers plan seats and
+                    materials.
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  className={
+                    event.is_going
+                      ? "group h-12 px-6 transition-colors hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      : "h-12 px-6"
                   }
-                  void share().catch(() =>
-                    toast.error("Could not share this event")
-                  )
-                }}
-                aria-label="Share event"
-                title="Share event"
-              >
-                <Share2Icon aria-hidden />
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-3xl/tight font-bold tracking-tight text-balance lg:text-4xl">
-                {event.name}
-              </h1>
-            </div>
-
-            {event.policy === "open" &&
-              !finished &&
-              event.type !== "recruitment" && (
-                <section className="space-y-2">
-                  <div className="space-y-1">
-                    <p className="font-medium">
-                      {event.is_going ? "You’re going" : "Planning to attend?"}
-                    </p>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      Marking that you’re going helps organizers plan seats and
-                      materials.
-                    </p>
-                  </div>
-                  <Button
-                    size="lg"
+                  disabled={toggleGoing.isPending}
+                  onClick={() => {
+                    if (!session) {
+                      beginLogin()
+                      return
+                    }
+                    toggleGoing.mutate()
+                  }}
+                >
+                  {event.is_going && (
+                    <CheckIcon className="group-hover:hidden" aria-hidden />
+                  )}
+                  <span
                     className={
-                      event.is_going
-                        ? "group h-12 px-6 transition-colors hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        : "h-12 px-6"
+                      event.is_going ? "group-hover:hidden" : undefined
                     }
-                    disabled={toggleGoing.isPending}
-                    onClick={() => {
-                      if (!session) {
-                        beginLogin()
-                        return
-                      }
-                      toggleGoing.mutate()
-                    }}
                   >
-                    {event.is_going && (
-                      <CheckIcon className="group-hover:hidden" aria-hidden />
-                    )}
-                    <span
-                      className={
-                        event.is_going ? "group-hover:hidden" : undefined
-                      }
-                    >
-                      {event.is_going ? "Going" : "I’m going"}
-                    </span>
-                    {event.is_going && (
-                      <span className="hidden group-hover:inline">
-                        Not going
-                      </span>
-                    )}
-                  </Button>
-                </section>
-              )}
+                    {event.is_going ? "Going" : "I’m going"}
+                  </span>
+                  {event.is_going && (
+                    <span className="hidden group-hover:inline">Not going</span>
+                  )}
+                </Button>
+              </section>
+            )}
 
-            {event.policy === "registration" &&
-              event.registration_link &&
-              !finished && (
-                <Card className="space-y-3 border-border/60 bg-muted/25 p-4">
-                  <div className="space-y-1">
-                    <p className="font-medium">
-                      External registration required
-                    </p>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      Registration is handled externally by the organizer.
-                    </p>
-                  </div>
-                  <Button
-                    nativeButton={false}
-                    size="lg"
-                    className="h-12 px-6"
-                    render={
-                      <a
-                        href={event.registration_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLinkIcon aria-hidden />
-                        Register
-                      </a>
-                    }
-                  />
-                </Card>
-              )}
-
-            <div className="flex flex-wrap gap-2.5">
-              {!finished && event.type !== "recruitment" && (
+          {event.policy === "registration" &&
+            event.registration_link &&
+            !finished && (
+              <Card className="space-y-3 border-border/60 bg-muted/25 p-4">
+                <div className="space-y-1">
+                  <p className="font-medium">External registration required</p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Registration is handled externally by the organizer.
+                  </p>
+                </div>
                 <Button
                   nativeButton={false}
-                  variant="outline"
-                  className="h-10 px-4"
+                  size="lg"
+                  className="h-12 px-6"
                   render={
                     <a
-                      href={eventGoogleCalendarUrl(event)}
+                      href={event.registration_link}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <CalendarPlusIcon aria-hidden />
-                      Add to calendar
+                      <ExternalLinkIcon aria-hidden />
+                      Register
                     </a>
                   }
                 />
-              )}
-              {canEdit && (
-                <Button
-                  variant="outline"
-                  className="h-10 px-4"
-                  onClick={() => {
-                    setIsEditing(true)
-                  }}
-                >
-                  <PencilIcon aria-hidden />
-                  Edit
-                </Button>
-              )}
-              {canDelete && (
-                <Button
-                  variant="ghost"
-                  className="ml-2 h-10 px-4 text-destructive hover:text-destructive"
-                  onClick={() => {
-                    setIsConfirmingDelete(true)
-                  }}
-                >
-                  <Trash2Icon aria-hidden />
-                  Delete
-                </Button>
-              )}
-            </div>
-
-            {deleteEvent.isError && (
-              <p className="text-sm text-destructive" role="alert">
-                {apiErrorMessage(
-                  deleteEvent.error,
-                  "Could not delete the event. Try again."
-                )}
-              </p>
+              </Card>
             )}
-          </header>
+
+          <div className="flex flex-wrap gap-2.5">
+            {!finished && event.type !== "recruitment" && (
+              <Button
+                nativeButton={false}
+                variant="outline"
+                className="h-10 px-4"
+                render={
+                  <a
+                    href={eventGoogleCalendarUrl(event)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <CalendarPlusIcon aria-hidden />
+                    Add to calendar
+                  </a>
+                }
+              />
+            )}
+            {canEdit && (
+              <Button
+                variant="outline"
+                className="h-10 px-4"
+                onClick={() => {
+                  setIsEditing(true)
+                }}
+              >
+                <PencilIcon aria-hidden />
+                Edit
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="ghost"
+                className="ml-2 h-10 px-4 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setIsConfirmingDelete(true)
+                }}
+              >
+                <Trash2Icon aria-hidden />
+                Delete
+              </Button>
+            )}
+          </div>
+
+          {deleteEvent.isError && (
+            <p className="text-sm text-destructive" role="alert">
+              {apiErrorMessage(
+                deleteEvent.error,
+                "Could not delete the event. Try again."
+              )}
+            </p>
+          )}
 
           <dl
             className={cn(
@@ -411,6 +403,6 @@ export function Page({ eventId }: { eventId: number }) {
           })
         }}
       />
-    </article>
+    </PageLayout>
   )
 }

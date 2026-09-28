@@ -1,6 +1,6 @@
 # PROGRESS — Standardize page layout & primitives
 
-**Status:** in progress — phases 1–2 landed
+**Status:** in progress — phases 1–3 landed
 **Scope:** `web/src` only. No backend, no infra, no API changes.
 
 This file is a self-contained brief. An agent picking this up cold should not
@@ -228,43 +228,43 @@ and `ChoiceChips` (see Deletions).
 
 Do these in order. Each is independent; tick as you go.
 
-- [ ] 3.1 **`routes/events`** — `Page`; `FilterBar` → bare
+- [x] 3.1 **`routes/events`** — `Page`; `FilterBar` → bare
       `flex flex-wrap items-center gap-2`; `ButtonGroup` → `FilterTabs`;
       "Club Recruitments" → `ui/toggle` (drop the
       `cn(type !== "recruitment" && "bg-background")` variant-fight);
       delete the local `EventGridSkeleton` (see 5.6).
-- [ ] 3.2 **`routes/communities`** — `Page`; `FilterBar` → bare flex row;
+- [x] 3.2 **`routes/communities`** — `Page`; `FilterBar` → bare flex row;
       2× `ChoiceChips` → 2× `FilterTabs`; `CardGridSkeleton` stays.
-- [ ] 3.3 **`routes/opportunities`** — `Page width="prose"`; `FilterBar` →
+- [x] 3.3 **`routes/opportunities`** — `Page width="prose"`; `FilterBar` →
       bare flex row; "Hide expired" `variant="secondary"` → `ui/toggle`.
-- [ ] 3.4 **`routes/contacts`** — `Page width="prose"`; drop
+- [x] 3.4 **`routes/contacts`** — `Page width="prose"`; drop
       `eyebrow="Campus directory"`; `FilterBar` → bare flex row;
       `Section spacing="none"` → plain `<section>`;
       `CardGrid columns={2}` **unchanged** (48rem body wants 2 columns).
-- [ ] 3.5 **`routes/announcements`** — `Page`; `space-y-8` → the standard
+- [x] 3.5 **`routes/announcements`** — `Page`; `space-y-8` → the standard
       body gap.
-- [ ] 3.6 **`routes/profile`** — comes free via `SettingsShell`; separately
+- [x] 3.6 **`routes/profile`** — comes free via `SettingsShell`; separately
       replace the hand-rolled `Row` + `divide-y divide-border` with
       `ui/item` (`ItemGroup` / `Item` / `ItemContent` / `ItemTitle` /
       `ItemDescription` / `ItemActions`). Drop the separators.
-- [ ] 3.7 **`routes/communities/settings/general`** and
+- [x] 3.7 **`routes/communities/settings/general`** and
       **`…/admin-controls`** — inherit the new shell; drop their own
       `space-y-10` wrappers so the shell's rhythm governs.
-- [ ] 3.8 **`routes/sgotinish`** — replace raw `mx-auto max-w-lg` div with
+- [x] 3.8 **`routes/sgotinish`** — replace raw `mx-auto max-w-lg` div with
       `Page width="prose"`. Keep the `eyebrow="Student Government"` (it
       carries real meaning, unlike "Campus directory").
-- [ ] 3.9 **`routes/degree-audit-info`** — replace raw
+- [x] 3.9 **`routes/degree-audit-info`** — replace raw
       `<article className="mx-auto max-w-prose …">` with `Page width="prose"`.
       Layout only (decision #6): keep the byline, the disclaimer block, the
       hand-rolled content. It is a sibling of the courses tabs, not a fifth tab.
-- [ ] 3.10 **`routes/events/$eventId`** — replace raw
+- [x] 3.10 **`routes/events/$eventId`** — replace raw
       `mx-auto max-w-[90rem]` with `Page width="wide"`. It is currently the
       widest page in the app; this is a bug, not a design.
-- [ ] 3.11 **`routes/courses/statistics`** — replace the inline
+- [x] 3.11 **`routes/courses/statistics`** — replace the inline
       `chipClass` copy-paste with `FilterTabs`. (`/courses/index`,
       `/schedule`, `/audit` need no change — they render inside
       `CoursesLayout`.)
-- [ ] 3.12 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] 3.12 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
 
 ### Phase 4 — public routes
 
@@ -298,7 +298,7 @@ Only after every consumer is migrated. Grep before each delete.
 - [ ] 5.5 In `shared/toggle-chip.tsx` — make `chipClass` private. After
       `ChoiceChips` is gone it has no external consumer. `ToggleChip` itself
       stays: two pages use it (degree audit, opportunity form).
-- [ ] 5.6 In `shared/page/card-grid.tsx` — add a `banner` variant to
+- [x] 5.6 In `shared/page/card-grid.tsx` — add a `banner` variant to
       `CardGridSkeleton` (the `aspect-3/4 rounded-none p-0` shape events
       needs) and delete events' private `EventGridSkeleton`. One skeleton
       primitive, two pages — this is what gets it over the two-page bar.

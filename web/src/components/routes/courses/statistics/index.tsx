@@ -15,8 +15,8 @@ import { useDebounced } from "@/hooks/use-debounced"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
+import { FilterTabs, type FilterOption } from "@/components/shared/list-filters"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
 
 export function Page({
   search,
@@ -79,32 +79,14 @@ export function Page({
       </div>
 
       {termOptions.length > 0 && (
-        <fieldset className="flex flex-wrap gap-1">
-          <legend className="sr-only">Term</legend>
-          {[undefined, ...termOptions].map((option) => {
-            const isActive = term === option
-
-            return (
-              <button
-                key={option ?? "all"}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => {
-                  onSearchChange((prev) => ({ ...prev, term: option }))
-                }}
-                className={cn(
-                  "rounded-full border px-3 py-1 text-sm transition-colors",
-                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  isActive
-                    ? "border-primary bg-primary/10 font-medium"
-                    : "text-muted-foreground hover:bg-muted/60"
-                )}
-              >
-                {option ?? "All terms"}
-              </button>
-            )
-          })}
-        </fieldset>
+        <FilterTabs
+          label="Term"
+          value={term}
+          options={TERM_OPTIONS(termOptions)}
+          onChange={(next) => {
+            onSearchChange((prev) => ({ ...prev, term: next }))
+          }}
+        />
       )}
 
       <InfiniteList
@@ -145,3 +127,6 @@ export function Page({
     </div>
   )
 }
+
+const TERM_OPTIONS = (terms: readonly string[]): FilterOption<string>[] =>
+  terms.map((term) => ({ value: term, label: term }))
