@@ -1,15 +1,14 @@
 import { Outlet } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
-import { TabsNav, type TabsNavTab } from "@/components/shared/tabs-nav"
+import { Page } from "@/components/shared/page"
+import { RouteTabs, type RouteTab } from "@/components/shared/route-tabs"
 
 interface SettingsShellProps {
   title: string
   description?: string
   /** Omit for a settings area with no subsections, e.g. `/profile`. */
-  sections?: readonly TabsNavTab[]
+  sections?: readonly RouteTab[]
   actions?: ReactNode
 }
 
@@ -18,7 +17,7 @@ interface SettingsShellProps {
  * content.
  *
  * The header is `PageHeader` so settings screens match every other page, and
- * the tabs are `TabsNav`, which `layouts/courses` shares. `sections` is a prop
+ * the tabs are `RouteTabs`, which `layouts/courses` shares. `sections` is a prop
  * rather than a constant so a tabless area reuses the shell without inheriting
  * tabs it has no business showing.
  *
@@ -34,15 +33,18 @@ export function SettingsShell({
   children,
 }: SettingsShellProps & { children: ReactNode }) {
   return (
-    <PageContainer maxWidth="wide" padding="none" className="space-y-6">
-      <PageHeader title={title} description={description} actions={actions} />
-
+    <Page
+      title={title}
+      description={description}
+      actions={actions}
+      width="prose"
+    >
       {sections ? (
-        <TabsNav label={`${title} sections`} tabs={sections} />
+        <RouteTabs label={`${title} sections`} tabs={sections} />
       ) : null}
 
       {children}
-    </PageContainer>
+    </Page>
   )
 }
 

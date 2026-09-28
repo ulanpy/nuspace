@@ -3,7 +3,6 @@ import { Outlet, useMatchRoute } from "@tanstack/react-router"
 
 import { readSidebarCollapsed, writeSidebarCollapsed } from "@/lib/shell"
 import { AppSidebar } from "@/components/layouts/app/app-sidebar"
-import { PageContainer } from "@/components/shared/page/container"
 import { cn } from "@/lib/utils"
 
 /**
@@ -51,11 +50,12 @@ export function AppLayout() {
         {shouldHideSidebar ? (
           <Outlet />
         ) : (
-          // Padding and vertical rhythm only. Each page owns its own width via
-          // its own PageContainer, so nothing here caps it.
-          <PageContainer maxWidth="full" className="py-4 sm:py-6">
+          // The only place horizontal padding lives. Pages used to wrap
+          // themselves in a `PageContainer` on top of this one and land up
+          // padded twice; now they cannot set padding at all.
+          <div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
             <Outlet />
-          </PageContainer>
+          </div>
         )}
       </main>
     </div>

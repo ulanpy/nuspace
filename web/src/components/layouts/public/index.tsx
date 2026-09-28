@@ -60,7 +60,8 @@ export function PublicLayout() {
         </header>
       )}
 
-      <main className="flex-1">
+      {/* The gutter, same as the app shell. Pages do not set padding. */}
+      <main className="flex-1 px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
         <Outlet />
       </main>
 

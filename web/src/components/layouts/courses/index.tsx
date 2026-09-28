@@ -1,8 +1,7 @@
 import { Outlet } from "@tanstack/react-router"
 
-import { PageContainer } from "@/components/shared/page/container"
-import { PageHeader } from "@/components/shared/page/header"
-import { TabsNav } from "@/components/shared/tabs-nav"
+import { Page } from "@/components/shared/page"
+import { RouteTabs } from "@/components/shared/route-tabs"
 
 /**
  * The four tabs are real child routes, not `useState`.
@@ -21,15 +20,13 @@ const TABS = [
 
 export function CoursesLayout() {
   return (
-    <PageContainer maxWidth="wide" padding="none" className="space-y-6">
-      <PageHeader
-        title="Courses"
-        description="Manage your classes, assignments, GPA and semester planning."
-      />
-
-      <TabsNav label="Courses sections" tabs={TABS} />
+    <Page
+      title="Courses"
+      description="Manage your classes, assignments, GPA and semester planning."
+    >
+      <RouteTabs label="Courses sections" tabs={TABS} />
 
       <Outlet />
-    </PageContainer>
+    </Page>
   )
 }

@@ -1,6 +1,6 @@
 # PROGRESS — Standardize page layout & primitives
 
-**Status:** in progress — phase 1 landed
+**Status:** in progress — phases 1–2 landed
 **Scope:** `web/src` only. No backend, no infra, no API changes.
 
 This file is a self-contained brief. An agent picking this up cold should not
@@ -213,16 +213,16 @@ and `ChoiceChips` (see Deletions).
 
 ### Phase 2 — layouts
 
-- [ ] 2.1 `layouts/app/index.tsx`: replace the `PageContainer maxWidth="full"`
+- [x] 2.1 `layouts/app/index.tsx`: replace the `PageContainer maxWidth="full"`
       with a plain `<div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6">`
       (keep the `className` that encodes the padding, drop the import).
-- [ ] 2.2 `layouts/courses/index.tsx`: `PageContainer`+`PageHeader` → `Page`,
+- [x] 2.2 `layouts/courses/index.tsx`: `PageContainer`+`PageHeader` → `Page`,
       `TabsNav` → `RouteTabs`. Keep the TABS const and its JSDoc.
-- [ ] 2.3 `layouts/settings/index.tsx`: same swap in `SettingsShell`.
+- [x] 2.3 `layouts/settings/index.tsx`: same swap in `SettingsShell`.
       Keep the `sections` prop (2 consumers — it earns its place) and keep
       `SettingsShell` vs `SettingsLayout` split (documented in its JSDoc:
       profile is a leaf route with no `Outlet`).
-- [ ] 2.4 Verify: `pnpm typecheck && pnpm lint && pnpm build`
+- [x] 2.4 Verify: `pnpm typecheck && pnpm lint && pnpm build`
 
 ### Phase 3 — app routes (the visible work)
 
@@ -381,5 +381,5 @@ Before declaring done, confirm all of these:
 - **`pnpm lint` is red before this work starts.** `layouts/app/app-sidebar.tsx:293`
   trips `jsx-a11y/no-noninteractive-element-interactions` on the deliberate
   click-to-expand collapsed rail. Pre-existing on `f0b8acb`, unrelated to layout.
-  The bar used here is "no *new* findings from the files this plan touches"
+  The bar used here is "no _new_ findings from the files this plan touches"
   rather than a green lint run.
