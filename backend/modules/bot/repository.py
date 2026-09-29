@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.auth.models import User
-from backend.modules.campuscurrent.models.events import EventBotSubmission
+from backend.modules.events.models.events import EventBotSubmission
 
 
 class BotUserRepository:

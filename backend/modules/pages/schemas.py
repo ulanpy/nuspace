@@ -4,11 +4,11 @@ from typing import List, Literal
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
-from backend.modules.campuscurrent.models.community import (
+from backend.modules.media.schemas import MediaResponse
+from backend.modules.pages.models.page import (
     CommunityCategory,
     CommunityType,
 )
-from backend.modules.media.schemas import MediaResponse
 from backend.modules.shared.slug import validate_slug
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.modules.campuscurrent.events import schemas as event_schemas
+from backend.modules.events import schemas as event_schemas
 
 
 class EventCatalog(Protocol):

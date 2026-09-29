@@ -1,4 +1,4 @@
-from backend.modules.campuscurrent.events.schemas import ListEventResponse
+from backend.modules.events.schemas import ListEventResponse
 from pydantic import BaseModel
 
 

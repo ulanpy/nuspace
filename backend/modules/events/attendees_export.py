@@ -13,7 +13,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.page import PageMargins
 
 from backend.modules.auth.models import User
-from backend.modules.campuscurrent.models import Event
+from backend.modules.events.models import Event
 
 CAMPUS_TZ = ZoneInfo("Asia/Almaty")
 

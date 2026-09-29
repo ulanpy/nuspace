@@ -16,11 +16,7 @@ class BasePolicy:
         self.user_creds = user
         self.user_role = user[1]["role"]
         self.user_sub = user[0]["sub"]
-        self.communities = user[1]["communities"]
         self.is_admin = self.user_role == UserRole.admin.value
 
     def _is_owner(self, author_sub: str) -> bool:
         return self.user_sub == author_sub
-
-    def _is_community_owner(self, community_id: int) -> bool:
-        return community_id in self.communities

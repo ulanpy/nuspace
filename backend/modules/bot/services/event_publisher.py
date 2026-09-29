@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 from backend.common.schemas import Infra
 from backend.core.configs.config import Config, config
 from backend.core.database.uow import UnitOfWork
-from backend.modules.campuscurrent.events import schemas as event_schemas
-from backend.modules.campuscurrent.events.service import EventService
-from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
+from backend.modules.events import schemas as event_schemas
+from backend.modules.events.models.events import EventType, RegistrationPolicy
+from backend.modules.events.service import EventService
 from backend.modules.media.dependencies import build_media_service
 from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData

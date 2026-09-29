@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-from backend.modules.campuscurrent.base import BasePolicy
+from backend.modules.shared.base_policy import BasePolicy
 
 
 class OpportunityPolicy(BasePolicy):

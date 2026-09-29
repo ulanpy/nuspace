@@ -11,16 +11,16 @@ from backend.common.datetime_utils import utc_now
 from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
 from backend.core.database.uow import UnitOfWork
-from backend.modules.campuscurrent.events import schemas, utils
-from backend.modules.campuscurrent.events.attendees_export import (
+from backend.modules.events import schemas, utils
+from backend.modules.events.attendees_export import (
     build_attendees_csv,
     build_attendees_xlsx,
 )
-from backend.modules.campuscurrent.events.interfaces import MediaAttachmentResolver
-from backend.modules.campuscurrent.events.policy import EventPolicy
-from backend.modules.campuscurrent.events.repository import EventRepository
-from backend.modules.campuscurrent.models import Event, EventAccessPurpose
+from backend.modules.events.interfaces import MediaAttachmentResolver
+from backend.modules.events.policy import EventPolicy
+from backend.modules.events.repository import EventRepository
 from backend.modules.media.models import EntityType, Media, MediaFormat
+from backend.modules.events.models import Event, EventAccessPurpose
 
 _ACCESS_INVITE_TTL = timedelta(days=7)
 

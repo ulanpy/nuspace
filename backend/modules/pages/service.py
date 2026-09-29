@@ -8,19 +8,19 @@ from backend.common.schemas import Infra, ShortUserResponse
 from backend.common.utils import response_builder
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.uow import UnitOfWork
-from backend.modules.campuscurrent.communities import schemas
-from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
-from backend.modules.campuscurrent.communities.policy import CommunityPolicy
-from backend.modules.campuscurrent.communities.repository import CommunityRepository
-from backend.modules.campuscurrent.communities.utils import get_community_permissions
-from backend.modules.campuscurrent.models.community import (
+from backend.modules.media.models import EntityType, Media, MediaFormat
+from backend.modules.media.schemas import MediaResponse
+from backend.modules.pages import schemas
+from backend.modules.pages.interfaces import MediaAttachmentResolver
+from backend.modules.pages.models.page import (
     Community,
     CommunityAdmin,
     CommunityCategory,
     CommunityType,
 )
-from backend.modules.media.models import EntityType, Media, MediaFormat
-from backend.modules.media.schemas import MediaResponse
+from backend.modules.pages.policy import CommunityPolicy
+from backend.modules.pages.repository import CommunityRepository
+from backend.modules.pages.utils import get_community_permissions
 from backend.modules.shared.media_ownership import delete_owned_media
 
 

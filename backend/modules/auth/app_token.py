@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.configs.config import config
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.models import User, UserRole
-from backend.modules.campuscurrent.models import Community
+from backend.modules.pages.models import Community
 
 logger = logging.getLogger(__name__)
 

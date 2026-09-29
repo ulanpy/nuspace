@@ -380,7 +380,7 @@ export function eventPolicyLabel(policy: "open" | "registration"): string {
 /**
  * Which fields the server will accept an edit to, for this user, on this event.
  *
- * The list is built per-request in `backend/modules/campuscurrent/events/policy.py`
+ * The list is built per-request in `backend/modules/events/policy.py`
  * and differs between an admin and the event's own creator — `tag` is admin-only,
  * and the difference is invisible from the response alone. Editing is gated on
  * this rather than on a role check, so a policy change on the server takes

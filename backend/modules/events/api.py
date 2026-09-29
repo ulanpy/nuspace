@@ -8,9 +8,9 @@ from backend.modules.auth.dependencies import (
     get_creds_or_401,
     get_creds_or_guest,
 )
-from backend.modules.campuscurrent.events import schemas
-from backend.modules.campuscurrent.events.dependencies import get_event_service
-from backend.modules.campuscurrent.events.service import EventService
+from backend.modules.events import schemas
+from backend.modules.events.dependencies import get_event_service
+from backend.modules.events.service import EventService
 
 router = APIRouter(tags=["Events Routes"])
 

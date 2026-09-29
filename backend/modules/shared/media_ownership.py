@@ -8,8 +8,8 @@ neither of them owns the concept.
 
 from fastapi import HTTPException, status
 
-from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
 from backend.modules.media.models import EntityType
+from backend.modules.pages.interfaces import MediaAttachmentResolver
 
 
 async def delete_owned_media(

@@ -6,8 +6,8 @@ from fastapi.responses import HTMLResponse
 from backend.common.dependencies import get_infra
 from backend.common.schemas import Infra
 from backend.modules.auth.dependencies import get_creds_or_guest
-from backend.modules.campuscurrent.communities.dependencies import get_community_service
-from backend.modules.campuscurrent.communities.service import CommunityService
+from backend.modules.pages.dependencies import get_community_service
+from backend.modules.pages.service import CommunityService
 
 router = APIRouter(tags=["Communities OG"])
 

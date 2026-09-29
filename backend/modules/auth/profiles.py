@@ -14,10 +14,10 @@ from backend.core.database.uow import UnitOfWork
 from backend.modules.auth import schemas
 from backend.modules.auth.models import User, UserCategory, UserScope
 from backend.modules.auth.repository import UserRepository
-from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
-from backend.modules.campuscurrent.communities.repository import CommunityRepository
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.media.schemas import MediaResponse
+from backend.modules.pages.interfaces import MediaAttachmentResolver
+from backend.modules.pages.repository import CommunityRepository
 from backend.modules.shared.media_ownership import delete_owned_media
 
 

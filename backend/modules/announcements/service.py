@@ -6,7 +6,7 @@ from typing import Optional
 import httpx
 from backend.modules.announcements import schemas
 from backend.modules.announcements.interfaces import EventCatalog
-from backend.modules.campuscurrent.events import schemas as event_schemas
+from backend.modules.events import schemas as event_schemas
 
 logger = logging.getLogger(__name__)
 

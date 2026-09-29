@@ -1,11 +1,4 @@
-from backend.modules.campuscurrent.models.community import (
-    Community,
-    CommunityAdmin,
-    CommunityAdminLink,
-    CommunityCategory,
-    CommunityType,
-)
-from backend.modules.campuscurrent.models.events import (
+from backend.modules.events.models.events import (
     CollaboratorType,
     Event,
     EventAccessInvite,
@@ -22,11 +15,6 @@ from backend.modules.campuscurrent.models.events import (
 )
 
 __all__ = [
-    "Community",
-    "CommunityAdmin",
-    "CommunityAdminLink",
-    "CommunityCategory",
-    "CommunityType",
     "CollaboratorType",
     "Event",
     "EventAccessInvite",

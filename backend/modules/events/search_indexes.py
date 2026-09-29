@@ -1,5 +1,5 @@
 from backend.bootstrap.meilisearch import MeilisearchIndexConfig
-from backend.modules.campuscurrent.models import Community, Event
+from backend.modules.events.models import Event
 
 MEILISEARCH_INDEXES = [
     MeilisearchIndexConfig(
@@ -7,11 +7,5 @@ MEILISEARCH_INDEXES = [
         searchable_columns=[Event.name, Event.description],
         filterable_attributes=None,
         primary_key=Event.id,
-    ),
-    MeilisearchIndexConfig(
-        model=Community,
-        searchable_columns=[Community.name],
-        filterable_attributes=None,
-        primary_key=Community.id,
     ),
 ]

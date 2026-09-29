@@ -1,5 +1,5 @@
-from backend.modules.campuscurrent.events import schemas
-from backend.modules.campuscurrent.models import EventStatus, EventTag
+from backend.modules.events import schemas
+from backend.modules.events.models import EventStatus, EventTag
 
 
 class EventEnrichmentService:

@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.auth.models import User, UserCategory, UserScope
 from backend.modules.auth.schemas import UserSchema
-from backend.modules.campuscurrent.models.community import Community, CommunityAdmin
 from backend.modules.media.models import EntityType, Media, MediaFormat
+from backend.modules.pages.models.page import Community, CommunityAdmin
 from backend.modules.shared.slug import generate_unique_slug
 
 # Owned by the user, not by Keycloak. UserSchema defaults page_content={} and

@@ -18,7 +18,8 @@
 | Identity | `modules/auth/models.py` (`User`, роли) |
 | Media | `modules/media/models.py` (`Media`, `EntityType`) |
 | Notification | `modules/notification/models.py` |
-| Campus Current | `modules/campuscurrent/models/` |
+| Pages | `modules/pages/models/` |
+| Events | `modules/events/models/` |
 | Courses | `modules/courses/models/` |
 | SGotinish | `modules/sgotinish/models.py` |
 | Opportunities | `modules/opportunities/models.py` |

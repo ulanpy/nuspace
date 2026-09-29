@@ -3,8 +3,8 @@ from fastapi import Depends
 from backend.common.dependencies import get_infra, get_uow
 from backend.common.schemas import Infra
 from backend.core.database.uow import UnitOfWork
-from backend.modules.campuscurrent.communities.service import CommunityService
 from backend.modules.media.dependencies import build_media_service
+from backend.modules.pages.service import CommunityService
 
 
 async def get_community_service(

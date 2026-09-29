@@ -8,14 +8,14 @@ from sqlalchemy.orm import selectinload
 from backend.common.datetime_utils import utc_now
 from backend.common.utils import meilisearch
 from backend.modules.auth.models import User
-from backend.modules.campuscurrent.models.community import (
+from backend.modules.media.models import EntityType, Media, MediaFormat
+from backend.modules.pages.models.page import (
     Community,
     CommunityAdmin,
     CommunityAdminLink,
     CommunityCategory,
     CommunityType,
 )
-from backend.modules.media.models import EntityType, Media, MediaFormat
 
 
 class CommunityRepository:

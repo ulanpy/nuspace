@@ -9,7 +9,7 @@ from backend.modules.google_bucket.interfaces import (
 from backend.modules.media.models import EntityType
 
 
-class CampusCurrentMediaUploadAuthorizer(MediaUploadAuthorizer):
+class BucketMediaUploadAuthorizer(MediaUploadAuthorizer):
     """Adapts Campus Current resource policies for bucket upload authorization."""
 
     def __init__(

@@ -3,8 +3,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from backend.modules.campuscurrent.communities.repository import CommunityRepository
-from backend.modules.campuscurrent.communities.service import CommunityService
+from backend.modules.pages.repository import CommunityRepository
+from backend.modules.pages.service import CommunityService
 
 USER = ({"sub": "viewer"}, {"role": "user", "communities": []})
 BASE = datetime(2026, 1, 1, tzinfo=timezone.utc)

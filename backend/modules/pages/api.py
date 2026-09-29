@@ -6,13 +6,13 @@ from sqlalchemy.exc import IntegrityError
 from backend.common.dependencies import get_infra
 from backend.common.schemas import Infra
 from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
-from backend.modules.campuscurrent.communities import schemas
-from backend.modules.campuscurrent.communities.dependencies import get_community_service
-from backend.modules.campuscurrent.communities.service import CommunityService
-from backend.modules.campuscurrent.models.community import (
+from backend.modules.pages import schemas
+from backend.modules.pages.dependencies import get_community_service
+from backend.modules.pages.models.page import (
     CommunityCategory,
     CommunityType,
 )
+from backend.modules.pages.service import CommunityService
 from backend.modules.shared.slug import raise_slug_taken
 
 router = APIRouter(tags=["Community Routes"])

@@ -103,7 +103,7 @@ export async function uploadToSignedUrl(
  * Formats are not interchangeable, and the backend filters on them in the
  * query rather than returning everything:
  *
- *   events      → `carousel` only  (campuscurrent/events/repository.list_media)
+ *   events      → `carousel` only  (events/repository.list_media)
  *   communities → `profile` and `banner`
  *
  * So asking an entity for a format it never carries renders nothing, with no

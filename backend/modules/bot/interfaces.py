@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Protocol
 
 from backend.modules.bot.schemas.event_post import ExtractedEventDraft
-from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
+from backend.modules.events.models.events import EventType, RegistrationPolicy
 
 
 class EventDraftExtractor(Protocol):

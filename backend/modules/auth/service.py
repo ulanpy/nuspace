@@ -24,9 +24,9 @@ from backend.modules.auth.models import User, UserRole, UserScope
 from backend.modules.auth.oauth import exchange_code_for_credentials
 from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.schemas import CurrentUserResponse, UserSchema
-from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
 from backend.modules.media.models import MediaFormat
 from backend.modules.media.schemas import MediaResponse
+from backend.modules.pages.interfaces import MediaAttachmentResolver
 
 logger = logging.getLogger(__name__)
 

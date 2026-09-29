@@ -7,7 +7,7 @@ from backend.modules.bot.services.event_post import EventPostService
 from backend.modules.bot.utils.telegram_event_album import load_event_album_messages
 from backend.modules.bot.utils.telegram_event_payload import build_telegram_event_post_input
 from backend.modules.bot.utils.telegram_media import download_message_images
-from backend.modules.campuscurrent.models.events import EventBotSubmissionStatus
+from backend.modules.events.models.events import EventBotSubmissionStatus
 from redis.asyncio import Redis
 
 router = Router(name="Post event router")

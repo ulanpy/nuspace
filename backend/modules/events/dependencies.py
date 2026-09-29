@@ -2,7 +2,7 @@ from fastapi import Depends, Request
 
 from backend.common.dependencies import get_uow
 from backend.core.database.uow import UnitOfWork
-from backend.modules.campuscurrent.events.service import EventService
+from backend.modules.events.service import EventService
 from backend.modules.media.dependencies import build_media_service
 
 

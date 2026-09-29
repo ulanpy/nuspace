@@ -87,24 +87,24 @@ Notes:
 
 ## Target shape (all decisions are settled — do not re-litigate)
 
-| Decision | Value |
-|---|---|
-| Public URL | **`/p/$slug`** |
-| Settings | `/p/$slug/settings`, tabs `general` + `admin-controls` |
-| Editor | `/p/$slug/editor` |
-| Backend modules | `modules/pages/` and `modules/events/`, both out of `campuscurrent/` |
-| `campuscurrent/` | **deleted entirely**, including the `/test_endpoint` stub |
-| Visibility | `pages.visibility` — `private` \| `internal` \| `public` |
-| Cap: pages | **100 owned pages per account** |
-| Cap: images | **20 content images per page** (`carousel` format) |
-| Account page | `/account` = Connecting Telegram + My Pages. Nothing else. |
-| Account avatar | Keycloak `user.picture`. Both account `MediaPicker`s deleted. |
-| My Pages filter | shadcn `FilterTabs`: **All / Owned / Admin** |
-| Community → Page | Business logic copied. `type`, `category`, `email`, `verified` all **dropped**. `description` **added**. |
-| Create dialog fields | Name, Description (optional), URL (slug), Logo (optional), Banner (optional) |
-| Slug | autofills from the name until the user edits it |
-| Category popover | **deleted** |
-| Legacy | No redirects, no alias table, no legacy-slug preservation, no dead reserved words. |
+| Decision             | Value                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------- |
+| Public URL           | **`/p/$slug`**                                                                                           |
+| Settings             | `/p/$slug/settings`, tabs `general` + `admin-controls`                                                   |
+| Editor               | `/p/$slug/editor`                                                                                        |
+| Backend modules      | `modules/pages/` and `modules/events/`, both out of `campuscurrent/`                                     |
+| `campuscurrent/`     | **deleted entirely**, including the `/test_endpoint` stub                                                |
+| Visibility           | `pages.visibility` — `private` \| `internal` \| `public`                                                 |
+| Cap: pages           | **100 owned pages per account**                                                                          |
+| Cap: images          | **20 content images per page** (`carousel` format)                                                       |
+| Account page         | `/account` = Connecting Telegram + My Pages. Nothing else.                                               |
+| Account avatar       | Keycloak `user.picture`. Both account `MediaPicker`s deleted.                                            |
+| My Pages filter      | shadcn `FilterTabs`: **All / Owned / Admin**                                                             |
+| Community → Page     | Business logic copied. `type`, `category`, `email`, `verified` all **dropped**. `description` **added**. |
+| Create dialog fields | Name, Description (optional), URL (slug), Logo (optional), Banner (optional)                             |
+| Slug                 | autofills from the name until the user edits it                                                          |
+| Category popover     | **deleted**                                                                                              |
+| Legacy               | No redirects, no alias table, no legacy-slug preservation, no dead reserved words.                       |
 
 Ownership transfer: **the previous owner becomes an admin** (`page_admins` row
 inserted, `ON CONFLICT DO NOTHING`) rather than being cut off from the editor.
@@ -122,13 +122,13 @@ The only thing this work does for it: `POST /pages` accepts `page_content` and
 - [x] Take a **fresh local pg_dump** so you can iterate on the migration without fear:
       `docker compose -f infra/prod.docker-compose.yml exec -T postgres pg_dump -U "$DB_USER" -d "$DB_NAME" | gzip > /tmp/nuspace-baseline.sql.gz`
 - [x] Count the rows you are about to migrate and write them down. They are the thing you will be asked about:
-      ```sql
-      SELECT count(*) AS communities, count(DISTINCT owner) AS owners FROM communities;
-      SELECT count(*) AS community_admins FROM community_admins;
-      SELECT count(*) AS media FROM media WHERE entity_type = 'communities';
-      SELECT count(*) AS user_pages FROM users WHERE page_content <> '{}'::jsonb;
-      SELECT count(*) AS orphan_media FROM media WHERE entity_type = 'users';
-      ```
+      `sql
+  SELECT count(*) AS communities, count(DISTINCT owner) AS owners FROM communities;
+  SELECT count(*) AS community_admins FROM community_admins;
+  SELECT count(*) AS media FROM media WHERE entity_type = 'communities';
+  SELECT count(*) AS user_pages FROM users WHERE page_content <> '{}'::jsonb;
+  SELECT count(*) AS orphan_media FROM media WHERE entity_type = 'users';
+  `
 - [x] Note any community whose name will not slugify cleanly (non-latin names, emoji, punctuation-only). These need the `page-{id}` fallback in the migration.
 
 ### Phase 0 findings — read these before Phase 2
@@ -151,20 +151,20 @@ pg_dump -U postgres -d postgres | gzip > …` is the equivalent.
 Row counts on the local dev DB — **small, so the migration is barely exercised
 here and staging is the real test**:
 
-| Query | Count |
-|---|---|
-| `communities` | **1** (1 distinct owner) |
-| `community_admins` | 0 |
-| `community_admin_links` | 2 |
-| `media WHERE entity_type='communities'` | **0** |
-| `users WHERE page_content <> '{}'` | 3 |
-| `media WHERE entity_type='users'` | 3 |
-| `users` total | 3 |
+| Query                                   | Count                    |
+| --------------------------------------- | ------------------------ |
+| `communities`                           | **1** (1 distinct owner) |
+| `community_admins`                      | 0                        |
+| `community_admin_links`                 | 2                        |
+| `media WHERE entity_type='communities'` | **0**                    |
+| `users WHERE page_content <> '{}'`      | 3                        |
+| `media WHERE entity_type='users'`       | 3                        |
+| `users` total                           | 3                        |
 
 The single community is `id=6, name='adsfs', slug='dsfsdfs', owner='mock-sub-bob'`.
 All 3 `users`-entity media rows are `profile`/`banner` avatar+banner images that
 `b3a4c5d6e7f8` drops on the floor with `users` — expected, and the reason Phase
-6c says to check the *page's* images by eye.
+6c says to check the _page's_ images by eye.
 
 **Two corrections to this plan, both forced by reality:**
 
@@ -174,10 +174,10 @@ All 3 `users`-entity media rows are `profile`/`banner` avatar+banner images that
    duplicate revision id and Alembic will refuse to start. The three new
    revisions need fresh ids chaining off `e5f6a7b8c9d0`.
 
-2. **The `page-{id}` fallback triggers on *invalid*, not on *empty*.**
+2. **The `page-{id}` fallback triggers on _invalid_, not on _empty_.**
    `base_slug` never returns an empty string, so the plan's stated trigger
    ("when a name slugifies to nothing") is unreachable. But `base_slug` is
-   *not* safe to insert directly, because for punctuation-only or emoji input
+   _not_ safe to insert directly, because for punctuation-only or emoji input
    it returns a **leading-hyphen** string:
    ```
    base_slug('🎉')  == '-page'      # not ''
@@ -198,27 +198,56 @@ All 3 `users`-entity media rows are `profile`/`banner` avatar+banner images that
 Nothing in this phase changes behaviour or the database. It is a rename plus a
 module split, and it must land on its own so the diff is reviewable.
 
-- [ ] `modules/shared/base_policy.py` ← `campuscurrent/base.py`. Keep `__init__`, `user_creds`, `user_role`, `user_sub`, `is_admin`, `_is_owner`. **Drop `self.communities` and `_is_community_owner`** (no callers).
-- [ ] Repoint `modules/opportunities/policy.py:3` to `modules.shared.base_policy`.
-- [ ] `modules/pages/` ← `campuscurrent/communities/` (still named `Community*` at this point; the entity rename is Phase 2).
-- [ ] `modules/events/` ← `campuscurrent/events/`.
-- [ ] Split `campuscurrent/models/`: `models/community.py` → `modules/pages/models/page.py`; `models/events.py` → `modules/events/models/events.py`. Each gets its own `models/__init__.py` barrel (5 and 13 symbols respectively).
-- [ ] Split `campuscurrent/search_indexes.py` into `modules/pages/search_indexes.py` and `modules/events/search_indexes.py`, each exporting `MEILISEARCH_INDEXES`.
-- [ ] `lifespan.py:18-20,50` — one import + one spread becomes `PAGES_MEILI_INDEXES` and `EVENTS_MEILI_INDEXES`.
-- [ ] `core/database/model_registry.py:14` — one import becomes two. **Keep `auth.models` first**: `models/page.py` uses string relationships (`relationship("User")`), so both sides must be imported before any mapper configures.
-- [ ] `modules/routers.py:8-12` — repoint; delete `test_endpoint_api` and its list entry. Re-sort imports so ruff/isort is happy (`events` sorts before `google_bucket`, `pages` after `opportunities`), then `ruff check --fix`.
-- [ ] Delete `campuscurrent/profile/` (the 9-line `/test_endpoint` stub). Nothing references it.
-- [ ] Delete `campuscurrent/` once empty.
-- [ ] Rewrite the remaining import lines — full list, all 30:
-      - `announcements/dependencies.py:2`, `announcements/interfaces.py:5`, `announcements/schemas.py:1`, `announcements/service.py:9` → `modules.events.*`. Note `announcements/service.py:56` uses `event_schemas.EventStatus.approved` **through a re-export** in `events/schemas.py` — keep that re-export.
-      - `bot/interfaces.py:9`, `bot/repository.py:9`, `bot/routes/user/private/messages/post_event.py:10`, `bot/schemas/event_post.py:9-13`, `bot/services/event_post.py:13-17`, `bot/services/event_publisher.py:11,12,13` → `modules.events.*`
-      - `google_bucket/dependencies.py:11-14` → `modules.pages.*` + `modules.events.*`
-      - `shared/media_ownership.py:11` → `modules.pages.interfaces`
-      - `auth/app_token.py:12`, `auth/profiles.py:17,18`, `auth/service.py:27` → `modules.pages.*`
-- [ ] Rename `CampusCurrentMediaUploadAuthorizer` → `BucketMediaUploadAuthorizer` in `google_bucket/service.py:12,25,39` and its test.
-- [ ] Fix the naming-only leftovers: `backend/README.md:21` (drop the Campus Current row), `web/src/lib/media/functions.ts:106`, `web/src/lib/events/functions.ts:383`.
-- [ ] `rm -rf backend/modules/campuscurrent/**/__pycache__` (15 stale `.pyc` files).
-- [ ] **Verify:** grep `rg -n campuscurrent backend/ web/src/` returns nothing. Run the full gate. Confirm **no new migration was generated** — this phase must be DB-neutral.
+- [x] `modules/shared/base_policy.py` ← `campuscurrent/base.py`. Keep `__init__`, `user_creds`, `user_role`, `user_sub`, `is_admin`, `_is_owner`. **Drop `self.communities` and `_is_community_owner`** (no callers).
+- [x] Repoint `modules/opportunities/policy.py:3` to `modules.shared.base_policy`.
+- [x] `modules/pages/` ← `campuscurrent/communities/` (still named `Community*` at this point; the entity rename is Phase 2).
+- [x] `modules/events/` ← `campuscurrent/events/`.
+- [x] Split `campuscurrent/models/`: `models/community.py` → `modules/pages/models/page.py`; `models/events.py` → `modules/events/models/events.py`. Each gets its own `models/__init__.py` barrel (5 and 13 symbols respectively).
+- [x] Split `campuscurrent/search_indexes.py` into `modules/pages/search_indexes.py` and `modules/events/search_indexes.py`, each exporting `MEILISEARCH_INDEXES`.
+- [x] `lifespan.py:18-20,50` — one import + one spread becomes `PAGES_MEILI_INDEXES` and `EVENTS_MEILI_INDEXES`.
+- [x] `core/database/model_registry.py:14` — one import becomes two. **Keep `auth.models` first**: `models/page.py` uses string relationships (`relationship("User")`), so both sides must be imported before any mapper configures.
+- [x] `modules/routers.py:8-12` — repoint; delete `test_endpoint_api` and its list entry. Re-sort imports so ruff/isort is happy (`events` sorts before `google_bucket`, `pages` after `opportunities`), then `ruff check --fix`.
+- [x] Delete `campuscurrent/profile/` (the 9-line `/test_endpoint` stub). Nothing references it.
+- [x] Delete `campuscurrent/` once empty.
+- [x] Rewrite the remaining import lines — full list, all 30: - `announcements/dependencies.py:2`, `announcements/interfaces.py:5`, `announcements/schemas.py:1`, `announcements/service.py:9` → `modules.events.*`. Note `announcements/service.py:56` uses `event_schemas.EventStatus.approved` **through a re-export** in `events/schemas.py` — keep that re-export. - `bot/interfaces.py:9`, `bot/repository.py:9`, `bot/routes/user/private/messages/post_event.py:10`, `bot/schemas/event_post.py:9-13`, `bot/services/event_post.py:13-17`, `bot/services/event_publisher.py:11,12,13` → `modules.events.*` - `google_bucket/dependencies.py:11-14` → `modules.pages.*` + `modules.events.*` - `shared/media_ownership.py:11` → `modules.pages.interfaces` - `auth/app_token.py:12`, `auth/profiles.py:17,18`, `auth/service.py:27` → `modules.pages.*`
+- [x] Rename `CampusCurrentMediaUploadAuthorizer` → `BucketMediaUploadAuthorizer` in `google_bucket/service.py:12,25,39` and its test.
+- [x] Fix the naming-only leftovers: `backend/README.md:21` (drop the Campus Current row), `web/src/lib/media/functions.ts:106`, `web/src/lib/events/functions.ts:383`.
+- [x] `rm -rf backend/modules/campuscurrent/**/__pycache__` (15 stale `.pyc` files).
+- [x] **Verify:** grep `rg -n campuscurrent backend/ web/src/` returns nothing. Run the full gate. Confirm **no new migration was generated** — this phase must be DB-neutral.
+
+### Phase 1 — what reality added
+
+The plan's import list was 16 files / "all 30" lines. It was **17** files:
+`auth/repository.py:8` also imported `campuscurrent.models.community` and was
+missing from the list. Repointed the same way.
+
+Splitting the single `models/` barrel into two **broke six files** the plan did
+not anticipate, and they only fail at import time, not at build time:
+
+```
+modules/events/{schemas,repository,service,policy,utils,attendees_export}.py
+  from backend.modules.campuscurrent.models import Event, ...
+```
+
+That was the _combined_ barrel, which re-exported both the `Community*` and the
+`Event*` symbols. A blind prefix rewrite sends them to
+`backend.modules.pages.models`, and the app dies on boot with
+`ImportError: cannot import name 'EventAccessPurpose'`. They now import
+`backend.modules.events.models`. If you ever split a barrel again, grep for
+`from ...models import` and check which side each symbol is on.
+
+`announcements/service.py:56` still reaches `EventStatus.approved` through the
+re-export in `events/schemas.py`, as the plan required.
+
+Live check after the move: the container hot-reloaded, `/api/openapi.json` serves
+**76 paths**, **10** of them `/communities…` (unchanged), and `test_endpoint` is
+gone. The two `/og/communities` routes are `include_in_schema=False`, so they
+never appear in that count — check them by hitting them, not by grep.
+
+`git status` renders these moves as swaps (`communities/interfaces.py →
+events/interfaces.py` and the reverse) because git's rename detection paired the
+two same-shaped files arbitrarily. The file _contents_ at each path are correct
+— verified with `git show HEAD:… | diff -`. Trust the paths, not the `R` arrows.
 
 ---
 
@@ -237,13 +266,13 @@ module split, and it must land on its own so the diff is reviewable.
 - [ ] `create_page`: cap at `MAX_PAGES_PER_OWNER`. `SELECT count(*) FROM pages WHERE owner = :sub`; at the cap return **409** with a clear detail. No site-admin exemption — one rule, no special case.
 - [ ] `create_page`: make `owner` optional, defaulting to `"me"`. `page_content` is already accepted at create, so an agent can produce a finished page in one call. Do not build anything else for automation.
 - [ ] `authorize_media_upload(page_id, user, count)`: after the existing `can_edit` check, cap content images at `MAX_PAGE_IMAGES`:
-      ```sql
-      SELECT count(*) FROM media
-       WHERE entity_type='pages' AND entity_id=:id AND media_format='carousel'
-      ```
+      `sql
+  SELECT count(*) FROM media
+   WHERE entity_type='pages' AND entity_id=:id AND media_format='carousel'
+  `
       `existing + count > 20` ⇒ **400**, matching the sibling `MAX_UPLOAD_URLS` limit in the same endpoint. Add a `ponytail:` comment naming the ceiling: the count is read before GCS's Pub/Sub hook creates the row, so two concurrent uploads can overshoot by one.
 - [ ] `google_bucket/interfaces.py`: `MediaUploadAuthorizer.authorize_media_upload` gains `count: int`.
-- [ ] `google_bucket/api.py:58-64`: replace the `upload_targets` set with a `Counter` of `(entity_type, entity_id)` and pass the per-target count. The authorizer is called once per *target*, not per file, so without this the batch size is invisible to the cap.
+- [ ] `google_bucket/api.py:58-64`: replace the `upload_targets` set with a `Counter` of `(entity_type, entity_id)` and pass the per-target count. The authorizer is called once per _target_, not per file, so without this the batch size is invisible to the cap.
 - [ ] `events/service.py::authorize_media_upload` gains the `count` parameter and ignores it. Events have no cap.
 - [ ] `list_pages` repository: replace the `type`/`category` conditions with a **hard** visibility `WHERE` — `public` for guests, `public|internal` when signed in, everything when `owner_sub` matches or the caller is a site admin. **Never a caller-supplied parameter.**
 - [ ] `list_pages` repository: add the `role` filter. `owned` → `pages.owner = :sub`. `admin` → `pages.id IN (SELECT page_id FROM page_admins WHERE user_sub = :sub)`. Replaces `community_type`/`community_category` params.
@@ -260,27 +289,18 @@ module split, and it must land on its own so the diff is reviewable.
 
 ### Migration — three revisions, head `e5f6a7b8c9d0`
 
-- [ ] `f1e2d3c4b5a6_add_pages.py`
-      - Create the `pagevisibility` enum, then `pages`, `page_admins`, `page_admin_links`.
-      - Copy rows with a **Python loop**, not raw SQL: for each community, `slug = unique(base_slug(name))`, suffixing `-2`, `-3`, … on collision, falling back to `page-{id}` when a name slugifies to nothing. Import `base_slug` and `RESERVED_SLUGS` from `backend.modules.shared.slug` rather than re-implementing the rule.
-      - **Preserve `id`** and both timestamps. `visibility = 'public'` — communities are all effectively public today.
-      - `page_admins` and `page_admin_links` are plain `INSERT … SELECT`; the ids line up.
-- [ ] `a2f3e4d5c6b7_repoint_media_to_pages.py`
-      - `ALTER TYPE entitytype ADD VALUE IF NOT EXISTS 'pages'`, then
-        `UPDATE media SET entity_type='pages' WHERE entity_type='communities'`.
-      - **This must be a separate revision from the one above.** Postgres cannot read a value added by `ADD VALUE` in the same transaction, and Alembic runs a revision in one. Combined into a single file, it fails at runtime — not at build time, not in the diff, in production. Leave a docstring saying so, and do not let anyone merge them back.
-- [ ] `b3a4c5d6e7f8_drop_communities.py`
-      - Drop `community_admin_links`, `community_admins`, `communities`.
-      - Drop `event_collaborators.community_id`. The `EventCollaborator` model has no service, repository, or endpoint — it is dead, and the FK is the only reason events cannot be extracted cleanly.
-      - Drop from `users`: `page_content`, `is_page_public`, `slug`, `category`, `id`. The last three are only reachable once the people directory and `/u/$slug` are gone; `users.id` existed only so `media.entity_id` could hang an int off `entity_type='users'`.
+- [ ] `f1e2d3c4b5a6_add_pages.py` - Create the `pagevisibility` enum, then `pages`, `page_admins`, `page_admin_links`. - Copy rows with a **Python loop**, not raw SQL: for each community, `slug = unique(base_slug(name))`, suffixing `-2`, `-3`, … on collision, falling back to `page-{id}` when a name slugifies to nothing. Import `base_slug` and `RESERVED_SLUGS` from `backend.modules.shared.slug` rather than re-implementing the rule. - **Preserve `id`** and both timestamps. `visibility = 'public'` — communities are all effectively public today. - `page_admins` and `page_admin_links` are plain `INSERT … SELECT`; the ids line up.
+- [ ] `a2f3e4d5c6b7_repoint_media_to_pages.py` - `ALTER TYPE entitytype ADD VALUE IF NOT EXISTS 'pages'`, then
+      `UPDATE media SET entity_type='pages' WHERE entity_type='communities'`. - **This must be a separate revision from the one above.** Postgres cannot read a value added by `ADD VALUE` in the same transaction, and Alembic runs a revision in one. Combined into a single file, it fails at runtime — not at build time, not in the diff, in production. Leave a docstring saying so, and do not let anyone merge them back.
+- [ ] `b3a4c5d6e7f8_drop_communities.py` - Drop `community_admin_links`, `community_admins`, `communities`. - Drop `event_collaborators.community_id`. The `EventCollaborator` model has no service, repository, or endpoint — it is dead, and the FK is the only reason events cannot be extracted cleanly. - Drop from `users`: `page_content`, `is_page_public`, `slug`, `category`, `id`. The last three are only reachable once the people directory and `/u/$slug` are gone; `users.id` existed only so `media.entity_id` could hang an int off `entity_type='users'`.
 - [ ] `alembic upgrade head` then `alembic downgrade -1` three times, then `upgrade head` again — locally, against the Phase 0 dump. It must round-trip.
 - [ ] Verify the copy against the Phase 0 counts: `SELECT count(*) FROM pages` equals the old `communities` count; every page has a non-null, unique, reserved-word-free slug; every old media row now has `entity_type='pages'`.
 - [ ] Verify no page image was orphaned:
-      ```sql
-      SELECT p.id FROM pages p
-      LEFT JOIN media m ON m.entity_id = p.id AND m.entity_type='pages'
-      WHERE m.id IS NULL;
-      ```
+      `sql
+  SELECT p.id FROM pages p
+  LEFT JOIN media m ON m.entity_id = p.id AND m.entity_type='pages'
+  WHERE m.id IS NULL;
+  `
       A non-empty result is a bug in the copy, not a page that legitimately has no images. Cross-check against the pre-migration count.
 
 ### Backend tests
@@ -317,17 +337,17 @@ the old keys. That is expected; Phase 4 fixes it. Do not paper over it.
 ## Phase 4 — Web routes and components
 
 - [ ] Delete `src/routes/_app/communities/**` and `src/routes/_app/u/**` (8 files).
-- [ ] Add `src/routes/_app/p/$slug/index.tsx` — loader `ensureQueryData(pageDetailQueryOptions)`, 404 → `notFound()`, reads the optional `?admin=` token, custom `NotFound`. No width clamp on the body (the page *is* the design).
+- [ ] Add `src/routes/_app/p/$slug/index.tsx` — loader `ensureQueryData(pageDetailQueryOptions)`, 404 → `notFound()`, reads the optional `?admin=` token, custom `NotFound`. No width clamp on the body (the page _is_ the design).
 - [ ] Add `src/routes/_app/p/$slug/editor/index.tsx`.
 - [ ] **Add the missing auth guard to the editor route.** Today `/communities/$slug/editor` checks 404 only; the only thing protecting it is `PATCH` rejecting the write. It must check `can_edit`, matching the settings guard.
 - [ ] Add `src/routes/_app/p/$slug/settings/{route,index,general,admin-controls}` — the two-tab layout (`General`, `Admin controls`) is unchanged from communities.
 - [ ] Add `src/routes/_app/account/index.tsx`:
-      ```ts
-      validateSearch: z.object({
-        page: z.coerce.number().int().min(1).default(1),
-        role: z.enum(["owned", "admin"]).optional(),
-      })
-      ```
+      `ts
+  validateSearch: z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    role: z.enum(["owned", "admin"]).optional(),
+  })
+  `
       Read with `Route.useSearch()`. Change pages with
       `useNavigate({ from: Route.fullPath, search: prev => ({ ...prev, page: n }) })`
       — the **functional updater** form. `search: { page: n }` would clobber the `role` filter.
@@ -374,7 +394,7 @@ the old keys. That is expected; Phase 4 fixes it. Do not paper over it.
 **This is a hard cutover, not an expand/contract migration.** The `communities`
 table, the `/communities` routes, `/u/:slug` and the people directory all stop
 existing in the same deploy. There is no zero-downtime path, because the media
-rows have to *move* rather than be copied — `media.name` is the GCS object path
+rows have to _move_ rather than be copied — `media.name` is the GCS object path
 and is unique, so a page's images cannot exist under two `entity_type` values at
 once. Plan a maintenance window. Do not pretend otherwise in the release notes.
 
@@ -383,12 +403,12 @@ once. Plan a maintenance window. Do not pretend otherwise in the release notes.
 - [ ] **Staging first.** Merge to `dev`, wait for the pipeline, and exercise the whole flow on staging: create a page, edit it in the Puck editor, upload a logo and a banner, set each visibility level and check it as guest / signed-in / owner / admin, transfer ownership and confirm you keep editing, list admins, redeem an admin link, hit the 100-page cap, hit the 20-image cap, search a page by keyword.
 - [ ] Confirm on staging that no `communities` index lingers in Meilisearch. `bootstrap/meilisearch.py:46-52` deletes **every** existing index and re-syncs from the DB on boot, so the new `pages` index is built fresh and the old one is dropped. Search is briefly empty while that runs — it self-heals, do not chase it.
 - [ ] **Take a fresh verified backup on prod.** This is the only rollback that exists.
-      ```sh
-      docker exec backup /bin/bash /scripts/pg-dump-backup.sh
-      docker exec backup /bin/bash /scripts/walg-backup-push.sh
-      docker logs backup --tail 50          # expect "pg_dump backup uploaded to gs://..."
-      gcloud storage ls gs://nuspace-backups-prod/pg-dump/postgres/<DB_NAME>/
-      ```
+      `sh
+  docker exec backup /bin/bash /scripts/pg-dump-backup.sh
+  docker exec backup /bin/bash /scripts/walg-backup-push.sh
+  docker logs backup --tail 50          # expect "pg_dump backup uploaded to gs://..."
+  gcloud storage ls gs://nuspace-backups-prod/pg-dump/postgres/<DB_NAME>/
+  `
       Do not proceed until you see a **new** object with a current timestamp.
 - [ ] Confirm you know how to restore it. The procedure is in `infra/backup/README.md` (Вариант A — pg_dump). Read it now, not during the incident. **Test the restore on staging first.**
 - [ ] Note the media reality: GCS media is **not** in the pg_dump. If you must roll back, the `Media` rows come back from the dump but the image files were never at risk — they live in the `nuspace-media` bucket. Orphaned rows are recoverable; orphaned files are not the risk here.
@@ -397,7 +417,7 @@ once. Plan a maintenance window. Do not pretend otherwise in the release notes.
 
 - [ ] Pick a window. The site is usable except for pages and communities, which are **deliberately gone** after this deploy.
 - [ ] Merge to `main`. The pipeline builds the FastAPI image, builds the web static export on the runner, and runs Ansible. Order inside `ansible/playbook.yml` is: **backend (migrations → fastapi restart) → frontend (unpack `out/` → reload nginx) → infra services.**
-- [ ] **Know the window you are accepting.** `ansible/roles/backend/tasks/main.yml` runs `alembic upgrade head` (line 82) *before* `up --no-deps -d fastapi` (line 91). Between those two steps the **old code is running against the new schema**, so `/communities` 500s and the old `/me` shape is gone. The window is the migration duration plus container start. There is no way to shrink it without shipping compatibility shims, which are out of scope.
+- [ ] **Know the window you are accepting.** `ansible/roles/backend/tasks/main.yml` runs `alembic upgrade head` (line 82) _before_ `up --no-deps -d fastapi` (line 91). Between those two steps the **old code is running against the new schema**, so `/communities` 500s and the old `/me` shape is gone. The window is the migration duration plus container start. There is no way to shrink it without shipping compatibility shims, which are out of scope.
 - [ ] Expect 404s from **cached old frontend bundles** after the deploy — browsers holding the previous `web/out` still call `/communities` and `/u/:slug`. They resolve on next reload. Do not add a redirect shim to paper over this; it is the intended behaviour.
 
 ### 6c. After the deploy
@@ -418,7 +438,7 @@ once. Plan a maintenance window. Do not pretend otherwise in the release notes.
 
 - [ ] **`git revert` is not a rollback.** By the time the pipeline finishes, revision 3 has dropped `communities` and the data is gone. Reverting the code puts the old app in front of a schema it cannot read, and it will not start.
 - [ ] The real rollback is a database restore, per `infra/backup/README.md` (Вариант A): stop `fastapi`, recreate the database from the dump taken in 6a, start `fastapi`. Budget real time for it — this is a full `DROP DATABASE` + `pg_restore`.
-- [ ] If you need the *schema* back but not the data, WAL-G PITR (Вариант B) can stop at a `recovery_target_time` just before the migration. Use a recovery VM, not prod.
+- [ ] If you need the _schema_ back but not the data, WAL-G PITR (Вариант B) can stop at a `recovery_target_time` just before the migration. Use a recovery VM, not prod.
 - [ ] Tell the user immediately. Do not start a restore on prod without saying so first.
 
 ---
@@ -439,10 +459,11 @@ Explicitly out of scope. The user will handle these after the prod push.
 
 Append one line per ticked box. Newest at the bottom.
 
-| Date | Phase | What | Notes |
-|---|---|---|---|
-| — | — | Plan written | `web/PROGRESS.md` created. No code changed yet. |
-| 2026-09-29 | 0 | Pre-flight | Stack already up. `pnpm build` ✓, 82 web tests, 181 backend tests, `black` ✓. Baselines: ruff **11** (as documented), web lint **8** pre-existing. Dump → `/tmp/nuspace-baseline.sql.gz`. Counts: 1 community, 0 community_admins, 2 admin links, 0 community media, 3 user pages, 3 orphan `users` media. Two plan corrections recorded above: the head id `e5f6a7b8c9d0` is already taken by `users_category`, and the `page-{id}` fallback keys on an *invalid* slug (`base_slug('🎉') == '-page'`), not an empty one. |
+| Date       | Phase | What                     | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------- | ----- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| —          | —     | Plan written             | `web/PROGRESS.md` created. No code changed yet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-09-29 | 0     | Pre-flight               | Stack already up. `pnpm build` ✓, 82 web tests, 181 backend tests, `black` ✓. Baselines: ruff **11** (as documented), web lint **8** pre-existing. Dump → `/tmp/nuspace-baseline.sql.gz`. Counts: 1 community, 0 community_admins, 2 admin links, 0 community media, 3 user pages, 3 orphan `users` media. Two plan corrections recorded above: the head id `e5f6a7b8c9d0` is already taken by `users_category`, and the `page-{id}` fallback keys on an _invalid_ slug (`base_slug('🎉') == '-page'`), not an empty one.                                                                                                                                                                                                                                                                                                                                               |
+| 2026-09-29 | 1     | Dissolve `campuscurrent` | `campuscurrent/` gone. `base.py` → `shared/base_policy.py` (dropped `communities` + `_is_community_owner`, no callers), `communities/` → `pages/`, `events/` → `events/`, models split 5/13, search indexes split, `CAMPUSCURRENT_MEILI_INDEXES` → `PAGES_`+`EVENTS_`, `test_endpoint` dropped, `CampusCurrentMediaUploadAuthorizer` → `BucketMediaUploadAuthorizer`. DB-neutral: single head still `e5f6a7b8c9d0`, `alembic_version` unchanged, no migration written. Gate green — ruff 11 (same findings, 4 just moved to `modules/events/`), black ✓, 181 backend tests, 82 web tests, typecheck/build/format ✓, web lint 8 = baseline. Live: 76 OpenAPI paths, 10 still `/communities…`. Six `events/*.py` files needed the _events_ barrel, not the pages one — see the Phase 1 note. Plan's import list was 16 files; it was 17 (`auth/repository.py:8` missing). |
 
 ## Open questions
 

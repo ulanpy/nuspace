@@ -1,13 +1,13 @@
 from typing import Callable
 
 import pytest
-from backend.modules.campuscurrent.communities.schemas import (
-    CommunityCreateRequest,
-    CommunityUpdateRequest,
-)
-from backend.modules.campuscurrent.models.community import (
+from backend.modules.pages.models.page import (
     CommunityCategory,
     CommunityType,
+)
+from backend.modules.pages.schemas import (
+    CommunityCreateRequest,
+    CommunityUpdateRequest,
 )
 from pydantic import BaseModel, ValidationError
 

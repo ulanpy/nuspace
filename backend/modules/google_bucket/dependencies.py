@@ -8,23 +8,23 @@ from google.oauth2 import id_token
 from backend.core.configs.config import Config
 from backend.modules.auth.dependencies import get_user_page_service, set_request_access_actor
 from backend.modules.auth.profiles import UserPageService
-from backend.modules.campuscurrent.communities.dependencies import get_community_service
-from backend.modules.campuscurrent.communities.service import CommunityService
-from backend.modules.campuscurrent.events.dependencies import get_event_service
-from backend.modules.campuscurrent.events.service import EventService
 from backend.modules.courses.registrar.service import (
     RegistrarService,
     ScheduleCatalogFinalizeError,
 )
+from backend.modules.events.dependencies import get_event_service
+from backend.modules.events.service import EventService
 from backend.modules.google_bucket import schemas
 from backend.modules.google_bucket.interfaces import (
     MediaUploadAuthorizer,
     ScheduleCatalogFinalizeOutcome,
     ScheduleCatalogOnFinalize,
 )
-from backend.modules.google_bucket.service import CampusCurrentMediaUploadAuthorizer
+from backend.modules.google_bucket.service import BucketMediaUploadAuthorizer
 from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
+from backend.modules.pages.dependencies import get_community_service
+from backend.modules.pages.service import CommunityService
 
 
 class ScheduleCatalogFinalizeFailed(Exception):
@@ -36,7 +36,7 @@ async def get_media_upload_authorizer(
     communities: CommunityService = Depends(get_community_service),
     users: UserPageService = Depends(get_user_page_service),
 ) -> MediaUploadAuthorizer:
-    return CampusCurrentMediaUploadAuthorizer(events=events, communities=communities, users=users)
+    return BucketMediaUploadAuthorizer(events=events, communities=communities, users=users)
 
 
 class _ScheduleCatalogOnFinalizeAdapter:

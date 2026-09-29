@@ -1,5 +1,5 @@
 import pytest
-from backend.modules.google_bucket.service import CampusCurrentMediaUploadAuthorizer
+from backend.modules.google_bucket.service import BucketMediaUploadAuthorizer
 from backend.modules.media.models import EntityType
 from fastapi import HTTPException
 
@@ -29,7 +29,7 @@ class _Users:
 
 
 def _authorizer(events: _Events, communities: _Communities, users: _Users):
-    return CampusCurrentMediaUploadAuthorizer(  # type: ignore[arg-type]
+    return BucketMediaUploadAuthorizer(  # type: ignore[arg-type]
         events=events, communities=communities, users=users
     )
 

@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse
 
 from backend.modules.auth.dependencies import get_creds_or_guest
-from backend.modules.campuscurrent.events.dependencies import get_event_service
-from backend.modules.campuscurrent.events.service import EventService
+from backend.modules.events.dependencies import get_event_service
+from backend.modules.events.service import EventService
 
 router = APIRouter(tags=["Events OG"])
 

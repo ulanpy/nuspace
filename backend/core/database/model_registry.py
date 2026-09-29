@@ -11,9 +11,10 @@ def import_models() -> None:
     from backend.modules.auth import models as _auth_models  # noqa: F401
 
     # Domain
-    from backend.modules.campuscurrent import models as _campuscurrent_models  # noqa: F401
     from backend.modules.courses import models as _courses_models  # noqa: F401
+    from backend.modules.events import models as _events_models  # noqa: F401
     from backend.modules.media import models as _media_models  # noqa: F401
     from backend.modules.notification import models as _notification_models  # noqa: F401
     from backend.modules.opportunities import models as _opportunities_models  # noqa: F401
+    from backend.modules.pages import models as _pages_models  # noqa: F401
     from backend.modules.sgotinish import models as _sgotinish_models  # noqa: F401

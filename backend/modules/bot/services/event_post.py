@@ -10,7 +10,7 @@ from backend.modules.bot.schemas.event_post import (
     EventPostResult,
     TelegramEventPostInput,
 )
-from backend.modules.campuscurrent.models.events import (
+from backend.modules.events.models.events import (
     EventBotSubmission,
     EventBotSubmissionStatus,
     RegistrationPolicy,

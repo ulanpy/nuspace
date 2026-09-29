@@ -1,5 +1,5 @@
 from backend.modules.announcements.service import AnnouncementsService
-from backend.modules.campuscurrent.events.dependencies import get_event_service
+from backend.modules.events.dependencies import get_event_service
 from fastapi import Depends
 
 
