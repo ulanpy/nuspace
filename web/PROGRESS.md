@@ -581,6 +581,92 @@ noting `/communities` is gone, and the template dialog explaining that its tabs
 used to be People and Communities. No code path, route, query key or CSS token
 is left on the old name.
 
+### Phase 4 — what a second pass added
+
+The first pass through Phase 4 compiled, tested and built, and the browser
+still disagreed with all of it. Three rounds of that, each a bug the gate
+could not see.
+
+**1. `GET /pages` had never worked at all.** The list behind `/mynuspace` and
+the My Pages table shipped 500-ing on every caller: the service called
+`check_permission(READ)` with no page to check the visibility of, and the
+repository ANDed its two visibility alternatives into `visibility IN (...)
+AND owner = me`, which is "a page you can see that you also own" — nothing.
+The admin branch then joined its alternatives with `func.or_`, which compiles
+to a call to a Postgres function named `or`, so `role=admin` was a syntax
+error while every other role was fine. Fixed with `test_list_pages.py` — the
+one read path that had no test at all.
+
+**2. A private page showed up in the public directory.** That same visibility
+WHERE ORed in "or you own it" on _every_ request, and the owner alternative
+is the only path by which a `private` page reaches a list at all, so signing
+in put your own private page in the `/mynuspace` grid — the one page in the
+app that was never meant to be listed, listed.
+
+The fix is `include_private`, a query parameter defaulting to true;
+`/mynuspace` passes false. Narrowing only — false removes the owner
+alternative and reveals nothing that was not already visible — so it cannot be
+used to reach a page, and the count and page window still agree with the grid
+because the list itself is narrower rather than the grid. `e0200fd`.
+
+**Which was wrong the first time, and the reason is worth keeping.**
+`f4997d9` derived the flag instead: "no `role` and no `owner_sub` means the
+caller is browsing". That is false, because the My Pages **All** tab sends no
+`role` either — and it is the tab where a signed-in user goes to look for the
+private pages they made. So the derivation emptied All of exactly what it
+exists to show, while Owned and Admin kept working, which is what made it read
+as a fix that mostly worked. The lesson is not "add a parameter". It is that
+two callers sent a byte-identical request and were being asked to mean
+different things by it, which is a broken interface, not a missing condition.
+`role` cannot tell those two callers apart, so the difference has to be
+stated rather than guessed at.
+
+**3. The account screen stopped looking like the app.** The first pass built
+My Pages and the admins table as bespoke tables sharing a new numbered
+pagination, and neither resembled anything else in the product. Back to the
+app's own idiom: `width="prose"`, `ItemGroup`/`Item`, the first/prev/next/
+last pagination, identity and Telegram as `Item` rows, and Admin access as a
+single input with labelled Copy/Rotate buttons instead of a link with its
+title printed twice. `4e74c0e`. The numbered pagination went with it, so
+`pageNumbers` and its test were deleted rather than left unused.
+
+The visibility control went the other way, from three rows of prose to a
+`<Select>`: it is a single-valued field, and in the create dialog the radio
+list pushed Save off the bottom of the form. The page card lost its
+visibility badge — a grid holding only public-and-internal pages had every
+card wearing the same two labels. `21f150f`.
+
+**The lesson worth keeping.** The test file for the list endpoint
+reimplemented the repository's condition instead of calling it, so it
+asserted the _intended_ query while the repository ran the _actual_ one and
+nothing checked the two agreed. That is how bug 1 survived review, and a green
+suite hid bug 2 just as thoroughly. The condition-building now lives in
+`PageRepository._list_conditions` and the tests call it. Both bug 2 and the
+original `func.or_` one are confirmed red by breaking the real method and
+watching the tests fail — a test that cannot fail is a comment.
+
+The gate is deliberately small: one helper that calls the real method and
+compiles it with `literal_binds`, then substring assertions on the result. An
+earlier draft reconstructed the bound parameters and matched them with a
+regex, which was a lot of machinery asking the same question. `literal_binds`
+is what makes the substring assertions work at all — `IN (public, internal)` is
+otherwise a POSTCOMPILE placeholder and the values never appear in the text.
+The helper also returns only what follows `WHERE`: the SELECT list names
+`pages.owner` on every row, so without that split each assertion would match
+the projection instead of the query.
+
+### Gate at the end of Phase 4
+
+`pnpm typecheck` ✓, `pnpm test` **95 passed** (83 after the round above —
+`page-numbers` and its test were deleted), `pnpm build` ✓ (with
+`routeTree.gen.ts` regenerated and committed), `pnpm api:check` ✓,
+`pnpm lint` **9 errors — the pre-existing baseline, unchanged**, `pnpm format` ✓.
+Backend `pytest` **208 passed**, of which 13 cover the pages list.
+
+`schema.d.ts` gains two lines and nothing else across this round: the
+`include_private` parameter, which is the one API change here. The card badge
+and the dropdown were meant to leave it untouched, and did.
+
 ---
 
 ## Phase 5 — Docs
