@@ -27,8 +27,9 @@ export const qk = {
     list: (filters: Record<string, unknown>) =>
       ["pages", "list", filters] as const,
     detail: (slug: string) => ["pages", "detail", slug] as const,
-    mine: (role?: "owned" | "admin", page?: number) =>
-      ["pages", "mine", role ?? null, page ?? null] as const,
+    /** `page` is the only thing that varies: the list is every page you run,
+     *  not one relationship or the other. */
+    mine: (page?: number) => ["pages", "mine", page ?? null] as const,
     /**
      * The page number is part of the key, not a filter inside it, so that
      * `invalidateQueries({ queryKey: qk.pages.all() })` after a removal

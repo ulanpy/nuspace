@@ -6,7 +6,6 @@ import { Page } from "@/components/routes/account"
 
 const accountSearchSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  role: z.enum(["owned", "admin"]).optional(),
 })
 
 export type AccountSearch = z.infer<typeof accountSearchSchema>

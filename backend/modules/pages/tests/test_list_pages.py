@@ -9,10 +9,12 @@ the promise that a list and a detail read agree.
 """
 
 from datetime import datetime, timezone
+from typing import Literal
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi import HTTPException
 from backend.modules.pages.models.page import Page, PageAdmin, PageVisibility
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.service import PageService
@@ -71,16 +73,16 @@ def _async_return(value):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("viewer", [SIGNED_IN, GUEST], ids=["signed_in", "guest"])
-async def test_list_pages_answers_instead_of_dereferencing_a_page_it_does_not_have(
+async def test_a_list_answers_instead_of_dereferencing_a_page_it_does_not_have(
     viewer: tuple[dict, dict],
 ) -> None:
-    """The regression: `list_pages` called `check_permission(READ)` with no page,
+    """The regression: the list service called `check_permission(READ)` with no page,
     and the READ branch checks visibility of whatever it was handed — which was
     `None`, on the first query of every list request, for every viewer."""
     service, infra, _repo = _list_service([_page()])
 
-    result = await service.list_pages(
-        infra=infra, user=viewer, page=1, size=24, owner_sub=None, role=None, keyword=None
+    result = await service.list_browsable_pages(
+        infra=infra, user=viewer, page=1, size=24, keyword=None
     )
 
     assert result.total == 0
@@ -91,9 +93,7 @@ async def test_list_pages_answers_instead_of_dereferencing_a_page_it_does_not_ha
 
 def _where(
     *,
-    role: str | None = None,
-    owner_sub: str | None = None,
-    include_private: bool = True,
+    scope: Literal["browsable", "mine"] = "browsable",
     viewer_sub: str | None = "owner",
     is_site_admin: bool = False,
 ) -> str:
@@ -102,92 +102,82 @@ def _where(
     Calls `PageRepository._list_conditions` rather than restating it. An
     earlier version of this file reimplemented the condition, so the tests
     proved a copy matched a copy while the repository ran something else —
-    which is how `func.or_` shipped. `literal_binds` inlines the visibility
-    values, so they can be asserted on in the text.
+    which is how `func.or_` shipped. `literal_binds` inlines the bound values,
+    so they can be asserted on in the text.
     """
     compiled = str(
         select(Page)
         .where(
             *PageRepository._list_conditions(
-                viewer_sub=viewer_sub,
-                is_site_admin=is_site_admin,
-                owner_sub=owner_sub,
-                role=role,
-                include_private=include_private,
+                viewer_sub=viewer_sub, is_site_admin=is_site_admin, scope=scope
             )
         )
         .compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
     )
     # Only the WHERE. The SELECT list names `pages.owner` on every row, so
-    # without this every assertion below would match the projection instead.
+    # without this split every assertion would match the projection instead.
     return compiled.split("WHERE", 1)[1]
 
 
-@pytest.mark.parametrize("role", ["owned", "admin", None], ids=["owned", "admin", "all"])
-def test_every_role_filter_compiles_to_real_sql(role: str | None) -> None:
-    """The regression: the admin branch joined its alternatives with
-    `func.or_`, which compiles to a call to a Postgres function named `or` —
-    which does not exist. `role=admin` 500'd and only that filter, while every
-    other role was fine. Only compiling to the real dialect can see this; the
-    expression tree looks perfectly reasonable."""
-    assert " or(" not in _where(role=role)
+def test_the_directory_never_lists_a_private_page_even_for_its_owner() -> None:
+    """`GET /pages` is the public directory behind `/mynuspace`.
 
-
-def test_a_browse_never_lists_a_private_page_even_for_its_owner() -> None:
-    """`/mynuspace` is a public directory, so it passes `include_private=False`
-    and a private page stays out of the grid even for its owner.
-
-    Asserted on `owner`, not on the string `private`: a private page reached
-    the directory through the `owner = me` half of the visibility OR, and no
-    `private` literal is named in the query either way."""
-    where = _where(include_private=False)
+    Asserted on the visibility values, and on the absence of both `owner` and
+    `page_admins`: this list is chosen by visibility alone, and a `private`
+    page reaches a list only through a relationship alternative."""
+    where = _where(scope="browsable")
 
     assert "owner" not in where
+    assert "page_admins" not in where
     assert "'public'" in where and "'internal'" in where
 
 
-@pytest.mark.parametrize(
-    ("role", "owner_sub"),
-    [(None, None), ("owned", None), ("admin", None), (None, "owner")],
-    ids=["all", "owned", "admin", "owner_sub_me"],
-)
-def test_every_my_pages_tab_still_lists_my_private_pages(
-    role: str | None, owner_sub: str | None
-) -> None:
-    """The regression that undid the fix above.
+def test_my_pages_is_the_two_relationships_and_nothing_else() -> None:
+    """`GET /pages/mine` is "pages I run", so the WHERE is exactly the two
+    relationships ORed together.
 
-    `include_private` was first derived from `role is not None or owner_sub is
-    not None`, on the reasoning that an unscoped list is a browse. It is not:
-    My Pages with no tab selected sends neither, and that tab is where a
-    signed-in user looks for the private pages they made. The derivation
-    emptied All of exactly what it exists to show while Owned and Admin kept
-    working — a convincing-looking bug. All four call shapes are pinned so the
-    flag stays explicit and cannot be re-inferred from a parameter that does not
-    distinguish them.
-
-    `OR`, not `AND`: the two alternatives went into the WHERE as separate
-    conditions once already, and `.where()` ANDs, so a signed-in viewer saw
-    public and internal pages only when they happened to own them."""
-    where = _where(role=role, owner_sub=owner_sub)
+    No visibility clause, and that is the point: every visibility belongs in
+    the list you manage your pages in, `private` most of all. An earlier
+    version mixed a visibility OR in here, and since that OR contained
+    `owner = me` the admin-only variant answered with owned pages too — the
+    same row under both tabs."""
+    where = _where(scope="mine")
 
     assert " OR " in where
-    assert "owner" in where
+    assert "owner" in where and "page_admins" in where
+    assert "visibility" not in where
 
 
-def test_a_page_admin_reaches_private_pages_through_membership() -> None:
-    """The admin is not the owner, so it is the `page_admins` alternative that
-    lets their private pages through."""
-    assert "page_admins" in _where(role="admin")
+def test_every_list_compiles_to_real_sql() -> None:
+    """The regression: the admin branch joined its alternatives with
+    `func.or_`, which compiles to a call to a Postgres function named `or` —
+    which does not exist, so the query was a syntax error. Only compiling to
+    the real dialect can see this; the expression tree looks reasonable."""
+    for scope in ("browsable", "mine"):
+        assert " or(" not in _where(scope=scope), scope
 
 
 def test_a_guest_gets_public_only() -> None:
-    where = _where(viewer_sub=None, include_private=False)
+    where = _where(scope="browsable", viewer_sub=None)
 
     assert "'public'" in where
     assert "'internal'" not in where and "OR" not in where
 
 
-def test_a_site_admin_gets_no_restriction() -> None:
-    assert PageRepository._list_conditions(
-        viewer_sub="root", is_site_admin=True, owner_sub=None, role=None
-    ) == []
+def test_a_site_admin_gets_no_restriction_on_the_directory() -> None:
+    assert (
+        PageRepository._list_conditions(
+            viewer_sub="root", is_site_admin=True, scope="browsable"
+        )
+        == []
+    )
+
+
+def test_a_site_admin_still_gets_only_their_own_pages_on_my_pages() -> None:
+    """The site-admin bypass relaxes who may *read* a page. It says nothing
+    about which pages you *run*, so it must not widen this list into every
+    page on campus — that is what an unfiltered `browsable` rule here would
+    do."""
+    where = _where(scope="mine", viewer_sub="root", is_site_admin=True)
+
+    assert "page_admins" in where

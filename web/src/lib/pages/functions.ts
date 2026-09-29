@@ -18,54 +18,36 @@ import type {
   PageUpdate,
 } from "./types"
 
-export interface PageFilters {
-  keyword?: string
-  /** `"me"` resolves to the caller server-side; `myPagesQueryOptions` uses it. */
-  owner_sub?: string
-  /** `owned` is pages you head, `admin` is pages you are an admin of. */
-  role?: "owned" | "admin"
-  /**
-   * Whether your own `private` pages are in the list. Defaults to true, which
-   * is what every management list wants.
-   *
-   * The public directory on `/mynuspace` passes false. Without it, signing in
-   * put your own private page in the public grid: a `private` page reaches a
-   * list only through the owner alternative in the server's visibility WHERE,
-   * and that applied to every caller rather than the ones managing a page.
-   */
-  include_private?: boolean
-}
-
-/** One page of the pages list. Used by useInfiniteList. */
-export function fetchPagesPage(
-  filters: PageFilters,
+/**
+ * One page of the public directory, for `useInfiniteList`.
+ *
+ * `GET /pages` and `GET /pages/mine` are two different questions with two
+ * different answers, so they are two endpoints and two functions. They used to
+ * be one endpoint with an `include_private` flag, and the flag is what broke:
+ * one query meant two things, so every caller had to be trusted to pass the
+ * right combination, and the My Pages "All" tab passed none at all.
+ */
+export function fetchBrowsablePages(
+  { keyword }: { keyword?: string },
   { page, size }: { page: number; size: number }
 ) {
   return unwrap(
     api.GET("/pages", {
-      params: { query: { page, size, ...filters } },
+      params: { query: { page, size, keyword } },
     })
   )
 }
 
-/**
- * Pages the signed-in user owns.
- *
- * The filter is `owner_sub`, and `"me"` resolves to the caller server-side. The
- * old app sent `head=<sub>` — a parameter the backend does not declare, so
- * FastAPI dropped it and the profile page's "My Pages" was really the first 100
- * of every page on campus.
- */
-export function myPagesQueryOptions() {
-  return queryOptions({
-    queryKey: qk.pages.mine(),
-    queryFn: () =>
-      unwrap(
-        api.GET("/pages", {
-          params: { query: { owner_sub: "me", page: 1, size: 100 } },
-        })
-      ),
-  })
+/** One page of the My Pages table: every page you own or administer. */
+export function fetchMyPages(
+  { keyword }: { keyword?: string },
+  { page, size }: { page: number; size: number }
+) {
+  return unwrap(
+    api.GET("/pages/mine", {
+      params: { query: { page, size, keyword } },
+    })
+  )
 }
 
 function fetchPage(slug: string) {

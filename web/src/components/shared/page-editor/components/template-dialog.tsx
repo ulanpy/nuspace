@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { SearchIcon } from "lucide-react"
 
 import { qk } from "@/api/query-keys"
-import { fetchPagesPage } from "@/lib/pages"
+import { fetchBrowsablePages } from "@/lib/pages"
 import { selectMedia } from "@/lib/media/functions"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { useDebounced } from "@/hooks/use-debounced"
@@ -65,7 +65,7 @@ export function TemplateDialog({
   const pages = useInfiniteList({
     enabled: open,
     queryKey: qk.pages.list(filters),
-    fetchPage: (page) => fetchPagesPage(filters, page),
+    fetchPage: (page) => fetchBrowsablePages(filters, page),
   })
 
   const apply = (pageContent: unknown) => {

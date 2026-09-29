@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Literal, Tuple
 
 from httpx import AsyncClient
 from sqlalchemy import case, exists, func, or_, select
@@ -104,94 +104,49 @@ class PageRepository:
         result = await self.db_session.execute(stmt)
         return result.scalar() or 0
 
-    @staticmethod
-    def _visibility_conditions(
-        *, viewer_sub: str | None, is_site_admin: bool, include_own_private: bool
-    ) -> list:
-        """A hard WHERE on visibility. Never a caller-supplied filter.
-
-        Mirrors `PagePolicy.check_visible` so a list and a detail read agree: a
-        signed-in viewer sees `public` and `internal`, a guest sees only
-        `public`, and the owner or a site admin sees their own pages whatever
-        their visibility.
-
-        One condition, not one per rule: the caller ORs this against the
-        `role=admin` membership alternative, and `.where()` ANDs whatever it is
-        given — so returning `visibility IN (...)` and `owner = viewer` as two
-        entries meant "a page you can see that you also own", i.e. nothing.
-
-        `include_private` is what separates "the pages I manage" from "the
-        pages anyone can browse". The owner alternative is the only way a
-        `private` page reaches a list at all, and a browse is a browse whether
-        or not the browser happens to own what is in it: `/mynuspace` is a
-        public directory, and a private page sitting in it because its owner
-        wandered in is the one page in the app that was never meant to be
-        listed.
-
-        It is passed in rather than derived from `role`, because `role` cannot
-        tell the two apart: My Pages with no tab selected sends no `role`
-        either, and that list is still "mine" and still wants the private ones.
-        Inferring it there emptied the All filter of the pages it exists to
-        show. Narrowing only — `False` removes the owner alternative and
-        reveals nothing that was not already visible.
-        """
-        if is_site_admin:
-            return []
-        if viewer_sub:
-            visible_kinds = [PageVisibility.public, PageVisibility.internal]
-            if not include_own_private:
-                return [Page.visibility.in_(visible_kinds)]
-            return [
-                or_(
-                    Page.visibility.in_(visible_kinds),
-                    Page.owner == viewer_sub,
-                )
-            ]
-        return [Page.visibility == PageVisibility.public]
-
     @classmethod
     def _list_conditions(
-        cls,
-        *,
-        viewer_sub: str | None,
-        is_site_admin: bool,
-        owner_sub: str | None,
-        role: str | None,
-        include_private: bool = True,
+        cls, *, viewer_sub: str | None, is_site_admin: bool, scope: Literal["browsable", "mine"]
     ) -> list:
         """The whole WHERE of `list_pages`, as one method so the tests can call
         the real thing instead of restating it.
 
-        They used to reimplement these six lines, which meant the test file
-        encoded the *intended* query while the repository ran the *actual* one
-        and nothing checked they agreed. One caller, one source of truth.
-        """
-        conditions: list = []
-        match_any: list = []
-        if role == "owned":
-            conditions.append(Page.owner == viewer_sub)
-        elif role == "admin":
-            match_any.append(
-                Page.id.in_(select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub))
-            )
-        if owner_sub:
-            conditions.append(Page.owner == owner_sub)
+        They used to reimplement these lines, which meant the test file encoded
+        the *intended* query while the repository ran the *actual* one and
+        nothing checked the two agreed. One caller, one source of truth.
 
-        # The visibility restriction and the role filter have to be ANDed
-        # together, so a `role=admin` search must not escape it. `match_any`
-        # holds the admin-membership alternative and joins the visibility
-        # alternative; everything else is a plain AND.
-        #
-        visible = cls._visibility_conditions(
-            viewer_sub=viewer_sub,
-            is_site_admin=is_site_admin,
-            include_own_private=include_private,
-        )
-        if match_any:
-            conditions.append(or_(*visible, *match_any))
-        else:
-            conditions.extend(visible)
-        return conditions
+        The two scopes are not variations on one question, and the difference
+        shows up here as the absence of a concept rather than a new one:
+
+        - `mine` has no visibility filter at all. It is not "pages I may read,
+          filtered to mine" — it is "pages I run", and every visibility belongs
+          in it, `private` most of all. The only question is which pages those
+          are, and it is answered entirely by the two relationships.
+        - `browsable` has no relationship filter, and needs a site-admin
+          bypass, because it is a visibility question about pages the caller
+          does not run.
+
+        Overlapping the two is what broke three times. An earlier version gave
+        `mine` a visibility OR that contained `owner = me`, so the `role=admin`
+        query was `(visible OR administered-by-me)` and `visible` already
+        meant "or owned by me" — every owned page came back under both tabs.
+        Deriving `owner_sub` was the same mistake: it is a visibility
+        alternative smuggled into a relationship query.
+        """
+        if scope == "mine":
+            return [
+                or_(
+                    Page.owner == viewer_sub,
+                    Page.id.in_(
+                        select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub)
+                    ),
+                )
+            ]
+        if is_site_admin:
+            return []
+        if viewer_sub:
+            return [Page.visibility.in_([PageVisibility.public, PageVisibility.internal])]
+        return [Page.visibility == PageVisibility.public]
 
     async def list_pages(
         self,
@@ -200,10 +155,8 @@ class PageRepository:
         size: int,
         viewer_sub: str | None,
         is_site_admin: bool,
-        owner_sub: str | None,
-        role: str | None,
+        scope: Literal["browsable", "mine"],
         keyword: str | None,
-        include_private: bool,
         meilisearch_client: AsyncClient,
     ) -> Tuple[List[Page], int, bool]:
         meili_result = None
@@ -226,9 +179,7 @@ class PageRepository:
         conditions = self._list_conditions(
             viewer_sub=viewer_sub,
             is_site_admin=is_site_admin,
-            owner_sub=owner_sub,
-            role=role,
-            include_private=include_private,
+            scope=scope,
         )
         if keyword:
             conditions.append(Page.id.in_(page_ids))
@@ -252,10 +203,14 @@ class PageRepository:
                     Media.entity_type == EntityType.pages,
                 )
             )
+            # The rows you run, in the order that answers "what is mine": the
+            # pages you own before the ones you help run, then image-first,
+            # then by name.
+            order_clauses = [has_media.desc(), Page.name.asc()]
+            if scope == "mine":
+                order_clauses.insert(0, (Page.owner == viewer_sub).desc())
             stmt = (
-                base_stmt.order_by(has_media.desc(), Page.name.asc())
-                .offset((page_num - 1) * size)
-                .limit(size)
+                base_stmt.order_by(*order_clauses).offset((page_num - 1) * size).limit(size)
             )
             result = await self.db_session.execute(stmt)
             pages = list(result.scalars().all())

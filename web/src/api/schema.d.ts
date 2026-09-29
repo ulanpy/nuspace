@@ -143,7 +143,16 @@ export interface paths {
         };
         /**
          * Get Pages
-         * @description Retrieves a paginated list of pages the caller is allowed to see.
+         * @description The public directory: pages anyone may browse.
+         *
+         *     `public`, plus `internal` for a signed-in viewer. Never a `private` page,
+         *     not even the caller's own — a private page is not a directory entry, and
+         *     one that appeared here only because its owner happened to be signed in
+         *     would be the one page in the app that was never meant to be listed.
+         *
+         *     The pages you own or administer, at any visibility, are a different
+         *     question with a different answer, so they are a different endpoint:
+         *     `GET /pages/mine`.
          */
         get: operations["get_pages_pages_get"];
         put?: never;
@@ -156,6 +165,36 @@ export interface paths {
          *     - Users can only create pages for themselves (owner must be "me" or their own sub)
          */
         post: operations["add_page_pages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pages/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Pages
+         * @description The pages the caller runs: the ones they own and the ones they administer,
+         *     at whatever visibility, owned first.
+         *
+         *     `private` belongs here and only here: this is the list you manage your
+         *     pages in, and a private page you made is the reason to have it.
+         *
+         *     No `role` parameter. There was one, to split this into an Owned tab and an
+         *     Admin tab, and the tabs held identical rows that both just link to the page
+         *     — the `Owner`/`Admin` badge on each row already said which relationship it
+         *     was. All it bought was a way to hide rows, and every version of the
+         *     visibility rules under it leaked between the two tabs.
+         */
+        get: operations["get_my_pages_pages_mine_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3611,12 +3650,6 @@ export interface operations {
             query?: {
                 size?: number;
                 page?: number;
-                /** @description if 'me' then current user's sub will be used */
-                owner_sub?: string | null;
-                /** @description 'owned' for pages you own, 'admin' for pages where you are an admin. Both are relative to the caller and cannot be widened by the client. */
-                role?: ("owned" | "admin") | null;
-                /** @description Whether your own private pages are in the list. The My Pages table passes true; the public directory on /mynuspace passes false, so signing in does not put a private page in a public grid. Narrowing only: false never reveals anything. */
-                include_private?: boolean;
                 /** @description Search keyword for page name */
                 keyword?: string | null;
             };
@@ -3674,6 +3707,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_pages_pages_mine_get: {
+        parameters: {
+            query?: {
+                size?: number;
+                page?: number;
+                /** @description Search keyword for page name */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPage"];
                 };
             };
             /** @description Validation Error */

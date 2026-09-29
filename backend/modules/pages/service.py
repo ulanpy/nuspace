@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from typing import List
+from typing import List, Literal
 
 from fastapi import HTTPException, status
 
@@ -182,25 +182,82 @@ class PageService:
         await repo.upsert_search(infra.meilisearch_client, page)
         return await self._build_page_response(page, infra, user)
 
-    async def list_pages(
+    async def list_browsable_pages(
         self,
         infra: Infra,
         user: tuple[dict, dict],
         *,
         page: int,
         size: int,
-        owner_sub: str | None,
-        role: str | None,
         keyword: str | None,
-        include_private: bool = True,
     ) -> schemas.ListPage:
-        # No policy check here: this is a list, so there is no single page to
-        # check, and `repo.list_pages` puts the visibility restriction in the
-        # WHERE itself. Asking anyway dereferenced a `None` page.
-        owner_sub = user[0].get("sub") if owner_sub == "me" else owner_sub
+        """The public directory behind `/mynuspace`.
+
+        Pages anyone may browse, and never a `private` one — not the caller's
+        own either. `repo.list_browsable_pages` puts that in the WHERE, so
+        there is no parameter here that could ask for more: this list has one
+        answer and it is the same for every caller.
+        """
+        return await self._list_pages(
+            infra=infra, user=user, page=page, size=size, keyword=keyword, scope="browsable"
+        )
+
+    async def list_my_pages(
+        self,
+        infra: Infra,
+        user: tuple[dict, dict],
+        *,
+        page: int,
+        size: int,
+        keyword: str | None,
+    ) -> schemas.ListPage:
+        """The pages behind the My Pages table on `/account`.
+
+        Every page you run — you own it, or you are an admin of it — in one
+        list, at whatever visibility. `private` is in here and only here,
+        because this is where you manage your pages and a private page you made
+        is the reason to be here.
+
+        There is no `role` filter, deliberately. It was there, and it cost more
+        than it returned: the Owned and Admin tabs rendered identical rows that
+        both just link to the page, and the `Owner`/`Admin` badge on each row
+        already says which relationship it is. Splitting the list added a
+        parameter whose only job was to hide rows, and every version of the
+        visibility rules underneath it leaked across the two tabs — which is
+        how owned pages ended up under both. The row's badge is the
+        distinction; the list is just the list.
+        """
+        return await self._list_pages(
+            infra=infra, user=user, page=page, size=size, keyword=keyword, scope="mine"
+        )
+
+    async def _list_pages(
+        self,
+        infra: Infra,
+        user: tuple[dict, dict],
+        *,
+        page: int,
+        size: int,
+        keyword: str | None,
+        scope: Literal["browsable", "mine"],
+    ) -> schemas.ListPage:
+        """Shared plumbing for the two lists: they page, resolve media and
+        build permissions identically, and differ only in the WHERE.
+
+        No policy check here: this is a list, so there is no single page to
+        check, and the repository puts the visibility restriction in the WHERE
+        itself. Asking anyway dereferenced a `None` page.
+        """
+        is_guest = bool(user[1].get("is_guest"))
+        if scope == "mine" and is_guest:
+            # `/pages/mine` is about the caller's own pages, and a guest has
+            # none. Reachable only by a hand-written URL, since the UI shows
+            # the table to signed-in users only.
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in to see your pages"
+            )
 
         admin_page_ids: set[int] = set()
-        is_guest = bool(user[1].get("is_guest"))
 
         async with self.uow:
             repo = self.uow.get_repo(PageRepository)
@@ -211,10 +268,8 @@ class PageService:
                 size=size,
                 viewer_sub=None if is_guest else user[0]["sub"],
                 is_site_admin=self._is_site_admin(user),
-                owner_sub=owner_sub,
-                role=role,
+                scope=scope,
                 keyword=keyword,
-                include_private=include_private,
                 meilisearch_client=infra.meilisearch_client,
             )
             media_objs: List[Media] = await repo.list_media(

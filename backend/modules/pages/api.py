@@ -41,40 +41,58 @@ async def get_pages(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
-    owner_sub: str | None = Query(
-        default=None,
-        description=("if 'me' then current user's sub will be used"),
-    ),
-    role: Literal["owned", "admin"] | None = Query(
-        default=None,
-        description=(
-            "'owned' for pages you own, 'admin' for pages where you are an admin. "
-            "Both are relative to the caller and cannot be widened by the client."
-        ),
-    ),
-    include_private: bool = Query(
-        default=True,
-        description=(
-            "Whether your own private pages are in the list. The My Pages table "
-            "passes true; the public directory on /mynuspace passes false, so "
-            "signing in does not put a private page in a public grid. Narrowing "
-            "only: false never reveals anything."
-        ),
-    ),
     infra: Infra = Depends(get_infra),
     page_service: PageService = Depends(get_page_service),
     keyword: str | None = Query(default=None, description="Search keyword for page name"),
 ) -> schemas.ListPage:
-    """Retrieves a paginated list of pages the caller is allowed to see."""
-    return await page_service.list_pages(
+    """The public directory: pages anyone may browse.
+
+    `public`, plus `internal` for a signed-in viewer. Never a `private` page,
+    not even the caller's own — a private page is not a directory entry, and
+    one that appeared here only because its owner happened to be signed in
+    would be the one page in the app that was never meant to be listed.
+
+    The pages you own or administer, at any visibility, are a different
+    question with a different answer, so they are a different endpoint:
+    `GET /pages/mine`.
+    """
+    return await page_service.list_browsable_pages(
         infra=infra,
         user=user,
         page=page,
         size=size,
-        owner_sub=owner_sub,
-        role=role,
         keyword=keyword,
-        include_private=include_private,
+    )
+
+
+@router.get("/pages/mine", response_model=schemas.ListPage)
+async def get_my_pages(
+    request: Request,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
+    infra: Infra = Depends(get_infra),
+    page_service: PageService = Depends(get_page_service),
+    keyword: str | None = Query(default=None, description="Search keyword for page name"),
+) -> schemas.ListPage:
+    """The pages the caller runs: the ones they own and the ones they administer,
+    at whatever visibility, owned first.
+
+    `private` belongs here and only here: this is the list you manage your
+    pages in, and a private page you made is the reason to have it.
+
+    No `role` parameter. There was one, to split this into an Owned tab and an
+    Admin tab, and the tabs held identical rows that both just link to the page
+    — the `Owner`/`Admin` badge on each row already said which relationship it
+    was. All it bought was a way to hide rows, and every version of the
+    visibility rules under it leaked between the two tabs.
+    """
+    return await page_service.list_my_pages(
+        infra=infra,
+        user=user,
+        page=page,
+        size=size,
+        keyword=keyword,
     )
 
 

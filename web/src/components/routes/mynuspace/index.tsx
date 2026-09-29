@@ -4,7 +4,7 @@ import { PlusIcon } from "lucide-react"
 import type { MyNuspaceSearch } from "@/routes/_app/mynuspace"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { qk } from "@/api/query-keys"
-import { fetchPagesPage } from "@/lib/pages"
+import { fetchBrowsablePages } from "@/lib/pages"
 import { PageCard } from "@/components/routes/pages/components/page-card"
 import { PageFormDialog } from "@/components/shared/pages/page-form-dialog"
 import { useDebounced } from "@/hooks/use-debounced"
@@ -42,7 +42,7 @@ export function Page({
   // `include_private: false` — this is a public directory, so a `private`
   // page stays out of it even when the viewer is the one who made it private.
   // Every other pages list leaves it on.
-  const filters = useMemo(() => ({ keyword: q, include_private: false }), [q])
+  const filters = useMemo(() => ({ keyword: q }), [q])
 
   const [isCreating, setIsCreating] = useState(false)
 
@@ -64,7 +64,7 @@ export function Page({
 
   const list = useInfiniteList({
     queryKey: qk.pages.list(filters),
-    fetchPage: (page) => fetchPagesPage(filters, page),
+    fetchPage: (page) => fetchBrowsablePages(filters, page),
   })
 
   return (
