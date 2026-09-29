@@ -155,7 +155,12 @@ export function AdminsTable({
         page={page}
         totalPages={totalPages}
         hasNext={query.data?.has_next ?? false}
-        summary={pageRangeSummary(query.data)}
+        summary={pageRangeSummary(
+          query.data,
+          // "You" and "Owner" are pinned above the page, so they are rows the
+          // reader can count whether or not the query has any admins.
+          (me ? 1 : 0) + 1
+        )}
         isFetching={query.isFetching && !query.isPlaceholderData}
         disabled={query.isPlaceholderData}
         onPageChange={onPageChange}

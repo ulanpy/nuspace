@@ -420,9 +420,9 @@ or left out, in the order it was reported. The routes moved, so read
       `/u/$slug/settings` because that is now the leaf a guest can ask for. The
       sidebar account card opens it, which is what it always meant to do.
 - [x] 10.3 **The public profile is the community page's shape** — same tinted
-      sticky header, same owner-only **Design Page** action — plus the
-      communities the person heads, each row an `Item` with an Owner or Admin
-      badge, mirroring the admins table.
+      sticky header, same owner-only **Design Page** action. The community rows
+      that 10.3 first added were **removed in 10.11**; a profile is about the
+      person, and the communities they head are one click away in the sidebar.
 - [x] 10.4 **`/people` is `/mynuspace`.** Sidebar label unchanged (decision #3).
 - [x] 10.5 **Directory cards mirror `CommunityCard`**: banner, overlapping
       avatar, category badge. This needed `media` on `UserSummaryResponse` —
@@ -434,14 +434,49 @@ or left out, in the order it was reported. The routes moved, so read
       community, profile image, name, position badge. No community type or
       category line.
 - [x] 10.8 **The logout button in the settings header is default size**, like
-      Design Page and Back, instead of a stray `size="sm"`.
+      Design page and Log out, instead of a stray `size="sm"`.
 - [x] 10.9 Verify: backend 180 passed, ruff 11 (baseline), black clean. Web
       `api:check`, typecheck, 81 tests, lint 8 (baseline), build.
-- [ ] 10.10 **Walk 10.1–10.8 in a browser.** There is no headless browser in
+- [ ] 10.10 **Walk 10.1–10.11 in a browser.** There is no headless browser in
       this environment, so 10.1 is verified by construction — the route tree
       has the editor outside the settings layout, and `RouteTabs` no longer
       passes `undefined` — and the API was walked over HTTP, not rendered. This
       is the same gap as 9.3, still open, now covering the new pages.
+
+### Phase 11 — second look at the profile area
+
+Same round of "it does not look like the community page" corrections, from
+looking at the rendered result of phase 10.
+
+- [x] 11.1 **The page is no longer clamped to a `prose` column.** 10.3 wrapped
+      `PageRenderer` in `mx-auto max-w-4xl`, which narrowed every block in the
+      design. The community page wraps it in a bare `<div>` and the editor's own
+      blocks are what constrain their own width, so this does the same.
+- [x] 11.2 **The category badge in the header is an info popover**, the same
+      `InfoIcon` + `Popover` the community header uses, not a `Badge` sitting
+      next to the name. Only the category is in it: the public response has no
+      `is_page_public` (deviation #8), and a second row saying "Public" on a
+      page you are already allowed to read is noise.
+- [x] 11.3 **Design Page is a primary button**, like every other Design page
+      button in the app. It was `variant="outline"`.
+- [x] 11.4 **The community rows are gone from the public profile** — see 10.3.
+- [x] 11.5 **"Back to page" is gone from the settings header.** The account card
+      in the sidebar opens settings; a settings screen offering a link back to
+      the thing it configures is a round trip nobody needs. The page is one
+      browser-back away and in the sidebar's own list.
+- [x] 11.6 **The directory filters by category**, one `FilterTabs` row beside
+      the search box, mirroring the communities list. Needed `category` on
+      `GET /users` — a hard filter in the same WHERE as the visibility clause,
+      and applied to the count query too, or the pager would lie.
+- [x] 11.7 **The admins table footer counts its pinned rows.** It always shows
+      "You" and "Owner" above the server page, so a community with no admins has
+      two rows on screen and a footer that said nothing beside them. See
+      deviation #36.
+- [x] 11.8 Verify: backend 181 passed, ruff 11 (baseline), black clean. Web
+      `api:check`, typecheck, 82 tests, lint 8 (baseline), build. Category
+      filter walked over HTTP: `?category=faculty` narrows the list and returns
+      `total` to match; `?category=hacker` is a 422.
+
 
 ---
 
@@ -727,4 +762,23 @@ unless the box says when it was last walked.
     reader of someone's profile. Documented at the query, not just here.
 35. **`web/.tanstack/` is ignored.** The TanStack Router plugin writes its build
     cache there; it was showing up as untracked noise after every route change.
+
+### Phase 11
+
+36. **`pageRangeSummary` grew a `pinned` count instead of the admins table
+    computing its own summary.** The admins table renders "You" and "Owner"
+    above the server page, so on a community with no admins it has two rows on
+    screen and `total: 0` — the honest server answer, and a footer with a blank
+    left half next to a two-row table. The count of pinned rows is passed in, and
+    only the `total === 0` case uses it. A page 2 of a community with admins
+    still describes the paged range only, which undercounts by the pinned rows:
+    that is pre-existing, and fixing it properly means the range stops being a
+    range and starts being a sentence about a list with a pinned prefix.
+37. **`GET /users` gained `category`, and it is filtered in SQL like
+    `keyword`.** Client-side filtering of a paginated list is always wrong — it
+    filters the twenty rows on screen and reports the unfiltered `total` — so it
+    went into the same `conditions` list the visibility clause is in, which is
+    also applied to the count query. A bad value is a 422, not an empty list,
+    because it is typed as `UserCategory` on the route.
+
 

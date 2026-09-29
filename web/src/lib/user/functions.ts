@@ -10,7 +10,7 @@ import { qk } from "@/api/query-keys"
 import { useMediaUpload, type UploadItem } from "@/hooks/use-media-upload"
 import { assertValidImageBatch, pollForMedia, saveWithMedia } from "@/lib/media"
 import { sessionSchema } from "./constants"
-import type { Session, UserPageUpdate } from "./types"
+import type { Session, UserCategory, UserPageUpdate } from "./types"
 
 /**
  * The session query. Resolves to null when nobody is signed in, rather than
@@ -91,7 +91,7 @@ export function toUserUploadItems(
 
 /** One page of the public directory. Used by useInfiniteList. */
 export function fetchUsersPage(
-  filters: { keyword?: string },
+  filters: { keyword?: string; category?: UserCategory },
   { page, size }: { page: number; size: number }
 ) {
   return unwrap(

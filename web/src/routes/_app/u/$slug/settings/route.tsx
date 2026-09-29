@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
-import { ArrowLeftIcon, LogOutIcon, PaletteIcon } from "lucide-react"
+import { LogOutIcon, PaletteIcon } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
 import { ApiError } from "@/api/client"
@@ -66,16 +66,6 @@ function UserSettingsLayoutRoute() {
               <Link to="/u/$slug/editor" params={{ slug }}>
                 <PaletteIcon aria-hidden />
                 Design page
-              </Link>
-            }
-          />
-          <Button
-            nativeButton={false}
-            variant="outline"
-            render={
-              <Link to="/u/$slug" params={{ slug }}>
-                <ArrowLeftIcon aria-hidden />
-                Back to page
               </Link>
             }
           />

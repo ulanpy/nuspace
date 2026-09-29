@@ -6,8 +6,13 @@ import { qk } from "@/api/query-keys"
 import { fetchUsersPage } from "@/lib/user"
 import type { UserSummary } from "@/lib/user"
 import { UserCard } from "@/components/routes/mynuspace/components/user-card"
+import { USER_CATEGORIES, type UserCategory } from "@/lib/user"
 import { useDebounced } from "@/hooks/use-debounced"
-import { SearchFilter } from "@/components/shared/list-filters"
+import {
+  FilterTabs,
+  SearchFilter,
+  type FilterOption,
+} from "@/components/shared/list-filters"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
 import { CardGrid, CardGridSkeleton } from "@/components/shared/page/card-grid"
@@ -16,10 +21,10 @@ import { Page as PageLayout } from "@/components/shared/page"
 /**
  * The public people directory.
  *
- * The communities list with the filters taken out: a user has no category and
- * no type, so the only thing to narrow a directory of people by is their name.
- * The server already hard-filters to pages that are public, so there is no
- * visibility filter here to forget about either.
+ * The communities list with one filter instead of two: a person has no type,
+ * but they do have a category, so that is the one row of tabs here. The server
+ * already hard-filters to pages that are public, so there is no visibility
+ * filter to forget about.
  */
 export function Page({
   search,
@@ -31,12 +36,12 @@ export function Page({
     replace?: boolean
   ) => void
 }) {
-  const { q } = search
+  const { category, q } = search
   const [searchInput, setSearchInput] = useState(q ?? "")
   const debouncedSearch = useDebounced(searchInput)
   // Memoised: a fresh object is a new query key, which restarts the infinite
   // list on every render.
-  const filters = useMemo(() => ({ keyword: q }), [q])
+  const filters = useMemo(() => ({ keyword: q, category }), [category, q])
 
   const [previousQuery, setPreviousQuery] = useState(q)
   if (previousQuery !== q) {
@@ -66,11 +71,21 @@ export function Page({
       title="My Nuspace"
       description="Find people on campus and see the pages they have published."
     >
-      <SearchFilter
-        value={searchInput}
-        onChange={setSearchInput}
-        placeholder="Search people"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchFilter
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search people"
+        />
+        <FilterTabs
+          label="Category"
+          value={category}
+          options={CATEGORY_OPTIONS}
+          onChange={(next) => {
+            onSearchChange((previous) => ({ ...previous, category: next }))
+          }}
+        />
+      </div>
 
       <InfiniteList
         items={list.items}
@@ -92,8 +107,8 @@ export function Page({
           <EmptyState
             title="No people"
             description={
-              q
-                ? "Nobody matches that search yet."
+              q || category
+                ? "Nobody matches these filters yet."
                 : "Nobody has published a page yet."
             }
           />
@@ -104,3 +119,8 @@ export function Page({
     </PageLayout>
   )
 }
+
+const CATEGORY_OPTIONS = USER_CATEGORIES.map((value) => ({
+  value,
+  label: value.charAt(0).toUpperCase() + value.slice(1),
+})) satisfies FilterOption<UserCategory>[]

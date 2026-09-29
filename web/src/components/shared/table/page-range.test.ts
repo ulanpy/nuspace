@@ -27,4 +27,15 @@ describe("pageRangeSummary", () => {
       null
     )
   })
+
+  it("counts the rows a table pins above its page", () => {
+    // The admins table always has at least "You" and "Owner" on screen, so an
+    // empty admin list is not an empty table.
+    assert.equal(
+      pageRangeSummary({ page: 1, size: 10, total: 0, items: [] }, 2),
+      "Showing 1–2 of 2"
+    )
+    // ...but a page that has not come back yet stays quiet.
+    assert.equal(pageRangeSummary({ page: 1, size: 10, total: 0 }, 2), null)
+  })
 })

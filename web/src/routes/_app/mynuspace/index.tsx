@@ -3,8 +3,10 @@ import { useCallback } from "react"
 import { z } from "zod"
 
 import { Page } from "@/components/routes/mynuspace"
+import { USER_CATEGORIES } from "@/lib/user"
 
 const myNuspaceSearchSchema = z.object({
+  category: z.enum(USER_CATEGORIES).optional(),
   q: z.string().optional(),
 })
 
