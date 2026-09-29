@@ -3,10 +3,10 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from backend.modules.pages.repository import CommunityRepository
-from backend.modules.pages.service import CommunityService
+from backend.modules.pages.repository import PageRepository
+from backend.modules.pages.service import PageService
 
-USER = ({"sub": "viewer"}, {"role": "user", "communities": []})
+USER = ({"sub": "viewer"}, {"role": "user"})
 BASE = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
@@ -25,9 +25,9 @@ def _admin(sub: str, minute: int) -> SimpleNamespace:
     )
 
 
-def _service(total: int, returned: int) -> tuple[CommunityService, MagicMock]:
-    repo = MagicMock(spec=CommunityRepository)
-    repo.get_by_slug = _async_return(SimpleNamespace(id=7, owner_user=SimpleNamespace(sub="owner")))
+def _service(total: int, returned: int) -> tuple[PageService, MagicMock]:
+    repo = MagicMock(spec=PageRepository)
+    repo.get_by_slug = _async_return(SimpleNamespace(id=7, owner="owner", slug="club"))
     repo.is_admin = _async_return(True)
     repo.list_admins_page = AsyncMock(
         return_value=([_admin(f"a{i}", i) for i in range(returned)], total)
@@ -37,7 +37,7 @@ def _service(total: int, returned: int) -> tuple[CommunityService, MagicMock]:
     uow.get_repo = MagicMock(return_value=repo)
     uow.__aenter__ = _async_return(None)
     uow.__aexit__ = _async_return(False)
-    return CommunityService(uow=uow, media_attachment_resolver=MagicMock()), repo
+    return PageService(uow=uow, media_attachment_resolver=MagicMock()), repo
 
 
 @pytest.mark.asyncio

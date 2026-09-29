@@ -1,38 +1,35 @@
 from typing import Callable
 
 import pytest
-from backend.modules.pages.models.page import (
-    CommunityCategory,
-    CommunityType,
-)
+from backend.modules.pages.models.page import PageVisibility
 from backend.modules.pages.schemas import (
-    CommunityCreateRequest,
-    CommunityUpdateRequest,
+    PageCreateRequest,
+    PageUpdateRequest,
 )
+from backend.modules.shared.slug import RESERVED_SLUGS
 from pydantic import BaseModel, ValidationError
 
 
-def create_community(**overrides: object) -> CommunityCreateRequest:
+def create_page(**overrides: object) -> PageCreateRequest:
     values = {
-        "name": "Test Community",
-        "type": CommunityType.club,
-        "category": CommunityCategory.academic,
-        "slug": "test-community",
+        "name": "Test Page",
+        "visibility": PageVisibility.public,
+        "slug": "test-page",
         "page_content": {},
         "owner": "test-user",
     }
     values.update(overrides)
-    return CommunityCreateRequest(**values)
+    return PageCreateRequest(**values)
 
 
-def update_community(**overrides: object) -> CommunityUpdateRequest:
-    return CommunityUpdateRequest(**overrides)
+def update_page(**overrides: object) -> PageUpdateRequest:
+    return PageUpdateRequest(**overrides)
 
 
 ModelFactory = Callable[..., BaseModel]
 
 
-@pytest.mark.parametrize("model_factory", [create_community, update_community])
+@pytest.mark.parametrize("model_factory", [create_page, update_page])
 @pytest.mark.parametrize(
     "slug",
     [
@@ -43,11 +40,11 @@ ModelFactory = Callable[..., BaseModel]
     ],
 )
 def test_accepts_valid_slugs(model_factory: ModelFactory, slug: str):
-    community = model_factory(slug=slug)
-    assert community.slug == slug
+    page = model_factory(slug=slug)
+    assert page.slug == slug
 
 
-@pytest.mark.parametrize("model_factory", [create_community, update_community])
+@pytest.mark.parametrize("model_factory", [create_page, update_page])
 @pytest.mark.parametrize(
     "slug",
     [
@@ -69,7 +66,7 @@ def test_rejects_invalid_slug_patterns(model_factory: ModelFactory, slug: str):
     assert "Slug" in str(exc_info.value)
 
 
-@pytest.mark.parametrize("model_factory", [create_community, update_community])
+@pytest.mark.parametrize("model_factory", [create_page, update_page])
 @pytest.mark.parametrize(
     "slug",
     [
@@ -82,7 +79,7 @@ def test_rejects_invalid_slug_patterns(model_factory: ModelFactory, slug: str):
         "about",
         "terms-of-service",
         "privacy-policy",
-        "communities",
+        "pages",
         "users",
         "events",
         "courses",
@@ -105,10 +102,21 @@ def test_rejects_reserved_words(model_factory: ModelFactory, slug: str):
     [
         "owner-edit",
         "nu-admin-club",
-        "my-communities",
+        "my-pages",
         "pages-create",
     ],
 )
 def test_reserved_words_only_apply_to_exact_match(slug: str):
-    community = create_community(slug=slug)
-    assert community.slug == slug
+    page = create_page(slug=slug)
+    assert page.slug == slug
+
+
+def test_the_page_route_prefix_is_reserved():
+    """`/p/$slug` cannot be shadowed, so `p` is reserved.
+
+    Asserted on the set rather than through a schema, because the 3-50 char
+    rule rejects a one-character slug before the reserved check ever runs.
+    """
+    assert "p" in RESERVED_SLUGS
+    assert "communities" not in RESERVED_SLUGS
+    assert "u" not in RESERVED_SLUGS
