@@ -14,14 +14,19 @@ from typing import Literal
 from unittest.mock import MagicMock
 
 import pytest
+from backend.modules.pages.constants import PageRole, PageSort
 from backend.modules.pages.models.page import Page, PageVisibility
-from backend.modules.pages.repository import PageRepository
+from backend.modules.pages.repository import _PAGE_SORT_COLUMNS, PageRepository
 from backend.modules.pages.service import PageService
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
 SIGNED_IN = ({"sub": "owner"}, {"role": "user"})
 GUEST = ({"sub": None, "is_guest": True}, {"role": "default", "is_guest": True})
+
+# The SQL text of each whitelisted sort column. Read out of the whitelist
+# rather than written out here, so adding a sort column is one edit and not two.
+_PAGE_SORT_SQL = {sort: f"pages.{column.name}" for sort, column in _PAGE_SORT_COLUMNS.items()}
 
 
 def _page(slug: str = "club") -> SimpleNamespace:
@@ -93,6 +98,8 @@ def _where(
     scope: Literal["browsable", "mine"] = "browsable",
     viewer_sub: str | None = "owner",
     is_site_admin: bool = False,
+    role: PageRole | None = None,
+    visibility: list[PageVisibility] | None = None,
 ) -> str:
     """The real WHERE of `list_pages`, as Postgres SQL.
 
@@ -106,7 +113,11 @@ def _where(
         select(Page)
         .where(
             *PageRepository._list_conditions(
-                viewer_sub=viewer_sub, is_site_admin=is_site_admin, scope=scope
+                viewer_sub=viewer_sub,
+                is_site_admin=is_site_admin,
+                scope=scope,
+                role=role,
+                visibility=visibility,
             )
         )
         .compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
@@ -176,3 +187,188 @@ def test_a_site_admin_still_gets_only_their_own_pages_on_my_pages() -> None:
     where = _where(scope="mine", viewer_sub="root", is_site_admin=True)
 
     assert "page_admins" in where
+
+
+# --- role filter ---------------------------------------------------------
+#
+# Written before the implementation, deliberately. This is the one bug the
+# whole filter is dangerous about, and `b176a18` deleted the filter rather than
+# fix it. The failure mode is not a crash: it is the same page showing up under
+# both Role options, which a green suite does not catch.
+
+
+def test_role_admin_excludes_pages_the_caller_owns() -> None:
+    """`role=admin` is "administered by me AND NOT owned by me".
+
+    Without the `NOT owner` clause a page the caller owns *and* administers
+    satisfies both filters, and the user's table renders it twice — once under
+    Owned, once under Where I'm an admin. That is the exact bug `b176a18`
+    existed to end.
+    """
+    where = _where(scope="mine", role=PageRole.admin)
+
+    assert "IS DISTINCT FROM" in where
+    assert "page_admins" in where
+
+
+def test_role_owner_and_role_admin_cannot_both_match_one_page() -> None:
+    """The disjointness, stated as the pair rather than as one clause.
+
+    `owner` is `pages.owner = me`; `admin` carries `IS DISTINCT FROM me` on the
+    same column. Read together the two are mutually exclusive by construction,
+    which is stronger than either clause being present: a future edit that drops
+    the `admin` half fails here even if the `owner` half still looks right.
+    """
+    owner_where = _where(scope="mine", role=PageRole.owner)
+    admin_where = _where(scope="mine", role=PageRole.admin)
+
+    assert "pages.owner = 'owner'" in owner_where
+    assert "pages.owner IS DISTINCT FROM 'owner'" in admin_where
+
+
+def test_role_admin_treats_an_ownerless_page_as_not_owned() -> None:
+    """`pages.owner` is nullable (`ON DELETE SET NULL`).
+
+    `owner != me` is NULL for a NULL owner, and NULL is not true, so plain `!=`
+    would silently hide a page the caller genuinely administers from the
+    `Where I'm an admin` filter. `IS DISTINCT FROM` says "not you" for NULL,
+    which is what "NOT owned by me" means.
+    """
+    conditions = PageRepository._list_conditions(
+        viewer_sub="owner", is_site_admin=False, scope="mine", role=PageRole.admin
+    )
+
+    assert any("IS DISTINCT FROM" in str(condition) for condition in conditions)
+
+
+def test_no_role_returns_both_relationships_and_nothing_else() -> None:
+    """The default is the whole list. `role` narrows; it never widens."""
+    where = _where(scope="mine")
+
+    assert "IS DISTINCT FROM" not in where
+    assert where == _where(scope="mine", role=None)
+
+
+def test_the_role_filter_does_not_touch_the_directory() -> None:
+    """`browsable` has no relationship to narrow, so it must not acquire one."""
+    assert _where(scope="browsable", role=PageRole.owner) == _where(scope="browsable")
+
+
+# --- visibility filter ---------------------------------------------------
+
+
+def test_visibility_narrows_my_pages_and_is_absent_by_default() -> None:
+    assert "visibility" not in _where(scope="mine")
+    where = _where(scope="mine", visibility=[PageVisibility.private])
+    assert "'private'" in where
+
+
+def test_visibility_and_role_combine_by_and_not_by_or() -> None:
+    """`?role=admin&visibility=private` is an intersection, not a union.
+
+    If these two could be satisfied by different rows the filter would be
+    describing "some page I administer OR some private page", which is a
+    different question and an unanswerable total.
+    """
+    where = _where(scope="mine", role=PageRole.admin, visibility=[PageVisibility.private])
+
+    # The scope's own two relationships are the only OR in the clause.
+    assert where.count(" OR ") == 1
+    assert where.count(" AND ") >= 3  # scope, role, not-owner, visibility
+
+
+def test_visibility_still_never_reaches_the_directory() -> None:
+    """The directory is a visibility question, so a visibility *filter* there
+    would let a caller ask it a narrower question than it is meant to answer.
+
+    Compared for equality rather than by substring: `browsable` legitimately
+    carries a `visibility IN (...)` of its own — the public/internal
+    restriction — so the clause is always there and only its contents are at
+    stake.
+    """
+    assert _where(scope="browsable", visibility=[PageVisibility.private]) == _where(
+        scope="browsable"
+    )
+
+
+# --- sort ----------------------------------------------------------------
+
+
+def _order_by(
+    *,
+    scope: Literal["browsable", "mine"] = "mine",
+    viewer_sub: str | None = "owner",
+    sort: PageSort | None = None,
+    order: Literal["asc", "desc"] = "desc",
+) -> str:
+    """The real ORDER BY of `list_pages`, as Postgres SQL.
+
+    Calls `PageRepository._page_order_clauses` rather than restating it, for the
+    same reason `_where` does.
+    """
+    return " ".join(
+        (
+            str(
+                select(Page)
+                .order_by(
+                    *PageRepository._page_order_clauses(
+                        viewer_sub=viewer_sub, scope=scope, sort=sort, order=order
+                    )
+                )
+                .compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+            ).split("ORDER BY", 1)[1]
+        ).split()
+    )
+
+
+def test_no_sort_preserves_the_existing_order_chain_exactly() -> None:
+    """The chain the list has always had: the pages you own first, then
+    image-first, then by name.
+
+    Asserted literally rather than against a copy, because the failure being
+    guarded against is precisely a copy: defaulting `sort` to `created_at` would
+    reorder the table people already use, and the diff would be a one-word
+    default nobody notices in review.
+    """
+    assert _order_by() == (
+        "pages.owner = 'owner' DESC, "
+        "(EXISTS (SELECT media.id FROM media "
+        "WHERE media.entity_id = pages.id AND media.entity_type = 'pages')) DESC, "
+        "pages.name ASC"
+    )
+
+
+def test_the_owner_first_prefix_belongs_to_the_default_chain_only() -> None:
+    """The directory is not owner-grouped, so it has no such prefix at all — and
+    an explicit `sort` must not gain one, or "sort by name" would quietly be
+    "sort by name, owned first", which is not a name sort."""
+    assert "pages.owner" not in _order_by(scope="browsable")
+    assert "pages.owner" not in _order_by(sort=PageSort.name, order="asc")
+
+
+@pytest.mark.parametrize("sort", list(PageSort), ids=lambda sort: sort.value)
+@pytest.mark.parametrize("order", ["asc", "desc"], ids=["asc", "desc"])
+def test_each_sort_column_answers_to_both_orders(
+    sort: PageSort, order: Literal["asc", "desc"]
+) -> None:
+    column = _PAGE_SORT_SQL[sort]
+    direction = "ASC" if order == "asc" else "DESC"
+
+    assert f"{column} {direction}" in _order_by(sort=sort, order=order)
+
+
+@pytest.mark.parametrize("sort", list(PageSort), ids=lambda sort: sort.value)
+def test_every_sort_keeps_a_stable_tiebreaker(sort: PageSort) -> None:
+    """`name` and `created_at` both repeat, and OFFSET pagination over a
+    non-deterministic order drops and repeats rows across page boundaries."""
+    assert "pages.id ASC" in _order_by(sort=sort)
+
+
+def test_the_whitelist_covers_exactly_the_accepted_values() -> None:
+    """`_PAGE_SORT_COLUMNS` and the `PageSort` enum are the two halves of one
+    contract: FastAPI accepts the enum, the repository looks the column up by
+    it. A key missing from the dict is a `KeyError` inside a coroutine, which
+    surfaces as an unhandled 500 rather than the 422 the caller was promised —
+    and a column missing from the enum is a sort the UI cannot reach.
+    """
+    assert set(_PAGE_SORT_COLUMNS) == set(PageSort)

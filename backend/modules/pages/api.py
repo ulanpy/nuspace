@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.exc import IntegrityError
@@ -7,7 +7,9 @@ from backend.common.dependencies import get_infra
 from backend.common.schemas import Infra
 from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.modules.pages import schemas
+from backend.modules.pages.constants import PageAdminSort, PageRole, PageSort
 from backend.modules.pages.dependencies import get_page_service
+from backend.modules.pages.models.page import PageVisibility
 from backend.modules.pages.service import PageService
 from backend.modules.shared.slug import raise_slug_taken
 
@@ -74,6 +76,10 @@ async def get_my_pages(
     infra: Infra = Depends(get_infra),
     page_service: PageService = Depends(get_page_service),
     keyword: str | None = Query(default=None, description="Search keyword for page name"),
+    role: PageRole | None = Query(default=None, description="owner | admin"),
+    visibility: list[PageVisibility] | None = Query(default=None),
+    sort: PageSort | None = None,
+    order: Literal["asc", "desc"] = "desc",
 ) -> schemas.ListPage:
     """The pages the caller runs: the ones they own and the ones they administer,
     at whatever visibility, owned first.
@@ -81,11 +87,40 @@ async def get_my_pages(
     `private` belongs here and only here: this is the list you manage your
     pages in, and a private page you made is the reason to have it.
 
-    No `role` parameter. There was one, to split this into an Owned tab and an
-    Admin tab, and the tabs held identical rows that both just link to the page
-    — the `Owner`/`Admin` badge on each row already said which relationship it
-    was. All it bought was a way to hide rows, and every version of the
-    visibility rules under it leaked between the two tabs.
+    ### `role`, and why it means what it means
+
+    `role=admin` is **administered by the caller AND NOT owned by them**, and is
+    therefore disjoint from `role=owner`. A page you own *and* administer comes
+    back under `owner` only.
+
+    That clause is not decoration. An earlier version of this endpoint had no
+    `role` parameter at all, removed in `b176a18`, and the reason it was
+    removed is worth keeping in the code rather than in a commit message: the
+    `mine` scope used to carry a visibility OR that contained `owner = me`, so
+    `role=admin` compiled to `(visible OR administered-by-me)` where `visible`
+    already meant "or owned by me". Every owned page came back under both
+    filters and the same row appeared twice. Two things are true at once and
+    they are the whole story:
+
+    - **The overlap was the bug.** Fix it by making the values disjoint.
+    - **A filter that can widen its scope is the bug's real shape.** That is
+      also why `include_private` (a boolean that flipped what the endpoint
+      meant) and a derived `owner_sub` are both gone for good.
+
+    Deleting the filter fixed the symptom and cost the ability to ask the
+    question, which is why it is back with the overlap closed. If you widen
+    this endpoint, keep the `NOT owner` clause in
+    `PageRepository._list_conditions`.
+
+    ### The Meilisearch trap
+
+    `sort` and `visibility` are **silently ignored when `keyword` is set**. The
+    keyword path short-circuits to Meilisearch, which ranks by relevance and
+    has `filterable_attributes=None`, so there is no facet to filter on either.
+    No error, just wrong rows — which is how you get "the sort button does
+    nothing". My Pages has no search box today, so this is unreachable. Adding
+    one means `filterableAttributes` in `modules/pages/search_indexes.py` plus
+    a reindex, not just a UI control.
     """
     return await page_service.list_my_pages(
         infra=infra,
@@ -93,6 +128,10 @@ async def get_my_pages(
         page=page,
         size=size,
         keyword=keyword,
+        role=role,
+        visibility=visibility,
+        sort=sort,
+        order=order,
     )
 
 
@@ -183,15 +222,28 @@ async def get_page_admins(
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     exclude_sub: str | None = None,
+    sort: PageAdminSort | None = None,
+    order: Literal["asc", "desc"] = "desc",
     page_service: PageService = Depends(get_page_service),
 ) -> schemas.ListPageAdmins:
     """Retrieves a paginated list of a page's admins. Owner, page admin or site admin only.
 
     `exclude_sub` drops one user from the rows *and* the count, so a caller
     rendering that user in a separate pinned row keeps correct page boundaries.
+
+    `sort` and `order` only — deliberately **no** `role` and **no** `visibility`
+    here, unlike `/pages/mine`. The owner is not in this list at all, so
+    "owner vs admin" is a column here, not a filter; and the admins of a page
+    are its admins whatever the pages' visibility is set to.
     """
     return await page_service.list_admins(
-        slug=slug, user=user, page=page, size=size, exclude_sub=exclude_sub
+        slug=slug,
+        user=user,
+        page=page,
+        size=size,
+        exclude_sub=exclude_sub,
+        sort=sort,
+        order=order,
     )
 
 

@@ -4,13 +4,34 @@ from httpx import AsyncClient
 from sqlalchemy import case, exists, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
 from backend.common.datetime_utils import utc_now
 from backend.common.utils import meilisearch
 from backend.modules.auth.models import User
 from backend.modules.media.models import EntityType, Media, MediaFormat
+from backend.modules.pages.constants import PageAdminSort, PageRole, PageSort
 from backend.modules.pages.models.page import Page, PageAdmin, PageAdminLink, PageVisibility
+
+# Sort columns are whitelisted, never interpolated into an `order_by` from a
+# caller-supplied string. The keys are the `PageSort` members, so the value
+# FastAPI already accepted and the column we order by cannot drift apart.
+_PAGE_SORT_COLUMNS: dict[PageSort, InstrumentedAttribute] = {
+    PageSort.name: Page.name,
+    PageSort.created_at: Page.created_at,
+    PageSort.visibility: Page.visibility,
+}
+
+# `visibility` is a Postgres enum, and `ORDER BY` on an enum sorts by
+# *declaration* order — `private, internal, public` in
+# `models/page.py:23-` — not alphabetically. Ascending is therefore
+# narrowest -> broadest, which is a useful ladder: the most locked-down pages
+# first. Do not "fix" this into `public` first; if a public-first ladder is
+# ever wanted, reverse it explicitly and say why in the UI.
+_ADMIN_SORT_COLUMNS: dict[PageAdminSort, InstrumentedAttribute] = {
+    PageAdminSort.name: User.name,
+    PageAdminSort.created_at: PageAdmin.created_at,
+}
 
 
 class PageRepository:
@@ -106,7 +127,13 @@ class PageRepository:
 
     @classmethod
     def _list_conditions(
-        cls, *, viewer_sub: str | None, is_site_admin: bool, scope: Literal["browsable", "mine"]
+        cls,
+        *,
+        viewer_sub: str | None,
+        is_site_admin: bool,
+        scope: Literal["browsable", "mine"],
+        role: PageRole | None = None,
+        visibility: list[PageVisibility] | None = None,
     ) -> list:
         """The whole WHERE of `list_pages`, as one method so the tests can call
         the real thing instead of restating it.
@@ -118,33 +145,128 @@ class PageRepository:
         The two scopes are not variations on one question, and the difference
         shows up here as the absence of a concept rather than a new one:
 
-        - `mine` has no visibility filter at all. It is not "pages I may read,
-          filtered to mine" — it is "pages I run", and every visibility belongs
-          in it, `private` most of all. The only question is which pages those
-          are, and it is answered entirely by the two relationships.
-        - `browsable` has no relationship filter, and needs a site-admin
-          bypass, because it is a visibility question about pages the caller
-          does not run.
+        - `browsable` is a visibility question about pages the caller does not
+          run. It has no relationship filter, and needs a site-admin bypass.
+        - `mine` is "pages I run" — you own it, or you administer it — at every
+          visibility. `private` belongs here and only here, because this is
+          where you manage your pages.
 
-        Overlapping the two is what broke three times. An earlier version gave
-        `mine` a visibility OR that contained `owner = me`, so the `role=admin`
-        query was `(visible OR administered-by-me)` and `visible` already
-        meant "or owned by me" — every owned page came back under both tabs.
-        Deriving `owner_sub` was the same mistake: it is a visibility
-        alternative smuggled into a relationship query.
+        `role` and `visibility` narrow `mine` and are deliberately **not** a
+        substitute for its visibility rule. The filter is an AND on top of the
+        two relationships, never folded into the `or_()`: `?role=admin&
+        visibility=private` is an intersection of "pages I administer" with
+        "private", and a filter that could only narrow what the scope already
+        allows cannot make the scope wider.
+
+        ### `role=admin` means administered by me AND NOT owned by me
+
+        This clause is the whole reason this docstring exists. Without it, a
+        page you own *and* administer comes back under both `role=owner` and
+        `role=admin` and the same row appears twice in the user's table, once
+        under each filter. `b176a18` deleted the `role` filter entirely rather
+        than fix that, and the reasoning it recorded is still the reasoning
+        behind keeping this clause: the `role` filter is not the problem, the
+        *overlap* is. Do not drop `is_distinct_from` to "simplify" it.
+
+        `is_distinct_from`, not `!=`: `pages.owner` is nullable (`ON DELETE SET
+        NULL`), and `owner != me` is NULL — therefore false — for a page whose
+        owner has been removed, which would hide a page you genuinely
+        administer. `IS DISTINCT FROM` treats NULL as "not you", which is what
+        "NOT owned by me" means.
+
+        ### Why these two scopes stopped overlapping
+
+        An earlier version gave `mine` a visibility OR that contained
+        `owner = me`, so the `role=admin` query compiled to `(visible OR
+        administered-by-me)` and `visible` already meant "or owned by me" —
+        every owned page came back under both tabs. That is the same leak as
+        above, reached by a different route, and it is why the ownership
+        alternative lives inside the `or_()` and the filters live outside it.
+        Deriving `owner_sub` was the same mistake one step earlier: a
+        visibility alternative smuggled into a relationship query.
         """
         if scope == "mine":
-            return [
-                or_(
-                    Page.owner == viewer_sub,
-                    Page.id.in_(select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub)),
+            administered = select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub)
+            conditions = [or_(Page.owner == viewer_sub, Page.id.in_(administered))]
+            if role == PageRole.owner:
+                conditions.append(Page.owner == viewer_sub)
+            elif role == PageRole.admin:
+                conditions.extend(
+                    [Page.id.in_(administered), Page.owner.is_distinct_from(viewer_sub)]
                 )
-            ]
+            if visibility:
+                conditions.append(Page.visibility.in_(visibility))
+            return conditions
+        # `browsable` ignores `role` and `visibility`: it is chosen by
+        # visibility alone, and the directory has no relationship filter to
+        # narrow. Only `/pages/mine` exposes those params, so this is
+        # unreachable rather than a silent ignore — see the docstring.
         if is_site_admin:
             return []
         if viewer_sub:
             return [Page.visibility.in_([PageVisibility.public, PageVisibility.internal])]
         return [Page.visibility == PageVisibility.public]
+
+    @classmethod
+    def _page_order_clauses(
+        cls,
+        *,
+        viewer_sub: str | None,
+        scope: Literal["browsable", "mine"],
+        sort: PageSort | None,
+        order: Literal["asc", "desc"],
+    ) -> list:
+        """The whole ORDER BY of `list_pages`, for the same reason
+        `_list_conditions` exists: the tests call this rather than restating
+        it, so they cannot pass while the repository sorts something else.
+
+        The default chain is load-bearing and must not be touched. It is the
+        order the list has always had — the pages you own before the ones you
+        help run, then image-first, then by name — and defaulting `sort` to
+        `created_at` would silently reorder the table people already use, with
+        no diff to show for it. So `sort=None` returns exactly that, and an
+        explicit `sort` replaces the chain *including* the owner-first prefix:
+        prefixing it would make "sort by name" owner-grouped, which is not a
+        name sort.
+        """
+        if sort is None:
+            has_media = exists(
+                select(Media.id).where(
+                    Media.entity_id == Page.id,
+                    Media.entity_type == EntityType.pages,
+                )
+            )
+            clauses = [has_media.desc(), Page.name.asc()]
+            if scope == "mine":
+                clauses.insert(0, (Page.owner == viewer_sub).desc())
+            return clauses
+        # `Page.id` is the tiebreaker for the same reason `PageAdmin.user_sub`
+        # is one in `list_admins_page`: OFFSET pagination over a
+        # non-deterministic order drops and repeats rows across page
+        # boundaries, and `name` repeats.
+        column = _PAGE_SORT_COLUMNS[sort]
+        return [column.asc() if order == "asc" else column.desc(), Page.id.asc()]
+
+    @classmethod
+    def _admin_order_clauses(
+        cls, *, sort: PageAdminSort | None, order: Literal["asc", "desc"]
+    ) -> list:
+        """The whole ORDER BY of `list_admins_page`.
+
+        `PageAdmin.user_sub` is the last clause whichever key is asked for, and
+        it is not a nicety: `created_at` is set in Python at insert time, so
+        rows promoted in the same transaction share it, and OFFSET pagination
+        over a non-deterministic order silently drops and repeats rows across
+        page boundaries. The `name` sort repeats for the same reason.
+
+        `name` lives on `users`, so this list joins there — unconditionally,
+        because it is one indexed lookup on a table we load rows from anyway
+        and a second code path for "the sort needs a join" is not worth it.
+        """
+        if sort is None:
+            return [PageAdmin.created_at.asc(), PageAdmin.user_sub.asc()]
+        column = _ADMIN_SORT_COLUMNS[sort]
+        return [column.asc() if order == "asc" else column.desc(), PageAdmin.user_sub.asc()]
 
     async def list_pages(
         self,
@@ -156,11 +278,22 @@ class PageRepository:
         scope: Literal["browsable", "mine"],
         keyword: str | None,
         meilisearch_client: AsyncClient,
+        role: PageRole | None = None,
+        visibility: list[PageVisibility] | None = None,
+        sort: PageSort | None = None,
+        order: Literal["asc", "desc"] = "desc",
     ) -> Tuple[List[Page], int, bool]:
         meili_result = None
         keyword_no_results = False
 
         if keyword:
+            # The Meilisearch path silently ignores `sort` and `visibility`:
+            # it ranks by the `case()` below, and `MEILISEARCH_INDEXES` declares
+            # `filterable_attributes=None`, so there is no facet to filter on
+            # either. The caller cannot tell — no error, just wrong rows. `/pages/
+            # mine` sends no `keyword` today, so this is unreachable; adding a
+            # search box there means index facet config in `search_indexes.py`
+            # plus a reindex, not just a UI control. See `api.py::get_my_pages`.
             meili_result = await meilisearch.get(
                 client=meilisearch_client,
                 storage_name=EntityType.pages.value,
@@ -178,6 +311,8 @@ class PageRepository:
             viewer_sub=viewer_sub,
             is_site_admin=is_site_admin,
             scope=scope,
+            role=role,
+            visibility=visibility,
         )
         if keyword:
             conditions.append(Page.id.in_(page_ids))
@@ -195,21 +330,15 @@ class PageRepository:
             count: int = meili_result.get("estimatedTotalHits", 0) if meili_result else 0
         else:
             page_num = max(1, page or 1)
-            has_media = exists(
-                select(Media.id).where(
-                    Media.entity_id == Page.id,
-                    Media.entity_type == EntityType.pages,
-                )
+            order_clauses = self._page_order_clauses(
+                viewer_sub=viewer_sub, scope=scope, sort=sort, order=order
             )
-            # The rows you run, in the order that answers "what is mine": the
-            # pages you own before the ones you help run, then image-first,
-            # then by name.
-            order_clauses = [has_media.desc(), Page.name.asc()]
-            if scope == "mine":
-                order_clauses.insert(0, (Page.owner == viewer_sub).desc())
             stmt = base_stmt.order_by(*order_clauses).offset((page_num - 1) * size).limit(size)
             result = await self.db_session.execute(stmt)
             pages = list(result.scalars().all())
+            # The COUNT reuses the same conditions, so a filtered list's `total`
+            # and `has_next` are already right. Do not add a second where-clause
+            # and do not "fix" the count separately.
             count_stmt = select(func.count()).select_from(Page).where(*conditions)
             count_result = await self.db_session.execute(count_stmt)
             count = count_result.scalar() or 0
@@ -235,25 +364,33 @@ class PageRepository:
         return result.scalars().first()
 
     async def list_admins_page(
-        self, page_id: int, *, page: int, size: int, exclude_sub: str | None = None
+        self,
+        page_id: int,
+        *,
+        page: int,
+        size: int,
+        exclude_sub: str | None = None,
+        sort: PageAdminSort | None = None,
+        order: Literal["asc", "desc"] = "desc",
     ) -> Tuple[List[PageAdmin], int]:
-        # created_at alone is not a stable sort: rows promoted in the same
-        # transaction share a timestamp, and OFFSET pagination over a
-        # non-deterministic order silently drops and repeats rows across
-        # page boundaries. user_sub breaks the tie.
         conditions = [PageAdmin.page_id == page_id]
         if exclude_sub is not None:
             conditions.append(PageAdmin.user_sub != exclude_sub)
+        order_clauses = self._admin_order_clauses(sort=sort, order=order)
         stmt = (
             select(PageAdmin)
+            .join(User, PageAdmin.user_sub == User.sub)
             .where(*conditions)
             .options(selectinload(PageAdmin.user))
-            .order_by(PageAdmin.created_at.asc(), PageAdmin.user_sub.asc())
+            .order_by(*order_clauses)
             .offset((page - 1) * size)
             .limit(size)
         )
         result = await self.db_session.execute(stmt)
         admins = list(result.scalars().all())
+        # Counted off the same conditions, so `exclude_sub` — and any future
+        # filter — keeps `total` and `has_next` consistent with the rows. It
+        # deliberately does not join `users`: nothing is ordered here.
         count_stmt = select(func.count()).select_from(PageAdmin).where(*conditions)
         count_result = await self.db_session.execute(count_stmt)
         return admins, count_result.scalar() or 0

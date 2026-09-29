@@ -12,9 +12,15 @@ from backend.modules.auth.models import UserRole
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.media.schemas import MediaResponse
 from backend.modules.pages import schemas
-from backend.modules.pages.constants import MAX_PAGE_IMAGES, MAX_PAGES_PER_OWNER
+from backend.modules.pages.constants import (
+    MAX_PAGE_IMAGES,
+    MAX_PAGES_PER_OWNER,
+    PageAdminSort,
+    PageRole,
+    PageSort,
+)
 from backend.modules.pages.interfaces import MediaAttachmentResolver
-from backend.modules.pages.models.page import Page, PageAdmin
+from backend.modules.pages.models.page import Page, PageAdmin, PageVisibility
 from backend.modules.pages.policy import PagePolicy
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.utils import get_page_permissions
@@ -210,6 +216,10 @@ class PageService:
         page: int,
         size: int,
         keyword: str | None,
+        role: PageRole | None = None,
+        visibility: list[PageVisibility] | None = None,
+        sort: PageSort | None = None,
+        order: Literal["asc", "desc"] = "desc",
     ) -> schemas.ListPage:
         """The pages behind the My Pages table on `/account`.
 
@@ -218,17 +228,41 @@ class PageService:
         because this is where you manage your pages and a private page you made
         is the reason to be here.
 
-        There is no `role` filter, deliberately. It was there, and it cost more
-        than it returned: the Owned and Admin tabs rendered identical rows that
-        both just link to the page, and the `Owner`/`Admin` badge on each row
-        already says which relationship it is. Splitting the list added a
-        parameter whose only job was to hide rows, and every version of the
-        visibility rules underneath it leaked across the two tabs — which is
-        how owned pages ended up under both. The row's badge is the
-        distinction; the list is just the list.
+        ### Why the `role` filter is back
+
+        It was removed in `b176a18`, and the reasoning behind that is still
+        right about the bug and wrong about the cure. The Owned and Admin tabs
+        did render identical rows that both just link to the page, and the
+        `Owner`/`Admin` badge on each row already says which relationship it
+        is — so the split "bought a way to hide rows, and every version of the
+        visibility rules underneath it leaked across the two tabs."
+
+        The leak was real, and it was one specific clause's fault. `mine` used
+        to carry a visibility OR containing `owner = me`, so `role=admin`
+        compiled to `(visible OR administered-by-me)` where `visible` already
+        meant "or owned by me" — every owned page came back under both tabs.
+        That is a *disjointness* bug, and it is fixed by making `role=admin`
+        mean "administered by me AND NOT owned by me", not by removing the
+        ability to ask.
+
+        The user asked for Owned/Admin filtering, so the filter is back. The
+        constraint it has to keep is in `PageRepository._list_conditions`:
+        **do not let these two values overlap.** A page you own *and* administer
+        belongs under `owner` only. The alternative is not "the tab is ugly",
+        it is "the same row appears twice", which is the bug that got the
+        parameter deleted in the first place.
         """
         return await self._list_pages(
-            infra=infra, user=user, page=page, size=size, keyword=keyword, scope="mine"
+            infra=infra,
+            user=user,
+            page=page,
+            size=size,
+            keyword=keyword,
+            scope="mine",
+            role=role,
+            visibility=visibility,
+            sort=sort,
+            order=order,
         )
 
     async def _list_pages(
@@ -240,9 +274,18 @@ class PageService:
         size: int,
         keyword: str | None,
         scope: Literal["browsable", "mine"],
+        role: PageRole | None = None,
+        visibility: list[PageVisibility] | None = None,
+        sort: PageSort | None = None,
+        order: Literal["asc", "desc"] = "desc",
     ) -> schemas.ListPage:
         """Shared plumbing for the two lists: they page, resolve media and
         build permissions identically, and differ only in the WHERE.
+
+        `role` / `visibility` / `sort` reach the repository and are only
+        meaningful on `mine`; the directory is a visibility question about
+        pages the caller does not run, so it has no relationship to filter by
+        and no owner-first ordering to disturb.
 
         No policy check here: this is a list, so there is no single page to
         check, and the repository puts the visibility restriction in the WHERE
@@ -271,6 +314,10 @@ class PageService:
                 scope=scope,
                 keyword=keyword,
                 meilisearch_client=infra.meilisearch_client,
+                role=role,
+                visibility=visibility,
+                sort=sort,
+                order=order,
             )
             media_objs: List[Media] = await repo.list_media(
                 page_ids=[page.id for page in pages],
@@ -455,6 +502,8 @@ class PageService:
         page: int,
         size: int,
         exclude_sub: str | None = None,
+        sort: PageAdminSort | None = None,
+        order: Literal["asc", "desc"] = "desc",
     ) -> schemas.ListPageAdmins:
         page_obj, policy = await self._load_page_and_policy(slug, user)
         # can_edit, not READ: READ is visibility, and visibility is granted to
@@ -464,7 +513,12 @@ class PageService:
         async with self.uow:
             repo = self.uow.get_repo(PageRepository)
             admins, count = await repo.list_admins_page(
-                page_obj.id, page=page, size=size, exclude_sub=exclude_sub
+                page_obj.id,
+                page=page,
+                size=size,
+                exclude_sub=exclude_sub,
+                sort=sort,
+                order=order,
             )
         return schemas.ListPageAdmins(
             items=self._to_admin_responses(admins),

@@ -14,11 +14,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from backend.common.utils.enums import ResourceAction
-from backend.modules.pages.models.page import PageVisibility
+from backend.modules.pages.models.page import Page, PageVisibility
 from backend.modules.pages.policy import PagePolicy
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.service import PageService
 from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.dialects import postgresql
 
 OWNER = ({"sub": "owner"}, {"role": "user"})
 ADMIN_OF_PAGE = ({"sub": "helper"}, {"role": "user"})
@@ -188,3 +190,47 @@ async def test_the_by_id_read_resolves_the_flag_too() -> None:
     response = await service.get_page_response_by_id(infra=infra, page_id=7, user=ADMIN_OF_PAGE)
 
     assert response.id == 7
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "visibility_filter",
+    [None, [], [PageVisibility.private], [PageVisibility.public, PageVisibility.internal]],
+    ids=["absent", "empty", "private", "public_and_internal"],
+)
+async def test_the_new_visibility_filter_does_not_touch_the_directory(
+    visibility_filter: list[PageVisibility] | None,
+) -> None:
+    """`GET /pages/mine` grew a `visibility` *filter*. The directory must be
+    unchanged by it.
+
+    The two scopes answer different questions, and the filter is the exact
+    mistake this refactor already made once: it narrows "pages I run" by
+    visibility, which is legitimate, but the moment the directory grows the
+    same parameter it becomes a way to ask the directory a question it is not
+    meant to answer — and, worse, a way to make it answer *differently* for
+    two callers asking the same thing.
+
+    `role` gets the same assertion in `test_list_pages`, where the reasoning is
+    spelled out. This one exists because the parameter is literally called
+    `visibility`, which makes it look at home on both endpoints.
+    """
+
+    # Compiled, not compared with `==`: on a SQLAlchemy clause `==` builds a
+    # comparison expression and returns a new object, so two identical WHERE
+    # clauses would happily report themselves unequal — and two different ones
+    # would build a query nobody runs.
+    def _compiled(**kwargs) -> str:
+        return " ".join(
+            str(
+                select(Page)
+                .where(*PageRepository._list_conditions(**kwargs))
+                .compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+            )
+            .split("WHERE", 1)[1]
+            .split()
+        )
+
+    base = {"viewer_sub": "owner", "is_site_admin": False, "scope": "browsable"}
+
+    assert _compiled(visibility=visibility_filter, **base) == _compiled(**base)
