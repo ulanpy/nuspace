@@ -193,8 +193,9 @@ class PageService:
         role: str | None,
         keyword: str | None,
     ) -> schemas.ListPage:
-        await PagePolicy(user=user).check_permission(action=ResourceAction.READ)
-
+        # No policy check here: this is a list, so there is no single page to
+        # check, and `repo.list_pages` puts the visibility restriction in the
+        # WHERE itself. Asking anyway dereferenced a `None` page.
         owner_sub = user[0].get("sub") if owner_sub == "me" else owner_sub
 
         admin_page_ids: set[int] = set()

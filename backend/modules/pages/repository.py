@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from httpx import AsyncClient
-from sqlalchemy import case, exists, func, select
+from sqlalchemy import case, exists, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -112,13 +112,20 @@ class PageRepository:
         signed-in viewer sees `public` and `internal`, a guest sees only
         `public`, and the owner or a site admin sees their own pages whatever
         their visibility.
+
+        One condition, not one per rule: the caller ORs this against the
+        `role=admin` membership alternative, and `.where()` ANDs whatever it is
+        given — so returning `visibility IN (...)` and `owner = viewer` as two
+        entries meant "a page you can see that you also own", i.e. nothing.
         """
         if is_site_admin:
             return []
         if viewer_sub:
             return [
-                Page.visibility.in_([PageVisibility.public, PageVisibility.internal]),
-                Page.owner == viewer_sub,
+                or_(
+                    Page.visibility.in_([PageVisibility.public, PageVisibility.internal]),
+                    Page.owner == viewer_sub,
+                )
             ]
         return [Page.visibility == PageVisibility.public]
 
@@ -170,7 +177,7 @@ class PageRepository:
         # alternative; everything else is a plain AND.
         visible = self._visibility_conditions(viewer_sub=viewer_sub, is_site_admin=is_site_admin)
         if match_any:
-            conditions.append(func.or_(*visible, *match_any))
+            conditions.append(or_(*visible, *match_any))
         else:
             conditions.extend(visible)
 
