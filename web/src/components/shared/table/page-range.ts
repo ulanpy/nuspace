@@ -10,7 +10,7 @@ export function pageRangeSummary(
     | undefined,
   /**
    * Rows rendered above the server page, outside it — the admins table pins
-   * "You" and "Owner" there. A community with no admins still has two rows on
+   * "You" and "Owner" there. A page with no admins still has two rows on
    * screen, and a footer that says nothing beside them reads as a bug.
    */
   pinned = 0

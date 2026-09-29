@@ -59,14 +59,15 @@ const PRODUCTS: Product[] = [
     details: ["Campus calendar", "Recruitment", "Calendar export"],
   },
   {
-    title: "Communities",
-    description:
-      "Find student groups and follow the communities you care about.",
-    to: "/communities",
+    title: "Pages",
+    description: "Find student groups and follow the pages you care about.",
+    // `/communities` is gone; `/mynuspace` is the pages directory, and the
+    // categories it used to filter by went with their backend columns.
+    to: "/mynuspace",
     icon: UsersIcon,
-    accent: "bg-community",
-    iconClassName: "bg-community/15 text-community",
-    details: ["Student clubs", "Profiles", "Categories"],
+    accent: "bg-page",
+    iconClassName: "bg-page/15 text-page",
+    details: ["Student clubs", "Course pages", "Study groups"],
   },
   {
     title: "Opportunities",
@@ -110,7 +111,7 @@ const ONBOARDING_STEPS = [
     icon: SearchIcon,
     title: "Open the tool you need",
     description:
-      "Courses, events, contacts, communities, and requests live in one place.",
+      "Courses, events, contacts, pages, and requests live in one place.",
   },
   {
     icon: CheckIcon,
@@ -272,7 +273,7 @@ export function Page() {
                 Know what is happening before you miss it
               </h2>
               <p className="mt-4 text-lg/relaxed text-muted-foreground">
-                Browse upcoming events, recruitment announcements, and community
+                Browse upcoming events, recruitment announcements, and student
                 activities in one campus calendar.
               </p>
               <ul className="mt-6 space-y-3 text-sm font-medium">

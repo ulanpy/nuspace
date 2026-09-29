@@ -2,7 +2,7 @@ import { useState } from "react"
 import { SendIcon, XIcon } from "lucide-react"
 
 import { useSession } from "@/hooks/use-session"
-import { TelegramLink } from "@/components/routes/u/$slug/settings/telegram-link"
+import { TelegramLink } from "@/components/routes/account/components/telegram-link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 

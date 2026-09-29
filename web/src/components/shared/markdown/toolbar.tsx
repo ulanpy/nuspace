@@ -50,7 +50,7 @@ const PLACEHOLDER = "text"
  *
  * The old app split this the wrong way: the toolbar rendered buttons and
  * emitted an action name, leaving every caller to write its own copy of the
- * ~55 lines that turn a selection into markdown. Event description, community
+ * ~55 lines that turn a selection into markdown. Event description, page
  * description and the opportunity form each had one, and they had already
  * drifted. Here the toolbar owns the transformation and the caller owns the
  * value, which is the split that actually deduplicates.

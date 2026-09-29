@@ -31,7 +31,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-community: var(--community);
+  --color-page: var(--page);
   --color-contact: var(--contact);
   --color-disabled: var(--disabled);
   --color-disabled-foreground: var(--disabled-foreground);
@@ -101,7 +101,7 @@
   --accent-foreground: hsl(217.3 41.4% 21.1%);
   --success: hsl(170.3 100% 22.6%);
   --success-foreground: hsl(163.5 63.8% 97.2%);
-  --community: hsl(263.7 45.9% 57.8%);
+  --page: hsl(263.7 45.9% 57.8%);
   --contact: hsl(191.6 100% 34.2%);
   --warning: hsl(37.5 81.5% 46%);
   --warning-foreground: hsl(31.3 97.3% 10.2%);
@@ -150,7 +150,7 @@
   --accent-foreground: hsl(214 36.4% 92.8%);
   --success: hsl(168.2 44.2% 51.6%);
   --success-foreground: hsl(167.2 85.4% 4.6%);
-  --community: hsl(262 67.6% 74.2%);
+  --page: hsl(262 67.6% 74.2%);
   --contact: hsl(193.2 66.5% 57.4%);
   --warning: hsl(36.7 76% 60.3%);
   --warning-foreground: hsl(31.7 91.9% 8.2%);

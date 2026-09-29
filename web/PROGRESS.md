@@ -486,12 +486,12 @@ turns both green.
 
 ## Phase 4 — Web routes and components
 
-- [ ] Delete `src/routes/_app/communities/**` and `src/routes/_app/u/**` (8 files).
-- [ ] Add `src/routes/_app/p/$slug/index.tsx` — loader `ensureQueryData(pageDetailQueryOptions)`, 404 → `notFound()`, reads the optional `?admin=` token, custom `NotFound`. No width clamp on the body (the page _is_ the design).
-- [ ] Add `src/routes/_app/p/$slug/editor/index.tsx`.
-- [ ] **Add the missing auth guard to the editor route.** Today `/communities/$slug/editor` checks 404 only; the only thing protecting it is `PATCH` rejecting the write. It must check `can_edit`, matching the settings guard.
-- [ ] Add `src/routes/_app/p/$slug/settings/{route,index,general,admin-controls}` — the two-tab layout (`General`, `Admin controls`) is unchanged from communities.
-- [ ] Add `src/routes/_app/account/index.tsx`:
+- [x] Delete `src/routes/_app/communities/**` and `src/routes/_app/u/**` (8 files).
+- [x] Add `src/routes/_app/p/$slug/index.tsx` — loader `ensureQueryData(pageDetailQueryOptions)`, 404 → `notFound()`, reads the optional `?admin=` token, custom `NotFound`. No width clamp on the body (the page _is_ the design).
+- [x] Add `src/routes/_app/p/$slug/editor/index.tsx`.
+- [x] **Add the missing auth guard to the editor route.** Today `/communities/$slug/editor` checks 404 only; the only thing protecting it is `PATCH` rejecting the write. It must check `can_edit`, matching the settings guard.
+- [x] Add `src/routes/_app/p/$slug/settings/{route,index,general,admin-controls}` — the two-tab layout (`General`, `Admin controls`) is unchanged from communities.
+- [x] Add `src/routes/_app/account/index.tsx`:
       `ts
 validateSearch: z.object({
 page: z.coerce.number().int().min(1).default(1),
@@ -501,30 +501,85 @@ role: z.enum(["owned", "admin"]).optional(),
       Read with `Route.useSearch()`. Change pages with
       `useNavigate({ from: Route.fullPath, search: prev => ({ ...prev, page: n }) })`
       — the **functional updater** form. `search: { page: n }` would clobber the `role` filter.
-- [ ] `src/routes/_app/mynuspace/index.tsx`: search loses `category`; it becomes the pages browser. Keeps `useInfiniteList` + `CardGrid` — a browse grid is not a table.
-- [ ] `components/routes/communities/` → `components/routes/pages/` (`index.tsx` detail, `editor/`, `settings/{general,admin-controls,components/{admins-table,admin-access-link}}`).
-- [ ] `settings/general`: Details (name, description, slug, logo, banner) + a **Visibility** radio group + Danger zone. Delete the Info popover.
-- [ ] `settings/admin-controls`: admin link + admins table + the **transfer ownership** control. `useTransferCommunityOwner` lives in `lib/communities/functions.ts` and is already called from `components/routes/communities/settings/components/admins-table.tsx` — so the UI exists, it just moves with the file. Re-point the import; do not rebuild it.
-- [ ] `mynuspace`: render `PageCard` (from `community-card.tsx`, type/category badge removed). Delete `components/routes/mynuspace/components/user-card.tsx` — it was already a deliberate copy of `CommunityCard`.
-- [ ] `src/index.css`: the `--community` token becomes a page token. Update the three usages.
-- [ ] New `components/shared/pages/page-form.tsx` + `page-form-dialog.tsx` (from `community-form{,-dialog}.tsx`). Shared, not route-local, because `/mynuspace` and `/account`'s empty state both reach it. Fields: name, description (optional), slug, logo (optional), banner (optional).
-- [ ] **Slug autofill from the name.** One `useState` + a "user has touched the slug" flag. ~5 lines. Do not over-engineer it.
-- [ ] New `components/routes/account/index.tsx` = **Connecting Telegram** + **My Pages**. Nothing else. No identity row, no `MediaPicker`s, no avatar. Move `telegram-link.tsx` in from `u/$slug/settings/`.
-- [ ] New `components/routes/account/components/my-pages.tsx` — `PAGE_SIZE = 10`, `?page=` in the URL, `keepPreviousData`, and a `FilterTabs` row (the project's shadcn-`ui/tabs` filter strip) over **All / Owned / Admin**, mapping to `GET /pages?role=`. Row badge reads **Owner** or **Admin** rather than the old hardcoded `Owner`.
-- [ ] `components/shared/page-editor/components/template-dialog.tsx`: collapse to **one** source. One `useInfiniteList(qk.pages.list({ keyword }))`, one handler. The people/communities tabs go, and the extra `fetchUserPage` round-trip disappears — `ListPage` items already carry `page_content`.
-- [ ] `components/shared/page-editor/context.tsx`: `UploadContextData` narrows to `entityType: "pages"`.
-- [ ] `components/layouts/app/app-sidebar.tsx`: remove the `Communities` nav item (`My Nuspace` is the only pages entry). Account card links to `/account` — no `params` any more.
-- [ ] `components/layouts/app/index.tsx`: the app-shell bypass becomes `/p/$slug` and `/p/$slug/editor`.
-- [ ] `components/routes/landing/index.tsx:65`: the marketing link to `/communities` now points at `/mynuspace`.
-- [ ] **Verify:** `pnpm typecheck` is green again. `pnpm build` regenerates `routeTree.gen.ts` — commit it. `rg -n "communit" web/src/` returns only legitimate leftovers you can justify in the commit message.
+- [x] `src/routes/_app/mynuspace/index.tsx`: search loses `category`; it becomes the pages browser. Keeps `useInfiniteList` + `CardGrid` — a browse grid is not a table.
+- [x] `components/routes/communities/` → `components/routes/pages/` (`index.tsx` detail, `editor/`, `settings/{general,admin-controls,components/{admins-table,admin-access-link}}`).
+- [x] `settings/general`: Details (name, description, slug, logo, banner) + a **Visibility** radio group + Danger zone. Delete the Info popover.
+- [x] `settings/admin-controls`: admin link + admins table + the **transfer ownership** control. `useTransferCommunityOwner` lives in `lib/communities/functions.ts` and is already called from `components/routes/communities/settings/components/admins-table.tsx` — so the UI exists, it just moves with the file. Re-point the import; do not rebuild it.
+- [x] `mynuspace`: render `PageCard` (from `community-card.tsx`, type/category badge removed). Delete `components/routes/mynuspace/components/user-card.tsx` — it was already a deliberate copy of `CommunityCard`.
+- [x] `src/index.css`: the `--community` token becomes a page token. Update the three usages.
+- [x] New `components/shared/pages/page-form.tsx` + `page-form-dialog.tsx` (from `community-form{,-dialog}.tsx`). Shared, not route-local, because `/mynuspace` and `/account`'s empty state both reach it. Fields: name, description (optional), slug, logo (optional), banner (optional).
+- [x] **Slug autofill from the name.** One `useState` + a "user has touched the slug" flag. ~5 lines. Do not over-engineer it.
+- [x] New `components/routes/account/index.tsx` = **Connecting Telegram** + **My Pages**. Nothing else. No identity row, no `MediaPicker`s, no avatar. Move `telegram-link.tsx` in from `u/$slug/settings/`.
+- [x] New `components/routes/account/components/my-pages.tsx` — `PAGE_SIZE = 10`, `?page=` in the URL, `keepPreviousData`, and a `FilterTabs` row (the project's shadcn-`ui/tabs` filter strip) over **All / Owned / Admin**, mapping to `GET /pages?role=`. Row badge reads **Owner** or **Admin** rather than the old hardcoded `Owner`.
+- [x] `components/shared/page-editor/components/template-dialog.tsx`: collapse to **one** source. One `useInfiniteList(qk.pages.list({ keyword }))`, one handler. The people/communities tabs go, and the extra `fetchUserPage` round-trip disappears — `ListPage` items already carry `page_content`.
+- [x] `components/shared/page-editor/context.tsx`: `UploadContextData` narrows to `entityType: "pages"`.
+- [x] `components/layouts/app/app-sidebar.tsx`: remove the `Communities` nav item (`My Nuspace` is the only pages entry). Account card links to `/account` — no `params` any more.
+- [x] `components/layouts/app/index.tsx`: the app-shell bypass becomes `/p/$slug` and `/p/$slug/editor`.
+- [x] `components/routes/landing/index.tsx:65`: the marketing link to `/communities` now points at `/mynuspace`.
+- [x] **Verify:** `pnpm typecheck` is green again. `pnpm build` regenerates `routeTree.gen.ts` — commit it. `rg -n "communit" web/src/` returns only legitimate leftovers you can justify in the commit message.
 
 ### Pagination
 
-- [ ] New `components/shared/table/page-numbers.ts` — `pageNumbers(current, total, window = 1) → (number | "…")[]`. First and last always present, ellipsis inserted, current clamped into range. This is the fiddly part, so it is the part that gets pinned.
-- [ ] New `components/shared/table/page-numbers.test.ts` covering: single page, two pages, exact-fit window, both ellipses, current on the first and last page, current out of range.
-- [ ] Rewrite `components/shared/table/pagination.tsx` on the **`ui/pagination` primitives** — `Pagination` › `PaginationContent` › `PaginationItem` › `PaginationLink` / `PaginationEllipsis`, with `PaginationPrevious`/`PaginationNext` and the existing `pageRangeSummary` range text. Numbered pages, not chevron-only. Do not add project-specific props to `ui/pagination.tsx` itself.
-- [ ] Point both paginated tables at it: My Pages and the page admins table. `page-range.ts` stays.
-- [ ] **Verify:** `pnpm test` green. `pnpm typecheck && pnpm test && pnpm build && pnpm lint && pnpm format` all green.
+- [x] New `components/shared/table/page-numbers.ts` — `pageNumbers(current, total, window = 1) → (number | "…")[]`. First and last always present, ellipsis inserted, current clamped into range. This is the fiddly part, so it is the part that gets pinned.
+- [x] New `components/shared/table/page-numbers.test.ts` covering: single page, two pages, exact-fit window, both ellipses, current on the first and last page, current out of range.
+- [x] Rewrite `components/shared/table/pagination.tsx` on the **`ui/pagination` primitives** — `Pagination` › `PaginationContent` › `PaginationItem` › `PaginationLink` / `PaginationEllipsis`, with `PaginationPrevious`/`PaginationNext` and the existing `pageRangeSummary` range text. Numbered pages, not chevron-only. Do not add project-specific props to `ui/pagination.tsx` itself.
+- [x] Point both paginated tables at it: My Pages and the page admins table. `page-range.ts` stays.
+- [x] **Verify:** `pnpm test` green. `pnpm typecheck && pnpm test && pnpm build && pnpm lint && pnpm format` all green.
+
+### Phase 4 — what reality added
+
+**The editor guard is the security fix here.** `/p/$slug/editor` used to check
+404 only, on the reasoning that `PATCH` rejects an unauthorised write anyway.
+That left the route open to anyone who could spell a slug: they could open the
+editor and build a draft they had no right to design. It now checks
+`can_edit`, matching the settings guard, and the server still refuses the write
+behind it.
+
+**Four things the plan did not anticipate:**
+
+1. **`/mynuspace` absorbed the communities list, and `pages/index.tsx` went
+   with it.** The plan asked for both `components/routes/pages/index.tsx` and a
+   pages browser at `/mynuspace`, which is one component written twice. The
+   browser is `mynuspace`'s now; `pages/` keeps only `$slug/`, `editor/`,
+   `settings/` and the card.
+
+2. **The page form could not stay a straight rename.** `type`, `category` and
+   `email` went with their columns, which took `FieldSelect` and two thirds of
+   the form with them. What is left is five fields and one `useState` for the
+   slug flag. The create body also has to send `visibility` and `owner`
+   explicitly: the backend defaults both, but the generated type marks them
+   required, and an unsafe assertion to dodge that is worse than saying
+   `visibility: "public", owner: "me"` out loud.
+
+3. **The detail header lost its Info popover and its mail button**, not by
+   choice but because `PageResponse` has no `category`, `type`, `verified` or
+   `email` to put in them. The card is the same story: the two badges became one
+   visibility badge, since that is the only fact about a page that is still
+   both shown to the reader and true.
+
+4. **`TablePagination` needs the current URL, not a path prop.** The numbered
+   links are real anchors so middle-click works, and My Pages has to keep
+   `role=admin` when it pages. So the href is built from `location.href` with
+   `page` replaced, which makes the component correct for both call sites
+   without knowing either one's other search params.
+
+`pageNumbers` is exported and tested on its own, including a loop over all 465
+(current, total) pairs up to 30 asserting first-and-last present, ascending,
+and in range. The bug it exists to catch is a 2-page table rendering
+`1 2 2`, which is why `pageNumbers(2, 2)` is asserted twice.
+
+### Gate at the end of Phase 4
+
+`pnpm typecheck` ✓, `pnpm test` **95 passed**, `pnpm build` ✓ (with
+`routeTree.gen.ts` regenerated and committed), `pnpm api:check` ✓,
+`pnpm lint` **9 errors — the pre-existing baseline, unchanged**, `pnpm format` ✓.
+
+`rg -in communit web/src/` returns four hits and all four are justified: the
+ToS copy ("the Nazarbayev University community"), the slug comment explaining
+why `"communities"` was removed from `RESERVED_SLUGS`, the landing comment
+noting `/communities` is gone, and the template dialog explaining that its tabs
+used to be People and Communities. No code path, route, query key or CSS token
+is left on the old name.
 
 ---
 

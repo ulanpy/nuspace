@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
  *
  * Without this the toolbar is a trap: the author sees a **Bold** button, uses
  * it, and every reader gets literal asterisks. The first pass of the rebuild
- * rendered descriptions as `whitespace-pre-line` text, so every community and
+ * rendered descriptions as `whitespace-pre-line` text, so every event and
  * event carried over from the old app showed its markup.
  *
  * `react-markdown` builds React elements rather than HTML, so there is no

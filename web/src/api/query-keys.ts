@@ -2,7 +2,7 @@
  * Every query key in the app is built here.
  *
  * The previous app had 88 inline `queryKey:` literals with no shared
- * convention — ["campusCurrent","communities"] next to ["grade-terms"] next to
+ * convention — ["campusCurrent","events"] next to ["grade-terms"] next to
  * ["sgotinish","list"] — which made targeted invalidation guesswork. Keys are
  * hierarchical: invalidating `qk.events.all()` clears every events query,
  * including lists and details.

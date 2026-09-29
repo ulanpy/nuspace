@@ -3,10 +3,8 @@ import { useCallback } from "react"
 import { z } from "zod"
 
 import { Page } from "@/components/routes/mynuspace"
-import { USER_CATEGORIES } from "@/lib/user"
 
 const myNuspaceSearchSchema = z.object({
-  category: z.enum(USER_CATEGORIES).optional(),
   q: z.string().optional(),
 })
 
@@ -34,5 +32,16 @@ function MyNuspaceRoute() {
     [navigate]
   )
 
-  return <Page search={search} onSearchChange={onSearchChange} />
+  return (
+    <Page
+      search={search}
+      onSearchChange={onSearchChange}
+      onPageCreated={(slug) => {
+        void navigate({
+          to: "/p/$slug",
+          params: { slug },
+        })
+      }}
+    />
+  )
 }

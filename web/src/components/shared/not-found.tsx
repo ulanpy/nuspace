@@ -17,7 +17,7 @@ interface NotFoundProps {
  * an unexplained bounce to the home page — and left nothing to report.
  *
  * Copy is a prop so a route that knows what it was looking for says so: the
- * community page used to ship a near-copy of this whole layout.
+ * page used to ship a near-copy of this whole layout.
  */
 export function NotFound({
   title = "Page not found",

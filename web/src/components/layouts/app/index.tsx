@@ -15,17 +15,14 @@ export function AppLayout() {
   )
 
   const matchRoute = useMatchRoute()
-  // The page editors fill the whole main area (the Puck canvas is the page
-  // itself, not a widget in a container), and the community and profile detail
-  // pages are designed as full-width landing pages with their own compact
-  // headers, so all four drop the global shell sidebar. The detail checks are
-  // fuzzy=false so sub-routes (`/settings`, `/editor`) are not caught by them:
-  // settings is a settings screen and keeps the shell.
+  // The page editor fills the whole main area (the Puck canvas is the page
+  // itself, not a widget in a container) and the page detail view is designed
+  // as a full-width landing page with its own compact header, so both drop the
+  // global shell sidebar. The detail check is fuzzy=false so `/settings` is not
+  // caught by it: settings is a settings screen and keeps the shell.
   const shouldHideSidebar = Boolean(
-    matchRoute({ to: "/communities/$slug/editor", fuzzy: true }) ||
-    matchRoute({ to: "/communities/$slug" }) ||
-    matchRoute({ to: "/u/$slug/editor", fuzzy: true }) ||
-    matchRoute({ to: "/u/$slug" })
+    matchRoute({ to: "/p/$slug/editor", fuzzy: true }) ||
+    matchRoute({ to: "/p/$slug" })
   )
 
   useEffect(() => {

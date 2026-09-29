@@ -1,47 +1,47 @@
 import { useEffect, useMemo, useState } from "react"
+import { PlusIcon } from "lucide-react"
 
 import type { MyNuspaceSearch } from "@/routes/_app/mynuspace"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { qk } from "@/api/query-keys"
-import { fetchUsersPage } from "@/lib/user"
-import type { UserSummary } from "@/lib/user"
-import { UserCard } from "@/components/routes/mynuspace/components/user-card"
-import { USER_CATEGORIES, type UserCategory } from "@/lib/user"
+import { fetchPagesPage } from "@/lib/pages"
+import { PageCard } from "@/components/routes/pages/components/page-card"
+import { PageFormDialog } from "@/components/shared/pages/page-form-dialog"
 import { useDebounced } from "@/hooks/use-debounced"
-import {
-  FilterTabs,
-  SearchFilter,
-  type FilterOption,
-} from "@/components/shared/list-filters"
+import { SearchFilter } from "@/components/shared/list-filters"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
 import { CardGrid, CardGridSkeleton } from "@/components/shared/page/card-grid"
 import { Page as PageLayout } from "@/components/shared/page"
+import { Button } from "@/components/ui/button"
 
 /**
- * The public people directory.
+ * The public pages directory.
  *
- * The communities list with one filter instead of two: a person has no type,
- * but they do have a category, so that is the one row of tabs here. The server
- * already hard-filters to pages that are public, so there is no visibility
- * filter to forget about.
+ * A browse grid and not a table, so `useInfiniteList` + `CardGrid` stay: the
+ * rows are images, and a page of images is a grid. The category and type
+ * filters are gone with the columns they filtered.
  */
 export function Page({
   search,
   onSearchChange,
+  onPageCreated,
 }: {
   search: MyNuspaceSearch
   onSearchChange: (
     updater: (previous: MyNuspaceSearch) => MyNuspaceSearch,
     replace?: boolean
   ) => void
+  onPageCreated: (slug: string) => void
 }) {
-  const { category, q } = search
+  const { q } = search
   const [searchInput, setSearchInput] = useState(q ?? "")
   const debouncedSearch = useDebounced(searchInput)
   // Memoised: a fresh object is a new query key, which restarts the infinite
   // list on every render.
-  const filters = useMemo(() => ({ keyword: q, category }), [category, q])
+  const filters = useMemo(() => ({ keyword: q }), [q])
+
+  const [isCreating, setIsCreating] = useState(false)
 
   const [previousQuery, setPreviousQuery] = useState(q)
   if (previousQuery !== q) {
@@ -60,37 +60,35 @@ export function Page({
   }, [debouncedSearch, onSearchChange])
 
   const list = useInfiniteList({
-    queryKey: qk.users.list(filters),
-    fetchPage: (page) => fetchUsersPage(filters, page),
-    // A user summary has no `id` — `sub` is the identity.
-    getId: (user: UserSummary) => user.sub,
+    queryKey: qk.pages.list(filters),
+    fetchPage: (page) => fetchPagesPage(filters, page),
   })
 
   return (
     <PageLayout
-      title="My Nuspace"
-      description="Find people on campus and see the pages they have published."
+      title="Pages"
+      description="Discover clubs, organizations, and campus groups."
+      actions={
+        // Open to any signed-in user, as on the server: creating a page makes
+        // you its owner, and admins can verify it afterwards.
+        <Button onClick={() => setIsCreating(true)}>
+          <PlusIcon aria-hidden />
+          Create page
+        </Button>
+      }
     >
       <div className="flex flex-wrap items-center gap-2">
         <SearchFilter
           value={searchInput}
           onChange={setSearchInput}
-          placeholder="Search people"
-        />
-        <FilterTabs
-          label="Category"
-          value={category}
-          options={CATEGORY_OPTIONS}
-          onChange={(next) => {
-            onSearchChange((previous) => ({ ...previous, category: next }))
-          }}
+          placeholder="Search pages"
         />
       </div>
 
       <InfiniteList
         items={list.items}
-        getKey={(user) => user.sub}
-        renderItem={(user) => <UserCard user={user} />}
+        getKey={(page) => page.id}
+        renderItem={(page) => <PageCard page={page} />}
         isPending={list.isPending}
         pending={<CardGridSkeleton columns={3} />}
         isError={list.isError}
@@ -105,22 +103,25 @@ export function Page({
         }}
         empty={
           <EmptyState
-            title="No people"
+            title="No pages"
             description={
-              q || category
-                ? "Nobody matches these filters yet."
-                : "Nobody has published a page yet."
+              q
+                ? "Nothing matches this search yet."
+                : "Nobody has created a page yet."
             }
           />
         }
       >
         {(rendered) => <CardGrid columns={3}>{rendered}</CardGrid>}
       </InfiniteList>
+
+      <PageFormDialog
+        open={isCreating}
+        onOpenChange={setIsCreating}
+        onSaved={(page) => {
+          onPageCreated(page.slug)
+        }}
+      />
     </PageLayout>
   )
 }
-
-const CATEGORY_OPTIONS = USER_CATEGORIES.map((value) => ({
-  value,
-  label: value.charAt(0).toUpperCase() + value.slice(1),
-})) satisfies FilterOption<UserCategory>[]

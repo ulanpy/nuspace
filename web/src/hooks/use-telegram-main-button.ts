@@ -26,7 +26,7 @@ interface TelegramWindow extends Window {
   }
 }
 
-/** Mirrors the active legacy community-form integration. */
+/** Mirrors the active legacy page-form integration. */
 export function useTelegramMainButton({
   enabled,
   text,

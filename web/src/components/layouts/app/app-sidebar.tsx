@@ -10,7 +10,6 @@ import {
   MenuIcon,
   PanelLeftIcon,
   UserIcon,
-  UsersIcon,
 } from "lucide-react"
 import type { LinkProps } from "@tanstack/react-router"
 import type { LucideIcon } from "lucide-react"
@@ -52,7 +51,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/events", label: "Events", icon: CalendarIcon },
   { to: "/courses", label: "Courses", icon: BookOpenIcon },
-  { to: "/communities", label: "Communities", icon: UsersIcon },
   { to: "/mynuspace", label: "My Nuspace", icon: UserIcon },
   { to: "/opportunities", label: "Opportunities Digest", icon: BriefcaseIcon },
   { to: "/contacts", label: "Contacts", icon: InfoIcon },
@@ -207,14 +205,14 @@ function AccountCard({
   const user = session.user
   const initial = user.given_name.charAt(0).toUpperCase()
 
-  // The account card opens the settings for this user's own page, which is
-  // where the account name, pictures and visibility live.
+  // The account card opens `/account`, which is where the Telegram connection
+  // and the pages you manage live. It used to point at `/u/$slug/settings`,
+  // which meant knowing your own handle.
   const profileLink = (
     <Link
-      to="/u/$slug/settings"
-      params={{ slug: user.slug }}
+      to="/account"
       onClick={onNavigate}
-      aria-label={collapsed ? `Settings for ${user.name}` : undefined}
+      aria-label={collapsed ? `Account for ${user.name}` : undefined}
       className={cn(
         "flex min-w-0 items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         collapsed && "justify-center px-1"

@@ -51,9 +51,9 @@ export interface MediaPickerProps {
  * `entity_type`/`media_format` the files belong to is the form's business —
  * the old app's 484-line zone welded all three together and then threaded the
  * result through two React contexts, which is why adding a second zone to the
- * community form meant a second provider.
+ * page form meant a second provider.
  *
- * Deletions are *staged*, not performed. Both events and communities take
+ * Deletions are *staged*, not performed. Both events and pages take
  * `media_ids_to_delete` in the PATCH body, so removing an image and editing a
  * field are one request — and a form the user abandons leaves the images alone.
  */

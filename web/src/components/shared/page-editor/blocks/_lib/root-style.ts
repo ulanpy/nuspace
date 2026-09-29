@@ -37,7 +37,7 @@ export function pageRootColors(
 /**
  * Match the app chrome to the page it is showing.
  *
- * Applied to the public profile and community pages so the header does not sit
+ * Applied to the public page so the header does not sit
  * on a white bar above a page the reader chose to be dark. Every derived
  * colour is `color-mix` off the foreground, which is what keeps the muted and
  * border tokens legible without a second palette per page.
