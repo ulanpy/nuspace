@@ -406,12 +406,12 @@ failures. A test that cannot fail is a comment.
 
 ## Phase 2 — Regenerate the client schema
 
-- [ ] 2.1 `cd web && pnpm api:generate`. Commits `web/src/api/schema.d.ts`.
-- [ ] 2.2 `web/src/api/query-keys.ts` — widen the two keys so a filter change
+- [x] 2.1 `cd web && pnpm api:generate`. Commits `web/src/api/schema.d.ts`.
+- [x] 2.2 `web/src/api/query-keys.ts` — widen the two keys so a filter change
       cannot be served from a stale cache. A key that omits a param is the
       subtlest version of this bug: the UI looks broken only for users who
-      navigated in a particular order. - [ ] `:32` → `mine(page, size, role, visibility, sort, order)` - [ ] `:41-42` → `admins(slug, page, size, excludeSub, sort, order)`
-- [ ] 2.3 `cd web && pnpm api:check` must pass.
+      navigated in a particular order. - [x] `:32` → `mine(page, size, role, visibility, sort, order)` - [x] `:41-42` → `admins(slug, page, size, excludeSub, sort, order)`
+- [x] 2.3 `cd web && pnpm api:check` must pass.
 
 ---
 
@@ -765,6 +765,7 @@ Append one line per ticked box. Newest at the bottom.
 | —          | —     | Plan corrected        | Phase 1 was found to reverse `b176a18`, which removed the `role` filter and the `mine` visibility clause two commits earlier. **The user confirmed the reversal is intentional.** Added a "Read this first" section carrying the three historical bugs, and turned 1.8/1.9 from "rewrite these docstrings" into "rewrite but preserve the history in them". Line refs re-verified against the tree: `_list_conditions` `:108`, `mine` branch `:136`, `list_pages` `:151`, `meili` short-circuit `:165-177`, `order_clause` `:190-194`, order chain `:206-211`, `list_admins_page` `:241`.                                                                                                                                                                                                                                                                                                                                                              |
 | 2026-09-30 | 0     | Pre-flight            | `web/PROGRESS.md` Phase 4 **fully ticked** — no race. Phases 5/6/7 open and staying open (docs / prod push / deferred). Baseline commit `fea3b84`. Four pre-existing reds fixed, all detailed above: the `fastapi` container had not booted in two days (`openai` missing from the stale `fastapi-venv` volume, so `api:check` was unrunnable), `schema.d.ts` 434 lines behind on the `agent` module, ruff 16 not 11 (the extra 5 in `modules/pages/`), and black red on two more pages files. **Green now: backend 209 tests, ruff 11, black ✓. Web 83 tests, typecheck ✓, build ✓, lint 9 = baseline, `api:check` ✓.** Note `pnpm api:check` runs on the host here, so `OPENAPI_URL=http://localhost/api/openapi.json`; the file's `http://nginx/…` advice only applies from inside the `web` container.                                                                                                                                             |
 | 2026-09-30 | 1     | Backend role/vis/sort | `df94076`. Reverses `b176a18`'s `role` removal. `role=admin` is `administered AND NOT owned`, via `is_distinct_from` not `!=` (nullable `pages.owner` — `!=` would hide an ownerless page you administer). `PageRole`/`PageSort`/`PageAdminSort` enums, so FastAPI 422s an unknown value and the whitelist dict is keyed by the same members. `sort=None` leaves the order chain byte-for-byte; an explicit sort replaces it whole, owner-first prefix dropped, `pages.id` tiebreaker added. The two chains are now classmethods (`_page_order_clauses`, `_admin_order_clauses`) so the tests call the real query like `_where` does. Three docstrings rewritten **with** their history, not deleted. Meilisearch silent-ignore commented at both ends. No `role`/`visibility` on the admins endpoint. **237 backend tests (was 209), ruff 11 = baseline, black ✓.** Disjointness confirmed red twice: `!=` → 3 failures, clause deleted → 4 failures. |
+| 2026-09-30 | 2     | Schema + query keys    | `e8966b4`. `api:generate` → `schema.d.ts` +84: the `PageRole`/`PageSort`/`PageAdminSort` enums, the `visibility` array param and `sort`/`order` on both endpoints. `api:check` ✓. `qk.pages.mine` and `qk.pages.admins` now take a **filter object** carrying every param (`page`, `size`, `role`, `visibility`, `sort`, `order`) rather than positional args — the file's own `pages.list`/`events.list` precedent, since five positional args stop being readable. `page` stays *outside* the object on purpose, so `invalidateQueries(qk.pages.all())` still clears every page while one page stays individually refetchable. Both call sites updated; no behaviour change yet. 83 web tests, typecheck ✓, lint 9 = baseline. |
 
 ## Open questions
 
