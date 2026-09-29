@@ -264,66 +264,66 @@ The gate for everything else. Do not start the web work until this is green.
 The `role=admin` disjointness test (1.15) is the first thing to write, not the
 last.
 
-- [ ] 1.1 `backend/modules/pages/api.py:69-89` (`get_my_pages`) — add
+- [x] 1.1 `backend/modules/pages/api.py:69-89` (`get_my_pages`) — add
       `role: Literal["owner", "admin"] | None = None`,
       `visibility: list[PageVisibility] | None = None`,
       `sort: str | None = None`, `order: Literal["asc", "desc"] = "desc"`.
       Forward all four to the service. Match the existing param style in the
       file (`size: int = Query(20, ge=1, le=100)` — note `size` already allows
       100, so the 10–50 range needs **no** backend change).
-- [ ] 1.2 `backend/modules/pages/api.py:179-` (`get_page_admins`) — add
+- [x] 1.2 `backend/modules/pages/api.py:179-` (`get_page_admins`) — add
       `sort` / `order` only. **No** `role`, and **no** `visibility`: the owner is
       not in the admins list at all, so "owner vs admin" is a column there, not
       a filter.
-- [ ] 1.3 `backend/modules/pages/service.py:205-` (`list_my_pages`) — accept and
+- [x] 1.3 `backend/modules/pages/service.py:205-` (`list_my_pages`) — accept and
       forward the new kwargs. **Rewrite the docstring at `:221-228`**, which
       currently argues at length that there is deliberately no `role` filter.
-- [ ] 1.4 `backend/modules/pages/service.py:450-` (`list_admins`) — accept and
+- [x] 1.4 `backend/modules/pages/service.py:450-` (`list_admins`) — accept and
       forward `sort` / `order`.
-- [ ] 1.5 `backend/modules/pages/repository.py:108-` (`_list_conditions`) — add
+- [x] 1.5 `backend/modules/pages/repository.py:108-` (`_list_conditions`) — add
       the two filters to the `scope == "mine"` branch **only**, as separate
       `AND` conditions appended to the returned list. Never fold them into the
       `or_()`. Visibility and role combine with AND, so
       `?role=admin&visibility=private` is an intersection.
-- [ ] 1.6 The count query at `:216-219` reuses `*conditions`, so totals and
+- [x] 1.6 The count query at `:216-219` reuses `*conditions`, so totals and
       `has_next` come out correct for free. **Do not add a second where-clause**
       and do not "fix" the count separately.
-- [ ] 1.7 **`role=admin` is disjoint**: administered-by-me **AND NOT**
+- [x] 1.7 **`role=admin` is disjoint**: administered-by-me **AND NOT**
       owner-is-me. See the callout above. Without the `NOT owner`, a page you own
       *and* administer appears under both Role options — the exact bug
       `b176a18` was written to end, and the one most likely to come back.
-- [ ] 1.8 **Rewrite the `_list_conditions` docstring at `:118-134`.** It says
+- [x] 1.8 **Rewrite the `_list_conditions` docstring at `:118-134`.** It says
       "`mine` has no visibility filter at all" and explains the old leak. Both
       become false. **Preserve the history**: the replacement must still explain
       why a `role` filter is dangerous here and what specifically went wrong,
       because the new filter is the thing that docstring warns about. A reader
       who only sees the new text should come away knowing the constraint (1.7),
       not concluding the filter is safe to widen.
-- [ ] 1.9 **Rewrite the `api.py:84-88` docstring** for the same reason. That is
+- [x] 1.9 **Rewrite the `api.py:84-88` docstring** for the same reason. That is
       the second of the three; the third is 1.3. Same instruction: replace the
       "No `role` parameter" paragraph, do not just delete it.
-- [ ] 1.10 `repository.py:151-` (`list_pages`) — `sort` is **`None` by default
+- [x] 1.10 `repository.py:151-` (`list_pages`) — `sort` is **`None` by default
       and the existing order chain is then left completely untouched**:
       `owner-first DESC, has_media DESC, name ASC` (`:206-211`). Defaulting
       `sort` to `created_at` would silently reorder the list people see today,
       with no diff to show for it. When `sort` *is* given it replaces the whole
       chain, including dropping the owner-first prefix — prefixing it would make
       "sort by name" owner-grouped, which is not a name sort.
-- [ ] 1.11 Sort columns go through a **whitelist dict**, never an interpolated
+- [x] 1.11 Sort columns go through a **whitelist dict**, never an interpolated
       column name — the same discipline as the existing keyword
       `order_clause` at `:189-194`. Pages: `name`, `created_at`, `visibility`.
       Unknown value → 422.
-- [ ] 1.12 `repository.py:241-` (`list_admins_page`) — same treatment. Keep
+- [x] 1.12 `repository.py:241-` (`list_admins_page`) — same treatment. Keep
       `PageAdmin.user_sub.asc()` as the final tiebreaker; the comment there
       explains that `created_at` alone is not a stable sort and offset paging
       over a non-deterministic order drops and repeats rows across page
       boundaries.
-- [ ] 1.13 Document the visibility sort order. `models/page.py:23-` declares
+- [x] 1.13 Document the visibility sort order. `models/page.py:23-` declares
       the enum `private, internal, public` and `:42` stores it as `SQLEnum`, so
       `ORDER BY visibility` ascending is **narrowest → broadest**, not
       alphabetical. That is a useful ladder; note it so nobody "fixes" it into
       `public` first.
-- [ ] 1.14 **The Meilisearch trap.** `repository.py:165-177` short-circuits to
+- [x] 1.14 **The Meilisearch trap.** `repository.py:165-177` short-circuits to
       Meilisearch whenever `keyword` is set, with `filters=None` (`:172`) and a
       relevance `case()` for ordering (`:190-194`). So `sort` and `visibility`
       are **silently ignored on the keyword path** — no error, just wrong
@@ -333,20 +333,80 @@ last.
       need index facet config in `search_indexes.py` plus a reindex.
       Silently-ignored params are how you get a bug report that says "the sort
       button does nothing".
-- [ ] 1.15 Tests in `backend/modules/pages/tests/`:
-      - [ ] `test_list_pages.py` — `role=owner` excludes administered-not-owned
+- [x] 1.15 Tests in `backend/modules/pages/tests/`:
+      - [x] `test_list_pages.py` — `role=owner` excludes administered-not-owned
             and vice versa; a page owned *and* administered appears under
             `owner` only, never under `admin`.
-      - [ ] `test_list_pages.py` — `visibility` narrows, and combines with `role`
+      - [x] `test_list_pages.py` — `visibility` narrows, and combines with `role`
             by AND.
-      - [ ] `test_list_pages.py` — each sort column, both orders; `sort` absent
+      - [x] `test_list_pages.py` — each sort column, both orders; `sort` absent
             preserves the existing chain exactly.
-      - [ ] `test_list_pages.py` — an unknown `sort` value is rejected.
-      - [ ] `test_list_admins_pagination.py` — `sort=name` stays stable across a
+      - [x] `test_list_pages.py` — an unknown `sort` value is rejected.
+      - [x] `test_list_admins_pagination.py` — `sort=name` stays stable across a
             page boundary (the tiebreaker concern the existing tests already
             cover for `created_at`).
-      - [ ] `test_page_visibility.py` — the new `visibility` filter does not
+      - [x] `test_page_visibility.py` — the new `visibility` filter does not
             change the `browsable` scope.
+
+---
+
+### Phase 1 — what reality added
+
+**1. The sort whitelist is an enum, not a string plus a dict.** The plan asked
+for a whitelist dict and a 422 on an unknown value, which is two mechanisms.
+`PageSort` / `PageAdminSort` are `PyEnum`s, so FastAPI rejects an unknown value
+with a 422 before the repository sees it, the OpenAPI doc lists the valid ones,
+and `_PAGE_SORT_COLUMNS` is keyed by the same members — so the accepted value
+and the ordered column cannot drift apart.
+`test_the_whitelist_covers_exactly_the_accepted_values` pins the two halves.
+The alternative is a dict lookup raising `KeyError` inside a coroutine, which
+surfaces as an unhandled 500 rather than the 422 the caller was promised.
+Verified live: `?sort=nonsense`, `?role=nonsense` and `?visibility=nonsense` on
+`/pages/mine` all return 422.
+
+**2. `!=` was the wrong operator and would have shipped a silent hole.**
+`pages.owner` is nullable (`ON DELETE SET NULL`), and `owner != me` is NULL for
+an ownerless page — and NULL is not true — so plain `!=` would hide a page the
+caller genuinely *administers* from `Where I'm an admin`. `IS DISTINCT FROM`
+says "not you" for NULL, which is what "NOT owned by me" means. Caught while
+writing the test, not by a bug report; it is the reason the clause is a
+documented `is_distinct_from` and not a `!=`.
+
+**3. The order chains became methods, and that was not in the plan.** 1.15
+asked for "each sort column, both orders; `sort` absent preserves the existing
+chain exactly" — which is untestable while the chains are inline in
+`list_pages` and `list_admins_page`. `_page_order_clauses` and
+`_admin_order_clauses` now exist as classmethods, exactly like
+`_list_conditions`, and the tests call the real thing. The first draft of the
+admins sort test re-implemented the chain — **the one mistake this file's
+docstring exists to prevent**, written into the file whose whole argument is
+"a test that restates the query proves a copy matched a copy". Caught on
+re-read, rewritten to call the method.
+
+**4. A `pages.id` tiebreaker on the sorted path.** 1.12 insists on
+`PageAdmin.user_sub` as a tiebreaker for offset paging over a
+non-deterministic order. The same argument applies to `name` and `created_at`
+on the pages list, and an explicit `sort` is a *new* order chain, so the hole
+would be one this phase introduced. `Page.id ASC` last, `sort is None` only.
+
+**5. `test_page_visibility.py` needed a SQLAlchemy trap fixed.** The obvious
+assertion — `_list_conditions(..., visibility=x) == _list_conditions(...)` —
+is silently wrong: on a SQLAlchemy clause `==` **builds a comparison
+expression**, so two identical WHEREs report themselves unequal and two
+different ones build a query nobody runs. It fails, so it is not dangerous, but
+the reason is not obvious. Compiled with `literal_binds` and compared as text,
+like `_where` does. Same trap applies to the `_ADMIN_SORT_COLUMNS` comparison I
+first wrote in the admins test.
+
+Gate: **237 backend tests** (was 209 — 28 new), ruff **11** = baseline, black
+clean. Live: `/pages/mine` advertises `role`, `visibility`, `sort`, `order`;
+`/pages/{slug}/admins` advertises `sort`, `order` and deliberately not the
+other two.
+
+**The disjointness tests are confirmed red**, not just green. Three
+experiments, each reverting after: `!=` instead of `is_distinct_from` → 3
+failures; the `NOT owner` clause deleted outright (i.e. `b176a18`'s bug) → 4
+failures. A test that cannot fail is a comment.
 
 ---
 
@@ -714,6 +774,7 @@ Append one line per ticked box. Newest at the bottom.
 | —          | —     | Plan written            | `web/PROGRESS-datatable.md` created. No code changed yet. Sibling of `web/PROGRESS.md`, which is live and untouched.                                                                                                                                                                                                                                                                                                       |
 | —          | —     | Plan corrected          | Phase 1 was found to reverse `b176a18`, which removed the `role` filter and the `mine` visibility clause two commits earlier. **The user confirmed the reversal is intentional.** Added a "Read this first" section carrying the three historical bugs, and turned 1.8/1.9 from "rewrite these docstrings" into "rewrite but preserve the history in them". Line refs re-verified against the tree: `_list_conditions` `:108`, `mine` branch `:136`, `list_pages` `:151`, `meili` short-circuit `:165-177`, `order_clause` `:190-194`, order chain `:206-211`, `list_admins_page` `:241`.   |
 | 2026-09-30 | 0     | Pre-flight              | `web/PROGRESS.md` Phase 4 **fully ticked** — no race. Phases 5/6/7 open and staying open (docs / prod push / deferred). Baseline commit `fea3b84`. Four pre-existing reds fixed, all detailed above: the `fastapi` container had not booted in two days (`openai` missing from the stale `fastapi-venv` volume, so `api:check` was unrunnable), `schema.d.ts` 434 lines behind on the `agent` module, ruff 16 not 11 (the extra 5 in `modules/pages/`), and black red on two more pages files. **Green now: backend 209 tests, ruff 11, black ✓. Web 83 tests, typecheck ✓, build ✓, lint 9 = baseline, `api:check` ✓.** Note `pnpm api:check` runs on the host here, so `OPENAPI_URL=http://localhost/api/openapi.json`; the file's `http://nginx/…` advice only applies from inside the `web` container. |
+| 2026-09-30 | 1     | Backend role/vis/sort   | `df94076`. Reverses `b176a18`'s `role` removal. `role=admin` is `administered AND NOT owned`, via `is_distinct_from` not `!=` (nullable `pages.owner` — `!=` would hide an ownerless page you administer). `PageRole`/`PageSort`/`PageAdminSort` enums, so FastAPI 422s an unknown value and the whitelist dict is keyed by the same members. `sort=None` leaves the order chain byte-for-byte; an explicit sort replaces it whole, owner-first prefix dropped, `pages.id` tiebreaker added. The two chains are now classmethods (`_page_order_clauses`, `_admin_order_clauses`) so the tests call the real query like `_where` does. Three docstrings rewritten **with** their history, not deleted. Meilisearch silent-ignore commented at both ends. No `role`/`visibility` on the admins endpoint. **237 backend tests (was 209), ruff 11 = baseline, black ✓.** Disjointness confirmed red twice: `!=` → 3 failures, clause deleted → 4 failures. |
 
 ## Open questions
 
