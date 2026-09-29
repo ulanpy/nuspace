@@ -417,29 +417,73 @@ failures. A test that cannot fail is a comment.
 
 ## Phase 3 — The DataTable layer
 
-- [ ] 3.1 `cd web && pnpm add @tanstack/react-table`
-- [ ] 3.2 `cd web && pnpm exec shadcn add table` → generates
+- [x] 3.1 `cd web && pnpm add @tanstack/react-table` — **pinned to `^8`
+      (8.21.3), not latest.** 3.3–3.5 name v8's API (`useReactTable`,
+      `manualPagination`, `manualSorting`, `getRowId`, `flexRender`), and v9
+      is a rewrite around `useTable` + feature flags. See findings below.
+- [x] 3.2 `cd web && pnpm exec shadcn add table` → generates
       `web/src/components/ui/table.tsx`. **Do not hand-edit it.** `components.json`
       pins `"style": "base-nova"` and Base UI, so it will match its siblings.
-- [ ] 3.3 `web/src/hooks/use-data-table.ts` — **in `hooks/`, not
+- [x] 3.3 `web/src/hooks/use-data-table.ts` — **in `hooks/`, not
       `components/shared/data-table/`** (see House rules). `manualPagination` +
       `manualSorting` over the current page of rows; `getRowId` supplied by the
       caller. **No row filtering** — that is the backend's job now, and
       duplicating it client-side is how the two drift.
-- [ ] 3.4 `web/src/components/shared/data-table/data-table.tsx` —
+- [x] 3.4 `web/src/components/shared/data-table/data-table.tsx` —
       `DataTable` (`Table` / `TableHeader` / `TableBody` / `TableRow` /
       `TableCell` + an empty row) and `DataTableSkeleton`.
-- [ ] 3.5 `web/src/components/shared/data-table/data-table-column-header.tsx` —
+- [x] 3.5 `web/src/components/shared/data-table/data-table-column-header.tsx` —
       sortable header button on `column.getToggleSortingHandler()`.
-- [ ] 3.6 `web/src/components/shared/data-table/data-table-toolbar.tsx` — a slot
+- [x] 3.6 `web/src/components/shared/data-table/data-table-toolbar.tsx` — a slot
       row for the filters plus the selection-action bar.
-- [ ] 3.7 `web/src/components/shared/table/pagination.tsx` — **extend, do not
+- [x] 3.7 `web/src/components/shared/table/pagination.tsx` — **extend, do not
       replace.** Add `pageSize` + `onPageSizeChange` and a `Select` of
       10/20/30/40/50 next to the existing chevrons. `pageRangeSummary` and
       `page-range.test.ts` are untouched.
-- [ ] 3.8 **Skipped on purpose:** `DataTableSortList`. The header chevron already
+- [x] 3.8 **Skipped on purpose:** `DataTableSortList`. The header chevron already
       shows the one active sort, and the backend has exactly one sort key. The
       chip row would be ink for a capability that does not exist.
+
+### Phase 3 — what reality added
+
+**`pnpm add @tanstack/react-table` installs 9.2.4, and 3.3 does not compile
+against it.** Box 3.1 as written says "latest", but every API name the rest of
+this phase names is v8's. v9 renamed the hook (`useTable`, not `useReactTable`),
+made the feature set a type parameter (`TFeatures extends TableFeatures`),
+replaced `flexRender(...)` calls with a `<table.FlexRender />` component, and
+moved row/column accessors. `ColumnDef` no longer satisfies the data generic on
+its own. Keeping 9.x would mean rewriting 3.3, 3.4 and 3.5 — i.e. re-litigating
+a decision this file says is settled — so the dependency is pinned `^8`.
+
+**`DataTableColumnHeader` does not carry `aria-sort`, and that is deliberate.**
+`aria-sort` belongs to the `columnheader` role, which is the `<th>`, not the
+button inside it. `DataTable` sets it on `TableHead` from
+`column.getIsSorted()`. The three states are genuinely different values
+(`false` / `"asc"` / `"desc"`), so they are mapped rather than collapsed into
+one truthy check.
+
+**Two new lint errors had to be scoped out in `vite.config.ts`, not suppressed
+inline.** The repo has no disable comments, and its precedent for this is a
+scoped `overrides` block with a comment:
+
+1. `shadcn add table` emits `[&:has([role=checkbox])]:pr-0`, which trips
+   `better-tailwindcss/enforce-canonical-classes` (an `error` on all of
+   `src/**`). 3.2 says the generated file is not to be hand-edited, and
+   canonicalising it would just have the next `shadcn add` reintroduce the
+   error — so the rule joins the two the `ui/**` block already switches off.
+2. `react/incompatible-library` fires on `useReactTable`, which returns
+   unmemoizable functions. React Compiler is not enabled in `build` and nothing
+   memoizes the table, so there is no stale-UI path open today. Scoped to the
+   hook and `shared/data-table/`.
+
+**No test was added, and none should be — yet.** Every existing web test is a
+pure-function test (`page-range.test.ts`, `template.test.ts`, `sanitize.test.ts`,
+`root-style.test.ts`); there is no DOM, no jsdom and no testing-library, so
+rendering is deliberately untested in this repo. Phase 3 adds no pure function,
+so there is nothing to assert on that conforms to the convention. The first
+genuine test lands in Phase 5/6, where the route's `sort`/`order` params have to
+become a react-table `SortingState` — that mapping is the piece worth pinning
+down, and it will have to be a pure function to be testable at all.
 
 ---
 
@@ -765,7 +809,9 @@ Append one line per ticked box. Newest at the bottom.
 | —          | —     | Plan corrected        | Phase 1 was found to reverse `b176a18`, which removed the `role` filter and the `mine` visibility clause two commits earlier. **The user confirmed the reversal is intentional.** Added a "Read this first" section carrying the three historical bugs, and turned 1.8/1.9 from "rewrite these docstrings" into "rewrite but preserve the history in them". Line refs re-verified against the tree: `_list_conditions` `:108`, `mine` branch `:136`, `list_pages` `:151`, `meili` short-circuit `:165-177`, `order_clause` `:190-194`, order chain `:206-211`, `list_admins_page` `:241`.                                                                                                                                                                                                                                                                                                                                                              |
 | 2026-09-30 | 0     | Pre-flight            | `web/PROGRESS.md` Phase 4 **fully ticked** — no race. Phases 5/6/7 open and staying open (docs / prod push / deferred). Baseline commit `fea3b84`. Four pre-existing reds fixed, all detailed above: the `fastapi` container had not booted in two days (`openai` missing from the stale `fastapi-venv` volume, so `api:check` was unrunnable), `schema.d.ts` 434 lines behind on the `agent` module, ruff 16 not 11 (the extra 5 in `modules/pages/`), and black red on two more pages files. **Green now: backend 209 tests, ruff 11, black ✓. Web 83 tests, typecheck ✓, build ✓, lint 9 = baseline, `api:check` ✓.** Note `pnpm api:check` runs on the host here, so `OPENAPI_URL=http://localhost/api/openapi.json`; the file's `http://nginx/…` advice only applies from inside the `web` container.                                                                                                                                             |
 | 2026-09-30 | 1     | Backend role/vis/sort | `df94076`. Reverses `b176a18`'s `role` removal. `role=admin` is `administered AND NOT owned`, via `is_distinct_from` not `!=` (nullable `pages.owner` — `!=` would hide an ownerless page you administer). `PageRole`/`PageSort`/`PageAdminSort` enums, so FastAPI 422s an unknown value and the whitelist dict is keyed by the same members. `sort=None` leaves the order chain byte-for-byte; an explicit sort replaces it whole, owner-first prefix dropped, `pages.id` tiebreaker added. The two chains are now classmethods (`_page_order_clauses`, `_admin_order_clauses`) so the tests call the real query like `_where` does. Three docstrings rewritten **with** their history, not deleted. Meilisearch silent-ignore commented at both ends. No `role`/`visibility` on the admins endpoint. **237 backend tests (was 209), ruff 11 = baseline, black ✓.** Disjointness confirmed red twice: `!=` → 3 failures, clause deleted → 4 failures. |
-| 2026-09-30 | 2     | Schema + query keys    | `e8966b4`. `api:generate` → `schema.d.ts` +84: the `PageRole`/`PageSort`/`PageAdminSort` enums, the `visibility` array param and `sort`/`order` on both endpoints. `api:check` ✓. `qk.pages.mine` and `qk.pages.admins` now take a **filter object** carrying every param (`page`, `size`, `role`, `visibility`, `sort`, `order`) rather than positional args — the file's own `pages.list`/`events.list` precedent, since five positional args stop being readable. `page` stays *outside* the object on purpose, so `invalidateQueries(qk.pages.all())` still clears every page while one page stays individually refetchable. Both call sites updated; no behaviour change yet. 83 web tests, typecheck ✓, lint 9 = baseline. |
+| 2026-09-30 | 2     | Schema + query keys    | `e8966b4`. `api:generate` → `schema.d.ts` +84: the `PageRole`/`PageSort`/`PageAdminSort` enums, the `visibility` array param and `sort`/`order` on both endpoints. `api:check` ✓. `qk.pages.mine` and `qk.pages.admins` now take a **filter object** carrying every param (`page`, `size`, `role`, `visibility`, `sort`, `order`) rather than positional args — the file's own `pages.list`/`events.list` precedent, since five positional args stop being readable. `page` is inside that object, not beside it; `invalidateQueries(qk.pages.all())` still clears every page, since `all()` is the `["pages"]` prefix and never reads the filters. (Correction made in Phase 3: the log and a comment in `query-keys.ts` originally said `page` stayed *outside* the object. The code always had it inside; the comment was the thing that was wrong.) Both call sites updated; no behaviour change yet. 83 web tests, typecheck ✓, lint 9 = baseline. |
+
+| 2026-09-30 | 3     | DataTable layer        | Pinned `@tanstack/react-table` to **8.21.3**, not the 9.2.4 that `pnpm add` gives: 3.3–3.5 name v8's API and v9 is a `useTable` + feature-flag rewrite. `useDataTable` wraps the only `useReactTable` call in the app — `manualPagination` + `manualSorting`, `getRowId` from the caller, sorting passed in from the URL rather than synced by the hook, and deliberately no `getFilteredRowModel` so the browser cannot re-filter rows the server already filtered. `DataTable` (empty row, `colSpan`, `toolbar` slot) + `DataTableSkeleton`; `DataTableColumnHeader` gates on `column.getCanSort()` so a non-sortable column is plain text with no dead chevron; `aria-sort` lives on the `TableHead`, because that is the `columnheader` role and not the button. `DataTableToolbar` **omits** the `table` argument shadcn's version takes — the component that fetched the rows is the only one that can invalidate them, so a toolbar that could see the table could be tempted to act on rows it cannot refetch. 3.7 extended `TablePagination` in place: `pageSize` + `onPageSizeChange` + a `Select`, both optional, and the **options come from the caller** rather than a literal `10/20/30/40/50` in the component, because the allowed sizes are a route's own `validateSearch` rule and a second copy of it is a second thing to forget. Two lint rules scoped off in `vite.config.ts` (details in the Phase 3 findings): the generated `ui/table.tsx` trips `enforce-canonical-classes` and 3.2 says not to hand-edit it, and `useReactTable` trips `react/incompatible-library` with the compiler off and nothing memoizing the table. No test added: this repo has no DOM or testing-library and all four existing web tests are pure functions, so Phase 3 has nothing assertable under that convention. **Web: 83 tests ✓, typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline.** Also corrected the Phase 2 log and a `query-keys.ts` comment that claimed `page` sat outside the filter object. |
 
 ## Open questions
 

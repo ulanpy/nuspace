@@ -6,6 +6,13 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export interface TablePaginationProps {
   /** 1-based, from the URL rather than component state. */
@@ -18,6 +25,19 @@ export interface TablePaginationProps {
   /** Greyed out while a page is still in flight, so pages cannot be skipped. */
   disabled?: boolean
   onPageChange: (page: number) => void
+  /**
+   * Rows per page, and the change handler. Both omitted on a table that does
+   * not offer the choice.
+   *
+   * The allowed values are not here: they come from the route's own
+   * `validateSearch` and its `constants.ts`, and this component is handed
+   * whatever that route accepts. A literal list in a component is a second
+   * source of truth for a validation rule the server already enforces, and the
+   * two drift the first time a route adds a size.
+   */
+  pageSize?: number
+  pageSizeOptions?: readonly number[]
+  onPageSizeChange?: (size: number) => void
 }
 
 /**
@@ -36,6 +56,9 @@ export function TablePagination({
   isFetching,
   disabled = false,
   onPageChange,
+  pageSize,
+  pageSizeOptions,
+  onPageSizeChange,
 }: TablePaginationProps) {
   const isFirst = page <= 1
   const isLast = !hasNext
@@ -48,6 +71,33 @@ export function TablePagination({
       </p>
 
       <div className="flex w-full items-center justify-center gap-4 sm:w-fit sm:justify-end">
+        {pageSizeOptions && onPageSizeChange ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Rows</span>
+            <Select
+              // The URL owns the size, so a reload or a shared link keeps it.
+              // Keyed on the value so a change re-renders Base UI's label.
+              value={String(pageSize)}
+              onValueChange={(next) => onPageSizeChange(Number(next))}
+            >
+              <SelectTrigger
+                size="sm"
+                className="w-20"
+                aria-label="Rows per page"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((option) => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
+
         <span className="text-sm font-medium">
           Page {page} of {totalPages}
         </span>
