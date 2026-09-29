@@ -5,11 +5,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  isVisibility,
-  VISIBILITIES,
-  type PageVisibilityValue,
-} from "./visibilities"
+import { PAGE_VISIBILITIES } from "@/lib/pages/constants"
+import type { PageVisibilityValue } from "@/lib/pages/types"
+import { isVisibility } from "./visibilities"
 
 /**
  * The visibility dropdown, shared by the create dialog and the settings page.
@@ -56,7 +54,7 @@ export function VisibilityPicker({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {VISIBILITIES.map((option) => (
+        {PAGE_VISIBILITIES.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.title}
           </SelectItem>

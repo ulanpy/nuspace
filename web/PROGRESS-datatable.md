@@ -493,23 +493,23 @@ Replaces `item.owner === me.sub` (`my-pages.tsx:112`),
 `page.owner_user?.sub === me.sub` (`admin-controls/index.tsx:24`) and the
 `pinnedSelf` inference (`admin-controls/index.tsx:33-34`).
 
-- [ ] 4.1 `web/src/lib/pages/types.ts` — add `PageOwnership = "owner" | "admin"`,
+- [x] 4.1 `web/src/lib/pages/types.ts` — add `PageOwnership = "owner" | "admin"`,
       and **derive** `PageVisibilityValue` from
       `components["schemas"]["PageVisibility"]` instead of the hand-written union
       at `shared/pages/visibilities.ts:1`.
-- [ ] 4.2 `web/src/lib/pages/constants.ts` — `PAGE_OWNERSHIP` label map,
+- [x] 4.2 `web/src/lib/pages/constants.ts` — `PAGE_OWNERSHIP` label map,
       `PAGE_OWNERSHIP_FILTERS` (all / owner / admin), `PAGE_VISIBILITIES` as a
       `as const` tuple, `PAGE_VISIBILITY_FILTERS`, `PAGE_SIZES = [10,20,30,40,50]`,
       `DEFAULT_PAGE_SIZE = 10`. The tuple is the runtime list the zod enum needs;
       the _type_ still derives from the generated schema per
       `CONVENTIONS.md:218-219`. This is the third place visibility values appear
       (see 8.12) and must be the last.
-- [ ] 4.3 `web/src/lib/pages/functions.ts` — `pageOwnership(page, meSub)`: the
+- [x] 4.3 `web/src/lib/pages/functions.ts` — `pageOwnership(page, meSub)`: the
       only place the FK `page.owner` is compared. **Never `owner_user.sub`** —
       `backend/modules/pages/policy.py:26-28` carries its own comment saying the
       relationship is `None` on an ownerless page and that it runs on every read.
-- [ ] 4.4 Same file — `ownershipLabel(o)`.
-- [ ] 4.5 Same file — `myPagesQueryOptions({...})` and
+- [x] 4.4 Same file — `ownershipLabel(o)`.
+- [x] 4.5 Same file — `myPagesQueryOptions({...})` and
       `pageAdminsQueryOptions({...})`, colocated with their fetches the way
       `pageDetailQueryOptions` (`:61-66`) already is. The two components
       currently build query options inline, so the param lists live in two
@@ -519,20 +519,67 @@ Replaces `item.owner === me.sub` (`my-pages.tsx:112`),
       `owner_sub=me`." It is being re-added here for a different reason — it
       now carries the real filter/sort params rather than a third ownership
       encoding. Do not resurrect `owner_sub`. If it still has no callers after
-      Phase 5, delete it again rather than leaving it dead.
-- [ ] 4.6 `web/src/components/shared/pages/visibilities.ts` — keep only the human
+      Phase 5, delete it again rather than leaving it dead. **Both are called in
+      5.5 and 6.4, which rewrite the two components — at this commit they have
+      no caller, so the instruction above is a live check and not a formality.**
+- [x] 4.6 `web/src/components/shared/pages/visibilities.ts` — keep only the human
       copy and its helpers. Add `visibilityLabel(value)`, so both tables' cells
       read the same way.
-- [ ] 4.7 `web/src/lib/pages/functions.ts:243` — **the comment is factually
+- [x] 4.7 `web/src/lib/pages/functions.ts:243` — **the comment is factually
       wrong.** It says "Admin only, per `PagePolicy` — the owner cannot delete
       their own club." `policy.py`'s DELETE branch and `utils.py:30-32` both grant
       the owner `can_delete`. Delete the comment. Do not change the behaviour —
       the behaviour is right and the comment is wrong.
-- [ ] 4.8 `web/src/lib/pages/tests.ts` — truth table for `pageOwnership`
+- [x] 4.8 `web/src/lib/pages/tests.ts` — truth table for `pageOwnership`
       alongside the existing `adminPageActions` one: FK match, FK `null` on an
       ownerless page, and a case where `owner_user.sub` disagrees with `owner` to
       prove the FK is what gets read. That last case is the regression test for
       the whole reason this helper exists.
+
+### Phase 4 — what reality added
+
+**`pageOwnership` cannot answer "does this viewer administer the page", and the
+docstring says so.** `ResourcePermissions` has no is-admin flag, and
+`can_manage_admins` is not a substitute: `utils.py:21-28` grants it to site
+admins alongside `can_edit`, which is exactly why `admin-controls/index.tsx` had
+to write the `pinnedSelf` inference as `can_edit && !can_manage_admins` — two
+terms because one term is ambiguous. So the function is written the only way it
+can be: FK match is `"owner"`, everything else is `"admin"`, and that is correct
+**only for a list the server already filtered** to the pages you own or
+administer. `/pages/mine` is the only such list, and 4.8 pins the boundary with
+a test. Anyone reaching for this to ask a general question is about to rebuild
+`pinnedSelf` under a new name.
+
+**`PageOwnership` is `PageRole`, not a third type.** Box 4.1 says
+`"owner" | "admin"` and the generated `PageRole` is exactly those two, so
+`PageOwnership` is a derived alias rather than a retyped union. There is no
+`"none"` case: a page you have no relationship with never appears in
+`/pages/mine`, and a value the function cannot produce is a branch nobody
+tests.
+
+**`order` has no schema name, so `PageOrder` reads it back off the operation.**
+`schema.d.ts` types `/pages/mine`'s `order` as a bare `"asc" | "desc"` inline in
+the operation, with no `PageOrder` component to import. A hand-written union
+here would be a second copy of a direction list, and the copy that survives a
+backend that adds a third. `MyPagesQuery` pulls the whole query bag off
+`operations["get_my_pages_pages_mine_get"]` instead, so a new query param
+arrives as a type error rather than as a silently dropped argument.
+
+**4.6's move had three call sites to repoint, not one.** `visibilities.ts` no
+longer exports `VISIBILITIES` or the type, so `visibility-picker.tsx` and
+`settings/general/index.tsx` now import the list from `lib/pages/constants` and
+the type from `lib/pages/types`. This is the third and last place visibility
+values live, as 4.2 requires.
+
+**The test fixture is a full `PageResponse`, not a cast.** The first version was
+`{ owner, owner_user } as unknown as Page`, which is the sort of cast that
+`typescript(no-unsafe-type-assertion)`:warn is aimed at — and it would have kept
+passing if a field `pageOwnership` reads were renamed in the regenerated
+`schema.d.ts`. Nine required fields later, the fixture is type-checked against
+the real schema and cannot drift. Two schema details cost a retry: `owner_user`
+is `ShortUserResponse | null` whose `picture` is a **required `string`**, not
+`string | null`, and `permissions.editable_fields` is a mutable `string[]` so an
+`as const` shared object does not fit.
 
 ---
 
@@ -812,6 +859,8 @@ Append one line per ticked box. Newest at the bottom.
 | 2026-09-30 | 2     | Schema + query keys    | `e8966b4`. `api:generate` → `schema.d.ts` +84: the `PageRole`/`PageSort`/`PageAdminSort` enums, the `visibility` array param and `sort`/`order` on both endpoints. `api:check` ✓. `qk.pages.mine` and `qk.pages.admins` now take a **filter object** carrying every param (`page`, `size`, `role`, `visibility`, `sort`, `order`) rather than positional args — the file's own `pages.list`/`events.list` precedent, since five positional args stop being readable. `page` is inside that object, not beside it; `invalidateQueries(qk.pages.all())` still clears every page, since `all()` is the `["pages"]` prefix and never reads the filters. (Correction made in Phase 3: the log and a comment in `query-keys.ts` originally said `page` stayed *outside* the object. The code always had it inside; the comment was the thing that was wrong.) Both call sites updated; no behaviour change yet. 83 web tests, typecheck ✓, lint 9 = baseline. |
 
 | 2026-09-30 | 3     | DataTable layer        | Pinned `@tanstack/react-table` to **8.21.3**, not the 9.2.4 that `pnpm add` gives: 3.3–3.5 name v8's API and v9 is a `useTable` + feature-flag rewrite. `useDataTable` wraps the only `useReactTable` call in the app — `manualPagination` + `manualSorting`, `getRowId` from the caller, sorting passed in from the URL rather than synced by the hook, and deliberately no `getFilteredRowModel` so the browser cannot re-filter rows the server already filtered. `DataTable` (empty row, `colSpan`, `toolbar` slot) + `DataTableSkeleton`; `DataTableColumnHeader` gates on `column.getCanSort()` so a non-sortable column is plain text with no dead chevron; `aria-sort` lives on the `TableHead`, because that is the `columnheader` role and not the button. `DataTableToolbar` **omits** the `table` argument shadcn's version takes — the component that fetched the rows is the only one that can invalidate them, so a toolbar that could see the table could be tempted to act on rows it cannot refetch. 3.7 extended `TablePagination` in place: `pageSize` + `onPageSizeChange` + a `Select`, both optional, and the **options come from the caller** rather than a literal `10/20/30/40/50` in the component, because the allowed sizes are a route's own `validateSearch` rule and a second copy of it is a second thing to forget. Two lint rules scoped off in `vite.config.ts` (details in the Phase 3 findings): the generated `ui/table.tsx` trips `enforce-canonical-classes` and 3.2 says not to hand-edit it, and `useReactTable` trips `react/incompatible-library` with the compiler off and nothing memoizing the table. No test added: this repo has no DOM or testing-library and all four existing web tests are pure functions, so Phase 3 has nothing assertable under that convention. **Web: 83 tests ✓, typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline.** Also corrected the Phase 2 log and a `query-keys.ts` comment that claimed `page` sat outside the filter object. |
+
+| 2026-09-30 | 4     | Ownership/visibility    | `PageOwnership` and `PageVisibilityValue` now **derive from `schema.d.ts`** instead of being hand-written unions, and `lib/pages/constants.ts` holds the one runtime list each is checked against — `PAGE_VISIBILITIES` `satisfies` the derived type, so a fourth visibility on the backend is a compile error rather than a `Select` offering a value the server rejects. That made `shared/pages/visibilities.ts` copy-only, which meant repointing `visibility-picker.tsx` and `settings/general/index.tsx` at the new homes. `pageOwnership` is the single place the owner FK is read, and its docstring records the limit that matters: `ResourcePermissions` has no is-admin flag and `can_manage_admins` is not one (site admins get it too, which is why `pinnedSelf` needed two terms), so "not the owner" means "admin" **only** inside a list `/pages/mine` already filtered. 4.7's comment was wrong as suspected — `policy.py:89-91` grants DELETE via `_is_owner` and `utils.py:30-32` grants the owner `can_delete`; comment deleted, behaviour untouched. **4 new tests, 87 total.** The FK-not-`owner_user` case was confirmed red: swapping in `page.owner_user?.sub === meSub` fails 2 of them. Both `*QueryOptions` helpers have **no caller yet** — 5.5 and 6.4 rewire the two components, and 4.5's own "delete it again if unused" clause is the check. **Web: 87 tests ✓, typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files.** |
 
 ## Open questions
 

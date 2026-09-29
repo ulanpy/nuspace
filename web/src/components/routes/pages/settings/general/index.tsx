@@ -11,10 +11,8 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { PageForm } from "@/components/shared/pages/page-form"
 import type { PageSubmitPayload } from "@/components/shared/pages/page-form"
 import { VisibilityPicker } from "@/components/shared/pages/visibility-picker"
-import {
-  visibilityCopy,
-  type PageVisibilityValue,
-} from "@/components/shared/pages/visibilities"
+import type { PageVisibilityValue } from "@/lib/pages/types"
+import { visibilityCopy } from "@/components/shared/pages/visibilities"
 import { Button } from "@/components/ui/button"
 import {
   Item,

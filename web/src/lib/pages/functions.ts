@@ -14,9 +14,15 @@ import type {
   AdminLink,
   AdminLinkAcceptResult,
   Page,
+  PageAdminSort,
   PageCreate,
+  PageOrder,
+  PageOwnership,
+  PageSort,
   PageUpdate,
+  PageVisibilityValue,
 } from "./types"
+import { PAGE_OWNERSHIP } from "./constants"
 
 /**
  * One page of the public directory, for `useInfiniteList`.
@@ -40,14 +46,57 @@ export function fetchBrowsablePages(
 
 /** One page of the My Pages table: every page you own or administer. */
 export function fetchMyPages(
-  { keyword }: { keyword?: string },
+  {
+    keyword,
+    role,
+    visibility,
+    sort,
+    order,
+  }: {
+    keyword?: string
+    role?: PageOwnership
+    visibility?: PageVisibilityValue[]
+    sort?: PageSort
+    order?: PageOrder
+  },
   { page, size }: { page: number; size: number }
 ) {
   return unwrap(
     api.GET("/pages/mine", {
-      params: { query: { page, size, keyword } },
+      params: { query: { page, size, keyword, role, visibility, sort, order } },
     })
   )
+}
+
+/**
+ * Query options for the My Pages table, next to the fetch they call.
+ *
+ * Deleted in `b176a18` for having no callers, back when it was a third
+ * encoding of the same question as `owner_sub=me`. It is back for a different
+ * reason: it now carries the real filter and sort params, and the component
+ * used to build a `queryKey` and a `queryFn` whose param lists had to be kept
+ * in agreement by hand. `owner_sub` is not resurrected.
+ */
+export function myPagesQueryOptions({
+  page,
+  size,
+  role,
+  visibility,
+  sort,
+  order,
+}: {
+  page: number
+  size: number
+  role?: PageOwnership
+  visibility?: PageVisibilityValue[]
+  sort?: PageSort
+  order?: PageOrder
+}) {
+  return queryOptions({
+    queryKey: qk.pages.mine({ page, size, role, visibility, sort, order }),
+    queryFn: () =>
+      fetchMyPages({ role, visibility, sort, order }, { page, size }),
+  })
 }
 
 function fetchPage(slug: string) {
@@ -223,13 +272,27 @@ export async function fetchPageAdminsPage(
     page,
     size,
     excludeSub,
-  }: { page: number; size: number; excludeSub?: string }
+    sort,
+    order,
+  }: {
+    page: number
+    size: number
+    excludeSub?: string
+    sort?: PageAdminSort
+    order?: PageOrder
+  }
 ) {
   const response = await unwrap(
     api.GET("/pages/{slug}/admins", {
       params: {
         path: { slug },
-        query: { page, size, exclude_sub: excludeSub },
+        query: {
+          page,
+          size,
+          exclude_sub: excludeSub,
+          sort,
+          order,
+        },
       },
     })
   )
@@ -240,7 +303,45 @@ export async function fetchPageAdminsPage(
   return { ...response, items: response.items ?? [] }
 }
 
-/** Admin only, per `PagePolicy` — the owner cannot delete their own club. */
+/**
+ * Query options for a page's admins table, next to the fetch it calls.
+ *
+ * Same reason as `myPagesQueryOptions`: the component used to write the key and
+ * the fetch out separately, and the only thing keeping the two param lists in
+ * agreement was reading them side by side.
+ */
+export function pageAdminsQueryOptions({
+  slug,
+  page,
+  size,
+  excludeSub,
+  sort,
+  order,
+}: {
+  slug: string
+  page: number
+  size: number
+  excludeSub?: string
+  sort?: PageAdminSort
+  order?: PageOrder
+}) {
+  return queryOptions({
+    queryKey: qk.pages.admins(slug, { page, size, excludeSub, sort, order }),
+    queryFn: () =>
+      fetchPageAdminsPage(slug, { page, size, excludeSub, sort, order }),
+  })
+}
+
+/**
+ * Delete a page, then drop every cached row that mentioned it.
+ *
+ * A former comment here said "Admin only, per `PagePolicy` — the owner cannot
+ * delete their own club." That was wrong on both counts: `policy.py`'s DELETE
+ * branch and `utils.py:30-32` both grant the owner `can_delete`, and the
+ * whole reason a page owner gets that flag is that they can delete their own
+ * page. The behaviour was never gated on role and still is not; only the
+ * comment was wrong.
+ */
 export function useDeletePage() {
   const queryClient = useQueryClient()
 
@@ -399,6 +500,32 @@ export function adminPageActions(
  * through a dedicated endpoint, so it is not editable here. The rest (`name`,
  * `description`, `slug`, `visibility`) map directly onto the PATCH body.
  */
+/**
+ * Which of the two relationships a page has with the signed-in user.
+ *
+ * The FK `page.owner`, never `page.owner_user?.sub`. `backend/modules/pages/
+ * policy.py:26-28` carries the same rule and the same reason: the relationship
+ * is `None` on an ownerless page, and the check runs on every read. The two
+ * disagree in the one case that matters — `owner_user` is a `ShortUserResponse
+ * | None` that can name someone other than the FK's holder, so reading the
+ * nested attribute answers a different question than the one being asked.
+ *
+ * "Not the owner" is read as `"admin"`, which is only correct for a list the
+ * server already filtered to the pages you own or administer — `/pages/mine`,
+ * which is where this is called. `ResourcePermissions` has no "I am an admin"
+ * flag, and `can_manage_admins` is not one: a site admin gets it too. So this
+ * cannot be used to ask "does this viewer administer the page", and pretending
+ * otherwise is the `pinnedSelf` inference this replaced.
+ */
+export function pageOwnership(page: Page, meSub: string): PageOwnership {
+  return page.owner === meSub ? "owner" : "admin"
+}
+
+/** The relationship in words, for a badge or a cell. */
+export function ownershipLabel(ownership: PageOwnership) {
+  return PAGE_OWNERSHIP[ownership]
+}
+
 export function canEditField(page: Page, field: string): boolean {
   return page.permissions.editable_fields.includes(field)
 }
