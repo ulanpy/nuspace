@@ -9,6 +9,29 @@
  */
 
 export interface paths {
+    "/agent/page-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Page Draft
+         * @description Generate a review-only Puck page JSON document from a user brief.
+         *
+         *     This endpoint deliberately has no authentication only while the Pages UX
+         *     is being prototyped. It does not store or publish its response.
+         */
+        post: operations["generate_page_draft_agent_page_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/login": {
         parameters: {
             query?: never;
@@ -2044,6 +2067,37 @@ export interface components {
             /** Tg Id */
             tg_id?: number | null;
         };
+        /**
+         * DefaultLayout
+         * @description Effective defaults from the shared withLayout wrapper.
+         */
+        DefaultLayout: {
+            /**
+             * Spancol
+             * @constant
+             */
+            spanCol: 1;
+            /**
+             * Spanrow
+             * @constant
+             */
+            spanRow: 1;
+            /**
+             * Paddingx
+             * @constant
+             */
+            paddingX: "16px";
+            /**
+             * Padding
+             * @constant
+             */
+            padding: "0px";
+            /**
+             * Grow
+             * @constant
+             */
+            grow: false;
+        };
         /** DegreeRequirement */
         DegreeRequirement: {
             /** Course Code */
@@ -2389,6 +2443,235 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HeadingBlock */
+        HeadingBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Heading";
+            props: components["schemas"]["HeadingProps"];
+        };
+        /**
+         * HeadingLayout
+         * @description Heading replaces the wrapper's vertical padding with its own default.
+         */
+        HeadingLayout: {
+            /**
+             * Spancol
+             * @constant
+             */
+            spanCol: 1;
+            /**
+             * Spanrow
+             * @constant
+             */
+            spanRow: 1;
+            /**
+             * Paddingx
+             * @constant
+             */
+            paddingX: "16px";
+            /**
+             * Padding
+             * @constant
+             */
+            padding: "8px";
+            /**
+             * Grow
+             * @constant
+             */
+            grow: false;
+        };
+        /** HeadingProps */
+        HeadingProps: {
+            /** Id */
+            id?: string | null;
+            /** Text */
+            text: string;
+            /**
+             * Level
+             * @constant
+             */
+            level: "1";
+            /**
+             * Size
+             * @constant
+             */
+            size: 20;
+            /**
+             * Align
+             * @constant
+             */
+            align: "left";
+            layout: components["schemas"]["HeadingLayout"];
+        };
+        /** HeroBlock */
+        HeroBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Hero";
+            props: components["schemas"]["HeroProps"];
+        };
+        /** HeroButton */
+        HeroButton: {
+            /** Label */
+            label: string;
+            /** Href */
+            href: string;
+            /**
+             * Variant
+             * @enum {string}
+             */
+            variant: "primary" | "secondary";
+            /**
+             * Size
+             * @constant
+             */
+            size: "large";
+            /**
+             * Icon
+             * @constant
+             */
+            icon: "none";
+            /**
+             * Iconposition
+             * @constant
+             */
+            iconPosition: "left";
+            /**
+             * Icononly
+             * @constant
+             */
+            iconOnly: false;
+        };
+        /**
+         * HeroLayout
+         * @description Exact defaults from Hero.defaultProps.layout.
+         */
+        HeroLayout: {
+            /**
+             * Paddingx
+             * @constant
+             */
+            paddingX: "16px";
+            /**
+             * Padding
+             * @constant
+             */
+            padding: "64px";
+        };
+        /** HeroProps */
+        HeroProps: {
+            /** Id */
+            id?: string | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Buttons */
+            buttons: components["schemas"]["HeroButton"][];
+            /**
+             * Align
+             * @constant
+             */
+            align: "left";
+            /**
+             * Verticalalign
+             * @constant
+             */
+            verticalAlign: "center";
+            /**
+             * Fontsize
+             * @constant
+             */
+            fontSize: 20;
+            /**
+             * Verticalgap
+             * @constant
+             */
+            verticalGap: "24px";
+            /**
+             * Horizontalgap
+             * @constant
+             */
+            horizontalGap: "24px";
+            layout: components["schemas"]["HeroLayout"];
+        };
+        /** LinkTreeBlock */
+        LinkTreeBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "LinkTree";
+            props: components["schemas"]["LinkTreeProps"];
+        };
+        /** LinkTreeButton */
+        LinkTreeButton: {
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /** Href */
+            href: string;
+            /**
+             * Variant
+             * @enum {string}
+             */
+            variant: "primary" | "secondary";
+            /**
+             * Size
+             * @constant
+             */
+            size: "large";
+            /**
+             * Icon
+             * @constant
+             */
+            icon: "none";
+            /**
+             * Iconposition
+             * @constant
+             */
+            iconPosition: "left";
+            /**
+             * Icononly
+             * @constant
+             */
+            iconOnly: false;
+        };
+        /**
+         * LinkTreeLayout
+         * @description Exact defaults from LinkTree.defaultProps.layout.
+         */
+        LinkTreeLayout: {
+            /**
+             * Paddingx
+             * @constant
+             */
+            paddingX: "16px";
+            /**
+             * Padding
+             * @constant
+             */
+            padding: "24px";
+        };
+        /** LinkTreeProps */
+        LinkTreeProps: {
+            /** Id */
+            id?: string | null;
+            /** Buttons */
+            buttons: components["schemas"]["LinkTreeButton"][];
+            /**
+             * Verticalgap
+             * @constant
+             */
+            verticalGap: "16px";
+            layout: components["schemas"]["LinkTreeLayout"];
         };
         /** ListBaseCourseResponse */
         ListBaseCourseResponse: {
@@ -2766,6 +3049,21 @@ export interface components {
              */
             owner: string;
         };
+        /**
+         * PageDraftRequest
+         * @description Brief accepted by the temporary unauthenticated draft endpoint.
+         */
+        PageDraftRequest: {
+            /** Brief */
+            brief: string;
+        };
+        /**
+         * PageDraftResponse
+         * @description The caller can paste `page_content` directly into the Puck editor.
+         */
+        PageDraftResponse: {
+            page_content: components["schemas"]["PuckPageData"];
+        };
         /** PageOwnerUpdateRequest */
         PageOwnerUpdateRequest: {
             /**
@@ -2820,6 +3118,41 @@ export interface components {
              *     }
              */
             permissions: components["schemas"]["ResourcePermissions"];
+        };
+        /** PageRoot */
+        PageRoot: {
+            props: components["schemas"]["PageRootProps"];
+        };
+        /**
+         * PageRootProps
+         * @description Exact defaults from pageEditorConfig.root.defaultProps.
+         */
+        PageRootProps: {
+            /**
+             * Backgroundcolor
+             * @constant
+             */
+            backgroundColor: "#ffffff";
+            /**
+             * Textcolor
+             * @constant
+             */
+            textColor: "";
+            /**
+             * Accentcolor
+             * @constant
+             */
+            accentColor: "#1d4ed8";
+            /**
+             * Fontfamily
+             * @constant
+             */
+            fontFamily: "Inter";
+            /**
+             * Borderradius
+             * @constant
+             */
+            borderRadius: "12px";
         };
         /** PageUpdateRequest */
         PageUpdateRequest: {
@@ -3070,6 +3403,15 @@ export interface components {
              */
             publishTime?: string | null;
         };
+        /**
+         * PuckPageData
+         * @description Safe subset of the frontend's actual Puck document format.
+         */
+        PuckPageData: {
+            root: components["schemas"]["PageRoot"];
+            /** Content */
+            content: (components["schemas"]["HeadingBlock"] | components["schemas"]["TextBlock"] | components["schemas"]["HeroBlock"] | components["schemas"]["LinkTreeBlock"] | components["schemas"]["SpaceBlock"])[];
+        };
         /** RegisteredCourseResponse */
         RegisteredCourseResponse: {
             /** Id */
@@ -3255,6 +3597,33 @@ export interface components {
             /** Purpose */
             purpose?: string | null;
         };
+        /** SpaceBlock */
+        SpaceBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Space";
+            props: components["schemas"]["SpaceProps"];
+        };
+        /**
+         * SpaceProps
+         * @description Exact defaults from Space.defaultProps.
+         */
+        SpaceProps: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Direction
+             * @constant
+             */
+            direction: "";
+            /**
+             * Size
+             * @constant
+             */
+            size: "24px";
+        };
         /** StudentScheduleResponse */
         StudentScheduleResponse: {
             /** Term Label */
@@ -3346,6 +3715,38 @@ export interface components {
             /** Template Items */
             template_items: components["schemas"]["TemplateItemUpdate"][];
         };
+        /** TextBlock */
+        TextBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Text";
+            props: components["schemas"]["TextProps"];
+        };
+        /** TextProps */
+        TextProps: {
+            /** Id */
+            id?: string | null;
+            /** Text */
+            text: string;
+            /**
+             * Size
+             * @constant
+             */
+            size: 20;
+            /**
+             * Align
+             * @constant
+             */
+            align: "left";
+            /**
+             * Maxwidth
+             * @constant
+             */
+            maxWidth: "";
+            layout: components["schemas"]["DefaultLayout"];
+        };
         /** TimeSchema */
         TimeSchema: {
             /** Hh */
@@ -3407,6 +3808,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    generate_page_draft_agent_page_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDraftResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     login_login_get: {
         parameters: {
             query?: {

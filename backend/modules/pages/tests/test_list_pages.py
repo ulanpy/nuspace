@@ -9,16 +9,15 @@ the promise that a list and a detail read agree.
 """
 
 from datetime import datetime, timezone
-from typing import Literal
 from types import SimpleNamespace
+from typing import Literal
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi import HTTPException
-from backend.modules.pages.models.page import Page, PageAdmin, PageVisibility
+from backend.modules.pages.models.page import Page, PageVisibility
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.service import PageService
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
 SIGNED_IN = ({"sub": "owner"}, {"role": "user"})
@@ -87,8 +86,6 @@ async def test_a_list_answers_instead_of_dereferencing_a_page_it_does_not_have(
 
     assert result.total == 0
     assert [item.slug for item in result.items] == ["club"]
-
-
 
 
 def _where(
@@ -166,9 +163,7 @@ def test_a_guest_gets_public_only() -> None:
 
 def test_a_site_admin_gets_no_restriction_on_the_directory() -> None:
     assert (
-        PageRepository._list_conditions(
-            viewer_sub="root", is_site_admin=True, scope="browsable"
-        )
+        PageRepository._list_conditions(viewer_sub="root", is_site_admin=True, scope="browsable")
         == []
     )
 

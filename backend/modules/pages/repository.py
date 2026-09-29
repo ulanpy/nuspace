@@ -137,9 +137,7 @@ class PageRepository:
             return [
                 or_(
                     Page.owner == viewer_sub,
-                    Page.id.in_(
-                        select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub)
-                    ),
+                    Page.id.in_(select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub)),
                 )
             ]
         if is_site_admin:
@@ -209,9 +207,7 @@ class PageRepository:
             order_clauses = [has_media.desc(), Page.name.asc()]
             if scope == "mine":
                 order_clauses.insert(0, (Page.owner == viewer_sub).desc())
-            stmt = (
-                base_stmt.order_by(*order_clauses).offset((page_num - 1) * size).limit(size)
-            )
+            stmt = base_stmt.order_by(*order_clauses).offset((page_num - 1) * size).limit(size)
             result = await self.db_session.execute(stmt)
             pages = list(result.scalars().all())
             count_stmt = select(func.count()).select_from(Page).where(*conditions)
