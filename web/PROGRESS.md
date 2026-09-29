@@ -781,4 +781,37 @@ unless the box says when it was last walked.
     also applied to the count query. A bad value is a 422, not an empty list,
     because it is typed as `UserCategory` on the route.
 
+### Migration safety — `e5f6a7b8c9d0`, walked against real rows
+
+The question "does this break anyone already in the database" is answerable, so
+it was answered rather than reasoned about. Downgraded one revision and upgraded
+again **against the dev database with three real users**, one of whom has a
+private page and one of whom has a three-zone design:
+
+| Checked | Result |
+| --- | --- |
+| `alembic downgrade -1` | clean; `category` column and `usercategory` type gone |
+| Other `users` columns across the round trip | zero field diffs on `sub`, `slug`, `id`, `is_page_public`, `page_content`, `picture`, `email`, `scope`, `name`, `surname` |
+| `alembic upgrade head` on existing rows | all three backfilled to `student`, `NOT NULL`, no NULLs |
+| `GET /me` per user | slug, `users.id` and page content intact for all three |
+| Private page, guest → self | `404` → `200`, still private |
+| **Logout + fresh login** | category and page content both survived — the phase-0 landmine, re-checked for the new column |
+| `?category=` filter | narrows the list and `total` |
+
+Two things this found, both of which are *not* migration defects:
+
+- **The first request after any `ALTER TABLE` on a live process can 500** with
+  asyncpg's `InvalidCachedStatementError` — "cached statement plan is invalid
+  due to a database schema or configuration change". The prepared-statement
+  cache is bound to the column list it was planned against. SQLAlchemy
+  invalidates the whole cache when it sees this and the retry succeeds, so it
+  is a one-shot per connection pool. It is the reason a deploy that migrates
+  while the old process is still serving restarts rather than relying on the
+  retry. **Do not read this 500 as data loss** — the retry is the same query.
+- **A test that does not follow the mock-login redirect tests nothing.** The
+  login sets cookies on a `303`, so a `curl` without `-L` gets an empty jar and
+  every later request looks like a permission failure. Two of the "problems"
+  in this round were that.
+
+
 
