@@ -45,10 +45,11 @@ export const qk = {
     mine: (filters: Record<string, unknown>) =>
       ["pages", "mine", filters] as const,
     /**
-     * The page number is part of the key, not a filter inside it, so that
-     * `invalidateQueries({ queryKey: qk.pages.all() })` after a removal
-     * refreshes every page the user could be looking at — and a single page
-     * can be prefetched or refetched on its own.
+     * The page number is one of the filters, not a separate key segment, so
+     * `invalidateQueries({ queryKey: qk.pages.all() })` after a removal still
+     * refreshes every page the user could be looking at — `all()` is the
+     * `["pages"]` prefix and never reads the filters — while a single page can
+     * still be prefetched or refetched on its own.
      *
      * `excludeSub` changes which rows come back, so it belongs here too, and
      * so do `size`, `sort` and `order` for the same reason they do on `mine`.

@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query"
 import { z } from "zod"
 
 import { api, unwrap } from "@/api/client"
+import type { TelegramBindChallenge } from "@/lib/user"
 
 /**
  * The confirmation grid the bot shows, in the order the backend builds it
@@ -34,11 +35,6 @@ const bindResponseSchema = z.object({
   link: z.url(),
   correct_number: z.number().int().min(1).max(CONFIRMATION_EMOJI.length),
 })
-
-export interface TelegramBindChallenge {
-  link: string
-  emoji: string
-}
 
 /**
  * Starts Telegram linking: the backend mints a deeplink and picks which emoji

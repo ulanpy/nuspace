@@ -9,6 +9,8 @@ interface PageProps {
   description?: ReactNode
   eyebrow?: ReactNode
   actions?: ReactNode
+  /** Drawn to the left of the title block. See `PageHeader`'s `media`. */
+  media?: ReactNode
   /**
    * `prose` caps the body at `max-w-3xl` for pages that are read rather than
    * scanned, and centres that column. `wide` leaves the body uncapped inside
@@ -46,12 +48,14 @@ export function Page({
   description,
   eyebrow,
   actions,
+  media,
   width = "wide",
   headerClassName,
   className,
   children,
 }: PageProps) {
-  const hasHeader = Boolean(title ?? description ?? eyebrow ?? actions)
+  // `media` counts: a page whose only header content is an avatar has a header.
+  const hasHeader = Boolean(title ?? description ?? eyebrow ?? actions ?? media)
   const column = width === "prose" && "mx-auto max-w-3xl"
 
   return (
@@ -62,6 +66,7 @@ export function Page({
           description={description}
           eyebrow={eyebrow}
           actions={actions}
+          media={media}
           className={cn(headerClassName, column)}
         />
       )}

@@ -43,7 +43,7 @@ export function RouteTabs({
 
   return (
     <Tabs
-      className={cn("-mx-1 overflow-x-auto", className)}
+      className={cn("-mx-1 overflow-x-auto overflow-y-hidden", className)}
       // `null`, not `undefined`, when no tab matches. base-ui treats an
       // `undefined` value as "uncontrolled" and then selects the first enabled
       // tab for itself, reporting that as a value change — so a route that is

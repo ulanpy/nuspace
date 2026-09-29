@@ -78,7 +78,7 @@ export function FilterTabs<T extends string>({
 }) {
   return (
     <Tabs
-      className="w-fit max-w-full overflow-x-auto"
+      className="w-fit max-w-full overflow-x-auto overflow-y-hidden"
       value={value ?? ALL}
       onValueChange={(next: string) => {
         // "All" matches no option, which is exactly the "no filter" it means.

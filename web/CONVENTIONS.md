@@ -86,6 +86,8 @@ Cohesive domains live in subfolders:
 - `media/` — picker, resilient-image
 - `legal/` — legal-page + `data.ts`
 - `query/` — boundary, infinite-list
+- `table/` — pagination, page-range
+- `data-table/` — the `DataTable` box, its sortable header, its toolbar
 - `page-editor/` — self-contained Puck editor; never split up
 
 Generic primitives that belong to no group stay flat at the shared root
@@ -112,8 +114,17 @@ header, one body:
 ```
 <div className="mx-auto w-full max-w-7xl">   the box — always
   <PageHeader …/>                             the title, spanning the box
+                                             (optional `media` at its left)
   <div className="mt-6 space-y-6 max-w-3xl?">  the body
 ```
+
+`PageHeader` takes an optional `media` node, drawn to the left of the title block
+and vertically centred against it — the pattern is an `Avatar` in the header of
+`/account`. It is the caller's own node rather than a variant, because the
+alternative is a fixed-size media box for the caller to fill, and that is how
+`/account` ended up with a `size-12` image inside a `size-10` clipper: the image
+was larger than the thing cropping it, so the round mask never read. `Avatar` is
+already round and sizes to its own content, so nothing needs a size override.
 
 - **The box is always `max-w-7xl`.** There is no per-page box width. Pages used
   to ship their own `mx-auto max-w-*`, so two pages of the same kind had
@@ -136,13 +147,19 @@ header, one body:
 Which width a page gets is not a per-page judgement call. The assignment:
 
 | `wide` (body uncapped)                                                   | `prose` (body `max-w-3xl`)                                     |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| -------------------------------------------------------------------------| ---------------------------------------------------------------|
+| `/account`, `/p/$slug/settings/admin-controls`                           |                                                                |
 | `/events`, `/events/$eventId`                                            | `/opportunities`                                               |
 | `/communities`                                                           | `/contacts`                                                    |
-| `/announcements`                                                         | `/profile`                                                     |
+| `/announcements`                                                         | `/sgotinish`, `/degree-audit-info`                             |
 | `/courses`, `/courses/statistics`, `/courses/schedule`, `/courses/audit` | `/communities/$slug/settings` + `/general` + `/admin-controls` |
-| `/about`, `/` (public)                                                   | `/sgotinish`, `/degree-audit-info`                             |
-|                                                                          | `/privacy-policy`, `/terms-of-service` (public)                |
+| `/about`, `/` (public)                                                   | `/privacy-policy`, `/terms-of-service` (public)                |
+
+**A page hosting a datatable is `wide`.** Not a preference: `prose` centres the
+body in `max-w-3xl`, and six columns of page data do not fit in a 48rem column,
+so the table scrolls sideways or — worse — the columns compress until the name
+and the slug are both ellipses. This is why `/account` and
+`/p/$slug/settings/admin-controls` are `wide` despite being settings-shaped.
 
 Two routes are deliberately outside this: community detail
 (`/communities/$slug`) and the page editor bypass the app shell entirely for
@@ -181,6 +198,38 @@ Rules that keep this graph acyclic and types cheap:
 Named `use-*.ts`. Hooks shared across routes live here (`use-session`,
 `use-media-upload`, `use-infinite-list`). Page-exclusive behavior stays
 co-located with the Page instead.
+
+**`useDataTable` is here, not beside the component it configures.** It is the
+only hook in the app that belongs to a component — `DataTable` renders whatever
+table it is handed and never calls it. The rule that decides it is the one
+above: shared *stateful behavior* lives in `hooks/`, and this is shared stateful
+behavior. Putting it in `components/shared/data-table/` would have looked right
+and been wrong, because the next developer would assume a component in that
+folder is rendered by a parent rather than called by one.
+
+### Tables
+
+`DataTable` (`shared/data-table/`) is the box, `useDataTable` the config, and
+`TablePagination` (`shared/table/`) the footer. Three rules the two tables that
+use them established:
+
+- **Page, size, sort and order are URL state, not component state.** They come
+  from the route's `validateSearch`, and the `size` a component shows is the one
+  that route accepts. No `PAGE_SIZE` literal in a component: the allowed values
+  live in that module's `constants.ts` (`PAGE_SIZES`, `DEFAULT_PAGE_SIZE`), and
+  a list in a component is a second source of truth for a rule the server
+  already enforces. The same shape applies to a sort whitelist, a filter option
+  list, and a badge's copy — one list, derived everywhere.
+- **Server-side means `manualPagination` and `manualSorting` on.** The hook
+  receives one page; letting react-table sort or page the array it was given
+  reorders one page of the result and leaves the rest in the server's order.
+  Consequently `sorting` is controlled and `onSortingChange` is **required** —
+  without it the header chevrons render, look right, and do nothing.
+- **`overflow-x-auto` needs `overflow-y-hidden` beside it.** `overflow-x: auto`
+  forces `overflow-y: visible` to compute to `auto`, so any child that overflows
+  vertically — a `TabsTrigger`'s 5px active bar, a focus ring — becomes a real
+  vertical scrollbar. It is not an overflow bug in the child; it is the
+  shorthand's interaction.
 
 ### `src/api/` — generated, not written
 

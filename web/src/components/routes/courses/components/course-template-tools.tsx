@@ -9,9 +9,11 @@ import {
   useShareCourseTemplate,
 } from "@/lib/courses"
 import type { CourseTemplate, RegisteredCourse } from "@/lib/courses"
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from "@/lib/pages/constants"
 import { useCurrentUser } from "@/hooks/use-session"
 import { apiErrorMessage } from "@/api/errors"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { TablePagination } from "@/components/shared/table/pagination"
 import { QueryBoundary } from "@/components/shared/query/boundary"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,8 +24,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-const PAGE_SIZE = 10
-
 export function CourseTemplateTools({
   registered,
 }: {
@@ -32,10 +32,15 @@ export function CourseTemplateTools({
   const user = useCurrentUser()
   const [open, setOpen] = useState(false)
   const [page, setPage] = useState(1)
+  // Local, not URL: this list lives in a dialog inside a course card, and
+  // `course-card.tsx` is rendered by both `/courses` and `/courses/schedule`.
+  // A `size` param on either route would be one page-size control fighting the
+  // other for a single key, describing a dialog nobody has opened yet.
+  const [size, setSize] = useState<number>(DEFAULT_PAGE_SIZE)
   const [importing, setImporting] = useState<CourseTemplate | null>(null)
 
   const query = useQuery({
-    ...templatesQueryOptions(registered.course.id, page, PAGE_SIZE),
+    ...templatesQueryOptions(registered.course.id, page, size),
     enabled: open,
   })
   const share = useShareCourseTemplate()
@@ -148,28 +153,24 @@ export function CourseTemplateTools({
                       </ul>
                     </article>
                   ))}
-                  <div className="flex justify-between">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={page === 1}
-                      onClick={() => {
-                        setPage((value) => Math.max(1, value - 1))
-                      }}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={page >= data.total_pages}
-                      onClick={() => {
-                        setPage((value) => value + 1)
-                      }}
-                    >
-                      Next
-                    </Button>
-                  </div>
+                  <TablePagination
+                    page={page}
+                    pageSize={size}
+                    pageSizeOptions={PAGE_SIZES}
+                    onPageSizeChange={(next) => {
+                      // Back to page 1: a size change re-slices the result, and
+                      // page 3 of the old size is usually past the new last page.
+                      setSize(next)
+                      setPage(1)
+                    }}
+                    totalPages={data.total_pages}
+                    hasNext={page < data.total_pages}
+                    // `ListTemplateDTO` carries `total_pages` and nothing else —
+                    // no `total`, no `size` — so there is no range to describe.
+                    summary={null}
+                    isFetching={query.isFetching}
+                    onPageChange={setPage}
+                  />
                 </div>
               )
             }}

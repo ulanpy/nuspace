@@ -5,11 +5,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  isVisibility,
-  VISIBILITIES,
-  type PageVisibilityValue,
-} from "./visibilities"
+import { PAGE_VISIBILITIES } from "@/lib/pages/constants"
+import type { PageVisibilityValue } from "@/lib/pages/types"
+import { isVisibility } from "./visibilities"
 
 /**
  * The visibility dropdown, shared by the create dialog and the settings page.
@@ -51,12 +49,25 @@ export function VisibilityPicker({
         }
       }}
       disabled={disabled}
+      // Without this the trigger falls back to the raw value and `capitalize`
+      // renders "Internal" directly above a dropdown saying "Members only" --
+      // the same control disagreeing with itself. Derived from
+      // `PAGE_VISIBILITIES` rather than written out, so the trigger's label and
+      // the items below are the same strings from the same list. (A
+      // `Record<string, ReactNode>` is the other shape base-ui accepts; the
+      // array needs no cast to keep the literal key type.)
+      items={PAGE_VISIBILITIES.map((option) => ({
+        label: option.title,
+        value: option.value,
+      }))}
     >
-      <SelectTrigger id={idPrefix} className="w-44 capitalize">
+      {/* No `capitalize`: the label is the sentence-cased title, and
+          capitalizing it was a second, different rendering of the same value. */}
+      <SelectTrigger id={idPrefix} className="w-44">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {VISIBILITIES.map((option) => (
+        {PAGE_VISIBILITIES.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.title}
           </SelectItem>
