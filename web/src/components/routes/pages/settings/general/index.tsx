@@ -10,36 +10,18 @@ import { SettingsSection } from "@/components/shared/settings/settings-section"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { PageForm } from "@/components/shared/pages/page-form"
 import type { PageSubmitPayload } from "@/components/shared/pages/page-form"
+import {
+  VisibilityPicker,
+  type PageVisibilityValue,
+} from "@/components/shared/pages/visibility-picker"
 import { Button } from "@/components/ui/button"
 import {
   Item,
   ItemActions,
   ItemContent,
   ItemDescription,
-  ItemGroup,
   ItemTitle,
 } from "@/components/ui/item"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-
-/** The three visibilities, with the copy that explains each. */
-const VISIBILITIES = [
-  {
-    value: "public",
-    title: "Public",
-    description: "Anyone, signed in or not, can read this page.",
-  },
-  {
-    value: "internal",
-    title: "NU only",
-    description:
-      "Signed-in students and staff can read it. Outsiders see a 404.",
-  },
-  {
-    value: "private",
-    title: "Private",
-    description: "Only you and the page's admins can read it.",
-  },
-] as const
 
 export function Page({ page }: { page: PageEntity }) {
   const navigate = useNavigate()
@@ -49,7 +31,7 @@ export function Page({ page }: { page: PageEntity }) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const [visibility, setVisibility] = useState(page.visibility)
 
-  const saveVisibility = (next: (typeof VISIBILITIES)[number]["value"]) => {
+  const saveVisibility = (next: PageVisibilityValue) => {
     if (next === page.visibility) return
     const previous = page.visibility
     setVisibility(next)
@@ -118,32 +100,12 @@ export function Page({ page }: { page: PageEntity }) {
           title="Visibility"
           description="Who can read this page. A private page is a 404 for everyone but you and its admins."
         >
-          <RadioGroup
+          <VisibilityPicker
             value={visibility}
-            onValueChange={(next) => {
-              saveVisibility(next as (typeof VISIBILITIES)[number]["value"])
-            }}
+            onValueChange={saveVisibility}
             disabled={updatePage.isPending}
-          >
-            <ItemGroup>
-              {VISIBILITIES.map((option) => (
-                <Item key={option.value} variant="muted" size="sm">
-                  <ItemContent>
-                    <ItemTitle className="w-auto min-w-0 flex-1">
-                      {option.title}
-                    </ItemTitle>
-                    <ItemDescription>{option.description}</ItemDescription>
-                  </ItemContent>
-                  <ItemActions className="ml-auto">
-                    <RadioGroupItem
-                      value={option.value}
-                      aria-label={option.title}
-                    />
-                  </ItemActions>
-                </Item>
-              ))}
-            </ItemGroup>
-          </RadioGroup>
+            idPrefix="page-settings-visibility"
+          />
         </SettingsSection>
       ) : null}
 

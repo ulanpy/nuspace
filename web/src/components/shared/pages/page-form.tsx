@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
@@ -13,6 +13,7 @@ import {
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item"
+import { VisibilityPicker } from "@/components/shared/pages/visibility-picker"
 import type { UploadItem } from "@/hooks/use-media-upload"
 import { MediaPicker } from "@/components/shared/media/picker"
 import { slugSchema } from "@/lib/slug"
@@ -29,6 +30,7 @@ const pageSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   description: z.string().trim(),
   slug: slugSchema(),
+  visibility: z.enum(["public", "internal", "private"]),
 })
 
 type PageFormValues = z.infer<typeof pageSchema>
@@ -78,10 +80,14 @@ export function PageForm({
       name: page?.name ?? "",
       description: page?.description ?? "",
       slug: page?.slug ?? "",
+      // Creating asks. Editing defaults to what the page already is, so the
+      // form never silently changes a page's audience by being opened.
+      visibility: page?.visibility ?? "public",
     },
   })
 
   const { errors } = form.formState
+  const visibility = useWatch({ control: form.control, name: "visibility" })
 
   /**
    * Fill the slug from the name until the reader types in that field.
@@ -139,17 +145,17 @@ export function PageForm({
               name: values.name,
               description,
               slug: values.slug,
-              // The backend defaults both, but the generated type marks them
-              // required anyway, so the client sends them. `owner: "me"`
-              // resolves to the caller server-side, as on events; a new page
-              // starts public and the settings page can change it after.
-              visibility: "public",
+              visibility: values.visibility,
+              // `owner: "me"` resolves to the caller server-side, as on
+              // events. The generated type marks it required, so the client
+              // sends it rather than omitting it.
               owner: "me",
             },
             update: {
               ...ifEditable("name", values.name),
               ...ifEditable("description", description),
               ...ifEditable("slug", values.slug),
+              ...ifEditable("visibility", values.visibility),
               media_ids_to_delete:
                 removedMedia.length > 0 ? removedMedia : null,
             },
@@ -235,6 +241,36 @@ export function PageForm({
             disabled={isPending}
           />
         </FieldRow>
+
+        {/* Creating asks who may read the page, rather than making everyone
+            create a public page and then hunt for the setting.
+
+            Only on create. The page's own settings screen has a Visibility
+            section that saves the moment a radio is touched, and a second
+            copy of these three radios there — behind a Save button, beside one
+            that already works — is one more place for a page's audience to
+            disagree with itself. */}
+        {!page ? (
+          <Item variant="muted">
+            <ItemContent>
+              <ItemTitle>Visibility</ItemTitle>
+              <ItemDescription>
+                Who can read this page. A page nobody may read is a 404 for
+                them, not a 403.
+              </ItemDescription>
+              <div className="mt-2">
+                <VisibilityPicker
+                  value={visibility}
+                  onValueChange={(next) => {
+                    form.setValue("visibility", next, { shouldDirty: true })
+                  }}
+                  disabled={isPending}
+                  idPrefix="page-form-visibility"
+                />
+              </div>
+            </ItemContent>
+          </Item>
+        ) : null}
       </ItemGroup>
 
       {submitError && (

@@ -8,13 +8,6 @@ import { pageAdminLinkQueryOptions, useRotateAdminLink } from "@/lib/pages"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemTitle,
-} from "@/components/ui/item"
 
 /** The link body only — the page wraps this in a `SettingsSection`. */
 export function AdminAccessLink({ slug }: { slug: string }) {
@@ -40,39 +33,38 @@ export function AdminAccessLink({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-4">
-      <Item variant="muted">
-        <ItemContent>
-          <ItemTitle>Admin access link</ItemTitle>
-          <ItemDescription>
-            Anyone with this link who is signed in becomes an admin. Treat it
-            like a password.
-          </ItemDescription>
-          <Input
-            readOnly
-            value={url}
-            aria-label="Admin access link"
-            placeholder="Loading link\u2026"
-          />
-        </ItemContent>
-        <ItemActions>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Copy admin access link"
-            onClick={() => setIsConfirmingCopy(true)}
-          >
-            {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Rotate admin access link"
-            onClick={() => setIsConfirmingRotate(true)}
-          >
-            <RotateCwIcon aria-hidden />
-          </Button>
-        </ItemActions>
-      </Item>
+      {/* No `Item` title or description here: the section above already says
+          "Admin access link" and what the link does. Repeating it inside the
+          row read as a stutter, and the section is the one that scrolls out
+          of view — so the warning that matters most belongs up there. */}
+      <Input
+        readOnly
+        value={url}
+        aria-label="Admin access link"
+        placeholder="Loading link…"
+        className="font-mono"
+      />
+
+      <div className="flex justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsConfirmingCopy(true)}
+        >
+          {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
+          Copy link
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsConfirmingRotate(true)}
+          disabled={rotateAdminLink.isPending}
+        >
+          <RotateCwIcon aria-hidden />
+          Rotate link
+        </Button>
+      </div>
+
       {rotateAdminLink.isError && (
         <p className="text-sm text-destructive" role="alert">
           {apiErrorMessage(
