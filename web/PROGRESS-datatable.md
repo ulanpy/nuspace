@@ -90,21 +90,60 @@ sorting are URL + react-query driven, not server-component driven.
 This work rewrites the very files the Pages refactor's Phase 4 was moving. Do
 not race it.
 
-- [ ] Read `web/PROGRESS.md` and check where its Phase 4 stands.
-- [ ] **If its Phase 4 is still open, stop and say so.** The two plans touch
+- [x] Read `web/PROGRESS.md` and check where its Phase 4 stands.
+- [x] **If its Phase 4 is still open, stop and say so.** The two plans touch
       `routes/_app/account/index.tsx`, `routes/_app/p/$slug/settings/admin-controls/index.tsx`,
       `components/routes/account/components/my-pages.tsx`,
       `components/routes/pages/settings/components/admins-table.tsx` and others.
       Two agents in one worktree over the same files is how lines get lost.
-- [ ] Confirm `web/PROGRESS.md` has no unchecked box under its Phase 6 (prod)
+      **Closed: every Phase 4 box is ticked.** Phases 5 (docs), 6 (prod push)
+      and 7 (deferred) are open and stay that way — 6 is a deploy and 7 says
+      "not this PR". See the note on Phase 5 overlap below.
+- [x] Confirm `web/PROGRESS.md` has no unchecked box under its Phase 6 (prod)
       or Phase 7 (deferred cleanup) that this work would pre-empt. Phase 7 is
       explicitly "not this PR" and stays out of scope either way.
-- [ ] Bring up the stack and confirm a green baseline before changing anything:
+- [x] Bring up the stack and confirm a green baseline before changing anything:
       backend up, `pnpm build` passes, backend pytest passes. Record the numbers
       in the Progress log.
-- [ ] Record the two known baselines so later runs can tell drift from
+- [x] Record the two known baselines so later runs can tell drift from
       regression: backend ruff ≈ **11** errors, web lint ≈ **8–9** (see the
       other file's log for the current figures).
+
+### Phase 0 findings — four things were red at HEAD, and none of them were mine
+
+1. **The `fastapi` container had not booted in two days.**
+   `ModuleNotFoundError: No module named 'openai'`, so nothing behind nginx
+   answered and **`pnpm api:check` could not run at all**. The image was built
+   Sep 27; `openai-agents` landed in `f1e9c29` on Sep 29. `infra/docker-compose.yml:34`
+   keeps a `fastapi-venv` volume "to preserve the image venv (bind mount hides
+   it otherwise)" — which is exactly how it goes stale in silence. Fixed with
+   `docker exec -w /nuros/backend fastapi uv sync --frozen` + restart; the volume
+   is now correct and the fix is not a repo change. **If the backend is
+   unhealthy at any point in this work, check this before anything else.**
+2. **`schema.d.ts` was 434 lines behind**, from the same commit — the whole
+   `agent` module (`/agent/page-drafts` and friends). Regenerated; nothing in
+   it touches pages, and typecheck/build/83 tests stay green on it.
+3. **ruff was 16, not ≈11.** The extra 5 were all in `modules/pages/` — four
+   unused imports in `test_list_pages.py` and `Literal` in `api.py` — i.e. in
+   the directory this work owns, left by the previous plan's second pass. Fixed
+   mechanically (`ruff check --fix` + `black`), which is what brings the count
+   to the documented **11**. Those 11 are in `bootstrap/gcp.py`, a migration,
+   `modules/events/schemas.py` and `courses/degree_audit/` — all untouched here,
+   and left alone.
+4. **`black --check` was red** on `modules/pages/repository.py` and
+   `test_list_pages.py` — also the previous plan's. Both reflows are cosmetic.
+
+Two of these are the same lesson the other plan's log keeps repeating, so it is
+worth naming: **a green suite says the code you touched is correct, not that
+the tree is green.** Both failures here were invisible to 209 passing tests,
+and one of them was invisible to `pnpm typecheck` too.
+
+**One overlap, flagged not resolved.** `web/PROGRESS.md` Phase 5 (docs, open)
+and this file's Phase 10 both edit `web/CONVENTIONS.md`. They touch different
+sections — Phase 5 is the route table, the `shared/pages/` group and the two
+READMEs; Phase 10 is the shared-domains list, the `wide` assignment and six new
+rules. Do them in this order, or Phase 5 first and re-read the file before
+Phase 10.
 
 ---
 
@@ -674,6 +713,7 @@ Append one line per ticked box. Newest at the bottom.
 | ---------- | ----- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | —          | —     | Plan written            | `web/PROGRESS-datatable.md` created. No code changed yet. Sibling of `web/PROGRESS.md`, which is live and untouched.                                                                                                                                                                                                                                                                                                       |
 | —          | —     | Plan corrected          | Phase 1 was found to reverse `b176a18`, which removed the `role` filter and the `mine` visibility clause two commits earlier. **The user confirmed the reversal is intentional.** Added a "Read this first" section carrying the three historical bugs, and turned 1.8/1.9 from "rewrite these docstrings" into "rewrite but preserve the history in them". Line refs re-verified against the tree: `_list_conditions` `:108`, `mine` branch `:136`, `list_pages` `:151`, `meili` short-circuit `:165-177`, `order_clause` `:190-194`, order chain `:206-211`, `list_admins_page` `:241`.   |
+| 2026-09-30 | 0     | Pre-flight              | `web/PROGRESS.md` Phase 4 **fully ticked** — no race. Phases 5/6/7 open and staying open (docs / prod push / deferred). Baseline commit `fea3b84`. Four pre-existing reds fixed, all detailed above: the `fastapi` container had not booted in two days (`openai` missing from the stale `fastapi-venv` volume, so `api:check` was unrunnable), `schema.d.ts` 434 lines behind on the `agent` module, ruff 16 not 11 (the extra 5 in `modules/pages/`), and black red on two more pages files. **Green now: backend 209 tests, ruff 11, black ✓. Web 83 tests, typecheck ✓, build ✓, lint 9 = baseline, `api:check` ✓.** Note `pnpm api:check` runs on the host here, so `OPENAPI_URL=http://localhost/api/openapi.json`; the file's `http://nginx/…` advice only applies from inside the `web` container. |
 
 ## Open questions
 
