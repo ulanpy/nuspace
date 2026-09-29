@@ -192,6 +192,7 @@ class PageService:
         owner_sub: str | None,
         role: str | None,
         keyword: str | None,
+        include_private: bool = True,
     ) -> schemas.ListPage:
         # No policy check here: this is a list, so there is no single page to
         # check, and `repo.list_pages` puts the visibility restriction in the
@@ -213,6 +214,7 @@ class PageService:
                 owner_sub=owner_sub,
                 role=role,
                 keyword=keyword,
+                include_private=include_private,
                 meilisearch_client=infra.meilisearch_client,
             )
             media_objs: List[Media] = await repo.list_media(

@@ -120,15 +120,20 @@ class PageRepository:
         given — so returning `visibility IN (...)` and `owner = viewer` as two
         entries meant "a page you can see that you also own", i.e. nothing.
 
-        `include_own_private` is what separates "the pages I manage" from "the
+        `include_private` is what separates "the pages I manage" from "the
         pages anyone can browse". The owner alternative is the only way a
         `private` page reaches a list at all, and a browse is a browse whether
         or not the browser happens to own what is in it: `/mynuspace` is a
         public directory, and a private page sitting in it because its owner
         wandered in is the one page in the app that was never meant to be
-        listed. The caller scopes the list to itself with `role` or `owner_sub`,
-        which is how "my pages" says so out loud; this only takes the
-        alternative away when nobody did.
+        listed.
+
+        It is passed in rather than derived from `role`, because `role` cannot
+        tell the two apart: My Pages with no tab selected sends no `role`
+        either, and that list is still "mine" and still wants the private ones.
+        Inferring it there emptied the All filter of the pages it exists to
+        show. Narrowing only — `False` removes the owner alternative and
+        reveals nothing that was not already visible.
         """
         if is_site_admin:
             return []
@@ -152,6 +157,7 @@ class PageRepository:
         is_site_admin: bool,
         owner_sub: str | None,
         role: str | None,
+        include_private: bool = True,
     ) -> list:
         """The whole WHERE of `list_pages`, as one method so the tests can call
         the real thing instead of restating it.
@@ -176,14 +182,10 @@ class PageRepository:
         # holds the admin-membership alternative and joins the visibility
         # alternative; everything else is a plain AND.
         #
-        # `role` or `owner_sub` means the caller is asking for their own pages,
-        # which is the one case where `private` belongs in a list. With neither,
-        # this is the public directory and a private page stays out of it even
-        # for its owner.
         visible = cls._visibility_conditions(
             viewer_sub=viewer_sub,
             is_site_admin=is_site_admin,
-            include_own_private=role is not None or owner_sub is not None,
+            include_own_private=include_private,
         )
         if match_any:
             conditions.append(or_(*visible, *match_any))
@@ -201,6 +203,7 @@ class PageRepository:
         owner_sub: str | None,
         role: str | None,
         keyword: str | None,
+        include_private: bool,
         meilisearch_client: AsyncClient,
     ) -> Tuple[List[Page], int, bool]:
         meili_result = None
@@ -225,6 +228,7 @@ class PageRepository:
             is_site_admin=is_site_admin,
             owner_sub=owner_sub,
             role=role,
+            include_private=include_private,
         )
         if keyword:
             conditions.append(Page.id.in_(page_ids))

@@ -39,7 +39,10 @@ export function Page({
   const debouncedSearch = useDebounced(searchInput)
   // Memoised: a fresh object is a new query key, which restarts the infinite
   // list on every render.
-  const filters = useMemo(() => ({ keyword: q }), [q])
+  // `include_private: false` — this is a public directory, so a `private`
+  // page stays out of it even when the viewer is the one who made it private.
+  // Every other pages list leaves it on.
+  const filters = useMemo(() => ({ keyword: q, include_private: false }), [q])
 
   const [isCreating, setIsCreating] = useState(false)
 

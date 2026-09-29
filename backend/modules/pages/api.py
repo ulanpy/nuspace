@@ -52,6 +52,15 @@ async def get_pages(
             "Both are relative to the caller and cannot be widened by the client."
         ),
     ),
+    include_private: bool = Query(
+        default=True,
+        description=(
+            "Whether your own private pages are in the list. The My Pages table "
+            "passes true; the public directory on /mynuspace passes false, so "
+            "signing in does not put a private page in a public grid. Narrowing "
+            "only: false never reveals anything."
+        ),
+    ),
     infra: Infra = Depends(get_infra),
     page_service: PageService = Depends(get_page_service),
     keyword: str | None = Query(default=None, description="Search keyword for page name"),
@@ -65,6 +74,7 @@ async def get_pages(
         owner_sub=owner_sub,
         role=role,
         keyword=keyword,
+        include_private=include_private,
     )
 
 

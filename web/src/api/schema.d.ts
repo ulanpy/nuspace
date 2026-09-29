@@ -3615,6 +3615,8 @@ export interface operations {
                 owner_sub?: string | null;
                 /** @description 'owned' for pages you own, 'admin' for pages where you are an admin. Both are relative to the caller and cannot be widened by the client. */
                 role?: ("owned" | "admin") | null;
+                /** @description Whether your own private pages are in the list. The My Pages table passes true; the public directory on /mynuspace passes false, so signing in does not put a private page in a public grid. Narrowing only: false never reveals anything. */
+                include_private?: boolean;
                 /** @description Search keyword for page name */
                 keyword?: string | null;
             };

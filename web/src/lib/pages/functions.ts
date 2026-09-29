@@ -24,6 +24,16 @@ export interface PageFilters {
   owner_sub?: string
   /** `owned` is pages you head, `admin` is pages you are an admin of. */
   role?: "owned" | "admin"
+  /**
+   * Whether your own `private` pages are in the list. Defaults to true, which
+   * is what every management list wants.
+   *
+   * The public directory on `/mynuspace` passes false. Without it, signing in
+   * put your own private page in the public grid: a `private` page reaches a
+   * list only through the owner alternative in the server's visibility WHERE,
+   * and that applied to every caller rather than the ones managing a page.
+   */
+  include_private?: boolean
 }
 
 /** One page of the pages list. Used by useInfiniteList. */
