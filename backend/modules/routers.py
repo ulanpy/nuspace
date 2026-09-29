@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter
 
+from backend.modules.agent import api as agent_api
 from backend.modules.announcements import api as announcements_api
 from backend.modules.auth import api as auth_api
 from backend.modules.bot.bot import web_router
@@ -24,6 +25,7 @@ from backend.modules.search import api as search_api
 from backend.modules.sgotinish import api as sgotinish_api
 
 routers: List[APIRouter] = [
+    agent_api.router,
     auth_api.router,
     communities_api.router,
     communities_og.router,
