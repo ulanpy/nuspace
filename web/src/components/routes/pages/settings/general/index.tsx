@@ -41,7 +41,7 @@ export function Page({ page }: { page: PageEntity }) {
           toast.success("Visibility updated.")
         },
         onError: (error) => {
-          // Put the radio back where it was. Leaving the optimistic value on
+          // Put the `Select` back where it was. Leaving the optimistic value on
           // screen would claim a setting the server refused.
           setVisibility(previous)
           toast.error(
@@ -97,7 +97,7 @@ export function Page({ page }: { page: PageEntity }) {
       {canEditField(page, "visibility") ? (
         <SettingsSection
           title="Visibility"
-          description="Who can read this page. A private page is a 404 for everyone but you and its admins."
+          description="Who can read this page."
         >
           <Item variant="muted">
             <ItemContent>

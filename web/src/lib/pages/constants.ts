@@ -53,9 +53,8 @@ export const PAGE_VISIBILITIES = [
   },
   {
     value: "internal",
-    title: "NU only",
-    description:
-      "Signed-in students and staff can read it. Outsiders see a 404.",
+    title: "Members only",
+    description: "Only signed-in students and staff can read this page.",
   },
   {
     value: "private",

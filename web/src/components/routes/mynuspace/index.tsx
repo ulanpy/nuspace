@@ -39,9 +39,10 @@ export function Page({
   const debouncedSearch = useDebounced(searchInput)
   // Memoised: a fresh object is a new query key, which restarts the infinite
   // list on every render.
-  // `include_private: false` — this is a public directory, so a `private`
-  // page stays out of it even when the viewer is the one who made it private.
-  // Every other pages list leaves it on.
+  // `private` pages are excluded server-side, in `repository.py:_list_conditions`
+  // — this is a public directory, so a page stays out of it even when the
+  // viewer is the one who made it private. That is not a filter this component
+  // can pass, so there is nothing to add here.
   const filters = useMemo(() => ({ keyword: q }), [q])
 
   const [isCreating, setIsCreating] = useState(false)

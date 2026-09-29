@@ -36,10 +36,7 @@ export function Page({
   return (
     <>
       {page.permissions.can_view_admin_link ? (
-        <SettingsSection
-          title="Admin access link"
-          description="Anyone signed in who opens this link becomes an admin. Do not share it publicly."
-        >
+        <SettingsSection title="Admin access link">
           <AdminAccessLink slug={page.slug} />
         </SettingsSection>
       ) : null}

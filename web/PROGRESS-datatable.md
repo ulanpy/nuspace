@@ -869,7 +869,7 @@ out of the table the way it walked them in.
 These are independent of the tables and could be done in any order. They are
 collected here because they were found in the same pass.
 
-- [ ] 8.1 **Avatar on `/account` — fixed by deleting the broken markup.**
+- [x] 8.1 **Avatar on `/account` — fixed by deleting the broken markup.**
       `components/routes/account/index.tsx:58-77` puts a `size-12 rounded-full`
       `ResilientImage` inside `ItemMedia variant="image"`, which hardcodes
       `size-10 overflow-hidden rounded-sm` (`ui/item.tsx:90-91`). The inner box is
@@ -878,7 +878,7 @@ collected here because they were found in the same pass.
       `ItemMedia` entirely; `Avatar` is already `rounded-full` and self-sizing,
       so no class overrides are needed. `ResilientImage` stays — it is still used
       for the page logo and in `page-card.tsx`.
-- [ ] 8.2 **`Page` gains a `media` prop.**
+- [x] 8.2 **`Page` gains a `media` prop.**
       `components/shared/page/header.tsx:27` — the existing `<div>` becomes a
       flex row, with the inner text block kept at `flex-1` so pages _without_
       media keep today's wrapping exactly:
@@ -898,7 +898,7 @@ collected here because they were found in the same pass.
           the `hasHeader` check at `:54`. Every other `Page` caller is unaffected —
           that is why this is a new optional prop and not a required one.
 
-- [ ] 8.3 **Rewrite `/account`'s header and sections**
+- [x] 8.3 **Rewrite `/account`'s header and sections**
       (`components/routes/account/index.tsx`): - [ ] `eyebrow="Account"`, `title={me.name}`, `description={me.email}`,
       `media={<Avatar size="lg">…</Avatar>}`, `width="wide"`. The eyebrow
       uses the slot that already exists at `header.tsx:29`, so the route
@@ -909,28 +909,28 @@ collected here because they were found in the same pass.
       `ItemGroup` and all — the group is one `div` today and is what gives
       the second integration its gap. - [ ] **Do not** make `SettingsSection`'s `title` optional
       (`settings/settings-section.tsx:6`). It stays required.
-- [ ] 8.4 **Visibility labels: the trigger and the dropdown disagree.**
+- [x] 8.4 **Visibility labels: the trigger and the dropdown disagree.**
       `shared/pages/visibility-picker.tsx:45-56` passes no `items` to
       `Select.Root`, so base-ui falls back to rendering the raw value and the
       `capitalize` class on the trigger at `:55` shows **"Internal"** while
       `SelectItem` at `:61` shows **"NU only"**. Fix: pass
       `items={{ public: "Public", internal: "Members only", private: "Private" }}`
       to `Select.Root` and drop `capitalize`. One label set everywhere.
-- [ ] 8.5 **Simplify the visibility copy** (`shared/pages/visibilities.ts`) —
+- [x] 8.5 **Simplify the visibility copy** (`shared/pages/visibilities.ts`) —
       `Public` / `Members only` / `Private`, one short line each. Remove
       "Outsiders see a 404." (`:14`): a 404 is a transport detail, not something
       a user needs. Also drop the 404 mention in `general/index.tsx:102`.
-- [ ] 8.6 Sidebar (`components/layouts/app/app-sidebar.tsx:51-57`) — move
+- [x] 8.6 Sidebar (`components/layouts/app/app-sidebar.tsx:51-57`) — move
       `/mynuspace` to first position in `NAV_ITEMS`, `UserIcon` → `GlobeIcon`.
       **Labels unchanged.**
-- [ ] 8.7 **"Admin access link" into an `Item`.**
+- [x] 8.7 **"Admin access link" into an `Item`.**
       `components/routes/pages/settings/components/admin-access-link.tsx` —
       wrap in `Item variant="muted"`, read-only `Input` in `ItemContent`, Copy
       and Rotate in `ItemActions`, drop the `SettingsSection` description (the
       comment at `:36-39` explains why there was _no_ `Item`; it goes with it).
       Also clear the un-cleared `setTimeout` at `:28` on unmount — it fires
       `setCopied` on an unmounted component.
-- [ ] 8.8 **FilterTabs scrollbars — found, and it is not an overflow bug.**
+- [x] 8.8 **FilterTabs scrollbars — found, and it is not an overflow bug.**
       `ui/tabs.tsx:62` gives `TabsTrigger` an `after:bottom-[-5px] after:h-0.5`
       bar that nothing clips. `FilterTabs` (`shared/list-filters.tsx:81`) and
       `RouteTabs` (`shared/route-tabs.tsx:46`) both put `overflow-x-auto` on the
@@ -940,21 +940,83 @@ collected here because they were found in the same pass.
       scrollbar is legitimate (the `TabsList` cannot shrink below its content)
       and stays. Do not "fix" this by editing `ui/tabs.tsx` — it is vendor code
       and the other two call sites get it for free.
-- [ ] 8.9 `components/routes/mynuspace/index.tsx:42-44` — delete the stale
+- [x] 8.9 `components/routes/mynuspace/index.tsx:42-44` — delete the stale
       `include_private: false` comment. That parameter no longer exists anywhere;
       the exclusion now lives in `repository.py:_list_conditions`. The comment
       actively misleads: it reads like a caller is passing it.
-- [ ] 8.10 `components/routes/pages/settings/general/index.tsx:46` — "Put the
+- [x] 8.10 `components/routes/pages/settings/general/index.tsx:46` — "Put the
       radio back where it was." There is no radio; it is a `Select`.
-- [ ] 8.11 **Duplicated `TelegramBindChallenge`** —
+- [x] 8.11 **Duplicated `TelegramBindChallenge`** —
       `lib/user/types.ts:17-20` and `hooks/use-connect-telegram.ts:38-41` are
       two shapes with one name. Collapse to one.
-- [ ] 8.12 `shared/pages/page-form.tsx:35` — the hand-written
+- [x] 8.12 `shared/pages/page-form.tsx:35` — the hand-written
       `z.enum(["public", "internal", "private"])`. zod 4 needs a literal tuple, so
       it cannot derive from the generated union; point it at `PAGE_VISIBILITIES`
       from `lib/pages/constants.ts` so there is one list. After this, visibility
       values exist in exactly two places: the derived _type_ (schema) and the
       runtime _tuple_ (constants).
+
+### Phase 8 — what reality added
+
+**8.4's suggested fix would have created the second label set Phases 4 and 5
+just deleted.** The box says to pass
+`items={{ public: "Public", internal: "Members only", private: "Private" }}` to
+`Select.Root` — a literal object, next to the `SelectItem`s that render
+`option.title` from `PAGE_VISIBILITIES`. That is the same two-sources bug 8.4 is
+reporting, one level down: the trigger and the dropdown would agree today and
+drift the first time someone edits `constants.ts`. So `items` is derived —
+`PAGE_VISIBILITIES.map(o => ({ label: o.title, value: o.value }))` — and the
+`capitalize` class is gone rather than kept as a third rendering of the same
+value. (base-ui's `items` here takes a record or an array, not the function form
+its docs show; the array needs no cast to keep the literal key type, so no
+`as Record<...>` either.) 5.10's "one label set" now covers the trigger, the
+dropdown, the table badge, the filter chips and the settings row.
+
+**8.7's warning moved rather than disappeared.** The box says to drop the
+`SettingsSection` description, and the description is exactly the sentence that
+decides whether this link gets pasted into a public channel — dropping it
+outright would have lost the only warning the feature has. It is now the
+`Item`'s `ItemDescription`, which is a better home than the one it was in: a
+section header scrolls out of view, the row does not, and the sentence now sits
+next to the thing being copied. The comment that argued for the old shape (no
+`Item` title, because the section above already says it) went with it, as
+instructed — but its actual observation was right and the fix was in the wrong
+place.
+
+**8.8 is CSS, and the diagnosis in the box is the interesting part.** The 5px
+`after:` bar on `TabsTrigger` is real vertical overflow once the root scrolls
+horizontally, because `overflow-x: auto` forces `overflow-y: visible` to compute
+to `auto`. So the fix belongs on the two `Tabs` roots — `overflow-y-hidden`
+next to `overflow-x-auto` in `FilterTabs` and `RouteTabs` — and not in
+`ui/tabs.tsx`, which is vendor code whose other call sites get the fix for
+free. The horizontal scrollbar stays: the `TabsList` genuinely cannot shrink
+below its content.
+
+**8.1 was a sizing bug, not a styling one.** The old markup put a `size-12`
+image inside `ItemMedia`'s hardcoded `size-10 overflow-hidden rounded-sm`, so the
+inner box was *larger than its clipper* — the `rounded-full` was cropped away
+and no amount of class tweaking on the image could have fixed it. `Avatar` is
+already round and sizes to its own content, so the `media` prop takes the
+caller's node and neither element needs a size override. `ResilientImage` is
+gone from this file but still used for the page logo and in `page-card.tsx`.
+
+**8.12 needed no cast.** The box worried that "zod 4 needs a literal tuple", but
+`z.enum` accepts `PAGE_VISIBILITY_VALUES` directly — the account route's
+`z.array(z.enum(PAGE_VISIBILITY_VALUES))` has been doing it since Phase 5.
+Visibility values now exist in exactly two places, as the box predicted: the
+derived _type_ from the schema and the runtime _tuple_ in `constants.ts`.
+
+**8.11 was a delete, not a merge.** `use-connect-telegram.ts` re-declared
+`TelegramBindChallenge` identically to `lib/user/types.ts`, and the only
+consumer already imported the one from `@/lib/user` — so the hook's copy had
+zero readers. It is gone rather than aliased.
+
+**8.3's `width="prose"` was going to break the table it sits above.** `/account`
+is a `prose` page, and `prose` centres the body in `max-w-3xl`; a six-column
+table in a 48rem column scrolls sideways. It is `wide` now, which is the same
+change 10.3 asks `CONVENTIONS.md` to record as a rule: a page hosting a
+datatable is `wide`. The eyebrow keeps the route's name now that the `h1` is
+the person, so "Account" is not an `h1` and an `h2` 30px apart.
 
 ---
 
@@ -1022,6 +1084,7 @@ Append one line per ticked box. Newest at the bottom.
 | 2026-09-30 | 5     | My Pages table         | `my-pages.tsx` is now a `DataTable`: `logo | name (link) | slug | role | visibility | actions`. The `Item render={<Link>}` whole-row-link hack is gone — the name is a link **in the cell**, which is what lets the row also host an actions cell. `slug` and `role` are plain text and unsortable; `name` and `visibility` carry chevrons, because the backend whitelist is name / visibility / created_at and a chevron on a column that cannot sort is a lie. 5.7's two gates kept separate: Settings on `canEditField(page, "name")`, Delete on `permissions.can_delete`, the latter behind a `ConfirmDialog`. No bulk path, per the decisions table. Empty state branches on whether a filter is active, with no second unfiltered request. **The role filter is a `FilterTabs`, not a second `MultiFilter`** — the backend's `role` is a single enum, so multi-select cannot be expressed, and `FilterTabs`' All chip is the omitted param. Both filter constants therefore lost their "all" entry (see 5.8's note). **7.1 is ticked here**: the filters write `?role=`/`?visibility=`, which the route's `validateSearch` would otherwise reject, so the account schema grew `size`/`role`/`visibility`/`sort`/`order` plus `page`'s `.catch(1)`. **The chevrons were dead on arrival** and no box mentions it: `state: { sorting }` is controlled, so `getToggleSortingHandler()` had nowhere to write and silently did nothing. `onSortingChange` is now an explicit option on `useDataTable` and the reason is in its docstring. `PAGE_SORTS` + `isPageSort` replace an `as PageSort` cast that both tripped the linter and would have written any string into the URL; the list now backs the route's `z.enum`, the guard, and the backend whitelist. 5.10's label-set requirement holds by construction — the visibility filter's labels are `PAGE_VISIBILITIES.map(o => o.title)`, so 8.5's copy change moves the filter with it. **4 new tests, 91 total.** Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files; backend ruff 11 = baseline, black ✓. |
 | 2026-09-30 | 6     | Admins table          | `admins-table.tsx` is now a `DataTable`: `checkbox | avatar | name (sortable) | role | actions`. **"You" and the owner became rows** with a `pinned` flag rather than two `Item` elements above the table, which is what 6.1 asks for and what makes the footer's `pinned` count `rows.length - items.length` instead of the hand-summed `(me ? 1 : 0) + 1` that had to be kept in step with two separate `if`s by hand. The flag is read three times — the count, `enableRowSelection`, and the per-row `adminPageActions` — so the three cannot disagree. **`pinnedSelf` is gone** (6.8): it inferred "I am a plain page admin" from `can_edit && !can_manage_admins`, which cannot actually tell a page admin from a site admin because both get `can_manage_admins`. The session's own `role` can, and `usePermissions()` already exposes it, so `me` is unconditional and `isSiteAdmin` decides the "You" row. A wrong answer was a Leave button on a membership the user does not have, not a duplicate row. `isCurrentUserOwner` now reads the FK through `pageOwnership` (6.9) — the old `page.owner_user?.sub === me.sub` compares two optional strings and answers "yes" when both are missing. **6.6's responsive pairs are one `ResponsiveAction` component, not the four buttons they were** — the two widths cannot drift apart that way. **6.2's "Make owner" is absent for a multi-row selection** rather than disabled, since ownership is one row's worth of authority; bulk Remove is N single-sub requests, so the dialog reports partial success via a toast instead of hanging on one failure. `enableRowSelection` had to go on `useDataTable`, not the column: in v8 `row.getCanSelect()` and the header's select-all both read a table option. `QueryBoundary` now guards only the error case — wrapping the table would hide the pinned rows, toolbar and footer for the whole first load, which is the one thing the old code kept them outside the boundary for. 7.2 shipped with 6.10 (the sort had nowhere to live otherwise), and `sortingToSearch` now takes its whitelist as an argument so the pages and admins tables share one mapper with no cast. **92 tests** (one new, pinning that the admins guard rejects a page-only column). Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files; backend ruff 11 = baseline, black ✓. |
 | 2026-09-30 | 7     | Route search schemas   | 7.1, 7.2, 7.5 shipped inside Phases 5 and 6 because a filter or a sort that writes `?role=`/`?sort=` has nothing to live in if the route's `validateSearch` rejects it. **7.3 names a route that does not exist** — `course-template-tools.tsx` is a dialog inside `course-card.tsx`, which both `/courses` and `/courses/schedule` render, so a `size` param on either would be one control fighting the other for a single key over a dialog nobody has opened. The size is local state; what 7.3 wanted (the third hardcoded `PAGE_SIZE`, also 9.1) is gone in favour of `DEFAULT_PAGE_SIZE` and `PAGE_SIZES`. Its 22-line hand-rolled Previous/Next became the shared `TablePagination` in the same pass, which is where the page-size control came from; `summary` is `null` because `ListTemplateDTO` carries `total_pages` and no total to count, and the box says so. **7.4: six call sites had to remember to reset `page` and forgetting it is invisible in review** — each table now has one `changeSearch` doing `page: patch.page ?? 1`, so a real page click keeps its number and everything else resets. **7.6 was fixed by deleting a parameter, not adding one**: the signatures differed by an optional `replace` that no caller anywhere passed (declared in three places, used in none), so both are now `(updater) => void` and the account route documents why it pushes rather than replaces — a filter or a page is a history entry. 92 tests. Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files. |
+| 2026-09-30 | 8     | The small fixes       | **8.4's suggested fix would have rebuilt the second label set Phases 4 and 5 just deleted** — the box's literal `items={{ public: \"Public\", ... }}` sits next to `SelectItem`s rendering `option.title` from `PAGE_VISIBILITIES`, which is the same two-sources bug one level down, agreeing today and drifting on the first edit to `constants.ts`. `items` is derived instead, and `capitalize` is gone rather than kept as a third rendering of one value. 5.10's \"one label set\" now covers the trigger, the dropdown, the table badge, the filter chips and the settings row. **8.7's warning moved rather than disappeared**: the section description being dropped is the only sentence deciding whether this link gets pasted into a public channel, so it is now the `Item`'s `ItemDescription` — a better home, since a section header scrolls out of view and the row does not. The comment that argued for the old shape went as instructed, but its observation was right and the fix was in the wrong place. Its un-cleared `setTimeout` is now a ref cleared on unmount (no new shared hook for one call site). **8.1 was a sizing bug, not a styling one**: a `size-12` image inside `ItemMedia`'s hardcoded `size-10 overflow-hidden rounded-sm` was larger than its clipper, so `rounded-full` was cropped away and no class on the image could have fixed it. `Avatar` is round and self-sizing, so the new `media` prop takes the caller's node and neither element needs a size override. **8.3's `prose` would have broken the table above it** — a six-column table in a centred `max-w-3xl` scrolls sideways, so `/account` is `wide`, which is the rule 10.3 asks `CONVENTIONS.md` to record. **8.8 is CSS and the diagnosis is the point**: `overflow-x: auto` forces `overflow-y: visible` to compute to `auto`, so `TabsTrigger`'s 5px `after` bar is real vertical overflow; the fix is `overflow-y-hidden` on the two `Tabs` roots, not in vendor `ui/tabs.tsx` whose other call sites get it free. The horizontal scrollbar legitimately stays. **8.12 needed no cast** — zod 4 takes `PAGE_VISIBILITY_VALUES` directly, as the account route's `z.array(z.enum(...))` has since Phase 5, so values now live in exactly two places as the box predicted. **8.11 was a delete**: the hook's `TelegramBindChallenge` had zero readers. 8.6/8.9/8.10 as written. 92 tests. Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files. |
 
 ## Open questions
 

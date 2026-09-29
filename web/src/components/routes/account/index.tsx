@@ -6,14 +6,13 @@ import { Page as PageLayout } from "@/components/shared/page"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
 import { TelegramLink } from "@/components/routes/account/components/telegram-link"
 import { MyPages } from "@/components/routes/account/components/my-pages"
-import { ResilientImage } from "@/components/shared/media/resilient-image"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Item,
   ItemActions,
   ItemContent,
   ItemDescription,
   ItemGroup,
-  ItemMedia,
   ItemTitle,
 } from "@/components/ui/item"
 
@@ -42,42 +41,33 @@ export function Page({
 
   return (
     <PageLayout
-      title="Account"
-      description="Your Telegram connection and the pages you manage."
-      width="prose"
+      // The eyebrow keeps the route's name now that the `h1` is the person.
+      // "Account" as an `h1` and again as a section heading 30px below it, with
+      // two descriptions saying the same thing, is what this replaces.
+      eyebrow="Account"
+      title={me.name}
+      description={me.email}
+      // `wide`, not `prose`: the page hosts a table, and a centred `max-w-3xl`
+      // column makes six columns scroll sideways.
+      width="wide"
+      media={
+        <Avatar className="size-12">
+          {/* No uploaded picture any more — the user page went with the user
+              feature — so the identity provider's claim is the only avatar
+              there is, and the initial is the fallback. `Avatar` is already
+              round and sizes itself, which is the whole fix: the old markup put
+              a `size-12` image inside `ItemMedia`'s hardcoded `size-10
+              overflow-hidden rounded-sm`, so the image was bigger than the box
+              clipping it and the `rounded-full` never read. */}
+          <AvatarImage src={me.picture ?? undefined} alt="" />
+          <AvatarFallback className="text-lg">
+            {me.name.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      }
     >
-      <SettingsSection
-        title="Account"
-        description="How Nuspace reaches you, and which pages you run."
-      >
+      <SettingsSection title="Integrations">
         <ItemGroup>
-          <Item variant="muted">
-            <ItemMedia variant="image">
-              <ResilientImage
-                // No uploaded picture any more — the user page went with the
-                // user feature — so the identity provider's claim is the only
-                // avatar there is, and the initial is the fallback.
-                src={me.picture}
-                alt=""
-                aria-hidden
-                eager
-                containerClassName="size-12 rounded-full"
-                fallback={
-                  <span
-                    aria-hidden
-                    className="grid size-full place-items-center bg-muted text-lg font-medium text-muted-foreground"
-                  >
-                    {me.name.charAt(0).toUpperCase()}
-                  </span>
-                }
-              />
-            </ItemMedia>
-            <ItemContent>
-              <ItemTitle>{me.name}</ItemTitle>
-              <ItemDescription>{me.email}</ItemDescription>
-            </ItemContent>
-          </Item>
-
           <Item variant="muted">
             <ItemContent>
               <ItemTitle>Telegram</ItemTitle>

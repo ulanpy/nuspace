@@ -9,7 +9,7 @@ import {
   LogOutIcon,
   MenuIcon,
   PanelLeftIcon,
-  UserIcon,
+  GlobeIcon,
 } from "lucide-react"
 import type { LinkProps } from "@tanstack/react-router"
 import type { LucideIcon } from "lucide-react"
@@ -49,9 +49,11 @@ interface NavItem {
 // Home is the logo and the account card at the bottom is the profile, matching
 // the previous app.
 const NAV_ITEMS: NavItem[] = [
+  // First: it is a directory, not a section of the app you are working in, and
+  // it was third for no reason other than the order things were added.
+  { to: "/mynuspace", label: "My Nuspace", icon: GlobeIcon },
   { to: "/events", label: "Events", icon: CalendarIcon },
   { to: "/courses", label: "Courses", icon: BookOpenIcon },
-  { to: "/mynuspace", label: "My Nuspace", icon: UserIcon },
   { to: "/opportunities", label: "Opportunities Digest", icon: BriefcaseIcon },
   { to: "/contacts", label: "Contacts", icon: InfoIcon },
 ]

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { CheckIcon, CopyIcon, RotateCwIcon } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -8,14 +8,38 @@ import { pageAdminLinkQueryOptions, useRotateAdminLink } from "@/lib/pages"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+} from "@/components/ui/item"
 
-/** The link body only — the page wraps this in a `SettingsSection`. */
+/**
+ * The admin access link, as one row: the link, the warning, and the two things
+ * you can do to it.
+ *
+ * The warning lives here rather than in the `SettingsSection` above because a
+ * section header scrolls out of view and the row does not — the one sentence
+ * that decides whether this gets pasted into a public channel belongs next to
+ * the thing being pasted.
+ */
 export function AdminAccessLink({ slug }: { slug: string }) {
   const { data: adminLink } = useQuery(pageAdminLinkQueryOptions(slug))
   const rotateAdminLink = useRotateAdminLink()
   const [copied, setCopied] = useState(false)
   const [isConfirmingCopy, setIsConfirmingCopy] = useState(false)
   const [isConfirmingRotate, setIsConfirmingRotate] = useState(false)
+  // The "copied" tick has to be cancellable: the old `setTimeout` fired
+  // `setCopied` two seconds after the component was gone, and rotating the link
+  // or leaving the page inside that window wrote to a dead component.
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (copiedTimer.current) clearTimeout(copiedTimer.current)
+    },
+    []
+  )
 
   const url = adminLink?.url ?? ""
 
@@ -23,47 +47,51 @@ export function AdminAccessLink({ slug }: { slug: string }) {
     if (!url) return
     try {
       await navigator.clipboard.writeText(url)
-      setCopied(true)
       toast.success("Link copied to clipboard.")
-      setTimeout(() => setCopied(false), 2000)
+      setCopied(true)
+      if (copiedTimer.current) clearTimeout(copiedTimer.current)
+      copiedTimer.current = setTimeout(() => setCopied(false), 2000)
     } catch {
       toast.error("Could not copy the link. Try again.")
     }
   }
 
   return (
-    <div className="space-y-4">
-      {/* No `Item` title or description here: the section above already says
-          "Admin access link" and what the link does. Repeating it inside the
-          row read as a stutter, and the section is the one that scrolls out
-          of view — so the warning that matters most belongs up there. */}
-      <Input
-        readOnly
-        value={url}
-        aria-label="Admin access link"
-        placeholder="Loading link…"
-        className="font-mono"
-      />
-
-      <div className="flex justify-end gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsConfirmingCopy(true)}
-        >
-          {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
-          Copy link
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsConfirmingRotate(true)}
-          disabled={rotateAdminLink.isPending}
-        >
-          <RotateCwIcon aria-hidden />
-          Rotate link
-        </Button>
-      </div>
+    <div className="space-y-2">
+      <Item variant="muted">
+        <ItemContent>
+          <Input
+            readOnly
+            value={url}
+            aria-label="Admin access link"
+            placeholder="Loading link…"
+            className="font-mono"
+          />
+          <ItemDescription>
+            Anyone signed in who opens this link becomes an admin. Do not share
+            it publicly.
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsConfirmingCopy(true)}
+          >
+            {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
+            Copy link
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsConfirmingRotate(true)}
+            disabled={rotateAdminLink.isPending}
+          >
+            <RotateCwIcon aria-hidden />
+            Rotate link
+          </Button>
+        </ItemActions>
+      </Item>
 
       {rotateAdminLink.isError && (
         <p className="text-sm text-destructive" role="alert">

@@ -20,6 +20,7 @@ import type { UploadItem } from "@/hooks/use-media-upload"
 import { MediaPicker } from "@/components/shared/media/picker"
 import { slugSchema } from "@/lib/slug"
 import { toPageUploadItems } from "@/lib/pages"
+import { PAGE_VISIBILITY_VALUES } from "@/lib/pages/constants"
 import {
   canEditField,
   type Page,
@@ -32,7 +33,7 @@ const pageSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   description: z.string().trim(),
   slug: slugSchema(),
-  visibility: z.enum(["public", "internal", "private"]),
+  visibility: z.enum(PAGE_VISIBILITY_VALUES),
 })
 
 type PageFormValues = z.infer<typeof pageSchema>
