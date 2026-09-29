@@ -67,7 +67,7 @@ export function AdminsTable({
   const excludeSub = me?.sub
 
   const query = useQuery({
-    queryKey: qk.pages.admins(slug, page, excludeSub),
+    queryKey: qk.pages.admins(slug, { page, excludeSub }),
     queryFn: () =>
       fetchPageAdminsPage(slug, {
         page,

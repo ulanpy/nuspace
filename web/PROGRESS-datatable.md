@@ -19,7 +19,7 @@ taken with the reasoning below in hand.
 
 **Do not "fix" Phase 1 back toward `b176a18`.** In particular, the docstring at
 `api.py:84-88` and the `_list_conditions` docstring at `repository.py:118-134`
-both currently argue *against* a `role` filter. Phase 1 tells you to rewrite
+both currently argue _against_ a `role` filter. Phase 1 tells you to rewrite
 them. When you do, **keep the history in the replacement text** — do not delete
 it. Those docstrings are the only thing stopping the next agent from repeating
 the loop.
@@ -197,7 +197,7 @@ Notes:
   (all logic), `types.ts` (types only), `tests.ts`, `index.ts` (barrel).
   Consumers import the barrel, never a file inside it. A new
   `shared/data-table/use-data-table.ts` would break this — it goes in
-  `src/hooks/`, because `CONVENTIONS.md:179-183` puts shared *stateful* behavior
+  `src/hooks/`, because `CONVENTIONS.md:179-183` puts shared _stateful_ behavior
   in `src/hooks/`.
 - `components/ui/` is shadcn vendor code. Consume it; do not hand-edit it. If a
   primitive does not fit, build the thing in `shared/`. This is also why 9.3
@@ -219,27 +219,27 @@ Notes:
 
 ## Target shape (all decisions are settled — do not re-litigate)
 
-| Decision                | Value                                                                                  |
-| ----------------------- | -------------------------------------------------------------------------------------- |
-| Datatable library       | `@tanstack/react-table` + shadcn `table` via `pnpm exec shadcn add table`              |
-| Paging / sorting        | **Server-side**, driven by route `validateSearch`. Never client-side over one page.      |
-| Rows per page           | 10 / 20 / 30 / 40 / 50, default 10, on **all three** paginated lists                    |
+| Decision                | Value                                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Datatable library       | `@tanstack/react-table` + shadcn `table` via `pnpm exec shadcn add table`                       |
+| Paging / sorting        | **Server-side**, driven by route `validateSearch`. Never client-side over one page.             |
+| Rows per page           | 10 / 20 / 30 / 40 / 50, default 10, on **all three** paginated lists                            |
 | Where the size lives    | Route `validateSearch`, values from that module's `constants.ts` — no `PAGE_SIZE` in components |
-| My Pages columns        | `logo \| name (link) \| slug \| role \| visibility \| actions`                          |
-| My Pages checkboxes     | **none**, and **no bulk delete**                                                        |
-| My Pages role filter    | `All roles` / `Owned by me` / `Where I'm an admin`                                       |
-| Admins columns          | `checkbox \| avatar \| name \| role \| actions`                                         |
-| Admins selection        | bulk `Remove`; `Make owner` **only when exactly one row is selected**                   |
-| Pinned rows             | "You" and "Owner", carried as react-table rows with `meta.pinned`                      |
-| Sortable pages columns  | `name`, `visibility`, `created_at`. **`slug` is not sortable.**                           |
-| Sortable admins columns | `name`, `created_at`                                                                     |
-| Page header media       | new `Page`/`PageHeader` `media` prop; avatar on `/account`                              |
-| Page widths             | `/account` and `/settings/admin-controls` → `width="wide"`                              |
-| Sidebar                 | `/mynuspace` moved to first, `UserIcon` → `GlobeIcon`. **Labels unchanged.**            |
-| `ui/` primitives        | all 39 unused ones **kept** — vendor code                                              |
-| My Pages search box     | **none** — see the Meilisearch trap in Phase 1                                          |
-| Column-visibility menu  | **none**. If columns crowd, `hidden lg:table-cell` on `slug` / `visibility`.           |
-| Reset-filters button    | **none** — each `MultiFilter` clears itself                                             |
+| My Pages columns        | `logo \| name (link) \| slug \| role \| visibility \| actions`                                  |
+| My Pages checkboxes     | **none**, and **no bulk delete**                                                                |
+| My Pages role filter    | `All roles` / `Owned by me` / `Where I'm an admin`                                              |
+| Admins columns          | `checkbox \| avatar \| name \| role \| actions`                                                 |
+| Admins selection        | bulk `Remove`; `Make owner` **only when exactly one row is selected**                           |
+| Pinned rows             | "You" and "Owner", carried as react-table rows with `meta.pinned`                               |
+| Sortable pages columns  | `name`, `visibility`, `created_at`. **`slug` is not sortable.**                                 |
+| Sortable admins columns | `name`, `created_at`                                                                            |
+| Page header media       | new `Page`/`PageHeader` `media` prop; avatar on `/account`                                      |
+| Page widths             | `/account` and `/settings/admin-controls` → `width="wide"`                                      |
+| Sidebar                 | `/mynuspace` moved to first, `UserIcon` → `GlobeIcon`. **Labels unchanged.**                    |
+| `ui/` primitives        | all 39 unused ones **kept** — vendor code                                                       |
+| My Pages search box     | **none** — see the Meilisearch trap in Phase 1                                                  |
+| Column-visibility menu  | **none**. If columns crowd, `hidden lg:table-cell` on `slug` / `visibility`.                    |
+| Reset-filters button    | **none** — each `MultiFilter` clears itself                                                     |
 
 ### The one semantic decision worth stating twice
 
@@ -248,9 +248,9 @@ disjoint from `role=owner`.
 
 This is not a preference. `repository.py:_list_conditions` carries a docstring
 recalling that a previous `role` implementation leaked pages the viewer both
-owned and administered into *both* buckets, and the fix was to delete the filter
+owned and administered into _both_ buckets, and the fix was to delete the filter
 entirely. We are re-adding the filter, so the `NOT owner` clause must be there
-from the first commit. A page you own *and* administer belongs under `Owner`
+from the first commit. A page you own _and_ administer belongs under `Owner`
 only.
 
 ---
@@ -290,7 +290,7 @@ last.
       and do not "fix" the count separately.
 - [x] 1.7 **`role=admin` is disjoint**: administered-by-me **AND NOT**
       owner-is-me. See the callout above. Without the `NOT owner`, a page you own
-      *and* administer appears under both Role options — the exact bug
+      _and_ administer appears under both Role options — the exact bug
       `b176a18` was written to end, and the one most likely to come back.
 - [x] 1.8 **Rewrite the `_list_conditions` docstring at `:118-134`.** It says
       "`mine` has no visibility filter at all" and explains the old leak. Both
@@ -306,7 +306,7 @@ last.
       and the existing order chain is then left completely untouched**:
       `owner-first DESC, has_media DESC, name ASC` (`:206-211`). Defaulting
       `sort` to `created_at` would silently reorder the list people see today,
-      with no diff to show for it. When `sort` *is* given it replaces the whole
+      with no diff to show for it. When `sort` _is_ given it replaces the whole
       chain, including dropping the owner-first prefix — prefixing it would make
       "sort by name" owner-grouped, which is not a name sort.
 - [x] 1.11 Sort columns go through a **whitelist dict**, never an interpolated
@@ -333,20 +333,14 @@ last.
       need index facet config in `search_indexes.py` plus a reindex.
       Silently-ignored params are how you get a bug report that says "the sort
       button does nothing".
-- [x] 1.15 Tests in `backend/modules/pages/tests/`:
-      - [x] `test_list_pages.py` — `role=owner` excludes administered-not-owned
-            and vice versa; a page owned *and* administered appears under
-            `owner` only, never under `admin`.
-      - [x] `test_list_pages.py` — `visibility` narrows, and combines with `role`
-            by AND.
-      - [x] `test_list_pages.py` — each sort column, both orders; `sort` absent
-            preserves the existing chain exactly.
-      - [x] `test_list_pages.py` — an unknown `sort` value is rejected.
-      - [x] `test_list_admins_pagination.py` — `sort=name` stays stable across a
-            page boundary (the tiebreaker concern the existing tests already
-            cover for `created_at`).
-      - [x] `test_page_visibility.py` — the new `visibility` filter does not
-            change the `browsable` scope.
+- [x] 1.15 Tests in `backend/modules/pages/tests/`: - [x] `test_list_pages.py` — `role=owner` excludes administered-not-owned
+      and vice versa; a page owned _and_ administered appears under
+      `owner` only, never under `admin`. - [x] `test_list_pages.py` — `visibility` narrows, and combines with `role`
+      by AND. - [x] `test_list_pages.py` — each sort column, both orders; `sort` absent
+      preserves the existing chain exactly. - [x] `test_list_pages.py` — an unknown `sort` value is rejected. - [x] `test_list_admins_pagination.py` — `sort=name` stays stable across a
+      page boundary (the tiebreaker concern the existing tests already
+      cover for `created_at`). - [x] `test_page_visibility.py` — the new `visibility` filter does not
+      change the `browsable` scope.
 
 ---
 
@@ -367,7 +361,7 @@ Verified live: `?sort=nonsense`, `?role=nonsense` and `?visibility=nonsense` on
 **2. `!=` was the wrong operator and would have shipped a silent hole.**
 `pages.owner` is nullable (`ON DELETE SET NULL`), and `owner != me` is NULL for
 an ownerless page — and NULL is not true — so plain `!=` would hide a page the
-caller genuinely *administers* from `Where I'm an admin`. `IS DISTINCT FROM`
+caller genuinely _administers_ from `Where I'm an admin`. `IS DISTINCT FROM`
 says "not you" for NULL, which is what "NOT owned by me" means. Caught while
 writing the test, not by a bug report; it is the reason the clause is a
 documented `is_distinct_from` and not a `!=`.
@@ -386,7 +380,7 @@ re-read, rewritten to call the method.
 **4. A `pages.id` tiebreaker on the sorted path.** 1.12 insists on
 `PageAdmin.user_sub` as a tiebreaker for offset paging over a
 non-deterministic order. The same argument applies to `name` and `created_at`
-on the pages list, and an explicit `sort` is a *new* order chain, so the hole
+on the pages list, and an explicit `sort` is a _new_ order chain, so the hole
 would be one this phase introduced. `Page.id ASC` last, `sort is None` only.
 
 **5. `test_page_visibility.py` needed a SQLAlchemy trap fixed.** The obvious
@@ -416,9 +410,7 @@ failures. A test that cannot fail is a comment.
 - [ ] 2.2 `web/src/api/query-keys.ts` — widen the two keys so a filter change
       cannot be served from a stale cache. A key that omits a param is the
       subtlest version of this bug: the UI looks broken only for users who
-      navigated in a particular order.
-      - [ ] `:32` → `mine(page, size, role, visibility, sort, order)`
-      - [ ] `:41-42` → `admins(slug, page, size, excludeSub, sort, order)`
+      navigated in a particular order. - [ ] `:32` → `mine(page, size, role, visibility, sort, order)` - [ ] `:41-42` → `admins(slug, page, size, excludeSub, sort, order)`
 - [ ] 2.3 `cd web && pnpm api:check` must pass.
 
 ---
@@ -465,7 +457,7 @@ Replaces `item.owner === me.sub` (`my-pages.tsx:112`),
       `PAGE_OWNERSHIP_FILTERS` (all / owner / admin), `PAGE_VISIBILITIES` as a
       `as const` tuple, `PAGE_VISIBILITY_FILTERS`, `PAGE_SIZES = [10,20,30,40,50]`,
       `DEFAULT_PAGE_SIZE = 10`. The tuple is the runtime list the zod enum needs;
-      the *type* still derives from the generated schema per
+      the _type_ still derives from the generated schema per
       `CONVENTIONS.md:218-219`. This is the third place visibility values appear
       (see 8.12) and must be the last.
 - [ ] 4.3 `web/src/lib/pages/functions.ts` — `pageOwnership(page, meSub)`: the
@@ -532,19 +524,20 @@ Columns, in order: `logo | name (link) | slug | role | visibility | actions`
 - [ ] 5.8 Toolbar row — two `MultiFilter`s plus the button, one row:
 
       ```tsx
-      <div className="flex flex-wrap items-center gap-2">
-        <MultiFilter label="Role" … />
-        <MultiFilter label="Visibility" … />
-        <Button className="ml-auto" onClick={() => setIsCreating(true)}>
-          <PlusIcon aria-hidden />
-          Create page
-        </Button>
-      </div>
-      ```
+          <div className="flex flex-wrap items-center gap-2">
+            <MultiFilter label="Role" … />
+            <MultiFilter label="Visibility" … />
+            <Button className="ml-auto" onClick={() => setIsCreating(true)}>
+              <PlusIcon aria-hidden />
+              Create page
+            </Button>
+          </div>
+          ```
 
-      `isCreating` and `PageFormDialog` **stay in this file** — the button keeps
-      its own state. The only edit to the existing markup is `justify-end` on the
-      old wrapper becoming `ml-auto` on the button.
+          `isCreating` and `PageFormDialog` **stay in this file** — the button keeps
+          its own state. The only edit to the existing markup is `justify-end` on the
+          old wrapper becoming `ml-auto` on the button.
+
 - [ ] 5.9 Role filter options: `All roles` / `Owned by me` /
       `Where I'm an admin`. An empty selection omits the param entirely.
 - [ ] 5.10 Visibility filter options, labelled from the same copy the picker uses
@@ -632,45 +625,42 @@ collected here because they were found in the same pass.
       `components/routes/account/index.tsx:58-77` puts a `size-12 rounded-full`
       `ResilientImage` inside `ItemMedia variant="image"`, which hardcodes
       `size-10 overflow-hidden rounded-sm` (`ui/item.tsx:90-91`). The inner box is
-      *larger than its clipper*, so the `rounded-full` never reads and the picture
+      _larger than its clipper_, so the `rounded-full` never reads and the picture
       is cropped to a rounded rectangle. 8.2's `media` prop removes the
       `ItemMedia` entirely; `Avatar` is already `rounded-full` and self-sizing,
       so no class overrides are needed. `ResilientImage` stays — it is still used
       for the page logo and in `page-card.tsx`.
 - [ ] 8.2 **`Page` gains a `media` prop.**
       `components/shared/page/header.tsx:27` — the existing `<div>` becomes a
-      flex row, with the inner text block kept at `flex-1` so pages *without*
+      flex row, with the inner text block kept at `flex-1` so pages _without_
       media keep today's wrapping exactly:
 
       ```tsx
-      <div className="flex min-w-0 items-center gap-3">
-        {media}
-        <div className="min-w-0 flex-1">
-          {eyebrow && …}
-          <h1 …>{title}</h1>
-          {description && …}
-        </div>
-      </div>
-      ```
+          <div className="flex min-w-0 items-center gap-3">
+            {media}
+            <div className="min-w-0 flex-1">
+              {eyebrow && …}
+              <h1 …>{title}</h1>
+              {description && …}
+            </div>
+          </div>
+          ```
 
-      `components/shared/page/index.tsx` threads `media` through and adds it to
-      the `hasHeader` check at `:54`. Every other `Page` caller is unaffected —
-      that is why this is a new optional prop and not a required one.
+          `components/shared/page/index.tsx` threads `media` through and adds it to
+          the `hasHeader` check at `:54`. Every other `Page` caller is unaffected —
+          that is why this is a new optional prop and not a required one.
+
 - [ ] 8.3 **Rewrite `/account`'s header and sections**
-      (`components/routes/account/index.tsx`):
-      - [ ] `eyebrow="Account"`, `title={me.name}`, `description={me.email}`,
-            `media={<Avatar size="lg">…</Avatar>}`, `width="wide"`. The eyebrow
-            uses the slot that already exists at `header.tsx:29`, so the route
-            keeps its name while the `h1` is the person.
-      - [ ] Delete the page description (`:48-49`) and the duplicate
-            `SettingsSection title="Account"` + its description (`:52-55`). The
-            word "Account" currently appears as an `h1` and an `h2` ~30px apart,
-            and the two descriptions say the same thing.
-      - [ ] Rename the section to **"Integrations"**. The Telegram `Item` stays,
-            `ItemGroup` and all — the group is one `div` today and is what gives
-            the second integration its gap.
-      - [ ] **Do not** make `SettingsSection`'s `title` optional
-            (`settings/settings-section.tsx:6`). It stays required.
+      (`components/routes/account/index.tsx`): - [ ] `eyebrow="Account"`, `title={me.name}`, `description={me.email}`,
+      `media={<Avatar size="lg">…</Avatar>}`, `width="wide"`. The eyebrow
+      uses the slot that already exists at `header.tsx:29`, so the route
+      keeps its name while the `h1` is the person. - [ ] Delete the page description (`:48-49`) and the duplicate
+      `SettingsSection title="Account"` + its description (`:52-55`). The
+      word "Account" currently appears as an `h1` and an `h2` ~30px apart,
+      and the two descriptions say the same thing. - [ ] Rename the section to **"Integrations"**. The Telegram `Item` stays,
+      `ItemGroup` and all — the group is one `div` today and is what gives
+      the second integration its gap. - [ ] **Do not** make `SettingsSection`'s `title` optional
+      (`settings/settings-section.tsx:6`). It stays required.
 - [ ] 8.4 **Visibility labels: the trigger and the dropdown disagree.**
       `shared/pages/visibility-picker.tsx:45-56` passes no `items` to
       `Select.Root`, so base-ui falls back to rendering the raw value and the
@@ -689,7 +679,7 @@ collected here because they were found in the same pass.
       `components/routes/pages/settings/components/admin-access-link.tsx` —
       wrap in `Item variant="muted"`, read-only `Input` in `ItemContent`, Copy
       and Rotate in `ItemActions`, drop the `SettingsSection` description (the
-      comment at `:36-39` explains why there was *no* `Item`; it goes with it).
+      comment at `:36-39` explains why there was _no_ `Item`; it goes with it).
       Also clear the un-cleared `setTimeout` at `:28` on unmount — it fires
       `setCopied` on an unmounted component.
 - [ ] 8.8 **FilterTabs scrollbars — found, and it is not an overflow bug.**
@@ -715,8 +705,8 @@ collected here because they were found in the same pass.
       `z.enum(["public", "internal", "private"])`. zod 4 needs a literal tuple, so
       it cannot derive from the generated union; point it at `PAGE_VISIBILITIES`
       from `lib/pages/constants.ts` so there is one list. After this, visibility
-      values exist in exactly two places: the derived *type* (schema) and the
-      runtime *tuple* (constants).
+      values exist in exactly two places: the derived _type_ (schema) and the
+      runtime _tuple_ (constants).
 
 ---
 
@@ -748,7 +738,7 @@ Last, so the document describes the code that landed. Seven edits:
 - [ ] 10.1 `shared/table/` and `shared/data-table/` are missing from the shared
       -domains list (`:81-89`).
 - [ ] 10.2 Note that `useDataTable` lives in `src/hooks/`, not beside the
-      component — `CONVENTIONS.md:179-183` puts shared *stateful* behavior in
+      component — `CONVENTIONS.md:179-183` puts shared _stateful_ behavior in
       `hooks/`, and putting it in `components/shared/` would have looked right
       and been wrong.
 - [ ] 10.3 Move `/account` and `/settings/admin-controls` to `wide` in the
@@ -769,12 +759,12 @@ Last, so the document describes the code that landed. Seven edits:
 
 Append one line per ticked box. Newest at the bottom.
 
-| Date       | Phase | What                    | Notes                                                                                                                                                                                                                                                                                                                                                     |
-| ---------- | ----- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| —          | —     | Plan written            | `web/PROGRESS-datatable.md` created. No code changed yet. Sibling of `web/PROGRESS.md`, which is live and untouched.                                                                                                                                                                                                                                                                                                       |
-| —          | —     | Plan corrected          | Phase 1 was found to reverse `b176a18`, which removed the `role` filter and the `mine` visibility clause two commits earlier. **The user confirmed the reversal is intentional.** Added a "Read this first" section carrying the three historical bugs, and turned 1.8/1.9 from "rewrite these docstrings" into "rewrite but preserve the history in them". Line refs re-verified against the tree: `_list_conditions` `:108`, `mine` branch `:136`, `list_pages` `:151`, `meili` short-circuit `:165-177`, `order_clause` `:190-194`, order chain `:206-211`, `list_admins_page` `:241`.   |
-| 2026-09-30 | 0     | Pre-flight              | `web/PROGRESS.md` Phase 4 **fully ticked** — no race. Phases 5/6/7 open and staying open (docs / prod push / deferred). Baseline commit `fea3b84`. Four pre-existing reds fixed, all detailed above: the `fastapi` container had not booted in two days (`openai` missing from the stale `fastapi-venv` volume, so `api:check` was unrunnable), `schema.d.ts` 434 lines behind on the `agent` module, ruff 16 not 11 (the extra 5 in `modules/pages/`), and black red on two more pages files. **Green now: backend 209 tests, ruff 11, black ✓. Web 83 tests, typecheck ✓, build ✓, lint 9 = baseline, `api:check` ✓.** Note `pnpm api:check` runs on the host here, so `OPENAPI_URL=http://localhost/api/openapi.json`; the file's `http://nginx/…` advice only applies from inside the `web` container. |
-| 2026-09-30 | 1     | Backend role/vis/sort   | `df94076`. Reverses `b176a18`'s `role` removal. `role=admin` is `administered AND NOT owned`, via `is_distinct_from` not `!=` (nullable `pages.owner` — `!=` would hide an ownerless page you administer). `PageRole`/`PageSort`/`PageAdminSort` enums, so FastAPI 422s an unknown value and the whitelist dict is keyed by the same members. `sort=None` leaves the order chain byte-for-byte; an explicit sort replaces it whole, owner-first prefix dropped, `pages.id` tiebreaker added. The two chains are now classmethods (`_page_order_clauses`, `_admin_order_clauses`) so the tests call the real query like `_where` does. Three docstrings rewritten **with** their history, not deleted. Meilisearch silent-ignore commented at both ends. No `role`/`visibility` on the admins endpoint. **237 backend tests (was 209), ruff 11 = baseline, black ✓.** Disjointness confirmed red twice: `!=` → 3 failures, clause deleted → 4 failures. |
+| Date       | Phase | What                  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | ----- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| —          | —     | Plan written          | `web/PROGRESS-datatable.md` created. No code changed yet. Sibling of `web/PROGRESS.md`, which is live and untouched.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| —          | —     | Plan corrected        | Phase 1 was found to reverse `b176a18`, which removed the `role` filter and the `mine` visibility clause two commits earlier. **The user confirmed the reversal is intentional.** Added a "Read this first" section carrying the three historical bugs, and turned 1.8/1.9 from "rewrite these docstrings" into "rewrite but preserve the history in them". Line refs re-verified against the tree: `_list_conditions` `:108`, `mine` branch `:136`, `list_pages` `:151`, `meili` short-circuit `:165-177`, `order_clause` `:190-194`, order chain `:206-211`, `list_admins_page` `:241`.                                                                                                                                                                                                                                                                                                                                                              |
+| 2026-09-30 | 0     | Pre-flight            | `web/PROGRESS.md` Phase 4 **fully ticked** — no race. Phases 5/6/7 open and staying open (docs / prod push / deferred). Baseline commit `fea3b84`. Four pre-existing reds fixed, all detailed above: the `fastapi` container had not booted in two days (`openai` missing from the stale `fastapi-venv` volume, so `api:check` was unrunnable), `schema.d.ts` 434 lines behind on the `agent` module, ruff 16 not 11 (the extra 5 in `modules/pages/`), and black red on two more pages files. **Green now: backend 209 tests, ruff 11, black ✓. Web 83 tests, typecheck ✓, build ✓, lint 9 = baseline, `api:check` ✓.** Note `pnpm api:check` runs on the host here, so `OPENAPI_URL=http://localhost/api/openapi.json`; the file's `http://nginx/…` advice only applies from inside the `web` container.                                                                                                                                             |
+| 2026-09-30 | 1     | Backend role/vis/sort | `df94076`. Reverses `b176a18`'s `role` removal. `role=admin` is `administered AND NOT owned`, via `is_distinct_from` not `!=` (nullable `pages.owner` — `!=` would hide an ownerless page you administer). `PageRole`/`PageSort`/`PageAdminSort` enums, so FastAPI 422s an unknown value and the whitelist dict is keyed by the same members. `sort=None` leaves the order chain byte-for-byte; an explicit sort replaces it whole, owner-first prefix dropped, `pages.id` tiebreaker added. The two chains are now classmethods (`_page_order_clauses`, `_admin_order_clauses`) so the tests call the real query like `_where` does. Three docstrings rewritten **with** their history, not deleted. Meilisearch silent-ignore commented at both ends. No `role`/`visibility` on the admins endpoint. **237 backend tests (was 209), ruff 11 = baseline, black ✓.** Disjointness confirmed red twice: `!=` → 3 failures, clause deleted → 4 failures. |
 
 ## Open questions
 
@@ -787,6 +777,6 @@ None blocking. If something surfaces that contradicts the decisions table,
 - If the Meilisearch keyword path ever needs to be reachable from My Pages, it
   needs index config and a reindex, not a code change (1.14). That is a
   conversation about operational cost.
-- If the Meilisearch path turns out to *not* be skipped for My Pages (i.e. some
+- If the Meilisearch path turns out to _not_ be skipped for My Pages (i.e. some
   caller passes `keyword`), then 1.14 becomes a real correctness bug in Phase 1,
   not a comment.

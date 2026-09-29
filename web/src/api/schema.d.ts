@@ -209,11 +209,40 @@ export interface paths {
          *     `private` belongs here and only here: this is the list you manage your
          *     pages in, and a private page you made is the reason to have it.
          *
-         *     No `role` parameter. There was one, to split this into an Owned tab and an
-         *     Admin tab, and the tabs held identical rows that both just link to the page
-         *     — the `Owner`/`Admin` badge on each row already said which relationship it
-         *     was. All it bought was a way to hide rows, and every version of the
-         *     visibility rules under it leaked between the two tabs.
+         *     ### `role`, and why it means what it means
+         *
+         *     `role=admin` is **administered by the caller AND NOT owned by them**, and is
+         *     therefore disjoint from `role=owner`. A page you own *and* administer comes
+         *     back under `owner` only.
+         *
+         *     That clause is not decoration. An earlier version of this endpoint had no
+         *     `role` parameter at all, removed in `b176a18`, and the reason it was
+         *     removed is worth keeping in the code rather than in a commit message: the
+         *     `mine` scope used to carry a visibility OR that contained `owner = me`, so
+         *     `role=admin` compiled to `(visible OR administered-by-me)` where `visible`
+         *     already meant "or owned by me". Every owned page came back under both
+         *     filters and the same row appeared twice. Two things are true at once and
+         *     they are the whole story:
+         *
+         *     - **The overlap was the bug.** Fix it by making the values disjoint.
+         *     - **A filter that can widen its scope is the bug's real shape.** That is
+         *       also why `include_private` (a boolean that flipped what the endpoint
+         *       meant) and a derived `owner_sub` are both gone for good.
+         *
+         *     Deleting the filter fixed the symptom and cost the ability to ask the
+         *     question, which is why it is back with the overlap closed. If you widen
+         *     this endpoint, keep the `NOT owner` clause in
+         *     `PageRepository._list_conditions`.
+         *
+         *     ### The Meilisearch trap
+         *
+         *     `sort` and `visibility` are **silently ignored when `keyword` is set**. The
+         *     keyword path short-circuits to Meilisearch, which ranks by relevance and
+         *     has `filterable_attributes=None`, so there is no facet to filter on either.
+         *     No error, just wrong rows — which is how you get "the sort button does
+         *     nothing". My Pages has no search box today, so this is unreachable. Adding
+         *     one means `filterableAttributes` in `modules/pages/search_indexes.py` plus
+         *     a reindex, not just a UI control.
          */
         get: operations["get_my_pages_pages_mine_get"];
         put?: never;
@@ -325,6 +354,11 @@ export interface paths {
          *
          *     `exclude_sub` drops one user from the rows *and* the count, so a caller
          *     rendering that user in a separate pinned row keeps correct page boundaries.
+         *
+         *     `sort` and `order` only — deliberately **no** `role` and **no** `visibility`
+         *     here, unlike `/pages/mine`. The owner is not in this list at all, so
+         *     "owner vs admin" is a column here, not a filter; and the admins of a page
+         *     are its admins whatever the pages' visibility is set to.
          */
         get: operations["get_page_admins_pages__slug__admins_get"];
         put?: never;
@@ -3008,6 +3042,16 @@ export interface components {
             /** By Category */
             by_category?: components["schemas"]["CategoryStat"][];
         };
+        /**
+         * PageAdminSort
+         * @description The columns `/pages/{slug}/admins` may be ordered by.
+         *
+         *     `name` is on `users`, not on `page_admins`, which is why that list needs a
+         *     join and this one does not need a `role` filter: the owner is not in the
+         *     admins list at all, so "owner vs admin" is a column there, not a filter.
+         * @enum {string}
+         */
+        PageAdminSort: "name" | "created_at";
         /** PageCreateRequest */
         PageCreateRequest: {
             /**
@@ -3119,6 +3163,23 @@ export interface components {
              */
             permissions: components["schemas"]["ResourcePermissions"];
         };
+        /**
+         * PageRole
+         * @description Which relationship to `/pages/mine` a caller wants.
+         *
+         *     Re-added deliberately in `1344998`'s successor work; `b176a18` removed it
+         *     along with the Owned/Admin tabs. The tabs rendered identical rows that both
+         *     just link to the page, and the `role` filter's implementation leaked owned
+         *     pages into the admin bucket. The leak is fixed by making the two values
+         *     disjoint, not by keeping the parameter away — see
+         *     `PageRepository._list_conditions`, which is where the constraint lives and
+         *     where the docstring explaining it is.
+         *
+         *     `admin` therefore means "administered by me and not owned by me". A page
+         *     you own *and* administer belongs under `owner` only.
+         * @enum {string}
+         */
+        PageRole: "owner" | "admin";
         /** PageRoot */
         PageRoot: {
             props: components["schemas"]["PageRootProps"];
@@ -3154,6 +3215,17 @@ export interface components {
              */
             borderRadius: "12px";
         };
+        /**
+         * PageSort
+         * @description The columns `/pages/mine` may be ordered by.
+         *
+         *     An enum, not a bare string, so that FastAPI rejects anything else with a
+         *     422 and the OpenAPI doc lists the valid values — and so the repository's
+         *     whitelist can be keyed by the same members instead of repeating three
+         *     string literals that nothing checks agree.
+         * @enum {string}
+         */
+        PageSort: "name" | "created_at" | "visibility";
         /** PageUpdateRequest */
         PageUpdateRequest: {
             /**
@@ -4161,6 +4233,11 @@ export interface operations {
                 page?: number;
                 /** @description Search keyword for page name */
                 keyword?: string | null;
+                /** @description owner | admin */
+                role?: components["schemas"]["PageRole"] | null;
+                visibility?: components["schemas"]["PageVisibility"][] | null;
+                sort?: components["schemas"]["PageSort"] | null;
+                order?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -4414,6 +4491,8 @@ export interface operations {
                 size?: number;
                 page?: number;
                 exclude_sub?: string | null;
+                sort?: components["schemas"]["PageAdminSort"] | null;
+                order?: "asc" | "desc";
             };
             header?: never;
             path: {

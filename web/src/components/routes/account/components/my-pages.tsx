@@ -60,7 +60,7 @@ export function MyPages({
 
   const query = useQuery({
     // `page` is in the key, so paging does not serve a cached earlier page.
-    queryKey: qk.pages.mine(page),
+    queryKey: qk.pages.mine({ page }),
     queryFn: () => fetchMyPages({}, { page, size: PAGE_SIZE }),
     // The previous page stays on screen while the next one loads, so paging
     // does not flash an empty list between clicks.

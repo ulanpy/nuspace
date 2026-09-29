@@ -27,19 +27,34 @@ export const qk = {
     list: (filters: Record<string, unknown>) =>
       ["pages", "list", filters] as const,
     detail: (slug: string) => ["pages", "detail", slug] as const,
-    /** `page` is the only thing that varies: the list is every page you run,
-     *  not one relationship or the other. */
-    mine: (page?: number) => ["pages", "mine", page ?? null] as const,
+    /**
+     * Every parameter the request carries has to be in the key.
+     *
+     * A key that omits one is the subtlest version of the stale-cache bug: the
+     * table looks broken only for users who navigated in a particular order —
+     * filter by role, go back, land on a cached unfiltered page. The backend
+     * takes `role`, `visibility`, `sort`, `order` and `size` on this endpoint,
+     * so all five are here.
+     *
+     * An object rather than six positional arguments, matching `pages.list` and
+     * `events.list`. Build it in **one** place per call site (usually the
+     * route's `search`, memoised): react-query hashes the key, and an object
+     * literal rebuilt with its properties in a different order is a different
+     * key.
+     */
+    mine: (filters: Record<string, unknown>) =>
+      ["pages", "mine", filters] as const,
     /**
      * The page number is part of the key, not a filter inside it, so that
      * `invalidateQueries({ queryKey: qk.pages.all() })` after a removal
      * refreshes every page the user could be looking at — and a single page
      * can be prefetched or refetched on its own.
      *
-     * `excludeSub` changes which rows come back, so it belongs here too.
+     * `excludeSub` changes which rows come back, so it belongs here too, and
+     * so do `size`, `sort` and `order` for the same reason they do on `mine`.
      */
-    admins: (slug: string, page: number, excludeSub?: string) =>
-      ["pages", "admins", slug, page, excludeSub ?? null] as const,
+    admins: (slug: string, filters: Record<string, unknown>) =>
+      ["pages", "admins", slug, filters] as const,
   },
 
   /**
