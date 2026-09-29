@@ -105,7 +105,9 @@ class PageRepository:
         return result.scalar() or 0
 
     @staticmethod
-    def _visibility_conditions(*, viewer_sub: str | None, is_site_admin: bool) -> list:
+    def _visibility_conditions(
+        *, viewer_sub: str | None, is_site_admin: bool, include_own_private: bool
+    ) -> list:
         """A hard WHERE on visibility. Never a caller-supplied filter.
 
         Mirrors `PagePolicy.check_visible` so a list and a detail read agree: a
@@ -117,17 +119,77 @@ class PageRepository:
         `role=admin` membership alternative, and `.where()` ANDs whatever it is
         given — so returning `visibility IN (...)` and `owner = viewer` as two
         entries meant "a page you can see that you also own", i.e. nothing.
+
+        `include_own_private` is what separates "the pages I manage" from "the
+        pages anyone can browse". The owner alternative is the only way a
+        `private` page reaches a list at all, and a browse is a browse whether
+        or not the browser happens to own what is in it: `/mynuspace` is a
+        public directory, and a private page sitting in it because its owner
+        wandered in is the one page in the app that was never meant to be
+        listed. The caller scopes the list to itself with `role` or `owner_sub`,
+        which is how "my pages" says so out loud; this only takes the
+        alternative away when nobody did.
         """
         if is_site_admin:
             return []
         if viewer_sub:
+            visible_kinds = [PageVisibility.public, PageVisibility.internal]
+            if not include_own_private:
+                return [Page.visibility.in_(visible_kinds)]
             return [
                 or_(
-                    Page.visibility.in_([PageVisibility.public, PageVisibility.internal]),
+                    Page.visibility.in_(visible_kinds),
                     Page.owner == viewer_sub,
                 )
             ]
         return [Page.visibility == PageVisibility.public]
+
+    @classmethod
+    def _list_conditions(
+        cls,
+        *,
+        viewer_sub: str | None,
+        is_site_admin: bool,
+        owner_sub: str | None,
+        role: str | None,
+    ) -> list:
+        """The whole WHERE of `list_pages`, as one method so the tests can call
+        the real thing instead of restating it.
+
+        They used to reimplement these six lines, which meant the test file
+        encoded the *intended* query while the repository ran the *actual* one
+        and nothing checked they agreed. One caller, one source of truth.
+        """
+        conditions: list = []
+        match_any: list = []
+        if role == "owned":
+            conditions.append(Page.owner == viewer_sub)
+        elif role == "admin":
+            match_any.append(
+                Page.id.in_(select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub))
+            )
+        if owner_sub:
+            conditions.append(Page.owner == owner_sub)
+
+        # The visibility restriction and the role filter have to be ANDed
+        # together, so a `role=admin` search must not escape it. `match_any`
+        # holds the admin-membership alternative and joins the visibility
+        # alternative; everything else is a plain AND.
+        #
+        # `role` or `owner_sub` means the caller is asking for their own pages,
+        # which is the one case where `private` belongs in a list. With neither,
+        # this is the public directory and a private page stays out of it even
+        # for its owner.
+        visible = cls._visibility_conditions(
+            viewer_sub=viewer_sub,
+            is_site_admin=is_site_admin,
+            include_own_private=role is not None or owner_sub is not None,
+        )
+        if match_any:
+            conditions.append(or_(*visible, *match_any))
+        else:
+            conditions.extend(visible)
+        return conditions
 
     async def list_pages(
         self,
@@ -158,28 +220,14 @@ class PageRepository:
                 estimated_hits = meili_result.get("estimatedTotalHits", 0) if meili_result else 0
                 return [], estimated_hits, True
 
-        conditions: list = []
-        match_any: list = []
-        if role == "owned":
-            conditions.append(Page.owner == viewer_sub)
-        elif role == "admin":
-            match_any.append(
-                Page.id.in_(select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub))
-            )
-        if owner_sub:
-            conditions.append(Page.owner == owner_sub)
+        conditions = self._list_conditions(
+            viewer_sub=viewer_sub,
+            is_site_admin=is_site_admin,
+            owner_sub=owner_sub,
+            role=role,
+        )
         if keyword:
             conditions.append(Page.id.in_(page_ids))
-
-        # The visibility restriction and the role filter have to be ANDed
-        # together, so a `role=admin` search must not escape it. `match_any`
-        # holds the admin-membership alternative and joins the visibility
-        # alternative; everything else is a plain AND.
-        visible = self._visibility_conditions(viewer_sub=viewer_sub, is_site_admin=is_site_admin)
-        if match_any:
-            conditions.append(or_(*visible, *match_any))
-        else:
-            conditions.extend(visible)
 
         base_stmt = select(Page).where(*conditions).options(selectinload(Page.owner_user))
 
