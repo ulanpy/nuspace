@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.auth.models import User, UserScope
 from backend.modules.auth.schemas import UserSchema
+from backend.modules.campuscurrent.models.community import Community, CommunityAdmin
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.shared.slug import generate_unique_slug
 
@@ -12,7 +13,7 @@ from backend.modules.shared.slug import generate_unique_slug
 # is_page_public=False, and both are non-None, so copying them onto an existing
 # row would wipe a designed profile page on every login. `slug` is claimed from
 # the user's own name, not from a token claim, and is generated below.
-LOCAL_FIELDS = {"page_content", "is_page_public", "slug"}
+LOCAL_FIELDS = {"page_content", "is_page_public", "slug", "category"}
 
 
 class UserRepository:
@@ -89,6 +90,31 @@ class UserRepository:
         count_stmt = select(func.count()).select_from(User).where(*conditions)
         count_result = await self.db_session.execute(count_stmt)
         return users, count_result.scalar() or 0
+
+    async def list_headed_communities(self, user_sub: str) -> List[Tuple[Community, str]]:
+        """Communities this person owns or admins, each with the position.
+
+        One query, because the profile page needs both halves and the union of
+        them is the interesting part. Owned communities are not rows in
+        `community_admins`, so the owner case is a LEFT JOIN and the position
+        comes from which side of it matched.
+        """
+        stmt = (
+            select(Community, CommunityAdmin)
+            .outerjoin(CommunityAdmin, CommunityAdmin.community_id == Community.id)
+            .where(
+                or_(
+                    Community.owner == user_sub,
+                    CommunityAdmin.user_sub == user_sub,
+                )
+            )
+            .order_by(Community.name.asc())
+        )
+        result = await self.db_session.execute(stmt)
+        return [
+            (community, "owner" if community.owner == user_sub else "admin")
+            for community, admin in result.all()
+        ]
 
     async def list_media(
         self, user_ids: List[int], media_formats: List[MediaFormat] | None = None

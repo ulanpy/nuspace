@@ -3449,6 +3449,43 @@ export interface components {
             /** Mm */
             mm: number;
         };
+        /**
+         * UserCategory
+         * @description Which side of the university a person is on.
+         *
+         *     Not a permission axis, which is what `UserRole` is: this is what the
+         *     directory badges people by, and what a card is filtered by. Someone on the
+         *     student government is a `capo` by role and a `student` by category, and both
+         *     facts are wanted at once.
+         * @enum {string}
+         */
+        UserCategory: "student" | "faculty" | "staff";
+        /**
+         * UserCommunityResponse
+         * @description A community this person heads, with the position they hold in it.
+         *
+         *     `position` is derived server-side rather than left to the client to
+         *     compare slugs: the owner of a community is not in `community_admins`, and a
+         *     badge that has to be computed in the browser is a badge that can be wrong.
+         */
+        UserCommunityResponse: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Position
+             * @enum {string}
+             */
+            position: "owner" | "admin";
+            /**
+             * Media
+             * @default []
+             */
+            media: components["schemas"]["MediaResponse"][];
+        };
         /** UserPageList */
         UserPageList: {
             /** Items */
@@ -3479,10 +3516,17 @@ export interface components {
             slug: string;
             /** Picture */
             picture?: string | null;
+            /** @default student */
+            category: components["schemas"]["UserCategory"];
             /** Page Content */
             page_content?: {
                 [key: string]: unknown;
             };
+            /**
+             * Communities
+             * @default []
+             */
+            communities: components["schemas"]["UserCommunityResponse"][];
             /**
              * Media
              * @default []
@@ -3493,6 +3537,7 @@ export interface components {
         UserPageUpdateRequest: {
             /** Slug */
             slug?: string | null;
+            category?: components["schemas"]["UserCategory"] | null;
             /** Page Content */
             page_content?: {
                 [key: string]: unknown;
@@ -3549,11 +3594,18 @@ export interface components {
             slug: string;
             /** Picture */
             picture?: string | null;
+            /** @default student */
+            category: components["schemas"]["UserCategory"];
             /**
              * Has Design
              * @default false
              */
             has_design: boolean;
+            /**
+             * Media
+             * @default []
+             */
+            media: components["schemas"]["MediaResponse"][];
         };
         /** ValidationError */
         ValidationError: {

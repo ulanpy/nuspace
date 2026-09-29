@@ -404,6 +404,7 @@ class AuthService:
             # it never appears in the public `/u/{slug}` payload.
             "id": user.id,
             "slug": user.slug,
+            "category": user.category.value,
             "page_content": user.page_content,
             "is_page_public": user.is_page_public,
             "media": media,

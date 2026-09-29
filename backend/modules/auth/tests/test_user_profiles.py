@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from backend.modules.auth.api import update_my_profile
-from backend.modules.auth.models import UserRole, UserScope
+from backend.modules.auth.models import UserCategory, UserRole, UserScope
 from backend.modules.auth.profiles import UserPageService
 from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.schemas import (
@@ -19,7 +19,8 @@ from backend.modules.auth.schemas import (
     UserSchema,
 )
 from backend.modules.auth.service import AuthService
-from backend.modules.media.models import EntityType
+from backend.modules.media.models import EntityType, MediaFormat
+from backend.modules.media.schemas import MediaResponse
 from fastapi import HTTPException
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import IntegrityError
@@ -43,6 +44,7 @@ def _user(**overrides):
         "slug": "ada-lovelace",
         "page_content": {"root": {"props": {"title": "My Page"}}, "content": []},
         "is_page_public": True,
+        "category": UserCategory.student,
         "scope": UserScope.allowed,
     }
     values.update(overrides)
@@ -68,6 +70,7 @@ def _uow_for(user, list_public=None):
     repo.get_by_id = _async_return(user)
     repo.list_media = _async_return([])
     repo.list_public = _async_return(list_public or ([], 0))
+    repo.list_headed_communities = _async_return([])
 
     uow = MagicMock()
     uow.get_repo = MagicMock(return_value=repo)
@@ -310,3 +313,90 @@ async def test_me_carries_the_surrogate_user_id() -> None:
     assert (
         "id" not in UserPageResponse(sub="user-1", name="Ada", surname="", slug="ada").model_dump()
     )
+
+
+# --------------------------------------------------------------------------
+# The category column and the community positions on the page
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_update_me_writes_the_category() -> None:
+    """Student / Faculty / Staff is the user's own to change."""
+    user = _user()
+    service, _ = _service(user)
+
+    await service.update_me(
+        new_data=UserPageUpdateRequest(slug="ada-l", category=UserCategory.faculty),
+        session_sub="user-1",
+    )
+
+    assert user.category == UserCategory.faculty
+
+
+@pytest.mark.asyncio
+async def test_page_response_carries_the_category() -> None:
+    user = _user(category=UserCategory.staff)
+    service, _ = _service(user)
+
+    page = await service.get_page("ada-lovelace", "user-1")
+
+    assert page.category == UserCategory.staff
+
+
+@pytest.mark.asyncio
+async def test_page_lists_headed_communities_with_their_position() -> None:
+    """An owner is not in `community_admins`, so the two halves are separate."""
+    user = _user()
+    service, repo = _service(user)
+    owned = SimpleNamespace(id=1, name="Fencing", slug="fencing")
+    joined = SimpleNamespace(id=2, name="Robotics", slug="robotics")
+    repo.list_headed_communities = _async_return([(owned, "owner"), (joined, "admin")])
+
+    page = await service.get_page("ada-lovelace", "user-1")
+
+    assert [(c.slug, c.position) for c in page.communities] == [
+        ("fencing", "owner"),
+        ("robotics", "admin"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_directory_rows_carry_the_category() -> None:
+    user = _user(category=UserCategory.faculty)
+    service, _ = _service(user, list_public=([user], 1))
+
+    listing = await service.list_pages(page=1, size=10)
+
+    assert [row.category for row in listing.items] == [UserCategory.faculty]
+
+
+@pytest.mark.asyncio
+async def test_directory_rows_carry_their_own_media() -> None:
+    """A card needs a banner, and the media is fetched once for the page, not
+    once per row."""
+    rows = [_user(sub="a"), _user(sub="b")]
+    uow, repo = _uow_for(rows[0], (rows, 2))
+    repo.list_media = AsyncMock(return_value=[])
+    first = [
+        MediaResponse(
+            id=1,
+            url="https://cdn.example/a.png",
+            mime_type="image/png",
+            entity_type=EntityType.users,
+            entity_id=rows[0].id,
+            media_format=MediaFormat.banner,
+            media_order=0,
+        )
+    ]
+    resolver = MagicMock()
+    resolver.map_to_resources = AsyncMock(return_value=[[], first])
+    service = UserPageService(uow=uow, media_attachment_resolver=resolver)
+
+    listing = await service.list_pages(page=1, size=10)
+
+    # Media stays with the row it belongs to: the second user has none, so the
+    # zip must not hand the first user's banner to both.
+    assert [row.media for row in listing.items] == [[], first]
+    # One batched query for the whole page.
+    assert repo.list_media.await_count == 1

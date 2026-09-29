@@ -23,6 +23,20 @@ class UserScope(PyEnum):
     banned = "banned"
 
 
+class UserCategory(PyEnum):
+    """Which side of the university a person is on.
+
+    Not a permission axis, which is what `UserRole` is: this is what the
+    directory badges people by, and what a card is filtered by. Someone on the
+    student government is a `capo` by role and a `student` by category, and both
+    facts are wanted at once.
+    """
+
+    student = "student"
+    faculty = "faculty"
+    staff = "staff"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -37,6 +51,17 @@ class User(Base):
     surname: Mapped[str] = mapped_column(nullable=False, index=True)
     picture: Mapped[str] = mapped_column(nullable=True)
     slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    # Which side of the university this person is on. Defaults to `student`
+    # because everyone at the university is one until they say otherwise, and
+    # a NULL here would mean every card and every filter has to handle it.
+    # `server_default` is declared as well as `default` so `alembic check` sees
+    # the migration and the model agree.
+    category: Mapped[UserCategory] = mapped_column(
+        SQLEnum(UserCategory, name="usercategory"),
+        nullable=False,
+        default=UserCategory.student,
+        server_default="student",
+    )
     page_content: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     is_page_public: Mapped[bool] = mapped_column(nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)

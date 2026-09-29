@@ -15,6 +15,7 @@ from backend.modules.auth import schemas
 from backend.modules.auth.models import User, UserScope
 from backend.modules.auth.repository import UserRepository
 from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
+from backend.modules.campuscurrent.communities.repository import CommunityRepository
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.media.schemas import MediaResponse
 from backend.modules.shared.media_ownership import delete_owned_media
@@ -87,6 +88,37 @@ class UserPageService:
                 detail="Your account has been banned",
             )
 
+    async def _attach_communities(self, sub: str) -> List[schemas.UserCommunityResponse]:
+        """The communities this person heads, with their position in each."""
+        async with self.uow:
+            repo = self.uow.get_repo(UserRepository)
+            headed = await repo.list_headed_communities(sub)
+            if not headed:
+                return []
+            media_objs: List[Media] = await self.uow.get_repo(CommunityRepository).list_media(
+                [community.id for community, _ in headed],
+                # The profile image only: a row in the community list shows an
+                # avatar, and a community with fifty carousel photos would
+                # otherwise ship all fifty to every reader of the page.
+                [MediaFormat.profile],
+            )
+
+        rows = [
+            schemas.UserCommunityResponse(
+                id=community.id,
+                name=community.name,
+                slug=community.slug,
+                position=position,
+            )
+            for community, position in headed
+        ]
+        # The same resolver the community pages use, keyed on the community id
+        # because that is what `media.entity_id` holds for a community.
+        media_per_row = await self.media_attachment_resolver.map_to_resources(
+            media_objects=media_objs, resources=rows
+        )
+        return [row.model_copy(update={"media": media}) for row, media in zip(rows, media_per_row)]
+
     async def get_page(self, slug: str, viewer_sub: str | None) -> schemas.UserPageResponse:
         async with self.uow:
             user = await self.uow.get_repo(UserRepository).get_by_slug(slug)
@@ -102,8 +134,10 @@ class UserPageService:
             surname=user.surname,
             slug=user.slug,
             picture=user.picture,
+            category=user.category,
             page_content=user.page_content,
             media=media,
+            communities=await self._attach_communities(user.sub),
         )
 
     async def list_pages(
@@ -115,6 +149,8 @@ class UserPageService:
             )
 
         total_pages = calculate_pages(count=count, size=size)
+        # One batched media query for the whole page of rows, not one per row.
+        media_per_row = await self._attach_media(users)
         return schemas.UserPageList(
             items=[
                 schemas.UserSummaryResponse(
@@ -123,9 +159,11 @@ class UserPageService:
                     surname=user.surname,
                     slug=user.slug,
                     picture=user.picture,
+                    category=user.category,
                     has_design=has_design(user.page_content),
+                    media=media,
                 )
-                for user in users
+                for user, media in zip(users, media_per_row)
             ],
             total=count,
             page=page,
