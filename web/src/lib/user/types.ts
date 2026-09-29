@@ -1,6 +1,11 @@
 import { z } from "zod"
 import type { components } from "@/api/schema"
-import type { USER_ROLES, currentUserSchema, sessionSchema } from "./constants"
+import type {
+  USER_CATEGORIES,
+  USER_ROLES,
+  currentUserSchema,
+  sessionSchema,
+} from "./constants"
 
 /**
  * The three session types are inferred from the zod schemas in
@@ -13,6 +18,12 @@ export type UserRole = (typeof USER_ROLES)[number]
 export type CurrentUser = z.infer<typeof currentUserSchema>
 
 export type Session = z.infer<typeof sessionSchema>
+
+/** Student / Faculty / Staff. */
+export type UserCategory = (typeof USER_CATEGORIES)[number]
+
+/** A community the person heads, with the position they hold in it. */
+export type UserCommunity = components["schemas"]["UserCommunityResponse"]
 
 /** A public profile page, as `GET /u/{slug}` returns it. */
 export type UserPage = components["schemas"]["UserPageResponse"]

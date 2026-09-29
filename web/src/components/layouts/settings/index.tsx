@@ -7,7 +7,7 @@ import { RouteTabs, type RouteTab } from "@/components/shared/route-tabs"
 interface SettingsShellProps {
   title: string
   description?: string
-  /** Omit for a settings area with no subsections, e.g. `/profile`. */
+  /** Omit for a settings area with no subsections. */
   sections?: readonly RouteTab[]
   actions?: ReactNode
 }
@@ -21,9 +21,13 @@ interface SettingsShellProps {
  * rather than a constant so a tabless area reuses the shell without inheriting
  * tabs it has no business showing.
  *
- * Split from `SettingsLayout` so a settings area that is a single route — the
- * profile is a leaf with no child routes — can reuse the chrome without
- * wrapping itself in an `Outlet` it cannot provide.
+ * Split from `SettingsLayout` so a settings area that is a single route can
+ * reuse the chrome without wrapping itself in an `Outlet` it cannot provide.
+ *
+ * A settings area must not put a non-tab route under `SettingsLayout`: the tab
+ * bar has no value on such a route, and base-ui reports its fallback tab
+ * selection as a change, which navigates the reader back to the first tab on
+ * mount. The page editor lives beside the settings layout for this reason.
  */
 export function SettingsShell({
   title,

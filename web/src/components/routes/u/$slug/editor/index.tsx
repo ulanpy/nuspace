@@ -18,7 +18,13 @@ import { UploadContext } from "@/components/shared/page-editor/context"
  * upload context points at `users`. The editor shell itself is shared
  * unchanged — that is the point of `shared/page-editor`.
  */
-export function Page({ queryClient }: { queryClient: QueryClient }) {
+export function Page({
+  slug,
+  queryClient,
+}: {
+  slug: string
+  queryClient: QueryClient
+}) {
   const user = useCurrentUser()
   const navigate = useNavigate()
 
@@ -40,7 +46,7 @@ export function Page({ queryClient }: { queryClient: QueryClient }) {
           queryClient.invalidateQueries({ queryKey: qk.session() }),
           queryClient.invalidateQueries({ queryKey: qk.users.all() }),
         ])
-        void navigate({ to: "/profile/general" })
+        void navigate({ to: "/u/$slug", params: { slug } })
       })
       .catch((error) => {
         toast.error(apiErrorMessage(error, "Could not publish. Try again."), {
@@ -56,7 +62,7 @@ export function Page({ queryClient }: { queryClient: QueryClient }) {
           data={pageContent}
           onPublish={handlePublish}
           onCancel={() => {
-            void navigate({ to: "/profile/general" })
+            void navigate({ to: "/u/$slug", params: { slug } })
           }}
         />
       </div>

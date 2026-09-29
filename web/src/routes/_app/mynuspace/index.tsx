@@ -2,25 +2,28 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/people"
+import { Page } from "@/components/routes/mynuspace"
 
-const peopleSearchSchema = z.object({
+const myNuspaceSearchSchema = z.object({
   q: z.string().optional(),
 })
 
-export type PeopleSearch = z.infer<typeof peopleSearchSchema>
+export type MyNuspaceSearch = z.infer<typeof myNuspaceSearchSchema>
 
-export const Route = createFileRoute("/_app/people/")({
-  validateSearch: peopleSearchSchema,
-  component: PeopleListRoute,
+export const Route = createFileRoute("/_app/mynuspace/")({
+  validateSearch: myNuspaceSearchSchema,
+  component: MyNuspaceRoute,
 })
 
-function PeopleListRoute() {
+function MyNuspaceRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
 
   const onSearchChange = useCallback(
-    (updater: (previous: PeopleSearch) => PeopleSearch, replace = false) => {
+    (
+      updater: (previous: MyNuspaceSearch) => MyNuspaceSearch,
+      replace = false
+    ) => {
       void navigate({
         search: updater,
         replace,

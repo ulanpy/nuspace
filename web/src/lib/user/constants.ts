@@ -16,6 +16,15 @@ export const USER_ROLES = [
 export const userRoleSchema = z.enum(USER_ROLES)
 
 /**
+ * Mirrors backend UserCategory: which side of the university a person is on.
+ * Not a permission axis — that is `USER_ROLES` above. The directory badges
+ * people by this, and the General tab sets it.
+ */
+export const USER_CATEGORIES = ["student", "faculty", "staff"] as const
+
+export const userCategorySchema = z.enum(USER_CATEGORIES)
+
+/**
  * Backend EntityType and MediaFormat, for the same reason: inside the opaque
  * `/me` dict nothing carries the generated types, so the media array is
  * described here. Both lists are checked against `lib/media/types.ts`.
@@ -72,6 +81,10 @@ export const currentUserSchema = z.object({
    * user by it, and the session is the only place the client can learn it. */
   id: z.number(),
   slug: z.string(),
+  /** Which side of the university: student, faculty or staff. Defaults to
+   * `student` because that is the column default, and an older session cookie
+   * minted before the column existed must not fail the whole parse. */
+  category: userCategorySchema.catch("student"),
   page_content: z.record(z.string(), z.unknown()).default({}),
   is_page_public: z.boolean().default(false),
   media: z.array(mediaSchema).default([]),

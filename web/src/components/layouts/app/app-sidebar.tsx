@@ -47,12 +47,13 @@ interface NavItem {
   icon: LucideIcon
 }
 
-// Home is the logo and profile is the account card, matching the previous app.
+// Home is the logo and the account card at the bottom is the profile, matching
+// the previous app.
 const NAV_ITEMS: NavItem[] = [
   { to: "/events", label: "Events", icon: CalendarIcon },
   { to: "/courses", label: "Courses", icon: BookOpenIcon },
   { to: "/communities", label: "Communities", icon: UsersIcon },
-  { to: "/people", label: "My Nuspace", icon: UserIcon },
+  { to: "/mynuspace", label: "My Nuspace", icon: UserIcon },
   { to: "/opportunities", label: "Opportunities Digest", icon: BriefcaseIcon },
   { to: "/contacts", label: "Contacts", icon: InfoIcon },
 ]
@@ -206,11 +207,14 @@ function AccountCard({
   const user = session.user
   const initial = user.given_name.charAt(0).toUpperCase()
 
+  // The account card opens the settings for this user's own page, which is
+  // where the account name, pictures and visibility live.
   const profileLink = (
     <Link
-      to="/profile"
+      to="/u/$slug/settings"
+      params={{ slug: user.slug }}
       onClick={onNavigate}
-      aria-label={collapsed ? `Profile for ${user.name}` : undefined}
+      aria-label={collapsed ? `Settings for ${user.name}` : undefined}
       className={cn(
         "flex min-w-0 items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         collapsed && "justify-center px-1"

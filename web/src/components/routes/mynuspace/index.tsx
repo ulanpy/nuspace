@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 
-import type { PeopleSearch } from "@/routes/_app/people"
+import type { MyNuspaceSearch } from "@/routes/_app/mynuspace"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { qk } from "@/api/query-keys"
 import { fetchUsersPage } from "@/lib/user"
 import type { UserSummary } from "@/lib/user"
-import { UserCard } from "@/components/routes/people/components/user-card"
+import { UserCard } from "@/components/routes/mynuspace/components/user-card"
 import { useDebounced } from "@/hooks/use-debounced"
 import { SearchFilter } from "@/components/shared/list-filters"
 import { EmptyState } from "@/components/shared/query/boundary"
@@ -25,9 +25,9 @@ export function Page({
   search,
   onSearchChange,
 }: {
-  search: PeopleSearch
+  search: MyNuspaceSearch
   onSearchChange: (
-    updater: (previous: PeopleSearch) => PeopleSearch,
+    updater: (previous: MyNuspaceSearch) => MyNuspaceSearch,
     replace?: boolean
   ) => void
 }) {

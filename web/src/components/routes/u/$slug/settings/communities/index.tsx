@@ -11,9 +11,18 @@ import { TablePagination } from "@/components/shared/table/pagination"
 import { pageRangeSummary } from "@/components/shared/table/page-range"
 import { EmptyState, QueryBoundary } from "@/components/shared/query/boundary"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { MyCommunitiesSearch } from "@/routes/_app/profile/communities"
+import type { MyCommunitiesSearch } from "@/routes/_app/u/$slug/settings/communities"
 
 const PAGE_SIZE = 10
 
@@ -26,6 +35,10 @@ const PAGE_SIZE = 10
  * nothing else. A share link would be the obvious thing to add, and it is
  * deliberately absent: it belongs to the community's own settings, not to a
  * list of the ones you happen to own.
+ *
+ * The rows are the admins table's rows: same `Item`, same avatar slot, same
+ * trailing badge. Category and type are gone — the badge says what the row is,
+ * and the two words under the name were the same fact said worse.
  */
 export function Page({
   search,
@@ -69,40 +82,48 @@ export function Page({
         }
       >
         {(data) => (
-          <ul className="space-y-1">
+          <ItemGroup className="gap-2">
             {(data.items ?? []).map((community) => (
-              <li key={community.id}>
-                <Link
-                  to="/communities/$slug"
-                  params={{ slug: community.slug }}
-                  className="flex items-center gap-3 rounded-md p-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
+              <Item
+                key={community.id}
+                variant="muted"
+                size="sm"
+                render={
+                  <Link
+                    to="/communities/$slug"
+                    params={{ slug: community.slug }}
+                  />
+                }
+              >
+                <ItemMedia variant="image" className="rounded-md">
                   <ResilientImage
                     src={selectMedia(community.media, "profile")?.url}
                     alt=""
                     aria-hidden
-                    containerClassName="size-8 shrink-0 rounded-full"
+                    containerClassName="size-10 rounded-md"
                     fallback={
                       <span
                         aria-hidden
-                        className="grid size-full place-items-center bg-muted"
+                        className="grid size-full place-items-center bg-community/15 text-community"
                       >
-                        <UsersIcon className="size-4 text-muted-foreground" />
+                        <UsersIcon aria-hidden />
                       </span>
                     }
                   />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">
-                      {community.name}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground capitalize">
-                      {community.category} · {community.type}
-                    </span>
-                  </span>
-                </Link>
-              </li>
+                </ItemMedia>
+
+                <ItemContent>
+                  <ItemTitle className="w-auto min-w-0 flex-1">
+                    {community.name}
+                  </ItemTitle>
+                </ItemContent>
+
+                <ItemActions className="ml-auto">
+                  <Badge variant="secondary">Owner</Badge>
+                </ItemActions>
+              </Item>
             ))}
-          </ul>
+          </ItemGroup>
         )}
       </QueryBoundary>
 

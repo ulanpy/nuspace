@@ -44,8 +44,15 @@ export function RouteTabs({
   return (
     <Tabs
       className={cn("-mx-1 overflow-x-auto", className)}
+      // `null`, not `undefined`, when no tab matches. base-ui treats an
+      // `undefined` value as "uncontrolled" and then selects the first enabled
+      // tab for itself, reporting that as a value change — so a route that is
+      // not one of the tabs (a stray child of a settings layout) was navigated
+      // away to the first tab the moment it mounted. `null` keeps the control
+      // controlled and therefore silent.
       value={
-        tabs.find(({ to, exact }) => matchRoute({ to, fuzzy: !exact }))?.to
+        tabs.find(({ to, exact }) => matchRoute({ to, fuzzy: !exact }))?.to ??
+        null
       }
       onValueChange={goTo}
     >

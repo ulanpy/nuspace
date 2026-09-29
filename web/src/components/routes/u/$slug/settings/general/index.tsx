@@ -7,13 +7,21 @@ import { apiErrorMessage } from "@/api/errors"
 import { useCurrentUser, useSession } from "@/hooks/use-session"
 import { selectMedia } from "@/lib/media"
 import { slugSchema } from "@/lib/slug"
-import { toUserUploadItems, useUpdateMe } from "@/lib/user"
+import { toUserUploadItems, useUpdateMe, USER_CATEGORIES } from "@/lib/user"
+import type { UserCategory } from "@/lib/user"
 import { MediaPicker } from "@/components/shared/media/picker"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
-import { TelegramLink } from "@/components/routes/profile/components/telegram-link"
+import { TelegramLink } from "@/components/routes/u/$slug/settings/telegram-link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Item,
   ItemActions,
@@ -55,6 +63,7 @@ export function Page() {
   const updateMe = useUpdateMe()
 
   const [slug, setSlug] = useState(user.slug)
+  const [category, setCategory] = useState<UserCategory>(user.category)
   const [isPublic, setIsPublic] = useState(user.is_page_public)
   const [profileFiles, setProfileFiles] = useState<File[]>([])
   const [bannerFiles, setBannerFiles] = useState<File[]>([])
@@ -85,6 +94,7 @@ export function Page() {
         userId: user.id,
         body: {
           slug: parsed.data,
+          category,
           is_page_public: isPublic,
           media_ids_to_delete: markedForDeletion,
         },
@@ -229,12 +239,40 @@ export function Page() {
             />
           </Row>
 
+          <Row
+            label="I am a"
+            description="What the directory badges you with. Not a permission — that is separate."
+          >
+            <Select
+              value={category}
+              onValueChange={(value) => {
+                if (value) setCategory(value as UserCategory)
+              }}
+              disabled={updateMe.isPending}
+            >
+              <SelectTrigger className="w-36 capitalize" aria-label="Category">
+                <SelectValue>{category}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {USER_CATEGORIES.map((option) => (
+                  <SelectItem
+                    key={option}
+                    value={option}
+                    className="capitalize"
+                  >
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Row>
+
           <Row label="Design page">
             <Button
               nativeButton={false}
               variant="outline"
               render={
-                <Link to="/profile/editor">
+                <Link to="/u/$slug/editor" params={{ slug: user.slug }}>
                   <PaletteIcon aria-hidden />
                   Design page
                 </Link>

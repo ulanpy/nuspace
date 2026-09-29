@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/profile/communities"
+import { Page } from "@/components/routes/u/$slug/settings/communities"
 
 const myCommunitiesSearchSchema = z.object({
   /**
@@ -17,7 +17,7 @@ const myCommunitiesSearchSchema = z.object({
 
 export type MyCommunitiesSearch = z.infer<typeof myCommunitiesSearchSchema>
 
-export const Route = createFileRoute("/_app/profile/communities/")({
+export const Route = createFileRoute("/_app/u/$slug/settings/communities/")({
   validateSearch: myCommunitiesSearchSchema,
   component: MyCommunitiesRoute,
 })

@@ -2,7 +2,7 @@ import { MessagesSquareIcon } from "lucide-react"
 
 import { useSession } from "@/hooks/use-session"
 import { OtinishStats } from "@/components/routes/sgotinish/components/otinish-stats"
-import { TelegramConnectPrompt } from "@/components/routes/profile/components/telegram-connect-prompt"
+import { TelegramConnectPrompt } from "@/components/shared/telegram/connect-prompt"
 import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
