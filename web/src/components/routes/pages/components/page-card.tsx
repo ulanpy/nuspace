@@ -1,23 +1,22 @@
 import { Link } from "@tanstack/react-router"
-import { GlobeIcon, LockIcon } from "lucide-react"
 
 import type { Page } from "@/lib/pages"
 import { selectMedia } from "@/lib/media/functions"
 import { ResilientImage } from "@/components/shared/media/resilient-image"
-import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 
-/** The icon and label a card shows for each visibility. */
-const VISIBILITY = {
-  public: { Icon: GlobeIcon, label: "Public" },
-  internal: { Icon: GlobeIcon, label: "NU only" },
-  private: { Icon: LockIcon, label: "Private" },
-} as const
-
+/**
+ * The public directory card: banner, avatar, name, description, nothing else.
+ *
+ * No visibility badge. This grid only ever holds pages the viewer is allowed
+ * to see, which is a mix of `public` and `internal`, so every card wore the
+ * same two labels and said nothing — and on `/mynuspace` it said it loudly
+ * about pages the viewer does not need to think about. `page.visibility` is
+ * still on the model for the places that manage a page, not for browse.
+ */
 export function PageCard({ page }: { page: Page }) {
   const avatar = selectMedia(page.media, "profile")?.url
   const banner = selectMedia(page.media, "banner")?.url
-  const { Icon, label } = VISIBILITY[page.visibility]
 
   return (
     <Card className="h-full p-0 transition-shadow hover:shadow-md">
@@ -61,13 +60,6 @@ export function PageCard({ page }: { page: Page }) {
               {page.description}
             </p>
           ) : null}
-
-          <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
-            <Badge variant="secondary">
-              <Icon className="size-3" aria-hidden />
-              {label}
-            </Badge>
-          </div>
         </div>
       </Link>
     </Card>

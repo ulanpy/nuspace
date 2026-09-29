@@ -246,10 +246,10 @@ export function PageForm({
             create a public page and then hunt for the setting.
 
             Only on create. The page's own settings screen has a Visibility
-            section that saves the moment a radio is touched, and a second
-            copy of these three radios there — behind a Save button, beside one
-            that already works — is one more place for a page's audience to
-            disagree with itself. */}
+            section that saves the moment a choice is made, and a second copy
+            of this control there — behind a Save button, beside one that
+            already works — is one more place for a page's audience to disagree
+            with itself. */}
         {!page ? (
           <Item variant="muted">
             <ItemContent>
@@ -258,16 +258,14 @@ export function PageForm({
                 Who can read this page. A page nobody may read is a 404 for
                 them, not a 403.
               </ItemDescription>
-              <div className="mt-2">
-                <VisibilityPicker
-                  value={visibility}
-                  onValueChange={(next) => {
-                    form.setValue("visibility", next, { shouldDirty: true })
-                  }}
-                  disabled={isPending}
-                  idPrefix="page-form-visibility"
-                />
-              </div>
+              <VisibilityPicker
+                value={visibility}
+                onValueChange={(next) => {
+                  form.setValue("visibility", next, { shouldDirty: true })
+                }}
+                disabled={isPending}
+                idPrefix="page-form-visibility"
+              />
             </ItemContent>
           </Item>
         ) : null}

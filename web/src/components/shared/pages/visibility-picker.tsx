@@ -1,12 +1,10 @@
 import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemTitle,
-} from "@/components/ui/item"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export type PageVisibilityValue = "public" | "internal" | "private"
 
@@ -34,12 +32,25 @@ export const VISIBILITIES = [
   description: string
 }[]
 
+const isVisibility = (value: string | null): value is PageVisibilityValue =>
+  VISIBILITIES.some((option) => option.value === value)
+
+const selected = (value: PageVisibilityValue) =>
+  VISIBILITIES.find((option) => option.value === value) ?? VISIBILITIES[0]
+
 /**
- * The visibility radios, shared by the create dialog and the settings page.
+ * The visibility dropdown, shared by the create dialog and the settings page.
  *
  * One list because it is one fact with three values: a page that is private
  * here and public there is a page whose audience depends on which screen you
  * happened to be on.
+ *
+ * A `<Select>`, not three radios. It is a single field with one current value
+ * and nothing to tick off, so a list of three rows of prose with a radio
+ * button on the right is three times the ink for the same answer — and in the
+ * create dialog it pushed the Save button off the bottom of the form. What
+ * the radios had that a `<Select>` has nowhere for, the description of the
+ * current value, is below the trigger.
  */
 export function VisibilityPicker({
   value,
@@ -50,37 +61,35 @@ export function VisibilityPicker({
   value: PageVisibilityValue
   onValueChange: (value: PageVisibilityValue) => void
   disabled?: boolean
-  /** The dialog and the settings page both render this, so the radio ids
-   *  cannot both be the bare option value. */
+  /** The dialog and the settings page both render this, so the trigger id
+   *  cannot be the same bare string in both. */
   idPrefix?: string
 }) {
+  const current = selected(value)
+
   return (
-    <RadioGroup
-      value={value}
-      onValueChange={(next) => {
-        onValueChange(next as PageVisibilityValue)
-      }}
-      disabled={disabled}
-    >
-      <ItemGroup>
-        {VISIBILITIES.map((option) => (
-          <Item key={option.value} variant="muted" size="sm">
-            <ItemContent>
-              <ItemTitle className="w-auto min-w-0 flex-1">
-                {option.title}
-              </ItemTitle>
-              <ItemDescription>{option.description}</ItemDescription>
-            </ItemContent>
-            <ItemActions className="ml-auto">
-              <RadioGroupItem
-                id={`${idPrefix}-${option.value}`}
-                value={option.value}
-                aria-label={option.title}
-              />
-            </ItemActions>
-          </Item>
-        ))}
-      </ItemGroup>
-    </RadioGroup>
+    <div className="space-y-2">
+      <Select
+        value={value}
+        onValueChange={(next) => {
+          if (isVisibility(next)) {
+            onValueChange(next)
+          }
+        }}
+        disabled={disabled}
+      >
+        <SelectTrigger id={idPrefix} className="w-full capitalize sm:w-56">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {VISIBILITIES.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-sm text-muted-foreground">{current.description}</p>
+    </div>
   )
 }
