@@ -51,6 +51,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        transaction_per_migration=True,
     )
 
     with context.begin_transaction():
@@ -81,6 +82,12 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
+            # One transaction per revision, not one for the whole run. Postgres
+            # refuses to let a transaction read an enum value another statement
+            # in that same transaction just added, so `ALTER TYPE ... ADD VALUE`
+            # and the UPDATE that uses the new value can never share one. See
+            # f1e2d3c4b5a6_add_pages.py.
+            transaction_per_migration=True,
         )
 
         with context.begin_transaction():
