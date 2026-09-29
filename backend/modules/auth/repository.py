@@ -3,7 +3,7 @@ from typing import List, Tuple
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.modules.auth.models import User, UserScope
+from backend.modules.auth.models import User, UserCategory, UserScope
 from backend.modules.auth.schemas import UserSchema
 from backend.modules.campuscurrent.models.community import Community, CommunityAdmin
 from backend.modules.media.models import EntityType, Media, MediaFormat
@@ -63,7 +63,12 @@ class UserRepository:
         return result.scalars().first()
 
     async def list_public(
-        self, *, page: int, size: int, keyword: str | None = None
+        self,
+        *,
+        page: int,
+        size: int,
+        keyword: str | None = None,
+        category: UserCategory | None = None,
     ) -> Tuple[List[User], int]:
         """Users whose profile page is published, for the public directory.
 
@@ -74,6 +79,8 @@ class UserRepository:
         if keyword:
             pattern = f"%{keyword}%"
             conditions.append(or_(User.name.ilike(pattern), User.surname.ilike(pattern)))
+        if category:
+            conditions.append(User.category == category)
 
         # name alone is not a stable sort — siblings share a first name, and
         # OFFSET over a non-deterministic order drops and repeats rows across

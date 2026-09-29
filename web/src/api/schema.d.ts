@@ -3909,6 +3909,8 @@ export interface operations {
                 page?: number;
                 /** @description Search keyword for name or surname */
                 keyword?: string | null;
+                /** @description Category of people to list */
+                category?: components["schemas"]["UserCategory"] | null;
             };
             header?: never;
             path?: never;

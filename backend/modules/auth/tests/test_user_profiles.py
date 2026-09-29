@@ -177,6 +177,17 @@ async def test_list_public_filters_visibility_in_sql_not_in_python() -> None:
 
 
 @pytest.mark.asyncio
+async def test_list_public_filters_by_category_in_sql() -> None:
+    session = _session_returning(None)
+    await UserRepository(session).list_public(page=1, size=20, category=UserCategory.faculty)
+
+    sql = _compiled(session.execute.call_args_list[0].args[0])
+    assert "users.category = 'faculty'" in sql
+    # Both the page and the count query get the filter, or the pager lies.
+    assert "users.category = 'faculty'" in _compiled(session.execute.call_args_list[1].args[0])
+
+
+@pytest.mark.asyncio
 async def test_list_public_orders_deterministically() -> None:
     """OFFSET over a non-deterministic order drops and repeats rows."""
     session = _session_returning(None)

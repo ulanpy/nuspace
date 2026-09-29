@@ -12,7 +12,7 @@ from fastapi import HTTPException, status
 from backend.common.utils.response_builder import calculate_pages
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth import schemas
-from backend.modules.auth.models import User, UserScope
+from backend.modules.auth.models import User, UserCategory, UserScope
 from backend.modules.auth.repository import UserRepository
 from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
 from backend.modules.campuscurrent.communities.repository import CommunityRepository
@@ -141,11 +141,16 @@ class UserPageService:
         )
 
     async def list_pages(
-        self, *, page: int, size: int, keyword: str | None = None
+        self,
+        *,
+        page: int,
+        size: int,
+        keyword: str | None = None,
+        category: UserCategory | None = None,
     ) -> schemas.UserPageList:
         async with self.uow:
             users, count = await self.uow.get_repo(UserRepository).list_public(
-                page=page, size=size, keyword=keyword
+                page=page, size=size, keyword=keyword, category=category
             )
 
         total_pages = calculate_pages(count=count, size=size)

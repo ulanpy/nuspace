@@ -22,7 +22,7 @@ from backend.modules.auth.dependencies import (
     mark_access_actor,
     set_request_access_actor,
 )
-from backend.modules.auth.models import UserRole
+from backend.modules.auth.models import UserCategory, UserRole
 from backend.modules.auth.profiles import UserPageService
 from backend.modules.auth.schemas import (
     CurrentUserResponse,
@@ -227,11 +227,14 @@ async def get_users(
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     keyword: str | None = Query(default=None, description="Search keyword for name or surname"),
+    category: UserCategory | None = Query(default=None, description="Category of people to list"),
     user_page_service: UserPageService = Depends(deps.get_user_page_service),
 ) -> UserPageList:
     """The directory of published profile pages. There is no way to widen the
     visibility filter — `is_page_public` and `scope` are a hard WHERE."""
-    return await user_page_service.list_pages(page=page, size=size, keyword=keyword)
+    return await user_page_service.list_pages(
+        page=page, size=size, keyword=keyword, category=category
+    )
 
 
 @router.patch("/users/me", response_model=UserPageResponse)
