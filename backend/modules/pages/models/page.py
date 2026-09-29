@@ -1,6 +1,17 @@
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, PrimaryKeyConstraint, String, Text
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    PrimaryKeyConstraint,
+    String,
+    Text,
+    text,
+)
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,35 +20,32 @@ from backend.common.datetime_utils import utc_now
 from backend.core.database.models.base import Base
 
 
-class CommunityCategory(PyEnum):
-    academic = "academic"
-    professional = "professional"
-    recreational = "recreational"
-    cultural = "cultural"
-    sports = "sports"
-    social = "social"
-    art = "art"
+class PageVisibility(PyEnum):
+    """Who may see a page. Anything not visible to the viewer 404s, not 403s."""
+
+    private = "private"
+    internal = "internal"
+    public = "public"
 
 
-class CommunityType(PyEnum):
-    club = "club"
-    university = "university"
-    organization = "organization"
-
-
-class Community(Base):
-    __tablename__ = "communities"
+class Page(Base):
+    __tablename__ = "pages"
+    # Enforced in the database as well as the application: any writer that
+    # bypasses `validate_slug` still cannot persist a reserved or malformed
+    # slug. Declared here so a future autogenerate does not read the constraint
+    # as drift and drop it.
+    __table_args__ = (CheckConstraint("validate_slug(slug)", name="chk_pages_slug"),)
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     name: Mapped[str] = mapped_column(nullable=False, unique=False, index=True)
-    type: Mapped[CommunityType] = mapped_column(
-        SQLEnum(CommunityType, name="community_type"), nullable=False, index=True
+    description: Mapped[str | None] = mapped_column(nullable=True, unique=False)
+    visibility: Mapped[PageVisibility] = mapped_column(
+        SQLEnum(PageVisibility, name="page_visibility"),
+        nullable=False,
+        default=PageVisibility.public,
+        server_default=PageVisibility.public.value,
+        index=True,
     )
-    category: Mapped[CommunityCategory] = mapped_column(
-        SQLEnum(CommunityCategory, name="community_category"), nullable=False, index=True
-    )
-    email: Mapped[str] = mapped_column(nullable=True, unique=False)
-    verified: Mapped[bool] = mapped_column(nullable=False, default=False, index=True)
-    owner: Mapped[str] = mapped_column(
+    owner: Mapped[str | None] = mapped_column(
         ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
     )
     slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
@@ -46,35 +54,44 @@ class Community(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     owner_user = relationship("User")
-    community_admins = relationship(
-        "CommunityAdmin", back_populates="community", cascade="all, delete-orphan"
-    )
+    page_admins = relationship("PageAdmin", back_populates="page", cascade="all, delete-orphan")
 
 
-class CommunityAdmin(Base):
-    __tablename__ = "community_admins"
-    __table_args__ = (PrimaryKeyConstraint("community_id", "user_sub"),)
+class PageAdmin(Base):
+    __tablename__ = "page_admins"
+    __table_args__ = (PrimaryKeyConstraint("page_id", "user_sub"),)
 
-    community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
+    page_id: Mapped[int] = mapped_column(
+        ForeignKey("pages.id", ondelete="CASCADE"), nullable=False, index=True
     )
     user_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
-    community = relationship("Community", back_populates="community_admins")
+    page = relationship("Page", back_populates="page_admins")
     user = relationship("User")
 
 
-class CommunityAdminLink(Base):
-    """Secret invite link that grants community-admin access on redemption."""
+class PageAdminLink(Base):
+    """Secret invite link that grants page-admin access on redemption."""
 
-    __tablename__ = "community_admin_links"
+    __tablename__ = "page_admin_links"
+    # At most one unrevoked link per page. A correctness constraint, not an
+    # optimisation: a second live link would leave two valid secrets for one
+    # page. Declared so autogenerate does not drop it as drift.
+    __table_args__ = (
+        Index(
+            "uq_page_admin_links_active",
+            "page_id",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-    community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
+    page_id: Mapped[int] = mapped_column(
+        ForeignKey("pages.id", ondelete="CASCADE"), nullable=False, index=True
     )
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     created_by_sub: Mapped[str] = mapped_column(

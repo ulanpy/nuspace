@@ -1,15 +1,13 @@
 from backend.modules.pages.models.page import (
-    Community,
-    CommunityAdmin,
-    CommunityAdminLink,
-    CommunityCategory,
-    CommunityType,
+    Page,
+    PageAdmin,
+    PageAdminLink,
+    PageVisibility,
 )
 
 __all__ = [
-    "Community",
-    "CommunityAdmin",
-    "CommunityAdminLink",
-    "CommunityCategory",
-    "CommunityType",
+    "Page",
+    "PageAdmin",
+    "PageAdminLink",
+    "PageVisibility",
 ]

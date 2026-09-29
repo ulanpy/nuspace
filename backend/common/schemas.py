@@ -25,7 +25,6 @@ class ResourcePermissions(BaseModel):
     can_view_attendees: bool = False
     can_share_access: bool = False
     can_change_owner: bool = False
-    can_toggle_verified: bool = False
     can_manage_admins: bool = False
     can_view_admin_link: bool = False
     editable_fields: List[str] = []

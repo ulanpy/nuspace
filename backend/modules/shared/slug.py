@@ -4,10 +4,10 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# The only unique, user-writable column on Community and on User is `slug`, so
-# an IntegrityError raised while creating or updating one of them means the
-# handle is already taken. Surface that to the caller instead of leaking the
-# raw database message.
+# The only unique, user-writable column on Page is `slug`, so an
+# IntegrityError raised while creating or updating one means the handle is
+# already taken. Surface that to the caller instead of leaking the raw
+# database message.
 SLUG_TAKEN_DETAIL = "That handle is already taken. Choose a different one."
 
 
@@ -28,7 +28,7 @@ RESERVED_SLUGS = {
     "about",
     "terms-of-service",
     "privacy-policy",
-    "communities",
+    "pages",
     "users",
     "events",
     "courses",
@@ -37,7 +37,7 @@ RESERVED_SLUGS = {
     "opportunities",
     "profile",
     "sgotinish",
-    "u",
+    "p",
 }
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")

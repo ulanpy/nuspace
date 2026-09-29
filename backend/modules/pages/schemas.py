@@ -1,35 +1,27 @@
 from datetime import datetime
 from typing import List, Literal
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
 from backend.modules.media.schemas import MediaResponse
-from backend.modules.pages.models.page import (
-    CommunityCategory,
-    CommunityType,
-)
+from backend.modules.pages.models.page import PageVisibility
 from backend.modules.shared.slug import validate_slug
 
 
-class CommunityCreateRequest(BaseModel):
+class PageCreateRequest(BaseModel):
     name: str = Field(
         ...,
         min_length=3,
         max_length=100,
-        description="The name of the community",
+        description="The name of the page",
         example="NU Fencing Club",
     )
-    type: CommunityType = Field(
-        ..., description="The type of the community", example=CommunityType.club
-    )
-    category: CommunityCategory = Field(
-        ..., description="The category of the community", example=CommunityCategory.academic
-    )
-    email: EmailStr | None = Field(
+    description: str | None = Field(
         default=None,
-        description="The email of the community",
-        example="nufencingclub@gmail.com",
+        max_length=500,
+        description="A short summary of what the page is for",
+        example="Weekly beginner-friendly fencing sessions.",
     )
     slug: str = Field(
         ...,
@@ -40,10 +32,15 @@ class CommunityCreateRequest(BaseModel):
     )
     page_content: dict = Field(
         default_factory=dict,
-        description="Free-form page content of the community",
+        description="Free-form page content",
         example={},
     )
-    owner: str = Field(..., description="The owner of the community (user_sub)")
+    visibility: PageVisibility = Field(
+        default=PageVisibility.public,
+        description="Who may see this page",
+        example=PageVisibility.public,
+    )
+    owner: str = Field(default="me", description="The owner of the page (user_sub, or 'me')")
 
     @field_validator("slug", mode="before")
     @classmethod
@@ -53,16 +50,14 @@ class CommunityCreateRequest(BaseModel):
         return validate_slug(str(value))
 
 
-class BaseCommunity(BaseModel):
+class BasePage(BaseModel):
     id: int
     name: str
-    type: CommunityType
-    category: CommunityCategory
-    email: EmailStr | None = None
-    verified: bool
+    description: str | None = None
+    visibility: PageVisibility
     slug: str
     page_content: dict
-    owner: str
+    owner: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -70,8 +65,10 @@ class BaseCommunity(BaseModel):
         from_attributes = True
 
 
-class CommunityResponse(BaseCommunity):
-    owner_user: ShortUserResponse
+class PageResponse(BasePage):
+    # None on a page with no owner: the FK is ON DELETE SET NULL, and the
+    # relationship is simply absent. A required field here crashes the read.
+    owner_user: ShortUserResponse | None = None
     media: List[MediaResponse] = []
     permissions: ResourcePermissions = ResourcePermissions()
 
@@ -99,32 +96,23 @@ class AdminLinkAcceptResponse(BaseModel):
     status: Literal["granted", "already_admin", "already_owner"]
 
 
-class ShortCommunityResponse(BaseModel):
+class ShortPageResponse(BaseModel):
     id: int
     name: str
-    verified: bool = False
     media: List[MediaResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
 
 
-class CommunityUpdateRequest(BaseModel):
+class PageUpdateRequest(BaseModel):
     name: str | None = Field(
-        default=None, description="The name of the community", example="NU Fencing Club"
+        default=None, description="The name of the page", example="NU Fencing Club"
     )
-    type: CommunityType | None = Field(
-        default=None, description="The type of the community", example=CommunityType.club
-    )
-    category: CommunityCategory | None = Field(
+    description: str | None = Field(
         default=None,
-        description="The category of the community",
-        example=CommunityCategory.academic,
-    )
-    email: EmailStr | None = Field(
-        default=None,
-        description="The email of the community",
-        example="nufencingclub@gmail.com",
+        max_length=500,
+        description="A short summary of what the page is for",
     )
     slug: str | None = Field(
         default=None,
@@ -135,7 +123,11 @@ class CommunityUpdateRequest(BaseModel):
     )
     page_content: dict | None = Field(
         default=None,
-        description="Free-form page content of the community",
+        description="Free-form page content",
+    )
+    visibility: PageVisibility | None = Field(
+        default=None,
+        description="Who may see this page",
     )
 
     media_ids_to_delete: list[int] | None = Field(
@@ -162,16 +154,12 @@ class CommunityUpdateRequest(BaseModel):
         from_attributes = True
 
 
-class CommunityOwnerUpdateRequest(BaseModel):
+class PageOwnerUpdateRequest(BaseModel):
     owner_sub: str = Field(..., description="Sub of the new owner user")
 
 
-class CommunityVerifiedUpdateRequest(BaseModel):
-    verified: bool = Field(..., description="New verified status")
-
-
-class ListCommunity(BaseModel):
-    items: List[CommunityResponse] = Field(default_factory=list)
+class ListPage(BaseModel):
+    items: List[PageResponse] = Field(default_factory=list)
     total_pages: int = Field(default=1, ge=1)
     total: int
     page: int
@@ -179,7 +167,7 @@ class ListCommunity(BaseModel):
     has_next: bool
 
 
-class ListCommunityAdmins(BaseModel):
+class ListPageAdmins(BaseModel):
     items: List[AdminResponse] = Field(default_factory=list)
     total_pages: int = Field(default=1, ge=1)
     total: int
