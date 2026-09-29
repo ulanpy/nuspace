@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Item,
+  ItemActions,
   ItemContent,
   ItemDescription,
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item"
 import { VisibilityPicker } from "@/components/shared/pages/visibility-picker"
+import { visibilityCopy } from "@/components/shared/pages/visibilities"
 import type { UploadItem } from "@/hooks/use-media-upload"
 import { MediaPicker } from "@/components/shared/media/picker"
 import { slugSchema } from "@/lib/slug"
@@ -253,11 +255,12 @@ export function PageForm({
         {!page ? (
           <Item variant="muted">
             <ItemContent>
-              <ItemTitle>Visibility</ItemTitle>
+              <ItemTitle>{visibilityCopy(visibility).title}</ItemTitle>
               <ItemDescription>
-                Who can read this page. A page nobody may read is a 404 for
-                them, not a 403.
+                {visibilityCopy(visibility).description}
               </ItemDescription>
+            </ItemContent>
+            <ItemActions className="ml-auto">
               <VisibilityPicker
                 value={visibility}
                 onValueChange={(next) => {
@@ -266,7 +269,7 @@ export function PageForm({
                 disabled={isPending}
                 idPrefix="page-form-visibility"
               />
-            </ItemContent>
+            </ItemActions>
           </Item>
         ) : null}
       </ItemGroup>

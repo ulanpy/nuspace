@@ -10,10 +10,11 @@ import { SettingsSection } from "@/components/shared/settings/settings-section"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { PageForm } from "@/components/shared/pages/page-form"
 import type { PageSubmitPayload } from "@/components/shared/pages/page-form"
+import { VisibilityPicker } from "@/components/shared/pages/visibility-picker"
 import {
-  VisibilityPicker,
+  visibilityCopy,
   type PageVisibilityValue,
-} from "@/components/shared/pages/visibility-picker"
+} from "@/components/shared/pages/visibilities"
 import { Button } from "@/components/ui/button"
 import {
   Item,
@@ -100,12 +101,22 @@ export function Page({ page }: { page: PageEntity }) {
           title="Visibility"
           description="Who can read this page. A private page is a 404 for everyone but you and its admins."
         >
-          <VisibilityPicker
-            value={visibility}
-            onValueChange={saveVisibility}
-            disabled={updatePage.isPending}
-            idPrefix="page-settings-visibility"
-          />
+          <Item variant="muted">
+            <ItemContent>
+              <ItemTitle>{visibilityCopy(visibility).title}</ItemTitle>
+              <ItemDescription>
+                {visibilityCopy(visibility).description}
+              </ItemDescription>
+            </ItemContent>
+            <ItemActions className="ml-auto">
+              <VisibilityPicker
+                value={visibility}
+                onValueChange={saveVisibility}
+                disabled={updatePage.isPending}
+                idPrefix="page-settings-visibility"
+              />
+            </ItemActions>
+          </Item>
         </SettingsSection>
       ) : null}
 
