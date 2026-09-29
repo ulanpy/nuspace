@@ -17,10 +17,10 @@ from backend.modules.events.attendees_export import (
     build_attendees_xlsx,
 )
 from backend.modules.events.interfaces import MediaAttachmentResolver
+from backend.modules.events.models import Event, EventAccessPurpose
 from backend.modules.events.policy import EventPolicy
 from backend.modules.events.repository import EventRepository
 from backend.modules.media.models import EntityType, Media, MediaFormat
-from backend.modules.events.models import Event, EventAccessPurpose
 
 _ACCESS_INVITE_TTL = timedelta(days=7)
 
@@ -99,7 +99,10 @@ class EventService:
         event_responses = await self._build_event_responses([event], user)
         return event_responses[0]
 
-    async def authorize_media_upload(self, event_id: int, user: tuple[dict, dict]) -> None:
+    async def authorize_media_upload(
+        self, event_id: int, user: tuple[dict, dict], count: int = 1
+    ) -> None:
+        # ponytail: `count` is accepted and ignored — events cap nothing.
         async with self.uow:
             repo = self.uow.get_repo(EventRepository)
             event = await repo.get_event_by_id(event_id)

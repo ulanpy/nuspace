@@ -2,7 +2,7 @@
 
 A caller-supplied media id is a guess until the row is checked against the
 entity being edited, otherwise anyone could pass someone else's media id and
-have it deleted. Both the community and the user profile paths need this, and
+have it deleted. Both the page and the user profile paths need this, and
 neither of them owns the concept.
 """
 

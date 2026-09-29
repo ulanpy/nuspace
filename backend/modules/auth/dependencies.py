@@ -6,8 +6,7 @@ from jose import JWTError, jwt
 from jwt import ExpiredSignatureError as PyJWTExpiredSignatureError
 from redis.asyncio import Redis
 
-from backend.common.dependencies import get_infra, get_uow
-from backend.common.schemas import Infra
+from backend.common.dependencies import get_uow
 from backend.core.configs.config import config
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.app_token import AppTokenManager
@@ -15,9 +14,7 @@ from backend.modules.auth.cookies import set_app_token_cookie, set_kc_auth_cooki
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.auth.mock import get_mock_user_by_sub
 from backend.modules.auth.models import UserRole, UserScope
-from backend.modules.auth.profiles import UserPageService
 from backend.modules.auth.service import AuthService
-from backend.modules.media.dependencies import build_media_service
 
 
 def set_request_access_actor(
@@ -70,18 +67,11 @@ async def get_auth_service(
     uow: UnitOfWork = Depends(get_uow),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
     app_token_manager: AppTokenManager = Depends(get_app_token_manager),
-    infra: Infra = Depends(get_infra),
 ) -> AuthService:
     return AuthService(
         uow=uow,
         kc_manager=kc_manager,
         app_token_manager=app_token_manager,
-        media_attachment_resolver=build_media_service(
-            uow=uow,
-            storage_client=infra.storage_client,
-            config=infra.config,
-            signing_credentials=infra.signing_credentials,
-        ),
     )
 
 
@@ -236,7 +226,6 @@ async def get_creds_or_guest(
     guest_kc = {"sub": "guest"}
     guest_app = {
         "role": UserRole.default.value,
-        "communities": [],
         "is_guest": True,
         "scope": "allowed",
     }
@@ -266,21 +255,6 @@ async def get_creds_or_guest(
             actor="guest",
         )
         return guest_kc, guest_app
-
-
-async def get_user_page_service(
-    uow: UnitOfWork = Depends(get_uow),
-    infra: Infra = Depends(get_infra),
-) -> UserPageService:
-    return UserPageService(
-        uow=uow,
-        media_attachment_resolver=build_media_service(
-            uow=uow,
-            storage_client=infra.storage_client,
-            config=infra.config,
-            signing_credentials=infra.signing_credentials,
-        ),
-    )
 
 
 async def check_tg(

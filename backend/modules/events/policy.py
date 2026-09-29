@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 
 from backend.common.schemas import ResourcePermissions
-from backend.modules.events.schemas import EventCreateRequest, EventUpdateRequest
 from backend.modules.events.models import Event, EventStatus
+from backend.modules.events.schemas import EventCreateRequest, EventUpdateRequest
 from backend.modules.shared.base_policy import BasePolicy
 
 

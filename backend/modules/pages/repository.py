@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from httpx import AsyncClient
 from sqlalchemy import case, exists, func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -9,49 +10,35 @@ from backend.common.datetime_utils import utc_now
 from backend.common.utils import meilisearch
 from backend.modules.auth.models import User
 from backend.modules.media.models import EntityType, Media, MediaFormat
-from backend.modules.pages.models.page import (
-    Community,
-    CommunityAdmin,
-    CommunityAdminLink,
-    CommunityCategory,
-    CommunityType,
-)
+from backend.modules.pages.models.page import Page, PageAdmin, PageAdminLink, PageVisibility
 
 
-class CommunityRepository:
+class PageRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def add_community(self, community_data) -> Community:
-        community = Community(**community_data.model_dump())
-        self.db_session.add(community)
+    async def add_page(self, page_data) -> Page:
+        page = Page(**page_data.model_dump())
+        self.db_session.add(page)
         await self.db_session.flush()
-        stmt = (
-            select(Community)
-            .where(Community.id == community.id)
-            .options(selectinload(Community.owner_user))
-        )
+        stmt = select(Page).where(Page.id == page.id).options(selectinload(Page.owner_user))
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
 
-    async def update_community(self, community: Community, new_data) -> Community:
+    async def update_page(self, page: Page, new_data) -> Page:
         for field, value in new_data.model_dump(
             exclude_unset=True, exclude={"media_ids_to_delete"}
         ).items():
-            if hasattr(community, field):
-                setattr(community, field, value)
+            if hasattr(page, field):
+                setattr(page, field, value)
         await self.db_session.flush()
-        stmt = (
-            select(Community)
-            .where(Community.id == community.id)
-            .options(selectinload(Community.owner_user))
-        )
+        stmt = select(Page).where(Page.id == page.id).options(selectinload(Page.owner_user))
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
 
-    async def delete_community(self, community: Community) -> bool:
+    async def delete_page(self, page: Page) -> bool:
         try:
-            await self.db_session.delete(community)
+            await self.db_session.delete(page)
             return True
         except Exception:
             return False
@@ -65,32 +52,32 @@ class CommunityRepository:
             return False
 
     @staticmethod
-    async def upsert_search(meilisearch_client: AsyncClient, community: Community) -> None:
+    async def upsert_search(meilisearch_client: AsyncClient, page: Page) -> None:
         await meilisearch.upsert(
             client=meilisearch_client,
-            storage_name=Community.__tablename__,
+            storage_name=Page.__tablename__,
             json_values={
-                "id": community.id,
-                "name": community.name,
+                "id": page.id,
+                "name": page.name,
             },
         )
 
     @staticmethod
-    async def delete_from_search(meilisearch_client: AsyncClient, community_id: int) -> None:
+    async def delete_from_search(meilisearch_client: AsyncClient, page_id: int) -> None:
         await meilisearch.delete(
             client=meilisearch_client,
-            storage_name=Community.__tablename__,
-            primary_key=str(community_id),
+            storage_name=Page.__tablename__,
+            primary_key=str(page_id),
         )
 
     async def list_media(
         self,
-        community_ids: List[int],
+        page_ids: List[int],
         media_formats: List[MediaFormat] | None = None,
     ) -> List[Media]:
         filters = [
-            Media.entity_id.in_(community_ids),
-            Media.entity_type == EntityType.communities,
+            Media.entity_id.in_(page_ids),
+            Media.entity_type == EntityType.pages,
         ]
         if media_formats:
             filters.append(Media.media_format.in_(media_formats))
@@ -98,99 +85,137 @@ class CommunityRepository:
         result = await self.db_session.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_communities(
+    async def count_page_images(self, page_id: int) -> int:
+        """Content images already attached to a page, for the per-page cap."""
+        stmt = (
+            select(func.count())
+            .select_from(Media)
+            .where(
+                Media.entity_type == EntityType.pages,
+                Media.entity_id == page_id,
+                Media.media_format == MediaFormat.carousel,
+            )
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalar() or 0
+
+    async def count_owned_pages(self, user_sub: str) -> int:
+        stmt = select(func.count()).select_from(Page).where(Page.owner == user_sub)
+        result = await self.db_session.execute(stmt)
+        return result.scalar() or 0
+
+    @staticmethod
+    def _visibility_conditions(*, viewer_sub: str | None, is_site_admin: bool) -> list:
+        """A hard WHERE on visibility. Never a caller-supplied filter.
+
+        Mirrors `PagePolicy.check_visible` so a list and a detail read agree: a
+        signed-in viewer sees `public` and `internal`, a guest sees only
+        `public`, and the owner or a site admin sees their own pages whatever
+        their visibility.
+        """
+        if is_site_admin:
+            return []
+        if viewer_sub:
+            return [
+                Page.visibility.in_([PageVisibility.public, PageVisibility.internal]),
+                Page.owner == viewer_sub,
+            ]
+        return [Page.visibility == PageVisibility.public]
+
+    async def list_pages(
         self,
         *,
         page: int,
         size: int,
-        community_type: CommunityType | None,
-        community_category: CommunityCategory | None,
+        viewer_sub: str | None,
+        is_site_admin: bool,
         owner_sub: str | None,
+        role: str | None,
         keyword: str | None,
         meilisearch_client: AsyncClient,
-    ) -> Tuple[List[Community], int, bool]:
+    ) -> Tuple[List[Page], int, bool]:
         meili_result = None
         keyword_no_results = False
 
         if keyword:
             meili_result = await meilisearch.get(
                 client=meilisearch_client,
-                storage_name=EntityType.communities.value,
+                storage_name=EntityType.pages.value,
                 keyword=keyword,
                 page=page,
                 size=size,
                 filters=None,
             )
-            community_ids = [item["id"] for item in meili_result.get("hits", [])]
-            if not community_ids:
+            page_ids = [item["id"] for item in meili_result.get("hits", [])]
+            if not page_ids:
                 estimated_hits = meili_result.get("estimatedTotalHits", 0) if meili_result else 0
                 return [], estimated_hits, True
 
-        conditions = []
-        if community_type:
-            conditions.append(Community.type == community_type)
-        if community_category:
-            conditions.append(Community.category == community_category)
+        conditions: list = []
+        match_any: list = []
+        if role == "owned":
+            conditions.append(Page.owner == viewer_sub)
+        elif role == "admin":
+            match_any.append(
+                Page.id.in_(select(PageAdmin.page_id).where(PageAdmin.user_sub == viewer_sub))
+            )
         if owner_sub:
-            conditions.append(Community.owner == owner_sub)
+            conditions.append(Page.owner == owner_sub)
         if keyword:
-            conditions.append(Community.id.in_(community_ids))
+            conditions.append(Page.id.in_(page_ids))
 
-        base_stmt = select(Community).where(*conditions).options(selectinload(Community.owner_user))
+        # The visibility restriction and the role filter have to be ANDed
+        # together, so a `role=admin` search must not escape it. `match_any`
+        # holds the admin-membership alternative and joins the visibility
+        # alternative; everything else is a plain AND.
+        visible = self._visibility_conditions(viewer_sub=viewer_sub, is_site_admin=is_site_admin)
+        if match_any:
+            conditions.append(func.or_(*visible, *match_any))
+        else:
+            conditions.extend(visible)
+
+        base_stmt = select(Page).where(*conditions).options(selectinload(Page.owner_user))
 
         if keyword:
             order_clause = case(
-                *[
-                    (Community.id == community_id, index)
-                    for index, community_id in enumerate(community_ids)
-                ],
-                else_=len(community_ids),
+                *[(Page.id == page_id, index) for index, page_id in enumerate(page_ids)],
+                else_=len(page_ids),
             )
             stmt = base_stmt.order_by(order_clause)
             result = await self.db_session.execute(stmt)
-            communities: List[Community] = list(result.scalars().all())
+            pages: List[Page] = list(result.scalars().all())
             count: int = meili_result.get("estimatedTotalHits", 0) if meili_result else 0
         else:
             page_num = max(1, page or 1)
             has_media = exists(
                 select(Media.id).where(
-                    Media.entity_id == Community.id,
-                    Media.entity_type == EntityType.communities,
+                    Media.entity_id == Page.id,
+                    Media.entity_type == EntityType.pages,
                 )
             )
             stmt = (
-                base_stmt.order_by(has_media.desc(), Community.name.asc())
+                base_stmt.order_by(has_media.desc(), Page.name.asc())
                 .offset((page_num - 1) * size)
                 .limit(size)
             )
             result = await self.db_session.execute(stmt)
-            communities = list(result.scalars().all())
-            count_stmt = select(func.count()).select_from(Community).where(*conditions)
+            pages = list(result.scalars().all())
+            count_stmt = select(func.count()).select_from(Page).where(*conditions)
             count_result = await self.db_session.execute(count_stmt)
             count = count_result.scalar() or 0
 
-        return communities, count, keyword_no_results
+        return pages, count, keyword_no_results
 
-    async def load_relations(
-        self, community: Community, relations: list[str] | None = None
-    ) -> None:
-        await self.db_session.refresh(community, relations or ["owner_user"])
+    async def load_relations(self, page: Page, relations: list[str] | None = None) -> None:
+        await self.db_session.refresh(page, relations or ["owner_user"])
 
-    async def get_by_id(self, community_id: int) -> Community | None:
-        stmt = (
-            select(Community)
-            .where(Community.id == community_id)
-            .options(selectinload(Community.owner_user))
-        )
+    async def get_by_id(self, page_id: int) -> Page | None:
+        stmt = select(Page).where(Page.id == page_id).options(selectinload(Page.owner_user))
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 
-    async def get_by_slug(self, slug: str) -> Community | None:
-        stmt = (
-            select(Community)
-            .where(Community.slug == slug)
-            .options(selectinload(Community.owner_user))
-        )
+    async def get_by_slug(self, slug: str) -> Page | None:
+        stmt = select(Page).where(Page.slug == slug).options(selectinload(Page.owner_user))
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 
@@ -200,48 +225,62 @@ class CommunityRepository:
         return result.scalars().first()
 
     async def list_admins_page(
-        self, community_id: int, *, page: int, size: int, exclude_sub: str | None = None
-    ) -> Tuple[List[CommunityAdmin], int]:
+        self, page_id: int, *, page: int, size: int, exclude_sub: str | None = None
+    ) -> Tuple[List[PageAdmin], int]:
         # created_at alone is not a stable sort: rows promoted in the same
         # transaction share a timestamp, and OFFSET pagination over a
         # non-deterministic order silently drops and repeats rows across
         # page boundaries. user_sub breaks the tie.
-        conditions = [CommunityAdmin.community_id == community_id]
+        conditions = [PageAdmin.page_id == page_id]
         if exclude_sub is not None:
-            conditions.append(CommunityAdmin.user_sub != exclude_sub)
+            conditions.append(PageAdmin.user_sub != exclude_sub)
         stmt = (
-            select(CommunityAdmin)
+            select(PageAdmin)
             .where(*conditions)
-            .options(selectinload(CommunityAdmin.user))
-            .order_by(CommunityAdmin.created_at.asc(), CommunityAdmin.user_sub.asc())
+            .options(selectinload(PageAdmin.user))
+            .order_by(PageAdmin.created_at.asc(), PageAdmin.user_sub.asc())
             .offset((page - 1) * size)
             .limit(size)
         )
         result = await self.db_session.execute(stmt)
         admins = list(result.scalars().all())
-        count_stmt = select(func.count()).select_from(CommunityAdmin).where(*conditions)
+        count_stmt = select(func.count()).select_from(PageAdmin).where(*conditions)
         count_result = await self.db_session.execute(count_stmt)
         return admins, count_result.scalar() or 0
 
-    async def add_admin(self, community_id: int, user_sub: str) -> CommunityAdmin:
-        admin = CommunityAdmin(community_id=community_id, user_sub=user_sub)
+    async def add_admin(self, page_id: int, user_sub: str) -> PageAdmin:
+        admin = PageAdmin(page_id=page_id, user_sub=user_sub)
         self.db_session.add(admin)
         await self.db_session.flush()
         stmt = (
-            select(CommunityAdmin)
+            select(PageAdmin)
             .where(
-                CommunityAdmin.community_id == community_id,
-                CommunityAdmin.user_sub == user_sub,
+                PageAdmin.page_id == page_id,
+                PageAdmin.user_sub == user_sub,
             )
-            .options(selectinload(CommunityAdmin.user))
+            .options(selectinload(PageAdmin.user))
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
 
-    async def remove_admin(self, community_id: int, user_sub: str) -> bool:
-        stmt = select(CommunityAdmin).where(
-            CommunityAdmin.community_id == community_id,
-            CommunityAdmin.user_sub == user_sub,
+    async def promote_to_admin(self, page_id: int, user_sub: str) -> None:
+        """Add an admin row, tolerating one that already exists.
+
+        Used by ownership transfer, where the outgoing owner may already be an
+        admin and the transfer must not blow up on the duplicate.
+        """
+        stmt = (
+            insert(PageAdmin)
+            .values(page_id=page_id, user_sub=user_sub, created_at=utc_now())
+            .on_conflict_do_nothing(index_elements=["page_id", "user_sub"])
+        )
+        await self.db_session.execute(stmt)
+        await self.db_session.flush()
+
+    async def remove_admin(self, page_id: int, user_sub: str) -> bool:
+        stmt = select(PageAdmin).where(
+            PageAdmin.page_id == page_id,
+            PageAdmin.user_sub == user_sub,
         )
         result = await self.db_session.execute(stmt)
         admin = result.scalars().first()
@@ -250,32 +289,32 @@ class CommunityRepository:
         await self.db_session.delete(admin)
         return True
 
-    async def is_admin(self, community_id: int, user_sub: str) -> bool:
-        stmt = select(CommunityAdmin).where(
-            CommunityAdmin.community_id == community_id,
-            CommunityAdmin.user_sub == user_sub,
+    async def is_admin(self, page_id: int, user_sub: str) -> bool:
+        stmt = select(PageAdmin).where(
+            PageAdmin.page_id == page_id,
+            PageAdmin.user_sub == user_sub,
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().first() is not None
 
-    async def admin_community_ids(self, user_sub: str) -> set[int]:
-        stmt = select(CommunityAdmin.community_id).where(CommunityAdmin.user_sub == user_sub)
+    async def admin_page_ids(self, user_sub: str) -> set[int]:
+        stmt = select(PageAdmin.page_id).where(PageAdmin.user_sub == user_sub)
         result = await self.db_session.execute(stmt)
         return set(result.scalars().all())
 
-    async def get_active_admin_link(self, community_id: int) -> CommunityAdminLink | None:
-        stmt = select(CommunityAdminLink).where(
-            CommunityAdminLink.community_id == community_id,
-            CommunityAdminLink.revoked_at.is_(None),
+    async def get_active_admin_link(self, page_id: int) -> PageAdminLink | None:
+        stmt = select(PageAdminLink).where(
+            PageAdminLink.page_id == page_id,
+            PageAdminLink.revoked_at.is_(None),
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 
     async def create_admin_link(
-        self, community_id: int, token_hash: str, created_by_sub: str
-    ) -> CommunityAdminLink:
-        link = CommunityAdminLink(
-            community_id=community_id,
+        self, page_id: int, token_hash: str, created_by_sub: str
+    ) -> PageAdminLink:
+        link = PageAdminLink(
+            page_id=page_id,
             token_hash=token_hash,
             created_by_sub=created_by_sub,
         )
@@ -283,11 +322,11 @@ class CommunityRepository:
         await self.db_session.flush()
         return link
 
-    async def revoke_admin_link(self, link: CommunityAdminLink) -> None:
+    async def revoke_admin_link(self, link: PageAdminLink) -> None:
         link.revoked_at = utc_now()
         await self.db_session.flush()
 
-    async def get_admin_link_by_token_hash(self, token_hash: str) -> CommunityAdminLink | None:
-        stmt = select(CommunityAdminLink).where(CommunityAdminLink.token_hash == token_hash)
+    async def get_admin_link_by_token_hash(self, token_hash: str) -> PageAdminLink | None:
+        stmt = select(PageAdminLink).where(PageAdminLink.token_hash == token_hash)
         result = await self.db_session.execute(stmt)
         return result.scalars().first()

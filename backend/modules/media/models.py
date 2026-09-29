@@ -21,7 +21,7 @@ class EntityType(str, PyEnum):
     """
 
     community_events = "community_events"
-    communities = "communities"
+    pages = "pages"
     grade_reports = "grade_reports"
     courses = "courses"
     tickets = "tickets"

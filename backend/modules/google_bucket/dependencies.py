@@ -6,8 +6,7 @@ from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token
 
 from backend.core.configs.config import Config
-from backend.modules.auth.dependencies import get_user_page_service, set_request_access_actor
-from backend.modules.auth.profiles import UserPageService
+from backend.modules.auth.dependencies import set_request_access_actor
 from backend.modules.courses.registrar.service import (
     RegistrarService,
     ScheduleCatalogFinalizeError,
@@ -23,8 +22,8 @@ from backend.modules.google_bucket.interfaces import (
 from backend.modules.google_bucket.service import BucketMediaUploadAuthorizer
 from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
-from backend.modules.pages.dependencies import get_community_service
-from backend.modules.pages.service import CommunityService
+from backend.modules.pages.dependencies import get_page_service
+from backend.modules.pages.service import PageService
 
 
 class ScheduleCatalogFinalizeFailed(Exception):
@@ -33,10 +32,9 @@ class ScheduleCatalogFinalizeFailed(Exception):
 
 async def get_media_upload_authorizer(
     events: EventService = Depends(get_event_service),
-    communities: CommunityService = Depends(get_community_service),
-    users: UserPageService = Depends(get_user_page_service),
+    pages: PageService = Depends(get_page_service),
 ) -> MediaUploadAuthorizer:
-    return BucketMediaUploadAuthorizer(events=events, communities=communities, users=users)
+    return BucketMediaUploadAuthorizer(events=events, pages=pages)
 
 
 class _ScheduleCatalogOnFinalizeAdapter:

@@ -75,7 +75,7 @@ class EventServicePublisher:
     ) -> int:
         user = (
             {"sub": creator_sub},
-            {"role": "default", "communities": []},
+            {"role": "default"},
         )
         created = await self.event_service.add_event(
             event_data=event_schemas.EventCreateRequest(

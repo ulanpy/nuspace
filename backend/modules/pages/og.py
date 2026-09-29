@@ -6,10 +6,10 @@ from fastapi.responses import HTMLResponse
 from backend.common.dependencies import get_infra
 from backend.common.schemas import Infra
 from backend.modules.auth.dependencies import get_creds_or_guest
-from backend.modules.pages.dependencies import get_community_service
-from backend.modules.pages.service import CommunityService
+from backend.modules.pages.dependencies import get_page_service
+from backend.modules.pages.service import PageService
 
-router = APIRouter(tags=["Communities OG"])
+router = APIRouter(tags=["Pages OG"])
 
 
 def _build_public_url(request: Request) -> str:
@@ -25,11 +25,11 @@ def _build_public_url(request: Request) -> str:
     return f"{request.base_url}".rstrip("/") + path
 
 
-def _select_og_image(community_response) -> str | None:
+def _select_og_image(page_response) -> str | None:
     banner_url = None
     profile_url = None
     fallback_url = None
-    for media in community_response.media:
+    for media in page_response.media:
         url = getattr(media, "url", "")
         if not url:
             continue
@@ -44,10 +44,10 @@ def _select_og_image(community_response) -> str | None:
     return profile_url or banner_url or fallback_url
 
 
-def _build_community_html(community_response, request: Request) -> str:
-    title = community_response.name or "Community"
+def _build_page_html(page_response, request: Request) -> str:
+    title = page_response.name or "Page"
     description = f"Learn about {title} on Nuspace."
-    og_image = _select_og_image(community_response)
+    og_image = _select_og_image(page_response)
     public_url = _build_public_url(request)
     site_name = "Nuspace"
 
@@ -82,25 +82,23 @@ def _build_community_html(community_response, request: Request) -> str:
   <body>
     <h1>{escape(title)}</h1>
     <p>{escape(description)}</p>
-    <p><a href="{escape(public_url, quote=True)}">View community</a></p>
+    <p><a href="{escape(public_url, quote=True)}">View page</a></p>
   </body>
 </html>
 """
     return html
 
 
-@router.get("/og/communities", response_class=HTMLResponse, include_in_schema=False)
-@router.get("/og/communities/", response_class=HTMLResponse, include_in_schema=False)
-async def get_community_og_by_query(
+@router.get("/og/pages", response_class=HTMLResponse, include_in_schema=False)
+@router.get("/og/pages/", response_class=HTMLResponse, include_in_schema=False)
+async def get_page_og_by_query(
     request: Request,
     id: int,
     user=Depends(get_creds_or_guest),
     infra: Infra = Depends(get_infra),
-    community_service: CommunityService = Depends(get_community_service),
+    page_service: PageService = Depends(get_page_service),
 ) -> HTMLResponse:
-    community_response = await community_service.get_community_response(
-        infra=infra, community_id=id, user=user
-    )
+    page_response = await page_service.get_page_response_by_id(infra=infra, page_id=id, user=user)
 
-    html = _build_community_html(community_response, request)
+    html = _build_page_html(page_response, request)
     return HTMLResponse(content=html, status_code=status.HTTP_200_OK)

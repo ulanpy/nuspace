@@ -1,4 +1,5 @@
 import uuid
+from collections import Counter
 from datetime import datetime, timedelta
 from typing import Annotated, List
 
@@ -55,12 +56,15 @@ async def generate_upload_url(
                 ),
             )
 
-    upload_targets = {(item.entity_type, item.entity_id) for item in signed_url_request}
-    for entity_type, entity_id in upload_targets:
+    # Counted, not de-duplicated: the authorizer runs once per target, so a set
+    # would hide the batch size from the per-target media cap.
+    upload_targets = Counter((item.entity_type, item.entity_id) for item in signed_url_request)
+    for (entity_type, entity_id), count in upload_targets.items():
         await media_upload_authorizer.authorize_media_upload(
             entity_type=entity_type,
             entity_id=entity_id,
             user=user,
+            count=count,
         )
 
     urls = []

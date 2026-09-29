@@ -17,19 +17,20 @@ class MediaUploadAuthorizer(Protocol):
         entity_type: EntityType,
         entity_id: int,
         user: tuple[dict, dict],
+        count: int = 1,
     ) -> None: ...
 
 
 class EventMediaUploadAccess(Protocol):
-    async def authorize_media_upload(self, event_id: int, user: tuple[dict, dict]) -> None: ...
+    async def authorize_media_upload(
+        self, event_id: int, user: tuple[dict, dict], count: int = 1
+    ) -> None: ...
 
 
-class CommunityMediaUploadAccess(Protocol):
-    async def authorize_media_upload(self, community_id: int, user: tuple[dict, dict]) -> None: ...
-
-
-class UserMediaUploadAccess(Protocol):
-    async def authorize_user_media_upload(self, user_id: int, user: tuple[dict, dict]) -> None: ...
+class PageMediaUploadAccess(Protocol):
+    async def authorize_media_upload(
+        self, page_id: int, user: tuple[dict, dict], count: int = 1
+    ) -> None: ...
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,5 @@
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import List
 
 import jwt
 from sqlalchemy import select
@@ -9,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.configs.config import config
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.models import User, UserRole
-from backend.modules.pages.models import Community
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +34,6 @@ class AppTokenManager:
                 raise RuntimeError(f"User {user_sub} not found while creating app token")
 
             user_role: UserRole = user.role
-            communities_stmt = select(Community).where(Community.owner == user_sub)
-            communities_result = await db_session.execute(communities_stmt)
-            owned_communities: List[Community] = list(communities_result.scalars().all())
 
         tg_id = user.telegram_id
 
@@ -46,7 +41,6 @@ class AppTokenManager:
             "sub": user_sub,
             "role": user_role.value,
             "scope": user.scope.value,
-            "communities": [community.id for community in owned_communities],
             "exp": datetime.now(UTC) + self.token_expiry,
             "tg_id": tg_id,
             "department_id": user.department_id,

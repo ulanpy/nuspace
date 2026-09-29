@@ -1,10 +1,9 @@
 from fastapi import HTTPException, status
 
 from backend.modules.google_bucket.interfaces import (
-    CommunityMediaUploadAccess,
     EventMediaUploadAccess,
     MediaUploadAuthorizer,
-    UserMediaUploadAccess,
+    PageMediaUploadAccess,
 )
 from backend.modules.media.models import EntityType
 
@@ -16,12 +15,10 @@ class BucketMediaUploadAuthorizer(MediaUploadAuthorizer):
         self,
         *,
         events: EventMediaUploadAccess,
-        communities: CommunityMediaUploadAccess,
-        users: UserMediaUploadAccess,
+        pages: PageMediaUploadAccess,
     ) -> None:
         self._events = events
-        self._communities = communities
-        self._users = users
+        self._pages = pages
 
     async def authorize_media_upload(
         self,
@@ -29,15 +26,13 @@ class BucketMediaUploadAuthorizer(MediaUploadAuthorizer):
         entity_type: EntityType,
         entity_id: int,
         user: tuple[dict, dict],
+        count: int = 1,
     ) -> None:
         if entity_type == EntityType.community_events:
-            await self._events.authorize_media_upload(entity_id, user)
+            await self._events.authorize_media_upload(entity_id, user, count)
             return
-        if entity_type == EntityType.communities:
-            await self._communities.authorize_media_upload(entity_id, user)
-            return
-        if entity_type == EntityType.users:
-            await self._users.authorize_user_media_upload(entity_id, user)
+        if entity_type == EntityType.pages:
+            await self._pages.authorize_media_upload(entity_id, user, count)
             return
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

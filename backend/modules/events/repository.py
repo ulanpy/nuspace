@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.utils import meilisearch
 from backend.modules.auth.models import User
 from backend.modules.events import schemas
-from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.events.models import (
     Event,
     EventAccessInvite,
@@ -19,6 +18,7 @@ from backend.modules.events.models import (
     EventAttendeeViewer,
     EventType,
 )
+from backend.modules.media.models import EntityType, Media, MediaFormat
 
 
 @dataclass

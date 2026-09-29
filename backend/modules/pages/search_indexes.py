@@ -1,11 +1,11 @@
 from backend.bootstrap.meilisearch import MeilisearchIndexConfig
-from backend.modules.pages.models import Community
+from backend.modules.pages.models import Page
 
 MEILISEARCH_INDEXES = [
     MeilisearchIndexConfig(
-        model=Community,
-        searchable_columns=[Community.name],
+        model=Page,
+        searchable_columns=[Page.name],
         filterable_attributes=None,
-        primary_key=Community.id,
+        primary_key=Page.id,
     ),
 ]

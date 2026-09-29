@@ -18,16 +18,16 @@ from backend.modules.google_bucket import api as google_bucket_api
 from backend.modules.media import api as media_api
 from backend.modules.notification import api as notification_api
 from backend.modules.opportunities import api as opportunities_api
-from backend.modules.pages import api as communities_api
-from backend.modules.pages import og as communities_og
+from backend.modules.pages import api as pages_api
+from backend.modules.pages import og as pages_og
 from backend.modules.search import api as search_api
 from backend.modules.sgotinish import api as sgotinish_api
 
 routers: List[APIRouter] = [
     agent_api.router,
     auth_api.router,
-    communities_api.router,
-    communities_og.router,
+    pages_api.router,
+    pages_og.router,
     events_api.router,
     events_og.router,
     search_api.router,

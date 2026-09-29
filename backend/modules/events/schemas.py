@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from backend.common.datetime_utils import almaty_to_utc
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
-from backend.modules.media.schemas import MediaResponse
 from backend.modules.events.models import (
     EventAccessPurpose,
     EventStatus,
@@ -14,6 +13,7 @@ from backend.modules.events.models import (
     EventType,
     RegistrationPolicy,
 )
+from backend.modules.media.schemas import MediaResponse
 
 
 class EventCreateRequest(BaseModel):

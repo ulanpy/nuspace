@@ -74,9 +74,6 @@ class EventCollaborator(Base):
     user_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=True, index=True
     )
-    community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, index=True
-    )
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
