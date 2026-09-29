@@ -76,6 +76,7 @@ export default defineConfig({
         files: [
           "src/hooks/use-data-table.ts",
           "src/components/shared/data-table/**",
+          "src/components/routes/account/components/my-pages.tsx",
         ],
         rules: {
           // `useReactTable` hands back a table of unmemoizable functions, so the
@@ -85,6 +86,10 @@ export default defineConfig({
           // compiler's: keep the table instance out of memoized boundaries, not a
           // linter exemption.
           "react/incompatible-library": "off",
+          "react/no-unstable-nested-components": [
+            "warn",
+            { allowAsProps: true },
+          ],
         },
       },
       {

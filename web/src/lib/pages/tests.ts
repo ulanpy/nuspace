@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { adminPageActions, pageOwnership } from "./functions"
+import { adminPageActions, pageOwnership, sortingToSearch } from "./functions"
 import type { Page } from "./types"
 
 /** Nobody's permissions. The ownership answer must not depend on these. */
@@ -110,5 +110,47 @@ describe("adminPageActions", () => {
       canManage: false,
       canLeave: false,
     })
+  })
+})
+
+describe("sortingToSearch", () => {
+  it("turns a column click into the route's sort and order", () => {
+    assert.deepEqual(sortingToSearch([{ id: "name", desc: true }]), {
+      sort: "name",
+      order: "desc",
+    })
+    assert.deepEqual(sortingToSearch([{ id: "visibility", desc: false }]), {
+      sort: "visibility",
+      order: "asc",
+    })
+  })
+
+  it("clears the sort when the table asks for none", () => {
+    // react-table's third click on an already-sorted column clears it. Writing
+    // `sort: undefined, order: undefined` is what removes both from the URL —
+    // returning the previous sort here would leave the chevron cycling forever.
+    assert.deepEqual(sortingToSearch([]), {
+      sort: undefined,
+      order: undefined,
+    })
+  })
+
+  it("drops a column the API cannot sort by", () => {
+    // A renamed column, or a URL someone edited. `validateSearch` would reject
+    // it on the next read, but the table would flicker first.
+    assert.deepEqual(sortingToSearch([{ id: "slug", desc: false }]), {
+      sort: undefined,
+      order: undefined,
+    })
+  })
+
+  it("keeps only the first column, because the backend sorts by one", () => {
+    assert.deepEqual(
+      sortingToSearch([
+        { id: "name", desc: false },
+        { id: "visibility", desc: true },
+      ]),
+      { sort: "name", order: "asc" }
+    )
   })
 })

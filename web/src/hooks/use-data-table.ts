@@ -2,6 +2,7 @@ import {
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
+  type OnChangeFn,
   type RowData,
   type SortingState,
 } from "@tanstack/react-table"
@@ -24,6 +25,17 @@ export interface UseDataTableOptions<TData extends RowData> {
    * state, and the two would disagree for exactly one frame.
    */
   sorting?: SortingState
+  /**
+   * What to do when a header chevron is clicked.
+   *
+   * Required for the chevrons to do anything. `sorting` is controlled state, so
+   * react-table's own toggle has nowhere to put the result and silently drops
+   * it — `getToggleSortingHandler()` becomes a no-op, and the table looks
+   * sortable and is not. The handler only *forwards* the intent; where it is
+   * stored is still the caller's business, and in every table here that is the
+   * URL.
+   */
+  onSortingChange?: OnChangeFn<SortingState>
   getRowId: (row: TData) => string
 }
 
@@ -52,6 +64,7 @@ export function useDataTable<TData extends RowData>({
   data,
   columns,
   sorting = [],
+  onSortingChange,
   getRowId,
 }: UseDataTableOptions<TData>) {
   return useReactTable({
@@ -60,6 +73,7 @@ export function useDataTable<TData extends RowData>({
     state: { sorting },
     manualPagination: true,
     manualSorting: true,
+    onSortingChange,
     getRowId,
     getCoreRowModel: getCoreRowModel(),
   })

@@ -1,4 +1,4 @@
-import type { PageOwnership, PageVisibilityValue } from "./types"
+import type { PageOwnership, PageSort, PageVisibilityValue } from "./types"
 
 /**
  * How many pages one account may own. Mirrors
@@ -25,33 +25,6 @@ export const PAGE_OWNERSHIP: Record<PageOwnership, string> = {
   owner: "Owner",
   admin: "Admin",
 }
-
-/**
- * The role filter above the My Pages table.
- *
- * `null` is the "All roles" entry, and it is a real value rather than an
- * absent one: the filter has to be able to say "do not filter", which the
- * backend models as an omitted `role` query param.
- */
-export const PAGE_OWNERSHIP_FILTERS: readonly {
-  value: PageOwnership | null
-  label: string
-}[] = [
-  { value: null, label: "All roles" },
-  { value: "owner", label: "Owned by me" },
-  { value: "admin", label: "Where I'm an admin" },
-]
-
-/** The visibility filter above the My Pages table, plus its "no filter" entry. */
-export const PAGE_VISIBILITY_FILTERS: readonly {
-  value: PageVisibilityValue | null
-  label: string
-}[] = [
-  { value: null, label: "All visibilities" },
-  { value: "public", label: "Public" },
-  { value: "internal", label: "NU only" },
-  { value: "private", label: "Private" },
-]
 
 /**
  * The three visibilities, in one list.
@@ -89,3 +62,59 @@ export const PAGE_VISIBILITIES = [
   title: string
   description: string
 }[]
+
+/**
+ * The role filter above the My Pages table.
+ *
+ * Two entries, not three: `FilterTabs` supplies its own "All" chip and maps it
+ * to `undefined`, which is what the backend's optional `role` param means. An
+ * "All roles" entry in here as well would be a second All control.
+ */
+export const PAGE_OWNERSHIP_FILTERS = [
+  { value: "owner", label: "Owned by me" },
+  { value: "admin", label: "Where I'm an admin" },
+] as const satisfies readonly { value: PageOwnership; label: string }[]
+
+/**
+ * The visibility filter above the My Pages table.
+ *
+ * No "all" entry here either, but for the other reason: `MultiFilter` is
+ * multi-select and its own Clear button empties the selection, and an empty
+ * `visibility` array is omitted from the request entirely.
+ */
+export const PAGE_VISIBILITY_FILTERS = PAGE_VISIBILITIES.map((option) => ({
+  value: option.value,
+  label: option.title,
+}))
+
+/**
+ * The bare visibility values, for the routes' zod enums.
+ *
+ * `z.enum` wants values and cannot read a TypeScript type, so the object list
+ * above is not usable directly. Derived rather than declared so there is still
+ * exactly one place a visibility is written down — this is the runtime twin of
+ * `PageVisibilityValue`, not a fourth spelling of it.
+ */
+export const PAGE_VISIBILITY_VALUES = PAGE_VISIBILITIES.map(
+  (option) => option.value
+)
+
+/**
+ * The columns `/pages/mine` can be ordered by.
+ *
+ * The same reason `PAGE_VISIBILITY_VALUES` exists: the route's zod enum needs
+ * runtime values, and the columns' own `enableSorting` flags need to agree with
+ * what the API will accept. `created_at` is sortable by the backend and has no
+ * column — the six columns are logo, name, slug, role, visibility and actions —
+ * so it is reachable by URL and by nothing else, which is why it is listed here
+ * rather than in the table.
+ */
+export const PAGE_SORTS = [
+  "name",
+  "visibility",
+  "created_at",
+] as const satisfies readonly PageSort[]
+
+/** Narrows a react-table column id to a column the API will sort by. */
+export const isPageSort = (value: string): value is PageSort =>
+  (PAGE_SORTS as readonly string[]).includes(value)

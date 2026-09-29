@@ -22,7 +22,7 @@ import type {
   PageUpdate,
   PageVisibilityValue,
 } from "./types"
-import { PAGE_OWNERSHIP } from "./constants"
+import { isPageSort, PAGE_OWNERSHIP } from "./constants"
 
 /**
  * One page of the public directory, for `useInfiniteList`.
@@ -524,6 +524,36 @@ export function pageOwnership(page: Page, meSub: string): PageOwnership {
 /** The relationship in words, for a badge or a cell. */
 export function ownershipLabel(ownership: PageOwnership) {
   return PAGE_OWNERSHIP[ownership]
+}
+
+/**
+ * Turns a react-table sort event into the route's `sort` / `order` pair.
+ *
+ * One column, one direction, because the backend has one sort key. The backend's
+ * `PageSort` allows a second direction on a third click for multi-sort, and this
+ * deliberately does not: the empty case *clears* the sort rather than stacking a
+ * second one, because there is no UI here that would let a user remove the first
+ * entry and a table stuck on an invisible compound sort is a support question.
+ *
+ * An id the API cannot sort by — a column renamed out from under the table, or a
+ * URL someone edited — is treated as no sort at all rather than passed through.
+ * `validateSearch` would reject it on the next read, but the row would flicker
+ * first, and dropping it here is the same answer with no flicker.
+ */
+export function sortingToSearch(
+  sorting: {
+    id: string
+    desc: boolean
+  }[]
+): { sort?: PageSort; order?: PageOrder } {
+  const first = sorting[0]
+  if (!first || !isPageSort(first.id)) {
+    return { sort: undefined, order: undefined }
+  }
+  return {
+    sort: first.id,
+    order: first.desc ? "desc" : "asc",
+  }
 }
 
 export function canEditField(page: Page, field: string): boolean {

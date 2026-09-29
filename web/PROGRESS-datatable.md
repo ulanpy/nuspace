@@ -589,30 +589,31 @@ Rewrites `web/src/components/routes/account/components/my-pages.tsx`.
 
 Columns, in order: `logo | name (link) | slug | role | visibility | actions`
 
-- [ ] 5.1 Column definitions for the six columns above.
-- [ ] 5.2 Logo: `ResilientImage` + `selectMedia(page.media, "profile")`, the
+- [x] 5.1 Column definitions for the six columns above.
+- [x] 5.2 Logo: `ResilientImage` + `selectMedia(page.media, "profile")`, the
       `rounded-md` / `size-10` treatment from `my-pages.tsx:149-154`, unchanged.
-- [ ] 5.3 Name: a `<Link to="/p/$slug">` **in the cell**, not the whole row. A
+- [x] 5.3 Name: a `<Link to="/p/$slug">` **in the cell**, not the whole row. A
       react-table row cannot be a link and still host an actions cell; the
       `Item render={<Link>}` hack (`:147`) is part of what the table replaces.
       Sortable.
-- [ ] 5.4 Slug: muted text, `max-w-48 truncate`, `title={page.slug}`. Max length
+- [x] 5.4 Slug: muted text, `max-w-48 truncate`, `title={page.slug}`. Max length
       is 50 (`schema.d.ts:2747`) so truncation is rare, but a truncated cell with
       no way to read it is a real loss. Plain text, **not** a second link to the
       same place as the name. **Not sortable.**
-- [ ] 5.5 Role: `secondary` Badge via `ownershipLabel(pageOwnership(...))`.
+- [x] 5.5 Role: `secondary` Badge via `ownershipLabel(pageOwnership(...))`.
       Header reads `Role` — the rename from "ownership type", matching the Admins
       table.
-- [ ] 5.6 Visibility: `outline` Badge via `visibilityLabel(page.visibility)`.
+- [x] 5.6 Visibility: `outline` Badge via `visibilityLabel(page.visibility)`.
       Sortable. The `outline` / `secondary` split is deliberate so two adjacent
       badge columns do not read as one field of identical pills.
-- [ ] 5.7 Actions: a `Settings` button, rendered only when the user can edit
+- [x] 5.7 Actions: a `Settings` button, rendered only when the user can edit
       (`canEditField(page, "name")` — same gate as `general/index.tsx:99`, which
       uses `canEditField(page, "visibility")`), and a `Delete` button, rendered
       only when `page.permissions.can_delete`. Use the same responsive button
       pair pattern as `admins-table.tsx:280-335`. **No bulk path, no multi-page
       confirm dialog.**
-- [ ] 5.8 Toolbar row — two `MultiFilter`s plus the button, one row:
+- [x] 5.8 Toolbar row — a `FilterTabs` and a `MultiFilter` plus the button,
+      one row (**not** two `MultiFilter`s — see the Phase 5 findings):
 
       ```tsx
           <div className="flex flex-wrap items-center gap-2">
@@ -629,19 +630,70 @@ Columns, in order: `logo | name (link) | slug | role | visibility | actions`
           its own state. The only edit to the existing markup is `justify-end` on the
           old wrapper becoming `ml-auto` on the button.
 
-- [ ] 5.9 Role filter options: `All roles` / `Owned by me` /
+- [x] 5.9 Role filter options: `All roles` / `Owned by me` /
       `Where I'm an admin`. An empty selection omits the param entirely.
-- [ ] 5.10 Visibility filter options, labelled from the same copy the picker uses
+- [x] 5.10 Visibility filter options, labelled from the same copy the picker uses
       — one label set, or the picker bug in 8.4 comes back.
-- [ ] 5.11 Empty state branches on whether any filter is active: with filters,
+- [x] 5.11 Empty state branches on whether any filter is active: with filters,
       "No pages match your filters" plus a clear action; without, "No pages yet"
       plus create. Do **not** issue a second unfiltered request to learn the true
       total — that doubles the queries on the slowest screen. The one
       inaccuracy is accepted: a genuinely empty account with a filter on reads
       as "no pages match your filters", which is a harmless wrong sentence.
-- [ ] 5.12 Note the `?page=` empty-value hazard for Phase 7: this route's
+- [x] 5.12 Note the `?page=` empty-value hazard for Phase 7: this route's
       `validateSearch` has **no** `.catch(1)` on `page`, so a bare `?page=` fails
       validation. `admin-controls/index.tsx:9-15` documents the fix.
+
+### Phase 5 — what reality added
+
+**5.8's "two `MultiFilter`s" is not possible for the role filter.**
+`MultiFilter` is multi-select (`selected: T[]`), and the backend's `role` takes a
+single `PageRole` — there is no way to express "owner *and* admin" in the API.
+Role is therefore a `FilterTabs`, the existing house component for single-choice
+state in the URL, and its built-in **All** chip maps to `undefined`, which is
+exactly what an omitted `role` means. Visibility keeps `MultiFilter` because
+`visibility` really is an array.
+
+**That changed the two filter constants from what 4.2 specified.** Both lost
+their "all" entry — `PAGE_OWNERSHIP_FILTERS` because `FilterTabs` supplies its
+own All, `PAGE_VISIBILITY_FILTERS` because `MultiFilter`'s Clear button empties
+the selection and an empty array is omitted. An "All" entry in either list would
+have been a second All control doing the same job as the first.
+
+**7.1 had to happen inside Phase 5, so it is ticked here too.** A filter that
+writes `?role=admin` cannot ship against a route that rejects `role`, so the
+account search schema grew `size`, `role`, `visibility`, `sort` and `order`
+along with the `.catch(1)` on `page` that 5.12 predicted. 7.4's rule — every
+filter and sort change resets `page` to 1 — is applied in one `changeSearch`
+helper rather than at each call site, because the missing-reset bug is
+invisible in review and repeats at every site that forgets.
+
+**`PAGE_SORTS` exists because a cast is worse than a list.** The first version of
+`sortingToSearch` did `first.id as PageSort`, which trips
+`typescript(no-unsafe-type-assertion)` and, worse, would have written any string
+into the URL. `PAGE_SORTS` is now the runtime list, used by three things that
+have to agree: the route's `z.enum`, `isPageSort`'s guard, and the backend's
+whitelist. It is the same argument 4.2 makes for `PAGE_VISIBILITY_VALUES`.
+`created_at` is in the list but has no column — the six columns have no date —
+so it is reachable by URL and by nothing else.
+
+**The header chevrons were silently dead, and 3.5 does not mention it.**
+`useDataTable` passes `state: { sorting }`, so react-table's toggle has nowhere
+to put its result and drops it: `column.getToggleSortingHandler()` — the exact
+call 3.5 requires — becomes a no-op, and the table looks sortable and is not.
+`onSortingChange` is now an explicit option, and the hook's docstring says why
+it is not optional. Nothing in the plan would have caught this, because a dead
+chevron still renders, still has the right icon, and still passes typecheck.
+
+**`react/no-unstable-nested-components` needed `allowAsProps` for the column
+defs.** Ten warnings, one per `header`/`cell`. react-table's column definitions
+*are* components-in-props by design, and `allowAsProps` is the rule's own opt-in
+for that shape, so it went into the same `vite.config.ts` override as Phase 3's
+rather than into ten `// eslint-disable` comments.
+
+**4 tests, 91 total.** `sortingToSearch` is the one piece of new logic with a
+branch worth pinning: it has to clear both params on react-table's third click,
+keep only the first column, and drop an id the API will not sort by.
 
 ---
 
@@ -861,6 +913,8 @@ Append one line per ticked box. Newest at the bottom.
 | 2026-09-30 | 3     | DataTable layer        | Pinned `@tanstack/react-table` to **8.21.3**, not the 9.2.4 that `pnpm add` gives: 3.3–3.5 name v8's API and v9 is a `useTable` + feature-flag rewrite. `useDataTable` wraps the only `useReactTable` call in the app — `manualPagination` + `manualSorting`, `getRowId` from the caller, sorting passed in from the URL rather than synced by the hook, and deliberately no `getFilteredRowModel` so the browser cannot re-filter rows the server already filtered. `DataTable` (empty row, `colSpan`, `toolbar` slot) + `DataTableSkeleton`; `DataTableColumnHeader` gates on `column.getCanSort()` so a non-sortable column is plain text with no dead chevron; `aria-sort` lives on the `TableHead`, because that is the `columnheader` role and not the button. `DataTableToolbar` **omits** the `table` argument shadcn's version takes — the component that fetched the rows is the only one that can invalidate them, so a toolbar that could see the table could be tempted to act on rows it cannot refetch. 3.7 extended `TablePagination` in place: `pageSize` + `onPageSizeChange` + a `Select`, both optional, and the **options come from the caller** rather than a literal `10/20/30/40/50` in the component, because the allowed sizes are a route's own `validateSearch` rule and a second copy of it is a second thing to forget. Two lint rules scoped off in `vite.config.ts` (details in the Phase 3 findings): the generated `ui/table.tsx` trips `enforce-canonical-classes` and 3.2 says not to hand-edit it, and `useReactTable` trips `react/incompatible-library` with the compiler off and nothing memoizing the table. No test added: this repo has no DOM or testing-library and all four existing web tests are pure functions, so Phase 3 has nothing assertable under that convention. **Web: 83 tests ✓, typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline.** Also corrected the Phase 2 log and a `query-keys.ts` comment that claimed `page` sat outside the filter object. |
 
 | 2026-09-30 | 4     | Ownership/visibility    | `PageOwnership` and `PageVisibilityValue` now **derive from `schema.d.ts`** instead of being hand-written unions, and `lib/pages/constants.ts` holds the one runtime list each is checked against — `PAGE_VISIBILITIES` `satisfies` the derived type, so a fourth visibility on the backend is a compile error rather than a `Select` offering a value the server rejects. That made `shared/pages/visibilities.ts` copy-only, which meant repointing `visibility-picker.tsx` and `settings/general/index.tsx` at the new homes. `pageOwnership` is the single place the owner FK is read, and its docstring records the limit that matters: `ResourcePermissions` has no is-admin flag and `can_manage_admins` is not one (site admins get it too, which is why `pinnedSelf` needed two terms), so "not the owner" means "admin" **only** inside a list `/pages/mine` already filtered. 4.7's comment was wrong as suspected — `policy.py:89-91` grants DELETE via `_is_owner` and `utils.py:30-32` grants the owner `can_delete`; comment deleted, behaviour untouched. **4 new tests, 87 total.** The FK-not-`owner_user` case was confirmed red: swapping in `page.owner_user?.sub === meSub` fails 2 of them. Both `*QueryOptions` helpers have **no caller yet** — 5.5 and 6.4 rewire the two components, and 4.5's own "delete it again if unused" clause is the check. **Web: 87 tests ✓, typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files.** |
+
+| 2026-09-30 | 5     | My Pages table         | `my-pages.tsx` is now a `DataTable`: `logo | name (link) | slug | role | visibility | actions`. The `Item render={<Link>}` whole-row-link hack is gone — the name is a link **in the cell**, which is what lets the row also host an actions cell. `slug` and `role` are plain text and unsortable; `name` and `visibility` carry chevrons, because the backend whitelist is name / visibility / created_at and a chevron on a column that cannot sort is a lie. 5.7's two gates kept separate: Settings on `canEditField(page, "name")`, Delete on `permissions.can_delete`, the latter behind a `ConfirmDialog`. No bulk path, per the decisions table. Empty state branches on whether a filter is active, with no second unfiltered request. **The role filter is a `FilterTabs`, not a second `MultiFilter`** — the backend's `role` is a single enum, so multi-select cannot be expressed, and `FilterTabs`' All chip is the omitted param. Both filter constants therefore lost their "all" entry (see 5.8's note). **7.1 is ticked here**: the filters write `?role=`/`?visibility=`, which the route's `validateSearch` would otherwise reject, so the account schema grew `size`/`role`/`visibility`/`sort`/`order` plus `page`'s `.catch(1)`. **The chevrons were dead on arrival** and no box mentions it: `state: { sorting }` is controlled, so `getToggleSortingHandler()` had nowhere to write and silently did nothing. `onSortingChange` is now an explicit option on `useDataTable` and the reason is in its docstring. `PAGE_SORTS` + `isPageSort` replace an `as PageSort` cast that both tripped the linter and would have written any string into the URL; the list now backs the route's `z.enum`, the guard, and the backend whitelist. 5.10's label-set requirement holds by construction — the visibility filter's labels are `PAGE_VISIBILITIES.map(o => o.title)`, so 8.5's copy change moves the filter with it. **4 new tests, 91 total.** Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files; backend ruff 11 = baseline, black ✓. |
 
 ## Open questions
 
