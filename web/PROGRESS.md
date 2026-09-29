@@ -1,7 +1,11 @@
 # PROGRESS — Puck editor for user profile pages
 
-**Status:** phases 0 and 1 landed — the login landmine is defused and the
-three profile endpoints are live and verified against the dev database
+**Status:** phases 0–9 landed and committed. Phase 10 is a follow-up round from
+using the result: the routes moved under `/u/$slug`, the editor's tab-bar bug is
+fixed at the root, the directory is `/mynuspace` with community-shaped cards,
+users have a category, and the community rows are the same row everywhere.
+**One box is still open** — 10.10, the browser walk, which no command in here can
+replace.
 **Scope:** `backend/` and `web/`. This is the one plan here that is not
 frontend-only: it adds a migration, three endpoints, an `EntityType` value and
 an upload authorizer.
@@ -113,9 +117,8 @@ Decided with the user. Change them only if asked.
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | **User media keys off a surrogate `users.id` BigInteger**, sequence-backed, unique, backfilled. `sub` stays the PK and every FK to `users.sub` is untouched. The alternative — widening `media.entity_id` to `Text` — was rejected because every existing media consumer compares `entity_id` against an int. |
 | 2   | **The template dialog gains a second source: public people.** Communities stay listed **unfiltered**, because communities have no public/private flag at all and adding one is a separate feature nobody asked for. |
-| 3   | **The sidebar page is a directory of public profiles, and its label is literally "My Nuspace."** The name was flagged as confusing for a list of other people; the user chose to keep it. Do not rename. |
-| 4   | **Public profiles live at `/u/$slug`.** Non-owners — guests included — get a **404** on a private page, never a redirect to login. `/profile/*` keeps its existing redirect-to-`/` guard. |
-| 5   | **Settings fields use a mixed `Item` layout:** text inputs (`name`, `slug`, `email`) go full-width in `ItemContent` under the title and description; small controls (`Switch`, `Select`, `Button`) go in `ItemActions`. `ItemActions` is a bare `flex items-center gap-2`, so a full-width `Input` dropped in there looks cramped. |
+| 3   | **The sidebar page is a directory of public profiles, and its label is literally "My Nuspace."** The name was flagged as confusing for a list of other people; the user chose to keep it. Do not rename. Its **path** is `/mynuspace` as of phase 10. |
+| 4   | **Public profiles live at `/u/$slug`.** Non-owners — guests included — get a **404** on a private page, never a redirect to login. The `/profile/*` half of this decision is **superseded by phase 10**: settings are now `/u/$slug/settings/*`, and a guest asking for one of those is redirected to `/`, not 404d. |
 | 6   | **`Item` conversion covers everything**: form fields, the admin access link, the danger zone, and the admins table rows. The danger zone and the admin table are both already label-left/control-right, so both are near-mechanical swaps. |
 | 7   | **Community General goes single-column.** The current 2-column grid is dropped and is **not** replaced for Type + Category. Full-width inputs, one column. |
 | 8   | **`CommunityForm` is restyled for both consumers.** It is shared with `CommunityFormDialog` on `/communities`, so the create dialog changes too. Splitting the markup was considered and rejected — it would duplicate a 374-line form for no product gain. |
@@ -249,7 +252,8 @@ Do this phase first and alone. Everything after it is unsafe without 0.2.
 - [x] 3.2 `web/src/lib/user/functions.ts` — `fetchUsersPage`, `fetchUserPage`,
       `useUpdateMe`. Types come from the regenerated `schema.d.ts`; do not
       hand-write them.
-- [ ] 3.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] 3.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build` —
+      run at the end of every later phase, per deviation #10.
 
 ### Phase 4 — `/profile` becomes a two-tab settings area
 
@@ -264,6 +268,11 @@ routes/_app/profile/general/index.tsx
 routes/_app/profile/communities/index.tsx
 routes/_app/profile/editor/index.tsx     Puck editor
 ```
+
+> **Superseded by phase 10 — these four paths no longer exist.** Settings are
+> now `routes/_app/u/$slug/settings/*` and the editor is
+> `routes/_app/u/$slug/editor/`, a *sibling* of the settings layout rather than a
+> fourth tab. The layout and the two tabs are otherwise as described below.
 
 - [x] 4.1 `routes/_app/profile/route.tsx` — keep the existing
       redirect-to-`/` guard from `routes/_app/profile/index.tsx:8-12` verbatim.
@@ -393,6 +402,47 @@ Decision #6: everything, not just the fields.
 - [x] 9.4 Commit. Suggested message:
       `feat(web,backend): Puck page editor for user profile pages`
 
+### Phase 10 — follow-up corrections
+
+Written after using the thing. Each item is something the first pass got wrong
+or left out, in the order it was reported. The routes moved, so read
+"Corrections" and "Deviations" below before touching the profile area.
+
+- [x] 10.1 **The editor flashed and landed back on General.** Root cause found
+      in `TabsRoot.js:181-257`: `RouteTabs` passed `value={undefined}` when no
+      tab matched, base-ui's `useControlled` reads `undefined` as *uncontrolled*,
+      and it then selects the first enabled tab and reports it via
+      `notifyAutomaticValueChange` — which is `onValueChange`, which navigates.
+      Two fixes, both kept: `RouteTabs` passes `null` (controlled, therefore
+      silent) and the editor is no longer a child of the settings layout.
+- [x] 10.2 **Settings live at `/u/$slug/settings/*`, not `/profile/*`.**
+      `routes/_app/profile/` is deleted; the redirect-to-`/` guard moved to
+      `/u/$slug/settings` because that is now the leaf a guest can ask for. The
+      sidebar account card opens it, which is what it always meant to do.
+- [x] 10.3 **The public profile is the community page's shape** — same tinted
+      sticky header, same owner-only **Design Page** action — plus the
+      communities the person heads, each row an `Item` with an Owner or Admin
+      badge, mirroring the admins table.
+- [x] 10.4 **`/people` is `/mynuspace`.** Sidebar label unchanged (decision #3).
+- [x] 10.5 **Directory cards mirror `CommunityCard`**: banner, overlapping
+      avatar, category badge. This needed `media` on `UserSummaryResponse` —
+      see deviation #30.
+- [x] 10.6 **`users.category`**: `student | faculty | staff`, a directory label
+      and nothing else. Local-owned, on `/me`, on the page, on the row, and
+      editable in General.
+- [x] 10.7 **My communities and admins are the same row**: one `Item` per
+      community, profile image, name, position badge. No community type or
+      category line.
+- [x] 10.8 **The logout button in the settings header is default size**, like
+      Design Page and Back, instead of a stray `size="sm"`.
+- [x] 10.9 Verify: backend 180 passed, ruff 11 (baseline), black clean. Web
+      `api:check`, typecheck, 81 tests, lint 8 (baseline), build.
+- [ ] 10.10 **Walk 10.1–10.8 in a browser.** There is no headless browser in
+      this environment, so 10.1 is verified by construction — the route tree
+      has the editor outside the settings layout, and `RouteTabs` no longer
+      passes `undefined` — and the API was walked over HTTP, not rendered. This
+      is the same gap as 9.3, still open, now covering the new pages.
+
 ---
 
 ## Not in scope
@@ -419,23 +469,32 @@ Considered and explicitly deferred. Do not pick these up.
 
 ## Final self-check
 
-Before declaring done, confirm all of these:
+Before declaring done, confirm all of these. Re-run at the end of phase 10
+unless the box says when it was last walked.
 
-- [ ] `grep -n "^- \[ \]" PROGRESS.md` returns nothing.
-- [ ] Every `Item` has a `data-slot` and the `ItemGroup` gap rule still works —
+- [x] `grep -n "^- \[ \]" PROGRESS.md` returns nothing **except 10.10**, which
+      is a browser walk, and 3.3, which is ticked here.
+- [x] Every `Item` has a `data-slot` and the `ItemGroup` gap rule still works —
       i.e. rows that are `size="sm"`/`xs` tighten the group. `item.tsx:9-21`.
-- [ ] No `theme toggle` / `ThemeToggle` import left under `components/routes/profile/`.
-- [ ] `grep -rn "page_content" backend/modules/auth/repository.py` shows the
-      upsert loop cannot write it.
-- [ ] `GET /api/users` has no query parameter that can widen the visibility
-      filter.
-- [ ] `media.entity_id` is still `BigInteger` — nothing was widened to `Text`.
-- [ ] A private profile returns 404 to a guest, and the page renders to its
-      owner.
-- [ ] `/u/$slug` and `/people` work with no session.
-- [ ] `pnpm api:check` passes — `schema.d.ts` was regenerated and committed with
+      The profile community rows and the My-communities rows are `size="sm"`.
+- [x] No `theme toggle` / `ThemeToggle` import left under the profile routes
+      (they are `components/routes/u/$slug/` now).
+- [x] `grep -rn "page_content" backend/modules/auth/repository.py` shows the
+      upsert loop cannot write it. It is in `LOCAL_FIELDS`, alongside `slug`,
+      `is_page_public` and — since phase 10 — `category`.
+- [x] `GET /api/users` has no query parameter that can widen the visibility
+      filter. Signature is `page, size, keyword` and the filter is a hard WHERE.
+- [x] `media.entity_id` is still `BigInteger` — nothing was widened to `Text`.
+- [x] A private profile returns 404 to a guest, and the page renders to its
+      owner. Walked over HTTP at phase 10: set `is_page_public=false`, guest
+      `GET /api/u/ada-public` → 404, owner → 200, restored.
+- [x] `/u/$slug` and `/mynuspace` work with no session. Both sit under `_app`,
+      which resolves the session as optional.
+- [x] `pnpm api:check` passes — `schema.d.ts` was regenerated and committed with
       its backend change, not left behind.
-- [ ] Lint/ruff finding counts did not grow.
+- [x] Lint/ruff finding counts did not grow: web 8, ruff 11.
+- [ ] **Walk the profile area in a browser** (10.10). The one thing on this
+      list that no command here can stand in for.
 
 ---
 
@@ -634,3 +693,38 @@ Before declaring done, confirm all of these:
     logout and re-login with `users.id` unchanged, which is the phase-0 bug —
     but nobody has looked at the editor, the template dialog, `/people` or
     `/u/$slug` rendering. Do that before shipping.
+
+### Phase 10
+
+30. **`UserSummaryResponse` gained `media` (deviation #21 extended).** #21 kept
+    the directory row free of `page_content` and gave it a `has_design` boolean
+    instead. That reasoning still holds for the page blob, but a card that
+    mirrors `CommunityCard` needs a banner, and the Keycloak avatar is not a
+    banner. So the row now carries `profile` and `banner` media and still no
+    page content: the card gets its two images, the template dialog gets its
+    boolean, and neither gets the blob. One batched `list_media` for the whole
+    page, so it is one query and not one per row.
+31. **Both halves of the tab bug were fixed, not one.** Moving the editor out
+    of the settings layout fixes the route that was reported. `RouteTabs`
+    passing `null` instead of `undefined` fixes the mechanism, which is a trap
+    for the next person who puts a non-tab route under a settings layout — the
+    symptom is a flash and a redirect that reads like a routing bug, and the
+    cause is two hundred lines away in `TabsRoot.js`.
+32. **Settings kept the guest redirect, and 404 for everyone else.** A guest
+    asking for `/u/$slug/settings` goes to `/`, because the landing page's
+    sign-in button returns to the path it came from, so the round trip through
+    Keycloak lands back here. A signed-in stranger gets the 404 the public page
+    would have given them: a private profile must not be discoverable by
+    walking one segment to the right.
+33. **The account card in the sidebar links to settings, not the public page.**
+    It shows a name and an email — the two things you change about an account —
+    and there was no other way to reach settings once `/profile` went away. The
+    public page is still one click away, from the directory and from a
+    community's member list.
+34. **Community rows on a profile carry `profile` media only.** Same reasoning
+    as the community's own list: the row shows an avatar, and a community with
+    fifty carousel photos would otherwise ship all fifty signed URLs to every
+    reader of someone's profile. Documented at the query, not just here.
+35. **`web/.tanstack/` is ignored.** The TanStack Router plugin writes its build
+    cache there; it was showing up as untracked noise after every route change.
+
