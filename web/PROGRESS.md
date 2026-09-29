@@ -253,49 +253,49 @@ two same-shaped files arbitrarily. The file _contents_ at each path are correct
 
 ## Phase 2 — Backend `pages/` entity (model, migration, policy, limits)
 
-- [ ] `modules/pages/constants.py` (new): `MAX_PAGES_PER_OWNER = 100`, `MAX_PAGE_IMAGES = 20`. The `modules/courses/planner/constants.py` file is the precedent for a backend `constants.py`.
-- [ ] Rename the entity: `Community` → `Page`, `CommunityAdmin` → `PageAdmin`, `CommunityAdminLink` → `PageAdminLink`, across `models/`, `api.py`, `service.py`, `repository.py`, `schemas.py`, `policy.py`, `utils.py`, `dependencies.py`, `og.py`, `search_indexes.py`. Endpoints become `/pages…`.
-- [ ] `Page` model: **add** `description` (nullable) and `visibility` (`PageVisibility` enum → PG `page_visibility`); **drop** `type`, `category`, `email`, `verified`.
-- [ ] `PagePolicy._is_owner` reads the FK column, not the relationship: `page.owner == self.user_sub`. The current `community.owner_user.sub` raises `AttributeError` on an ownerless page, and that path runs on every read and update.
-- [ ] `PagePolicy.check_visible(page, user)`. Not visible ⇒ **404, never 403** (matches the old `UserPagePolicy.check_visible`; do not leak existence).
-- [ ] `list_admins` moves off `ResourceAction.READ` — which returns `True` for every signed-in user, so today anyone can enumerate any page's admin list — onto the `can_edit` gate.
-- [ ] Delete `PagePolicy.check_admin_only` and `toggle_verified`. Delete `can_toggle_verified` from `common/schemas.py:28` (only the community util ever set it; events/courses use `can_edit`/`can_delete`/`can_share_access`/`can_view_attendees`).
-- [ ] `get_page_permissions` (`utils.py`): `editable_fields` becomes `["name","description","slug","page_content","visibility"]`.
-- [ ] `PageResponse.owner_user` becomes `ShortUserResponse | None`. It is required today and crashes on a NULL owner.
-- [ ] `reassign_owner`: insert the **previous** owner into `page_admins` with `ON CONFLICT DO NOTHING` before swapping `page.owner`. Keep the existing "the new owner must not also be an admin" delete. This is the one behaviour change the user asked for.
-- [ ] `create_page`: cap at `MAX_PAGES_PER_OWNER`. `SELECT count(*) FROM pages WHERE owner = :sub`; at the cap return **409** with a clear detail. No site-admin exemption — one rule, no special case.
-- [ ] `create_page`: make `owner` optional, defaulting to `"me"`. `page_content` is already accepted at create, so an agent can produce a finished page in one call. Do not build anything else for automation.
-- [ ] `authorize_media_upload(page_id, user, count)`: after the existing `can_edit` check, cap content images at `MAX_PAGE_IMAGES`:
+- [x] `modules/pages/constants.py` (new): `MAX_PAGES_PER_OWNER = 100`, `MAX_PAGE_IMAGES = 20`. The `modules/courses/planner/constants.py` file is the precedent for a backend `constants.py`.
+- [x] Rename the entity: `Community` → `Page`, `CommunityAdmin` → `PageAdmin`, `CommunityAdminLink` → `PageAdminLink`, across `models/`, `api.py`, `service.py`, `repository.py`, `schemas.py`, `policy.py`, `utils.py`, `dependencies.py`, `og.py`, `search_indexes.py`. Endpoints become `/pages…`.
+- [x] `Page` model: **add** `description` (nullable) and `visibility` (`PageVisibility` enum → PG `page_visibility`); **drop** `type`, `category`, `email`, `verified`.
+- [x] `PagePolicy._is_owner` reads the FK column, not the relationship: `page.owner == self.user_sub`. The current `community.owner_user.sub` raises `AttributeError` on an ownerless page, and that path runs on every read and update.
+- [x] `PagePolicy.check_visible(page, user)`. Not visible ⇒ **404, never 403** (matches the old `UserPagePolicy.check_visible`; do not leak existence).
+- [x] `list_admins` moves off `ResourceAction.READ` — which returns `True` for every signed-in user, so today anyone can enumerate any page's admin list — onto the `can_edit` gate.
+- [x] Delete `PagePolicy.check_admin_only` and `toggle_verified`. Delete `can_toggle_verified` from `common/schemas.py:28` (only the community util ever set it; events/courses use `can_edit`/`can_delete`/`can_share_access`/`can_view_attendees`).
+- [x] `get_page_permissions` (`utils.py`): `editable_fields` becomes `["name","description","slug","page_content","visibility"]`.
+- [x] `PageResponse.owner_user` becomes `ShortUserResponse | None`. It is required today and crashes on a NULL owner.
+- [x] `reassign_owner`: insert the **previous** owner into `page_admins` with `ON CONFLICT DO NOTHING` before swapping `page.owner`. Keep the existing "the new owner must not also be an admin" delete. This is the one behaviour change the user asked for.
+- [x] `create_page`: cap at `MAX_PAGES_PER_OWNER`. `SELECT count(*) FROM pages WHERE owner = :sub`; at the cap return **409** with a clear detail. No site-admin exemption — one rule, no special case.
+- [x] `create_page`: make `owner` optional, defaulting to `"me"`. `page_content` is already accepted at create, so an agent can produce a finished page in one call. Do not build anything else for automation.
+- [x] `authorize_media_upload(page_id, user, count)`: after the existing `can_edit` check, cap content images at `MAX_PAGE_IMAGES`:
       `sql
   SELECT count(*) FROM media
    WHERE entity_type='pages' AND entity_id=:id AND media_format='carousel'
   `
       `existing + count > 20` ⇒ **400**, matching the sibling `MAX_UPLOAD_URLS` limit in the same endpoint. Add a `ponytail:` comment naming the ceiling: the count is read before GCS's Pub/Sub hook creates the row, so two concurrent uploads can overshoot by one.
-- [ ] `google_bucket/interfaces.py`: `MediaUploadAuthorizer.authorize_media_upload` gains `count: int`.
-- [ ] `google_bucket/api.py:58-64`: replace the `upload_targets` set with a `Counter` of `(entity_type, entity_id)` and pass the per-target count. The authorizer is called once per _target_, not per file, so without this the batch size is invisible to the cap.
-- [ ] `events/service.py::authorize_media_upload` gains the `count` parameter and ignores it. Events have no cap.
-- [ ] `list_pages` repository: replace the `type`/`category` conditions with a **hard** visibility `WHERE` — `public` for guests, `public|internal` when signed in, everything when `owner_sub` matches or the caller is a site admin. **Never a caller-supplied parameter.**
-- [ ] `list_pages` repository: add the `role` filter. `owned` → `pages.owner = :sub`. `admin` → `pages.id IN (SELECT page_id FROM page_admins WHERE user_sub = :sub)`. Replaces `community_type`/`community_category` params.
-- [ ] `list_media` and `upsert_search`/`delete_from_search`: `EntityType.pages`, `storage_name = "pages"`.
-- [ ] `communities/og.py`: rename to pages, and **fix the live production bug at line 101.** It calls `get_community_response(infra=…, community_id=id, user=…)` but the signature (`communities/service.py:269`) is `(self, infra, slug: str, user)`. There is no `community_id` parameter, so **both** `/og/communities` routes raise `TypeError` on every single request — every community OG image is broken in prod right now, and has been. The routes take `?id=` but the service only resolves by slug, so the fix needs an id lookup (`select(Page).where(Page.id == id)`, then the same policy check). Do not "fix" it by switching the route to a slug — the frontend and the Telegram preview URL both use `?id=`.
-- [ ] `infra/nginx/nginx.conf`: **no rule change needed.** The OG proxy at line 209 is `proxy_pass http://fastapi_backend/api/og$request_uri;` — path-agnostic, it passes `/og/pages/` straight through. Only the stale comment at line 178 (`# URLs: /communities/?id=123, …`) needs updating to `/pages/?id=123`. Do not go looking for a `location` block to edit.
-- [ ] `shared/slug.py`: `RESERVED_SLUGS` gains `p`, **loses** `communities` and `u` (no route can be shadowed any more). `users` stays.
-- [ ] `RESERVED_SLUGS` docstring: it currently says "the only unique, user-writable column on `Community` and on `User`". Update — it is now only `Page`.
-- [ ] Delete the `communities` JWT claim: `auth/app_token.py:39-49`, the re-emit at `auth/service.py:399`, the guest principal at `auth/dependencies.py:239`, and the dead `_is_community_owner` in `modules/shared/base_policy.py` (already gone in Phase 1). It was a stale snapshot of owned ids that the FK column makes redundant.
-- [ ] `auth/profiles.py`: delete `UserPageService`, `UserPagePolicy`, `has_design`, `list_users`, `UserSummaryResponse`, `UserPageResponse`, `UserCommunityResponse`, `_attach_communities`, and the `GET /users` endpoint. Drop `communities` from `/me`.
-- [ ] `auth/models.py`: `UserRole.community_admin` is a dead enum value — remove it.
-- [ ] `bot/services/event_publisher.py:78`: the fake principal loses `"communities": []`.
-- [ ] `media/models.py`: add `EntityType.pages`. The `communities` and `users` values become inert and cannot be dropped (PG enum) — deferred to Phase 7.
+- [x] `google_bucket/interfaces.py`: `MediaUploadAuthorizer.authorize_media_upload` gains `count: int`.
+- [x] `google_bucket/api.py:58-64`: replace the `upload_targets` set with a `Counter` of `(entity_type, entity_id)` and pass the per-target count. The authorizer is called once per _target_, not per file, so without this the batch size is invisible to the cap.
+- [x] `events/service.py::authorize_media_upload` gains the `count` parameter and ignores it. Events have no cap.
+- [x] `list_pages` repository: replace the `type`/`category` conditions with a **hard** visibility `WHERE` — `public` for guests, `public|internal` when signed in, everything when `owner_sub` matches or the caller is a site admin. **Never a caller-supplied parameter.**
+- [x] `list_pages` repository: add the `role` filter. `owned` → `pages.owner = :sub`. `admin` → `pages.id IN (SELECT page_id FROM page_admins WHERE user_sub = :sub)`. Replaces `community_type`/`community_category` params.
+- [x] `list_media` and `upsert_search`/`delete_from_search`: `EntityType.pages`, `storage_name = "pages"`.
+- [x] `communities/og.py`: rename to pages, and **fix the live production bug at line 101.** It calls `get_community_response(infra=…, community_id=id, user=…)` but the signature (`communities/service.py:269`) is `(self, infra, slug: str, user)`. There is no `community_id` parameter, so **both** `/og/communities` routes raise `TypeError` on every single request — every community OG image is broken in prod right now, and has been. The routes take `?id=` but the service only resolves by slug, so the fix needs an id lookup (`select(Page).where(Page.id == id)`, then the same policy check). Do not "fix" it by switching the route to a slug — the frontend and the Telegram preview URL both use `?id=`.
+- [x] `infra/nginx/nginx.conf`: **no rule change needed.** The OG proxy at line 209 is `proxy_pass http://fastapi_backend/api/og$request_uri;` — path-agnostic, it passes `/og/pages/` straight through. Only the stale comment at line 178 (`# URLs: /communities/?id=123, …`) needs updating to `/pages/?id=123`. Do not go looking for a `location` block to edit.
+- [x] `shared/slug.py`: `RESERVED_SLUGS` gains `p`, **loses** `communities` and `u` (no route can be shadowed any more). `users` stays.
+- [x] `RESERVED_SLUGS` docstring: it currently says "the only unique, user-writable column on `Community` and on `User`". Update — it is now only `Page`.
+- [x] Delete the `communities` JWT claim: `auth/app_token.py:39-49`, the re-emit at `auth/service.py:399`, the guest principal at `auth/dependencies.py:239`, and the dead `_is_community_owner` in `modules/shared/base_policy.py` (already gone in Phase 1). It was a stale snapshot of owned ids that the FK column makes redundant.
+- [x] `auth/profiles.py`: delete `UserPageService`, `UserPagePolicy`, `has_design`, `list_users`, `UserSummaryResponse`, `UserPageResponse`, `UserCommunityResponse`, `_attach_communities`, and the `GET /users` endpoint. Drop `communities` from `/me`.
+- [x] `auth/models.py`: `UserRole.community_admin` is a dead enum value — remove it.
+- [x] `bot/services/event_publisher.py:78`: the fake principal loses `"communities": []`.
+- [x] `media/models.py`: add `EntityType.pages`. The `communities` and `users` values become inert and cannot be dropped (PG enum) — deferred to Phase 7.
 
 ### Migration — three revisions, head `e5f6a7b8c9d0`
 
-- [ ] `f1e2d3c4b5a6_add_pages.py` - Create the `pagevisibility` enum, then `pages`, `page_admins`, `page_admin_links`. - Copy rows with a **Python loop**, not raw SQL: for each community, `slug = unique(base_slug(name))`, suffixing `-2`, `-3`, … on collision, falling back to `page-{id}` when a name slugifies to nothing. Import `base_slug` and `RESERVED_SLUGS` from `backend.modules.shared.slug` rather than re-implementing the rule. - **Preserve `id`** and both timestamps. `visibility = 'public'` — communities are all effectively public today. - `page_admins` and `page_admin_links` are plain `INSERT … SELECT`; the ids line up.
-- [ ] `a2f3e4d5c6b7_repoint_media_to_pages.py` - `ALTER TYPE entitytype ADD VALUE IF NOT EXISTS 'pages'`, then
+- [x] `f1e2d3c4b5a6_add_pages.py` - Create the `pagevisibility` enum, then `pages`, `page_admins`, `page_admin_links`. - Copy rows with a **Python loop**, not raw SQL: for each community, `slug = unique(base_slug(name))`, suffixing `-2`, `-3`, … on collision, falling back to `page-{id}` when a name slugifies to nothing. Import `base_slug` and `RESERVED_SLUGS` from `backend.modules.shared.slug` rather than re-implementing the rule. - **Preserve `id`** and both timestamps. `visibility = 'public'` — communities are all effectively public today. - `page_admins` and `page_admin_links` are plain `INSERT … SELECT`; the ids line up.
+- [x] `a2f3e4d5c6b7_repoint_media_to_pages.py` - `ALTER TYPE entitytype ADD VALUE IF NOT EXISTS 'pages'`, then
       `UPDATE media SET entity_type='pages' WHERE entity_type='communities'`. - **This must be a separate revision from the one above.** Postgres cannot read a value added by `ADD VALUE` in the same transaction, and Alembic runs a revision in one. Combined into a single file, it fails at runtime — not at build time, not in the diff, in production. Leave a docstring saying so, and do not let anyone merge them back.
-- [ ] `b3a4c5d6e7f8_drop_communities.py` - Drop `community_admin_links`, `community_admins`, `communities`. - Drop `event_collaborators.community_id`. The `EventCollaborator` model has no service, repository, or endpoint — it is dead, and the FK is the only reason events cannot be extracted cleanly. - Drop from `users`: `page_content`, `is_page_public`, `slug`, `category`, `id`. The last three are only reachable once the people directory and `/u/$slug` are gone; `users.id` existed only so `media.entity_id` could hang an int off `entity_type='users'`.
-- [ ] `alembic upgrade head` then `alembic downgrade -1` three times, then `upgrade head` again — locally, against the Phase 0 dump. It must round-trip.
-- [ ] Verify the copy against the Phase 0 counts: `SELECT count(*) FROM pages` equals the old `communities` count; every page has a non-null, unique, reserved-word-free slug; every old media row now has `entity_type='pages'`.
-- [ ] Verify no page image was orphaned:
+- [x] `b3a4c5d6e7f8_drop_communities.py` - Drop `community_admin_links`, `community_admins`, `communities`. - Drop `event_collaborators.community_id`. The `EventCollaborator` model has no service, repository, or endpoint — it is dead, and the FK is the only reason events cannot be extracted cleanly. - Drop from `users`: `page_content`, `is_page_public`, `slug`, `category`, `id`. The last three are only reachable once the people directory and `/u/$slug` are gone; `users.id` existed only so `media.entity_id` could hang an int off `entity_type='users'`.
+- [x] `alembic upgrade head` then `alembic downgrade -1` three times, then `upgrade head` again — locally, against the Phase 0 dump. It must round-trip.
+- [x] Verify the copy against the Phase 0 counts: `SELECT count(*) FROM pages` equals the old `communities` count; every page has a non-null, unique, reserved-word-free slug; every old media row now has `entity_type='pages'`.
+- [x] Verify no page image was orphaned:
       `sql
   SELECT p.id FROM pages p
   LEFT JOIN media m ON m.entity_id = p.id AND m.entity_type='pages'
@@ -305,13 +305,91 @@ two same-shaped files arbitrarily. The file _contents_ at each path are correct
 
 ### Backend tests
 
-- [ ] `test_community_url_validation.py` (66 cases) → `tests/test_page_url_validation.py`, renamed. Delete the telegram/instagram cases — `email` is gone.
-- [ ] `test_list_admins_pagination.py` → page repo mocks.
-- [ ] **New `tests/test_page_visibility.py`** — guest / signed-in / owner / admin / site-admin across all three visibility values, plus the 404-not-403 rule. This is the one genuinely new rule and it does not ship untested.
-- [ ] **New `tests/test_reassign_owner.py`** — the old owner ends up in `page_admins`, the new owner's admin row is gone, both idempotent, and a transfer to yourself is a no-op.
-- [ ] **New `tests/test_page_limits.py`** — the 100-page cap and the 20-image cap, including the `existing + count` boundary (19 existing + 1 = ok, 19 existing + 2 = 400).
-- [ ] Fix `auth/tests/test_user_profiles.py` (asserts community positions, `has_design`) and `google_bucket/tests/test_media_upload_authorization.py` (constructs the renamed authorizer).
-- [ ] **Verify:** full backend pytest green. `pnpm api:generate` — regenerate `web/src/api/schema.d.ts`.
+- [x] `test_community_url_validation.py` (66 cases) → `tests/test_page_url_validation.py`, renamed. Delete the telegram/instagram cases — `email` is gone.
+- [x] `test_list_admins_pagination.py` → page repo mocks.
+- [x] **New `tests/test_page_visibility.py`** — guest / signed-in / owner / admin / site-admin across all three visibility values, plus the 404-not-403 rule. This is the one genuinely new rule and it does not ship untested.
+- [x] **New `tests/test_reassign_owner.py`** — the old owner ends up in `page_admins`, the new owner's admin row is gone, both idempotent, and a transfer to yourself is a no-op.
+- [x] **New `tests/test_page_limits.py`** — the 100-page cap and the 20-image cap, including the `existing + count` boundary (19 existing + 1 = ok, 19 existing + 2 = 400).
+- [x] Fix `auth/tests/test_user_profiles.py` (asserts community positions, `has_design`) and `google_bucket/tests/test_media_upload_authorization.py` (constructs the renamed authorizer).
+- [x] **Verify:** full backend pytest green. `pnpm api:generate` — regenerate `web/src/api/schema.d.ts` — **deferred to Phase 3**, which schedules it and sanctions a red typecheck; regenerating here turns the gate red for the whole of Phase 2. See the Phase 2 note.
+
+### Phase 2 — what reality added
+
+Four things the plan did not anticipate. All four are corrections to the
+plan, not open questions.
+
+1. **The `ADD VALUE` split is not enough — it needs
+   `transaction_per_migration=True`.** Splitting the enum value into its own
+   revision, as the plan says, is necessary but not sufficient: with Alembic's
+   default single-transaction-per-`upgrade head`, all three revisions commit
+   together and `a2`'s `UPDATE media SET entity_type='pages'` still cannot read
+   the value `f1` added. `backend/migrations/env.py` now sets
+   `transaction_per_migration=True` in both the online and offline branches. A
+   future migration that depends on its own `ADD VALUE` is silently wrong
+   without this.
+
+2. **The live dev DB migrated itself.** `backend/bootstrap/db.py` runs
+   `alembic upgrade head` at startup, and the `fastapi` container bind-mounts
+   the backend with a file watcher — so editing a migration re-triggers the
+   upgrade. The dev DB went to `b3a4c5d6e7f8` on its own, which is also why the
+   3 orphan `users` media rows were still present at the end: `b3`'s
+   `DELETE FROM media WHERE entity_type='users'` was added _after_ that run.
+   Applied manually to match a fresh upgrade; `media` is now empty and
+   `/pages/adsfs` serves 200. **Do the destructive round-trip on a scratch DB
+   (as done here), and treat a running `fastapi` container as a live migration
+   trigger.**
+
+3. **`alembic check` is not a usable gate in this repo.** It reports drift for
+   `event_access_invites`, `sg_ministries`, `ticket_telegram_messages` and
+   others that predate this work, so a red `check` proves nothing on its own.
+   It is still worth reading for _new_ tables. It caught two real omissions in
+   the tables this phase added: `pages` carried `chk_pages_slug` and a
+   `visibility` server default in the DB but not in the model, and
+   `page_admin_links` carried the `uq_page_admin_links_active` partial unique
+   index in the DB but not the model. Without declaring them, the next
+   autogenerate reads them as drift and drops the slug check. Both are now in
+   `models/page.py`, and `alembic check` is clean for every page table. The
+   residual `page_admin_links` items are the pre-existing
+   `unique=True, index=True` pattern inherited unchanged from
+   `CommunityAdminLink`.
+
+4. **A policy bug the policy tests could not see.** `get_page_response` and
+   `get_page_response_by_id` built `PagePolicy` without `is_page_admin`, so a
+   page admin could see their own private page in `list_pages` — which resolves
+   the flag — and then get a **404** the moment they opened it. The
+   `test_page_visibility.py` matrix is handed `is_page_admin` directly and so
+   cannot catch a caller that never looks it up; the three service-level tests
+   added at the bottom of that file can. Both read paths now go through
+   `_load_page_and_policy`, and `_get_page_or_404` is gone — it was the only
+   caller of a path that skipped the lookup.
+
+`schema.d.ts` was regenerated once to confirm the backend side is correct
+(248 insertions / 680 deletions, `api:check` green against the exported
+doc), then **reverted** — see item 1 of the open decision below.
+
+**Decisions taken, for the record:**
+
+- `pnpm api:generate` is **not** run in this phase. The regenerated schema is
+  correct, but the web still imports `UserPageResponse`, `UserSummaryResponse`,
+  `UserCommunityResponse`, `UserPageUpdateRequest` and the `communities`
+  entity type, so committing it turns `pnpm typecheck`/`pnpm build` red for the
+  whole of Phase 2. Phase 3 already schedules the regeneration (line 333) and
+  explicitly sanctions a red typecheck at its end (line 320), so the file lands
+  there, once, with the web that actually uses it. The Gate says green at every
+  commit and that wins.
+- The `chk_pages_slug` and `uq_page_admin_links_active` declarations were
+  **added to the model** rather than removed from the migration: both are
+  correctness constraints (a malformed slug, two live invite links for one
+  page), and the repo has no `CheckConstraint`/`server_default` precedent, but
+  the alternative was silently dropping them on the next autogenerate.
+
+### Gate at the end of Phase 2
+
+Backend **195 passed** (was 181), black ✓, ruff **11** — unchanged findings,
+all in untouched files, and down from a 15-error stash baseline. Web: 82 tests
+✓, `pnpm build` ✓, `pnpm lint` **9** = the captured baseline exactly.
+`alembic upgrade → downgrade ×3 → upgrade` round-trips on a scratch DB
+restored from `/tmp/nuspace-baseline.sql.gz`.
 
 ---
 
@@ -464,6 +542,7 @@ Append one line per ticked box. Newest at the bottom.
 | —          | —     | Plan written             | `web/PROGRESS.md` created. No code changed yet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 2026-09-29 | 0     | Pre-flight               | Stack already up. `pnpm build` ✓, 82 web tests, 181 backend tests, `black` ✓. Baselines: ruff **11** (as documented), web lint **8** pre-existing. Dump → `/tmp/nuspace-baseline.sql.gz`. Counts: 1 community, 0 community_admins, 2 admin links, 0 community media, 3 user pages, 3 orphan `users` media. Two plan corrections recorded above: the head id `e5f6a7b8c9d0` is already taken by `users_category`, and the `page-{id}` fallback keys on an _invalid_ slug (`base_slug('🎉') == '-page'`), not an empty one.                                                                                                                                                                                                                                                                                                                                               |
 | 2026-09-29 | 1     | Dissolve `campuscurrent` | `campuscurrent/` gone. `base.py` → `shared/base_policy.py` (dropped `communities` + `_is_community_owner`, no callers), `communities/` → `pages/`, `events/` → `events/`, models split 5/13, search indexes split, `CAMPUSCURRENT_MEILI_INDEXES` → `PAGES_`+`EVENTS_`, `test_endpoint` dropped, `CampusCurrentMediaUploadAuthorizer` → `BucketMediaUploadAuthorizer`. DB-neutral: single head still `e5f6a7b8c9d0`, `alembic_version` unchanged, no migration written. Gate green — ruff 11 (same findings, 4 just moved to `modules/events/`), black ✓, 181 backend tests, 82 web tests, typecheck/build/format ✓, web lint 8 = baseline. Live: 76 OpenAPI paths, 10 still `/communities…`. Six `events/*.py` files needed the _events_ barrel, not the pages one — see the Phase 1 note. Plan's import list was 16 files; it was 17 (`auth/repository.py:8` missing). |
+| 2026-09-29 | 2     | Backend `pages/` entity | `Community` → `Page` across model/api/service/repository/schemas/policy/utils/og/search_indexes; `type`/`category`/`email`/`verified` dropped, `description`+`visibility` added; hidden pages 404; `list_admins` off `READ` onto the `can_edit` gate; user-page service, `GET /users`, `/u/$slug`, the `communities` claim and `UserRole.community_admin` all deleted; 100-page and 20-image caps; `EventCollaborator.community_id` dropped. Three migrations `f1e2d3c4b5a6` → `a2f3e4d5c6b7` → `b3a4c5d6e7f8`, head now `b3a4c5d6e7f8`; round-trip ✓ against the Phase 0 dump on a scratch DB. Four reality corrections recorded above: `transaction_per_migration=True` is required on top of the enum split; the dev DB self-migrates via `bootstrap/db.py`; `alembic check` needs two declarations added to `models/page.py`; and a private-page admin got a 404 on detail because both read paths skipped `is_page_admin`. Gate green — 195 backend tests (was 181), black ✓, ruff 11 = baseline, 82 web tests, build ✓, web lint 9 = baseline. `schema.d.ts` regeneration deferred to Phase 3 so the gate stays green. |
 
 ## Open questions
 
