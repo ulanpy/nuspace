@@ -1,41 +1,46 @@
-# PROGRESS — Puck editor for user profile pages
+# PROGRESS — Unify Communities + User Pages into `Pages`
 
-**Status:** phases 0–9 landed and committed. Phase 10 is a follow-up round from
-using the result: the routes moved under `/u/$slug`, the editor's tab-bar bug is
-fixed at the root, the directory is `/mynuspace` with community-shaped cards,
-users have a category, and the community rows are the same row everywhere.
-**One box is still open** — 10.10, the browser walk, which no command in here can
-replace.
-**Scope:** `backend/` and `web/`. This is the one plan here that is not
-frontend-only: it adds a migration, three endpoints, an `EntityType` value and
-an upload authorizer.
-
-This file is a self-contained brief. An agent picking this up cold should not
-need any of the conversation that produced it.
-
----
+This file is the **single source of truth for this refactor**. It is written to be
+handed to an AI agent with a fresh context. Read the whole thing before touching
+code, then work the checkboxes in order.
 
 ## How to use this file
 
-1. Read `web/CONVENTIONS.md` in full before touching anything frontend. It is
-   binding.
-2. Read the "Decisions locked" section below. They are settled — do not
-   re-litigate them, and do not substitute your own.
-3. **Read "Corrections to the original brief" before writing a line of code.**
-   Two of the plan's premises are wrong, and one of them will silently destroy
-   user data if you miss it.
-4. Work the phases top to bottom. Each phase leaves the tree green.
-5. **Tick a checkbox `[x]` the moment that item is done and verified.** Not
-   when you start it.
-6. Before resuming after a break, run the verification commands in
-   "Resume protocol" and then `git diff` to see what actually landed.
-7. If reality forces a change to this plan, edit this file in the same commit
-   and note it under "Deviations" at the bottom. Do not silently diverge.
+1. Read this file end to end.
+2. Run `git status` and `git log --oneline -10`. Reconcile reality with the
+   Progress log below — code wins over the log.
+3. Find the **first unchecked box**. That is your next task. Do not skip ahead.
+4. Do exactly that task. Do not "while I'm here" anything outside the box.
+5. Verify with the gate commands in [Gate](#gate). If the gate is red, fix it
+   before ticking the box.
+6. Tick the box. Append one line to the [Progress log](#progress-log).
+7. Repeat until Phase 6 (prod) is done.
 
-**Commands.**
+**Phases 3 and 4 are known to leave `pnpm typecheck` red in the middle.** That is
+by design and is called out at the top of Phase 4. Do not "fix" it early.
+
+**Never `git commit`, `git push`, or deploy without being asked to.** The user
+commits. The agent does the work and reports.
+
+---
+
+## Gate
+
+Must be green at every commit (this is the repo's own rule, from
+`web/CONVENTIONS.md` and `CONTRIBUTING.md`).
 
 ```sh
-# backend — from backend/
+# web
+cd web
+pnpm typecheck      # tsc -b --noEmit
+pnpm test           # node --test, no framework
+pnpm build          # typecheck + vite build; also regenerates routeTree.gen.ts
+pnpm lint           # oxlint --type-aware
+pnpm format         # prettier, sorts Tailwind classes
+pnpm api:check      # schema.d.ts matches the backend OpenAPI doc
+
+# backend
+cd backend
 uv run ruff check .
 uv run black --check .
 PYTHONPATH="$(dirname "$PWD")" uv run python -c "
@@ -45,773 +50,408 @@ import pytest, sys
 sys.exit(pytest.main(['-q']))"
 ```
 
-```sh
-# web — from web/
-pnpm api:check        # requires a running backend
-pnpm typecheck
-pnpm test
-pnpm lint
-pnpm format:check
-pnpm build            # also regenerates routeTree.gen.ts
-```
+Notes:
 
-The `pytest` invocation is deliberately awkward — `backend/` itself is the
-importable package so its **parent** must be on `PYTHONPATH`, and
-`core.configs.Config` needs ~25 variables out of `infra/.env`. Load the env
-in-process; do **not** `source infra/.env`, two of its values are unquoted and
-abort `zsh`. The container is not a fallback: `backend/Dockerfile` runs
-`uv sync --frozen --no-dev`, so pytest/ruff/black are not in the image.
+- `pnpm api:generate` / `api:check` need a **running backend**. From inside the
+  `web` container, `localhost` is Vite — use
+  `OPENAPI_URL=http://nginx/api/openapi.json`.
+- Backend tests run under **pytest strict mode**. No `conftest.py` exists, so
+  every async test needs an explicit `@pytest.mark.asyncio`.
+- There is a known pre-existing baseline of ~11 ruff errors. Do not fix them
+  here; do not add new ones.
+- `pnpm api:generate` was last verified against a running backend. If you cannot
+  bring one up, **stop and say so** rather than hand-editing
+  `web/src/api/schema.d.ts`. It is a generated file.
+- CI (`.github/workflows/deploy.yml`) has **no test job**. The gate above is the
+  only gate. Run it yourself.
 
-**Lint is red before you start.** `pnpm lint` exits 1 on a pre-existing
-baseline of **8** errors in `layouts/app/app-sidebar.tsx`,
-`routes/announcements/index.tsx` and `routes/events/`. `uv run ruff check .`
-has a baseline of **11**. The bar here is *no new findings from the files this
-plan touches*, not a green run. Diff the finding list before and after.
+## House rules that are easy to break
 
----
-
-## Corrections to the original brief
-
-The request assumed two new columns on `users`. They already exist.
-
-1. **`users.page_content` (JSONB) and `users.is_page_public` (bool) are
-   already in the model** — `backend/modules/auth/models.py:37-38`, added by
-   migration `8b32e85c3697`. **Do not add them and do not write a migration
-   that adds them.**
-
-2. **They are destroyed on every login, and this is the load-bearing bug of
-   the whole plan.** `UserRepository.upsert`
-   (`backend/modules/auth/repository.py:20-22`) copies every `UserSchema` field
-   onto an existing row, and `UserSchema` (`schemas.py:17-18`) defaults
-   `page_content={}` / `is_page_public=False`. `{}` and `False` are both
-   non-`None`, so they pass the `value is not None` guard and get written onto
-   the row on **every Keycloak callback**. Without the phase 0 fix, a user
-   designs their page, signs in, and finds it wiped and unpublished. Phase 0
-   ships first for this reason.
-
-3. **There is no `PATCH /users/me`.** `backend/modules/auth/api.py` exposes
-   `GET /me` (`:151`) and an admin-only `PATCH /users/{sub}/scope` (`:187`).
-   Nothing can currently write a user's slug, page or visibility.
-
-4. **There is no public profile route.** No `/u/$slug`, nothing. The only page
-   rendering `page_content` is `/communities/$slug`.
-
-5. **Avatar and banner upload is the one part that is not "straightforward
-   reusing the existing things."** `media.entity_id` is `BigInteger`
-   (`backend/modules/media/models.py:45`), `get_media_metadata` does
-   `int(...)` on the GCS metadata (`google_bucket/dependencies.py:129`),
-   `EntityType` has no `users` value, and there is no users upload authorizer
-   — while `users.sub` is a Keycloak UUID string. Decision #1 resolves it.
-
-Everything else *does* reuse cleanly: `MediaPicker`, `selectMedia`,
-`saveWithMedia`, and `MediaAttachmentResolver.map_to_resources` all key off
-`getattr(resource, "id")`, which is exactly what the surrogate column provides.
+- Read `web/CONVENTIONS.md` before writing web code. It is binding.
+- Route files are thin: `createFileRoute`, `validateSearch`, `beforeLoad`,
+  `loader`, `Route.use*`. Markup lives in `components/routes/<route>/`.
+- Page files are `kebab-case`. Puck blocks are `PascalCase` folders.
+- `lib/<module>/` has exactly `constants.ts` (limits, enums, zod), `functions.ts`
+  (all logic), `types.ts` (types only), `tests.ts`, `index.ts` (barrel).
+  Consumers import the barrel, never a file inside it.
+- `components/ui/` is shadcn vendor code. Consume it; do not hand-edit it. If a
+  primitive does not fit, build the thing in `shared/`.
+- Everything under `components/shared/page-editor/` is self-contained. Do not
+  split it or import app state into it.
+- No `enum` / `namespace` (erasableSyntaxOnly). Use `as const` + derived union.
+- `verbatimModuleSyntax`: `import { fn, type T } from "..."`.
+- Design tokens only (`bg-muted`, `text-foreground`), never raw palette classes.
+- Never build a Tailwind class by interpolation.
 
 ---
 
-## Decisions locked
+## Target shape (all decisions are settled — do not re-litigate)
 
-Decided with the user. Change them only if asked.
+| Decision | Value |
+|---|---|
+| Public URL | **`/p/$slug`** |
+| Settings | `/p/$slug/settings`, tabs `general` + `admin-controls` |
+| Editor | `/p/$slug/editor` |
+| Backend modules | `modules/pages/` and `modules/events/`, both out of `campuscurrent/` |
+| `campuscurrent/` | **deleted entirely**, including the `/test_endpoint` stub |
+| Visibility | `pages.visibility` — `private` \| `internal` \| `public` |
+| Cap: pages | **100 owned pages per account** |
+| Cap: images | **20 content images per page** (`carousel` format) |
+| Account page | `/account` = Connecting Telegram + My Pages. Nothing else. |
+| Account avatar | Keycloak `user.picture`. Both account `MediaPicker`s deleted. |
+| My Pages filter | shadcn `FilterTabs`: **All / Owned / Admin** |
+| Community → Page | Business logic copied. `type`, `category`, `email`, `verified` all **dropped**. `description` **added**. |
+| Create dialog fields | Name, Description (optional), URL (slug), Logo (optional), Banner (optional) |
+| Slug | autofills from the name until the user edits it |
+| Category popover | **deleted** |
+| Legacy | No redirects, no alias table, no legacy-slug preservation, no dead reserved words. |
 
-| #   | Decision                                                                                                                                                                            |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **User media keys off a surrogate `users.id` BigInteger**, sequence-backed, unique, backfilled. `sub` stays the PK and every FK to `users.sub` is untouched. The alternative — widening `media.entity_id` to `Text` — was rejected because every existing media consumer compares `entity_id` against an int. |
-| 2   | **The template dialog gains a second source: public people.** Communities stay listed **unfiltered**, because communities have no public/private flag at all and adding one is a separate feature nobody asked for. |
-| 3   | **The sidebar page is a directory of public profiles, and its label is literally "My Nuspace."** The name was flagged as confusing for a list of other people; the user chose to keep it. Do not rename. Its **path** is `/mynuspace` as of phase 10. |
-| 4   | **Public profiles live at `/u/$slug`.** Non-owners — guests included — get a **404** on a private page, never a redirect to login. The `/profile/*` half of this decision is **superseded by phase 10**: settings are now `/u/$slug/settings/*`, and a guest asking for one of those is redirected to `/`, not 404d. |
-| 6   | **`Item` conversion covers everything**: form fields, the admin access link, the danger zone, and the admins table rows. The danger zone and the admin table are both already label-left/control-right, so both are near-mechanical swaps. |
-| 7   | **Community General goes single-column.** The current 2-column grid is dropped and is **not** replaced for Type + Category. Full-width inputs, one column. |
-| 8   | **`CommunityForm` is restyled for both consumers.** It is shared with `CommunityFormDialog` on `/communities`, so the create dialog changes too. Splitting the markup was considered and rejected — it would duplicate a 374-line form for no product gain. |
+Ownership transfer: **the previous owner becomes an admin** (`page_admins` row
+inserted, `ON CONFLICT DO NOTHING`) rather than being cut off from the editor.
 
----
-
-## What exists to reuse
-
-Read these before writing anything. Most of this plan is assembly, not
-invention.
-
-| Need                          | Reuse                                                                                          |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| Puck editor shell             | `shared/page-editor/components/editor.tsx` — no change at all                                     |
-| Template apply + its 6 tests  | `shared/page-editor/components/_lib/template.ts` — takes `(page_content, config)`, unchanged     |
-| Template picker chrome        | `shared/page-editor/components/template-dialog.tsx` — add a source switch                        |
-| Editor route wiring           | `components/routes/communities/editor/index.tsx:54-66` — copy, swap the upload context          |
-| Pagination footer             | `components/routes/communities/settings/components/admins-table.tsx:155-213` — extract, do not copy |
-| Page param in the URL         | `routes/_app/communities/$slug/settings/admin-controls/index.tsx:8-17` — `.min(1)` before `.catch(1)` |
-| Page in the query key         | `web/src/api/query-keys.ts:26-36` — the comment there is the rule                                    |
-| Slug-taken 409                | `backend/modules/campuscurrent/communities/api.py:20-27`                                           |
-| Generic `setattr` update loop | `backend/modules/campuscurrent/communities/repository.py:37-50`                                     |
-| Media delete + attach         | `MediaAttachmentResolver`, `communities/service.py:106-107, 240-270`                                |
-| Public-page rendering         | `components/routes/communities/$slug/index.tsx:57-86` (root colour tint) and `:263` (`PageRenderer`) |
-| Settings layout + tabs        | `routes/_app/communities/$slug/settings/route.tsx` + `components/layouts/settings/index.tsx`       |
-| `saveWithMedia`               | `web/src/lib/media/functions.ts:150` — an upload failure must not lose the form                     |
-| Two-zone upload items         | `toCommunityUploadItems`, `web/src/lib/communities/functions.ts:106-122`                             |
-| Shared validation to extract   | `SLUG_PATTERN` + `RESERVED_SLUGS` at `components/routes/communities/components/community-form.tsx:28-72` and `backend/modules/shared/slug.py:6-25` |
-
-**Deterministic ordering matters for the new user list.** There is no
-Meilisearch index for users, so it is plain SQL. `ORDER BY name, surname, sub`
-is required, not cosmetic — OFFSET over a non-deterministic order drops and
-repeats rows across page boundaries. See the comment at
-`communities/repository.py:202-224` for the same reasoning on the admins query.
+A future agentic "make me a page" workflow is anticipated but **not built here**.
+The only thing this work does for it: `POST /pages` accepts `page_content` and
+`owner` is optional (defaults to `"me"`), so one call can produce a finished page.
 
 ---
 
-## Phases
+## Phase 0 — Pre-flight
 
-### Phase 0 — migration + the login landmine
+- [x] Bring up the stack and confirm a green baseline: backend up, `pnpm build` passes, backend pytest passes.
+- [x] Record the baseline: `git log --oneline -1`, and whether `ruff check` already reports the known ~11 errors.
+- [x] Take a **fresh local pg_dump** so you can iterate on the migration without fear:
+      `docker compose -f infra/prod.docker-compose.yml exec -T postgres pg_dump -U "$DB_USER" -d "$DB_NAME" | gzip > /tmp/nuspace-baseline.sql.gz`
+- [x] Count the rows you are about to migrate and write them down. They are the thing you will be asked about:
+      ```sql
+      SELECT count(*) AS communities, count(DISTINCT owner) AS owners FROM communities;
+      SELECT count(*) AS community_admins FROM community_admins;
+      SELECT count(*) AS media FROM media WHERE entity_type = 'communities';
+      SELECT count(*) AS user_pages FROM users WHERE page_content <> '{}'::jsonb;
+      SELECT count(*) AS orphan_media FROM media WHERE entity_type = 'users';
+      ```
+- [x] Note any community whose name will not slugify cleanly (non-latin names, emoji, punctuation-only). These need the `page-{id}` fallback in the migration.
 
-Do this phase first and alone. Everything after it is unsafe without 0.2.
+### Phase 0 findings — read these before Phase 2
 
-- [x] 0.1 Migration `backend/migrations/versions/b3c4d5e6f7a8_user_page_owner.py`,
-      `down_revision = "a1b2c3d4e5f6"` (current head,
-      `a1b2c3d4e5f6_community_admins.py`). Confirm the head is still that with a
-      grep over `migrations/versions/*.py` before writing it.
-      - `users.id` — `BigInteger`, sequence-backed, `NOT NULL`, unique.
-        Existing rows backfilled with `nextval`.
-      - `ALTER TYPE entity_type ADD VALUE 'users'`. Alembic cannot detect enum
-        value changes; this line is manual by design
-        (`media/models.py:13-20`).
-      - **PG caveat:** `ALTER TYPE ... ADD VALUE` cannot run inside a
-        transaction block on PG < 12. If the target PG is older, wrap it in
-        `op.get_context().autocommit_block()`. The value is not read in this
-        migration, so on PG 12+ it is safe in-transaction.
-- [x] 0.2 **`backend/modules/auth/repository.py:20-22` — the actual bug.**
-      Exclude locally-owned fields from the upsert copy loop:
-      `LOCAL_FIELDS = {"page_content", "is_page_public", "slug"}`. `slug` is
-      already handled specially at `:33-37` and must not be clobbered either.
-      Add a comment saying *why*: these are user-owned, not Keycloak claims.
-- [x] 0.3 `backend/modules/media/models.py` — add `users = "users"` to
-      `EntityType`; add `id: Mapped[int]` to `User` (`models.py:26`).
-- [x] 0.4 `backend/modules/shared/slug.py:6-25` — add `"u"` to
-      `RESERVED_SLUGS` so no profile slug can shadow `/u/$slug`.
-- [x] 0.5 Verify: `uv run ruff check .` shows no new findings; migration
-      applies and downgrades cleanly against a real database.
+`git log --oneline -1` at pre-flight: `db7b225`. The stack was already up
+(2 days); nothing needed restarting. `uv run ruff check .` reports **exactly the
+known 11** (10 × `E501`, 1 × `F841`) — 4 of them in
+`modules/campuscurrent/events/schemas.py`, which Phase 1 moves, so the count
+drops to 7 for free. `black --check` clean. Backend pytest **181 passed**. Web
+`pnpm build` green, `pnpm test` **82 passed**. Web `pnpm lint` is **red on a
+pre-existing baseline of 8 errors** (events, app-sidebar, announcements) plus
+one in the untracked `src/components/ui/pagination.tsx`. Baseline captured to
+`/tmp/ruff-baseline.txt` and `/tmp/web-lint-baseline.txt`.
 
-### Phase 1 — backend profile read/write
+Dump: `/tmp/nuspace-baseline.sql.gz`, 12K, gzip-verified. Note the plan's
+`docker compose -f infra/prod.docker-compose.yml exec` will not work — the
+running containers are from `infra/docker-compose.yml`. `docker exec postgres
+pg_dump -U postgres -d postgres | gzip > …` is the equivalent.
 
-- [x] 1.1 New `backend/modules/auth/profiles.py` holding the service and
-      policy for profile pages, so `service.py` does not grow. It needs a
-      `UserRepository.get_by_id` and a `list_public` alongside the existing
-      methods.
-- [x] 1.2 `GET /api/u/{slug}` → `UserPageResponse { sub, name, surname, slug,
-      picture, page_content, media[] }`. **404** when not found, when
-      `is_page_public` is false, or when `scope == banned` — *unless* the
-      viewer's `sub` matches, so the owner can always preview their own page.
-      `get_creds_or_guest`, mirroring `communities/api.py:89`.
-- [x] 1.3 `GET /api/users?keyword=&page=&size=` → the same
-      `{items, total_pages, total, page, size, has_next}` shape as
-      `communities/schemas.py:173-188`.
-      - **Filter on `is_page_public` and `scope == allowed` as a hard `WHERE`,
-        never as a caller-supplied query parameter.** A parameter would let
-        anyone enumerate private pages.
-      - `keyword` → `ILIKE` over `name`/`surname`.
-      - `ORDER BY name, surname, sub` — see "What exists to reuse".
-- [x] 1.4 `PATCH /api/users/me` — body `{ slug?, page_content?,
-      is_page_public?, media_ids_to_delete? }`, self only
-      (`get_creds_or_401`, compare against the session `sub`). Generic
-      `setattr` loop like `communities/repository.py:37-50`. Media deletion
-      reuses `communities/service.py:124-147`, which already checks
-      `entity_type` + `entity_id` before deleting.
-      `IntegrityError` → **409** with `SLUG_TAKEN_DETAIL`
-      (`communities/api.py:20-27`).
-- [x] 1.5 Extend `/api/me` (`auth/api.py:151`) to also return `slug`,
-      `page_content`, `is_page_public` and `media` — one dict in
-      `service.py:376-381`. The General tab reads the session, so this is the
-      only read endpoint it needs.
-- [x] 1.6 Backend tests (see "Verification"):
-      - `upsert` on an existing user **preserves** `page_content` and
-        `is_page_public`. This is the regression that silently destroys work.
-      - `PATCH /users/me` rejects a duplicate slug with 409, and rejects
-        another user's `sub` with 403.
-      - `GET /users` never returns a private or a banned user.
-- [x] 1.7 Verify: ruff + black + the new pytest cases pass.
+Row counts on the local dev DB — **small, so the migration is barely exercised
+here and staging is the real test**:
 
-### Phase 2 — media uploads for users
+| Query | Count |
+|---|---|
+| `communities` | **1** (1 distinct owner) |
+| `community_admins` | 0 |
+| `community_admin_links` | 2 |
+| `media WHERE entity_type='communities'` | **0** |
+| `users WHERE page_content <> '{}'` | 3 |
+| `media WHERE entity_type='users'` | 3 |
+| `users` total | 3 |
 
-- [x] 2.1 `CampusCurrentMediaUploadAuthorizer`
-      (`backend/modules/google_bucket/service.py:11-39`) — add a `users` branch
-      → `authorize_user_media_upload(entity_id, user)`: load the user by `id`,
-      require `user.sub == session_sub` and `scope != banned`. Wire it in
-      `google_bucket/dependencies.py:33-37`.
-- [x] 2.2 Web: `toUserUploadItems`, mirroring `toCommunityUploadItems`
-      (`lib/communities/functions.ts:106-122`) — same `profile`/`banner`
-      formats, per-format `mediaOrder` counters.
-- [x] 2.3 Web: `useUpdateMe()` in `web/src/lib/user/functions.ts`, routed
-      through `saveWithMedia` (`lib/media/functions.ts:150`) so a failed upload
-      batch does not discard the form. Extend `CurrentUser` in
-      `lib/user/types.ts` with the four fields from 1.5.
-- [x] 2.4 `pnpm api:generate` against a running backend; commit
-      `web/src/api/schema.d.ts` **in the same commit** as the backend change.
-- [x] 2.5 Verify: `pnpm api:check && pnpm typecheck && pnpm test && pnpm lint`
+The single community is `id=6, name='adsfs', slug='dsfsdfs', owner='mock-sub-bob'`.
+All 3 `users`-entity media rows are `profile`/`banner` avatar+banner images that
+`b3a4c5d6e7f8` drops on the floor with `users` — expected, and the reason Phase
+6c says to check the *page's* images by eye.
 
-### Phase 3 — frontend API layer
+**Two corrections to this plan, both forced by reality:**
 
-- [x] 3.1 `qk.users = { all, list(filters), detail(slug), mine }` in
-      `web/src/api/query-keys.ts`. `page` belongs **in the key**, not inside
-      it — the comment at `:26-36` is the rule.
-- [x] 3.2 `web/src/lib/user/functions.ts` — `fetchUsersPage`, `fetchUserPage`,
-      `useUpdateMe`. Types come from the regenerated `schema.d.ts`; do not
-      hand-write them.
-- [x] 3.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build` —
-      run at the end of every later phase, per deviation #10.
+1. **The head `e5f6a7b8c9d0` is already taken.** `alembic_version` in the local
+   DB is at `e5f6a7b8c9d0`, which is `migrations/versions/e5f6a7b8c9d0_users_category.py`
+   (the `users.category` migration, landed in `9a30a0a`). Reusing it is a
+   duplicate revision id and Alembic will refuse to start. The three new
+   revisions need fresh ids chaining off `e5f6a7b8c9d0`.
 
-### Phase 4 — `/profile` becomes a two-tab settings area
-
-`/profile` is currently a leaf route using `SettingsShell` *because* it has no
-child routes. It gets a layout, mirroring
-`routes/_app/communities/$slug/settings/route.tsx`.
-
-```
-routes/_app/profile/route.tsx            SettingsLayout, tabs General / My communities
-routes/_app/profile/index.tsx            → redirect /profile/general
-routes/_app/profile/general/index.tsx
-routes/_app/profile/communities/index.tsx
-routes/_app/profile/editor/index.tsx     Puck editor
-```
-
-> **Superseded by phase 10 — these four paths no longer exist.** Settings are
-> now `routes/_app/u/$slug/settings/*` and the editor is
-> `routes/_app/u/$slug/editor/`, a *sibling* of the settings layout rather than a
-> fourth tab. The layout and the two tabs are otherwise as described below.
-
-- [x] 4.1 `routes/_app/profile/route.tsx` — keep the existing
-      redirect-to-`/` guard from `routes/_app/profile/index.tsx:8-12` verbatim.
-      `SettingsLayout` with the two tabs. Actions: **Design page**
-      (`PaletteIcon` → `/profile/editor`, copying `settings/route.tsx:54-62`)
-      and the existing **Log out**.
-- [x] 4.2 `routes/_app/profile/index.tsx` — redirect to `/profile/general`,
-      as `communities/$slug/settings/index.tsx:3-4` does.
-- [x] 4.3 **General tab**, an `ItemGroup` per decision #5:
-      - Account row — `ItemMedia variant="image"`, uploaded avatar with the
-        Keycloak `picture` claim as the `ResilientImage` fallback, name +
-        email.
-      - Avatar upload — `MediaPicker`, `aspectRatio="square"`, `maxFiles={1}`.
-      - Banner upload — `MediaPicker`, `aspectRatio="video"`, `maxFiles={1}`.
-      - URL row — full-width `Input` in `ItemContent`; the description
-        previews `/u/{slug}`. Extract the `SLUG_PATTERN` + reserved-word
-        validation into a shared module rather than copying
-        `community-form.tsx:28-72`. Add `"u"` to the frontend copy.
-      - Public page row — `Switch` in `ItemActions`, description explaining
-        that the page is only reachable at `/u/{slug}` while it is off.
-      - Edit page button row.
-      - **Delete the Appearance row** (`components/routes/profile/index.tsx:180-182`).
-        The `ThemeToggle` is redundant here: `app-sidebar.tsx` already renders
-        it in **three** places — `:336` in the header when expanded, `:357` on
-        the collapsed rail, `:388` in the mobile sheet. All three are chrome;
-        the profile row was the only content-level copy. The row and its now-
-        unused `ThemeToggle` import both go.
-- [x] 4.4 **My communities tab** — no new backend endpoint.
-      `fetchCommunitiesPage({ owner_sub: "me" }, { page, size })` already
-      paginates. `page` in the URL via `validateSearch`
-      (`.min(1).catch(1)`, per `admin-controls/index.tsx:8-17`). Rows mirror
-      `AdminRowView`; **no share link**, actions limited to "Open".
-      - Extract the footer at `admins-table.tsx:155-213` into one shared
-        `TablePagination` component. Do not duplicate 60 lines of pagination
-        markup into a third file.
-- [x] 4.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
-
-### Phase 5 — editor + public page
-
-- [x] 5.1 `routes/_app/profile/editor/index.tsx` — copy
-      `components/routes/communities/editor/index.tsx:54-66`: loader ensures
-      the session, `UploadContext.Provider` with `entityType: "users"` and
-      `entityId: user.id` (the new int from phase 0), publish through
-      `PATCH /users/me`, invalidate `qk.users.all()`, navigate back.
-      - `UploadContextData.entityId` is typed `number`
-        (`shared/page-editor/context.tsx:4-12`). Phase 0 is what makes this
-        legal.
-- [x] 5.2 `routes/_app/u/$slug/index.tsx` + its component — the public
-      profile. `PageRenderer` on `page_content`, mirroring
-      `components/routes/communities/$slug/index.tsx:57-86` (root bg/text tint
-      on the app header) and `:263`. Keep the optional-viewer pattern.
-      - `404` maps from the API 404 via the same `ApiError` handling
-        `communities/$slug/index.tsx:8-40` uses.
-      - Lives under `_app`, not `_public`: `routes/_app/route.tsx:6-15`
-        deliberately leaves browsing anonymous, which is what decision #4 needs.
-- [x] 5.3 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
-
-### Phase 6 — template dialog
-
-- [x] 6.1 `shared/page-editor/components/template-dialog.tsx` — add a section
-      switch above the list, driven by one shared `keyword` box. The people
-      source calls `fetchUsersPage`; the community source is unchanged and
-      **unfiltered** (decision #2). Reuse the existing `hasDesign()` check for
-      both shapes, and the existing empty/pending/error copy per source.
-- [x] 6.2 `applyTemplate` and its 6 tests in
-      `shared/page-editor/components/_lib/template.test.ts` are **untouched** —
-      it already takes `(page_content, config)`. They must stay green.
-- [x] 6.3 Verify: `pnpm test && pnpm typecheck && pnpm lint`
-
-### Phase 7 — "My Nuspace" sidebar page
-
-- [x] 7.1 `{ to: "/people", label: "My Nuspace", icon: UserIcon }` in
-      `NAV_ITEMS` (`web/src/components/layouts/app/app-sidebar.tsx:50-56`).
-      `to` is typed `LinkProps["to"]`, so the route must exist before the
-      entry does or the build fails.
-- [x] 7.2 `routes/_app/people/index.tsx` + component — `communities/index.tsx`
-      minus the two `FilterTabs`. `SearchFilter` stays, `useInfiniteList` +
-      `InfiniteList` + `CardGrid` stay, `UserCard` replaces `CommunityCard`,
-      empty state included. No filters.
-- [x] 7.3 Cards link to `/u/$slug`; avatar falls back to initials, the way
-      `profile/index.tsx:157-165` does.
-- [x] 7.4 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
-
-### Phase 8 — `Item` across both settings areas
-
-Decision #6: everything, not just the fields.
-
-- [x] 8.1 **Community General** — name, type, category, slug, email → `Item`
-      rows, mixed layout per decision #5. `MediaPicker` rows. The 2-column
-      grid goes to one column, **not** replaced for Type + Category
-      (decision #7). The danger zone (`general/index.tsx:78-98`) is already
-      label-left/button-right, so it is a near-mechanical swap to
-      `<Item variant="outline">` keeping the destructive classes.
-      `CommunityForm` is shared with `CommunityFormDialog`, so the create
-      dialog restyles too (decision #8).
-- [x] 8.2 **Admin access link** — `settings/components/admin-access-link.tsx`
-      → `Item` rows. Read-only `Input` + copy + rotate, both
-      `ConfirmDialog`-gated. Logic unchanged; markup only. Leave the
-      `qk.adminLink` key out of the `communities` prefix as its comment
-      (`query-keys.ts:38-46`) requires.
-- [x] 8.3 **Admins table rows** — `AdminRowView`
-      (`admins-table.tsx:300-381`) → `Item` with `ItemMedia variant="image"`,
-      `ItemTitle` + `Badge`, actions in `ItemActions`. The
-      `<Card><div className="divide-y">` wrapper becomes an `ItemGroup`.
-      `adminRowActions()` gating (`lib/communities/functions.ts:390-398`) and
-      the responsive labelled/icon-only button pair are unchanged. The
-      `excludeSub` reasoning at `:74-78` must survive verbatim — the pinned
-      "You" row is why the server drops them from the rows *and* the count.
-- [x] 8.4 Pagination footer untouched beyond the phase 4.4 extraction.
-- [x] 8.5 Verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
-
-### Phase 9 — final
-
-- [x] 9.1 Full backend suite + ruff + black.
-- [x] 9.2 Full web suite: `pnpm api:check && pnpm typecheck && pnpm test &&
-      pnpm lint && pnpm format:check && pnpm build`.
-- [x] 9.3 Walk the self-check below by hand in a browser, not just by reading
-      the diff: design a page as a user, log out, log back in, confirm the
-      design survived. That round trip is the one thing no automated test here
-      covers end to end, and it is the bug that motivated phase 0.
-      Done against the dev stack with the mock OIDC login rather than a real
-      browser: `PATCH /api/users/me` as `mock-sub-alice`, `GET /api/logout`,
-      `GET /api/me` → 401, log in again, and the design plus
-      `is_page_public` came back with the same `users.id`. The visual side —
-      the Puck editor rendering, the template dialog, `/people`, and
-      `/u/ada-public` — was not looked at; do that before shipping.
-- [x] 9.4 Commit. Suggested message:
-      `feat(web,backend): Puck page editor for user profile pages`
-
-### Phase 10 — follow-up corrections
-
-Written after using the thing. Each item is something the first pass got wrong
-or left out, in the order it was reported. The routes moved, so read
-"Corrections" and "Deviations" below before touching the profile area.
-
-- [x] 10.1 **The editor flashed and landed back on General.** Root cause found
-      in `TabsRoot.js:181-257`: `RouteTabs` passed `value={undefined}` when no
-      tab matched, base-ui's `useControlled` reads `undefined` as *uncontrolled*,
-      and it then selects the first enabled tab and reports it via
-      `notifyAutomaticValueChange` — which is `onValueChange`, which navigates.
-      Two fixes, both kept: `RouteTabs` passes `null` (controlled, therefore
-      silent) and the editor is no longer a child of the settings layout.
-- [x] 10.2 **Settings live at `/u/$slug/settings/*`, not `/profile/*`.**
-      `routes/_app/profile/` is deleted; the redirect-to-`/` guard moved to
-      `/u/$slug/settings` because that is now the leaf a guest can ask for. The
-      sidebar account card opens it, which is what it always meant to do.
-- [x] 10.3 **The public profile is the community page's shape** — same tinted
-      sticky header, same owner-only **Design Page** action. The community rows
-      that 10.3 first added were **removed in 10.11**; a profile is about the
-      person, and the communities they head are one click away in the sidebar.
-- [x] 10.4 **`/people` is `/mynuspace`.** Sidebar label unchanged (decision #3).
-- [x] 10.5 **Directory cards mirror `CommunityCard`**: banner, overlapping
-      avatar, category badge. This needed `media` on `UserSummaryResponse` —
-      see deviation #30.
-- [x] 10.6 **`users.category`**: `student | faculty | staff`, a directory label
-      and nothing else. Local-owned, on `/me`, on the page, on the row, and
-      editable in General.
-- [x] 10.7 **My communities and admins are the same row**: one `Item` per
-      community, profile image, name, position badge. No community type or
-      category line.
-- [x] 10.8 **The logout button in the settings header is default size**, like
-      Design page and Log out, instead of a stray `size="sm"`.
-- [x] 10.9 Verify: backend 180 passed, ruff 11 (baseline), black clean. Web
-      `api:check`, typecheck, 81 tests, lint 8 (baseline), build.
-- [ ] 10.10 **Walk 10.1–10.11 in a browser.** There is no headless browser in
-      this environment, so 10.1 is verified by construction — the route tree
-      has the editor outside the settings layout, and `RouteTabs` no longer
-      passes `undefined` — and the API was walked over HTTP, not rendered. This
-      is the same gap as 9.3, still open, now covering the new pages.
-
-### Phase 11 — second look at the profile area
-
-Same round of "it does not look like the community page" corrections, from
-looking at the rendered result of phase 10.
-
-- [x] 11.1 **The page is no longer clamped to a `prose` column.** 10.3 wrapped
-      `PageRenderer` in `mx-auto max-w-4xl`, which narrowed every block in the
-      design. The community page wraps it in a bare `<div>` and the editor's own
-      blocks are what constrain their own width, so this does the same.
-- [x] 11.2 **The category badge in the header is an info popover**, the same
-      `InfoIcon` + `Popover` the community header uses, not a `Badge` sitting
-      next to the name. Only the category is in it: the public response has no
-      `is_page_public` (deviation #8), and a second row saying "Public" on a
-      page you are already allowed to read is noise.
-- [x] 11.3 **Design Page is a primary button**, like every other Design page
-      button in the app. It was `variant="outline"`.
-- [x] 11.4 **The community rows are gone from the public profile** — see 10.3.
-- [x] 11.5 **"Back to page" is gone from the settings header.** The account card
-      in the sidebar opens settings; a settings screen offering a link back to
-      the thing it configures is a round trip nobody needs. The page is one
-      browser-back away and in the sidebar's own list.
-- [x] 11.6 **The directory filters by category**, one `FilterTabs` row beside
-      the search box, mirroring the communities list. Needed `category` on
-      `GET /users` — a hard filter in the same WHERE as the visibility clause,
-      and applied to the count query too, or the pager would lie.
-- [x] 11.7 **The admins table footer counts its pinned rows.** It always shows
-      "You" and "Owner" above the server page, so a community with no admins has
-      two rows on screen and a footer that said nothing beside them. See
-      deviation #36.
-- [x] 11.8 Verify: backend 181 passed, ruff 11 (baseline), black clean. Web
-      `api:check`, typecheck, 82 tests, lint 8 (baseline), build. Category
-      filter walked over HTTP: `?category=faculty` narrows the list and returns
-      `total` to match; `?category=hacker` is a 422.
-
+2. **The `page-{id}` fallback triggers on *invalid*, not on *empty*.**
+   `base_slug` never returns an empty string, so the plan's stated trigger
+   ("when a name slugifies to nothing") is unreachable. But `base_slug` is
+   *not* safe to insert directly, because for punctuation-only or emoji input
+   it returns a **leading-hyphen** string:
+   ```
+   base_slug('🎉')  == '-page'      # not ''
+   base_slug('!!!') == '-page'
+   base_slug('  ')  == '-page'
+   base_slug('a')   == 'a-page'
+   ```
+   `communities` carries `CHECK (validate_slug(slug))`, and `SLUG_RE` is
+   `^[a-z0-9]+(-[a-z0-9]+)*$`, so `-page` is rejected. The migration must fall
+   back when `validate_slug` raises (or equivalently when the candidate is not
+   a valid slug), not when it is falsy. This branch is **live code**, not
+   defensive dead weight — do not delete it.
 
 ---
 
-## Not in scope
+## Phase 1 — Dissolve `campuscurrent` (pure move, no behaviour change)
 
-Considered and explicitly deferred. Do not pick these up.
+Nothing in this phase changes behaviour or the database. It is a rename plus a
+module split, and it must land on its own so the diff is reviewable.
 
-- **A `pages` table.** The JSONB-on-owner pattern already works and is what
-  communities do.
-- **A users Meilisearch index.** Nobody searches users by keyword yet.
-  `ILIKE` is fine at campus scale; revisit if `/people` gets slow.
-- **A public/private flag on communities.** Communities are fully public
-  today (`CommunityPolicy` grants READ to guests, and there is no visibility
-  column). Decision #2 keeps the community list in the template dialog
-  unfiltered because of this.
-- **An `Appearance` row anywhere.** The app header owns the theme toggle.
-- **Modifying `editor.tsx` or `template.ts`.** The Puck remount-on-apply dance
-  (`editor.tsx:28-30, 90-107`) is deliberate — Puck does not reload its `data`
-  prop after first mount. Do not "clean it up".
-- **Editing `web/src/components/ui/item.tsx`.** Per `CONVENTIONS.md`, `ui/` is
-  vendor code: consume it, never add project props or hand-written styles to it.
-  If `Item` cannot express something, wrap it in `shared/`.
-
----
-
-## Final self-check
-
-Before declaring done, confirm all of these. Re-run at the end of phase 10
-unless the box says when it was last walked.
-
-- [x] `grep -n "^- \[ \]" PROGRESS.md` returns nothing **except 10.10**, which
-      is a browser walk, and 3.3, which is ticked here.
-- [x] Every `Item` has a `data-slot` and the `ItemGroup` gap rule still works —
-      i.e. rows that are `size="sm"`/`xs` tighten the group. `item.tsx:9-21`.
-      The profile community rows and the My-communities rows are `size="sm"`.
-- [x] No `theme toggle` / `ThemeToggle` import left under the profile routes
-      (they are `components/routes/u/$slug/` now).
-- [x] `grep -rn "page_content" backend/modules/auth/repository.py` shows the
-      upsert loop cannot write it. It is in `LOCAL_FIELDS`, alongside `slug`,
-      `is_page_public` and — since phase 10 — `category`.
-- [x] `GET /api/users` has no query parameter that can widen the visibility
-      filter. Signature is `page, size, keyword` and the filter is a hard WHERE.
-- [x] `media.entity_id` is still `BigInteger` — nothing was widened to `Text`.
-- [x] A private profile returns 404 to a guest, and the page renders to its
-      owner. Walked over HTTP at phase 10: set `is_page_public=false`, guest
-      `GET /api/u/ada-public` → 404, owner → 200, restored.
-- [x] `/u/$slug` and `/mynuspace` work with no session. Both sit under `_app`,
-      which resolves the session as optional.
-- [x] `pnpm api:check` passes — `schema.d.ts` was regenerated and committed with
-      its backend change, not left behind.
-- [x] Lint/ruff finding counts did not grow: web 8, ruff 11.
-- [ ] **Walk the profile area in a browser** (10.10). The one thing on this
-      list that no command here can stand in for.
+- [ ] `modules/shared/base_policy.py` ← `campuscurrent/base.py`. Keep `__init__`, `user_creds`, `user_role`, `user_sub`, `is_admin`, `_is_owner`. **Drop `self.communities` and `_is_community_owner`** (no callers).
+- [ ] Repoint `modules/opportunities/policy.py:3` to `modules.shared.base_policy`.
+- [ ] `modules/pages/` ← `campuscurrent/communities/` (still named `Community*` at this point; the entity rename is Phase 2).
+- [ ] `modules/events/` ← `campuscurrent/events/`.
+- [ ] Split `campuscurrent/models/`: `models/community.py` → `modules/pages/models/page.py`; `models/events.py` → `modules/events/models/events.py`. Each gets its own `models/__init__.py` barrel (5 and 13 symbols respectively).
+- [ ] Split `campuscurrent/search_indexes.py` into `modules/pages/search_indexes.py` and `modules/events/search_indexes.py`, each exporting `MEILISEARCH_INDEXES`.
+- [ ] `lifespan.py:18-20,50` — one import + one spread becomes `PAGES_MEILI_INDEXES` and `EVENTS_MEILI_INDEXES`.
+- [ ] `core/database/model_registry.py:14` — one import becomes two. **Keep `auth.models` first**: `models/page.py` uses string relationships (`relationship("User")`), so both sides must be imported before any mapper configures.
+- [ ] `modules/routers.py:8-12` — repoint; delete `test_endpoint_api` and its list entry. Re-sort imports so ruff/isort is happy (`events` sorts before `google_bucket`, `pages` after `opportunities`), then `ruff check --fix`.
+- [ ] Delete `campuscurrent/profile/` (the 9-line `/test_endpoint` stub). Nothing references it.
+- [ ] Delete `campuscurrent/` once empty.
+- [ ] Rewrite the remaining import lines — full list, all 30:
+      - `announcements/dependencies.py:2`, `announcements/interfaces.py:5`, `announcements/schemas.py:1`, `announcements/service.py:9` → `modules.events.*`. Note `announcements/service.py:56` uses `event_schemas.EventStatus.approved` **through a re-export** in `events/schemas.py` — keep that re-export.
+      - `bot/interfaces.py:9`, `bot/repository.py:9`, `bot/routes/user/private/messages/post_event.py:10`, `bot/schemas/event_post.py:9-13`, `bot/services/event_post.py:13-17`, `bot/services/event_publisher.py:11,12,13` → `modules.events.*`
+      - `google_bucket/dependencies.py:11-14` → `modules.pages.*` + `modules.events.*`
+      - `shared/media_ownership.py:11` → `modules.pages.interfaces`
+      - `auth/app_token.py:12`, `auth/profiles.py:17,18`, `auth/service.py:27` → `modules.pages.*`
+- [ ] Rename `CampusCurrentMediaUploadAuthorizer` → `BucketMediaUploadAuthorizer` in `google_bucket/service.py:12,25,39` and its test.
+- [ ] Fix the naming-only leftovers: `backend/README.md:21` (drop the Campus Current row), `web/src/lib/media/functions.ts:106`, `web/src/lib/events/functions.ts:383`.
+- [ ] `rm -rf backend/modules/campuscurrent/**/__pycache__` (15 stale `.pyc` files).
+- [ ] **Verify:** grep `rg -n campuscurrent backend/ web/src/` returns nothing. Run the full gate. Confirm **no new migration was generated** — this phase must be DB-neutral.
 
 ---
 
-## Resume protocol
+## Phase 2 — Backend `pages/` entity (model, migration, policy, limits)
 
-1. `cd backend && uv run ruff check .` and `cd web && pnpm typecheck && pnpm
-   lint` — confirm the tree is at least as green as the documented baselines
-   (ruff 11, pnpm lint 9).
-2. `git diff` + `git status` — see what actually landed.
-3. `grep -n "^- \[ \]" PROGRESS.md | head -1` — the first unticked box is where
-   you resume.
-4. Read the phase header for context, do the item, tick it, run that phase's
-   verify command.
-5. Check the Alembic head before adding a migration — 0.1 names a revision, and
-   someone may have landed another one.
+- [ ] `modules/pages/constants.py` (new): `MAX_PAGES_PER_OWNER = 100`, `MAX_PAGE_IMAGES = 20`. The `modules/courses/planner/constants.py` file is the precedent for a backend `constants.py`.
+- [ ] Rename the entity: `Community` → `Page`, `CommunityAdmin` → `PageAdmin`, `CommunityAdminLink` → `PageAdminLink`, across `models/`, `api.py`, `service.py`, `repository.py`, `schemas.py`, `policy.py`, `utils.py`, `dependencies.py`, `og.py`, `search_indexes.py`. Endpoints become `/pages…`.
+- [ ] `Page` model: **add** `description` (nullable) and `visibility` (`PageVisibility` enum → PG `page_visibility`); **drop** `type`, `category`, `email`, `verified`.
+- [ ] `PagePolicy._is_owner` reads the FK column, not the relationship: `page.owner == self.user_sub`. The current `community.owner_user.sub` raises `AttributeError` on an ownerless page, and that path runs on every read and update.
+- [ ] `PagePolicy.check_visible(page, user)`. Not visible ⇒ **404, never 403** (matches the old `UserPagePolicy.check_visible`; do not leak existence).
+- [ ] `list_admins` moves off `ResourceAction.READ` — which returns `True` for every signed-in user, so today anyone can enumerate any page's admin list — onto the `can_edit` gate.
+- [ ] Delete `PagePolicy.check_admin_only` and `toggle_verified`. Delete `can_toggle_verified` from `common/schemas.py:28` (only the community util ever set it; events/courses use `can_edit`/`can_delete`/`can_share_access`/`can_view_attendees`).
+- [ ] `get_page_permissions` (`utils.py`): `editable_fields` becomes `["name","description","slug","page_content","visibility"]`.
+- [ ] `PageResponse.owner_user` becomes `ShortUserResponse | None`. It is required today and crashes on a NULL owner.
+- [ ] `reassign_owner`: insert the **previous** owner into `page_admins` with `ON CONFLICT DO NOTHING` before swapping `page.owner`. Keep the existing "the new owner must not also be an admin" delete. This is the one behaviour change the user asked for.
+- [ ] `create_page`: cap at `MAX_PAGES_PER_OWNER`. `SELECT count(*) FROM pages WHERE owner = :sub`; at the cap return **409** with a clear detail. No site-admin exemption — one rule, no special case.
+- [ ] `create_page`: make `owner` optional, defaulting to `"me"`. `page_content` is already accepted at create, so an agent can produce a finished page in one call. Do not build anything else for automation.
+- [ ] `authorize_media_upload(page_id, user, count)`: after the existing `can_edit` check, cap content images at `MAX_PAGE_IMAGES`:
+      ```sql
+      SELECT count(*) FROM media
+       WHERE entity_type='pages' AND entity_id=:id AND media_format='carousel'
+      ```
+      `existing + count > 20` ⇒ **400**, matching the sibling `MAX_UPLOAD_URLS` limit in the same endpoint. Add a `ponytail:` comment naming the ceiling: the count is read before GCS's Pub/Sub hook creates the row, so two concurrent uploads can overshoot by one.
+- [ ] `google_bucket/interfaces.py`: `MediaUploadAuthorizer.authorize_media_upload` gains `count: int`.
+- [ ] `google_bucket/api.py:58-64`: replace the `upload_targets` set with a `Counter` of `(entity_type, entity_id)` and pass the per-target count. The authorizer is called once per *target*, not per file, so without this the batch size is invisible to the cap.
+- [ ] `events/service.py::authorize_media_upload` gains the `count` parameter and ignores it. Events have no cap.
+- [ ] `list_pages` repository: replace the `type`/`category` conditions with a **hard** visibility `WHERE` — `public` for guests, `public|internal` when signed in, everything when `owner_sub` matches or the caller is a site admin. **Never a caller-supplied parameter.**
+- [ ] `list_pages` repository: add the `role` filter. `owned` → `pages.owner = :sub`. `admin` → `pages.id IN (SELECT page_id FROM page_admins WHERE user_sub = :sub)`. Replaces `community_type`/`community_category` params.
+- [ ] `list_media` and `upsert_search`/`delete_from_search`: `EntityType.pages`, `storage_name = "pages"`.
+- [ ] `communities/og.py`: rename to pages, and **fix the live production bug at line 101.** It calls `get_community_response(infra=…, community_id=id, user=…)` but the signature (`communities/service.py:269`) is `(self, infra, slug: str, user)`. There is no `community_id` parameter, so **both** `/og/communities` routes raise `TypeError` on every single request — every community OG image is broken in prod right now, and has been. The routes take `?id=` but the service only resolves by slug, so the fix needs an id lookup (`select(Page).where(Page.id == id)`, then the same policy check). Do not "fix" it by switching the route to a slug — the frontend and the Telegram preview URL both use `?id=`.
+- [ ] `infra/nginx/nginx.conf`: **no rule change needed.** The OG proxy at line 209 is `proxy_pass http://fastapi_backend/api/og$request_uri;` — path-agnostic, it passes `/og/pages/` straight through. Only the stale comment at line 178 (`# URLs: /communities/?id=123, …`) needs updating to `/pages/?id=123`. Do not go looking for a `location` block to edit.
+- [ ] `shared/slug.py`: `RESERVED_SLUGS` gains `p`, **loses** `communities` and `u` (no route can be shadowed any more). `users` stays.
+- [ ] `RESERVED_SLUGS` docstring: it currently says "the only unique, user-writable column on `Community` and on `User`". Update — it is now only `Page`.
+- [ ] Delete the `communities` JWT claim: `auth/app_token.py:39-49`, the re-emit at `auth/service.py:399`, the guest principal at `auth/dependencies.py:239`, and the dead `_is_community_owner` in `modules/shared/base_policy.py` (already gone in Phase 1). It was a stale snapshot of owned ids that the FK column makes redundant.
+- [ ] `auth/profiles.py`: delete `UserPageService`, `UserPagePolicy`, `has_design`, `list_users`, `UserSummaryResponse`, `UserPageResponse`, `UserCommunityResponse`, `_attach_communities`, and the `GET /users` endpoint. Drop `communities` from `/me`.
+- [ ] `auth/models.py`: `UserRole.community_admin` is a dead enum value — remove it.
+- [ ] `bot/services/event_publisher.py:78`: the fake principal loses `"communities": []`.
+- [ ] `media/models.py`: add `EntityType.pages`. The `communities` and `users` values become inert and cannot be dropped (PG enum) — deferred to Phase 7.
+
+### Migration — three revisions, head `e5f6a7b8c9d0`
+
+- [ ] `f1e2d3c4b5a6_add_pages.py`
+      - Create the `pagevisibility` enum, then `pages`, `page_admins`, `page_admin_links`.
+      - Copy rows with a **Python loop**, not raw SQL: for each community, `slug = unique(base_slug(name))`, suffixing `-2`, `-3`, … on collision, falling back to `page-{id}` when a name slugifies to nothing. Import `base_slug` and `RESERVED_SLUGS` from `backend.modules.shared.slug` rather than re-implementing the rule.
+      - **Preserve `id`** and both timestamps. `visibility = 'public'` — communities are all effectively public today.
+      - `page_admins` and `page_admin_links` are plain `INSERT … SELECT`; the ids line up.
+- [ ] `a2f3e4d5c6b7_repoint_media_to_pages.py`
+      - `ALTER TYPE entitytype ADD VALUE IF NOT EXISTS 'pages'`, then
+        `UPDATE media SET entity_type='pages' WHERE entity_type='communities'`.
+      - **This must be a separate revision from the one above.** Postgres cannot read a value added by `ADD VALUE` in the same transaction, and Alembic runs a revision in one. Combined into a single file, it fails at runtime — not at build time, not in the diff, in production. Leave a docstring saying so, and do not let anyone merge them back.
+- [ ] `b3a4c5d6e7f8_drop_communities.py`
+      - Drop `community_admin_links`, `community_admins`, `communities`.
+      - Drop `event_collaborators.community_id`. The `EventCollaborator` model has no service, repository, or endpoint — it is dead, and the FK is the only reason events cannot be extracted cleanly.
+      - Drop from `users`: `page_content`, `is_page_public`, `slug`, `category`, `id`. The last three are only reachable once the people directory and `/u/$slug` are gone; `users.id` existed only so `media.entity_id` could hang an int off `entity_type='users'`.
+- [ ] `alembic upgrade head` then `alembic downgrade -1` three times, then `upgrade head` again — locally, against the Phase 0 dump. It must round-trip.
+- [ ] Verify the copy against the Phase 0 counts: `SELECT count(*) FROM pages` equals the old `communities` count; every page has a non-null, unique, reserved-word-free slug; every old media row now has `entity_type='pages'`.
+- [ ] Verify no page image was orphaned:
+      ```sql
+      SELECT p.id FROM pages p
+      LEFT JOIN media m ON m.entity_id = p.id AND m.entity_type='pages'
+      WHERE m.id IS NULL;
+      ```
+      A non-empty result is a bug in the copy, not a page that legitimately has no images. Cross-check against the pre-migration count.
+
+### Backend tests
+
+- [ ] `test_community_url_validation.py` (66 cases) → `tests/test_page_url_validation.py`, renamed. Delete the telegram/instagram cases — `email` is gone.
+- [ ] `test_list_admins_pagination.py` → page repo mocks.
+- [ ] **New `tests/test_page_visibility.py`** — guest / signed-in / owner / admin / site-admin across all three visibility values, plus the 404-not-403 rule. This is the one genuinely new rule and it does not ship untested.
+- [ ] **New `tests/test_reassign_owner.py`** — the old owner ends up in `page_admins`, the new owner's admin row is gone, both idempotent, and a transfer to yourself is a no-op.
+- [ ] **New `tests/test_page_limits.py`** — the 100-page cap and the 20-image cap, including the `existing + count` boundary (19 existing + 1 = ok, 19 existing + 2 = 400).
+- [ ] Fix `auth/tests/test_user_profiles.py` (asserts community positions, `has_design`) and `google_bucket/tests/test_media_upload_authorization.py` (constructs the renamed authorizer).
+- [ ] **Verify:** full backend pytest green. `pnpm api:generate` — regenerate `web/src/api/schema.d.ts`.
 
 ---
 
-## Deviations
+## Phase 3 — Web plumbing
 
-### Phase 0
+`pnpm typecheck` **will be red** at the end of this phase. Routes still reference
+the old keys. That is expected; Phase 4 fixes it. Do not paper over it.
 
-1. **`users.id` is added with `GENERATED BY DEFAULT AS IDENTITY`, not the
-   add-nullable / backfill / set-not-null dance.** On PG 10+ the single
-   `ALTER TABLE` is sequence-backed, `NOT NULL` and backfills every existing
-   row with a distinct `nextval()` value. Verified against the dev PG 17: three
-   pre-existing users came back as ids 1, 2, 3. The model declares it as
-   `mapped_column(BigInteger, Identity(), nullable=False, unique=True)`, which
-   `alembic check` reports as no diff.
-2. **The `ALTER TYPE ... ADD VALUE 'users'` is wrapped in an idempotent
-   `DO` block checking `pg_enum`.** PG has no `ALTER TYPE ... DROP VALUE`, so
-   the value outlives `downgrade()` and a plain re-upgrade fails with
-   `DuplicateObject: enum label "users" already exists`. The guard is what makes
-   0.5's "applies and downgrades cleanly" true in both directions. The
-   downgrade still leaves the value in place, with a comment saying so.
-3. **"u" in `RESERVED_SLUGS` cannot actually fire.** `validate_slug` already
-   rejects anything under 3 characters, and the mirror-image `validate_slug()`
-   plpgsql CHECK constraint the migration `8b32e85c3697` installed does the
-   same — so neither the API nor the database will ever accept `u` as a slug.
-   Added as specified anyway; it is free and survives a future relaxation of
-   the minimum length. The plpgsql copy was left alone deliberately, because
-   for this one value the two are already in agreement.
+- [ ] `lib/communities/` → `lib/pages/` (5 files). Delete `COMMUNITY_TYPES`, `COMMUNITY_CATEGORIES`, `COMMUNITY_CREATE_ONLY`, the telegram/instagram URL validators (`email` is gone), `isCommunityAdmin`. Keep `adminRowActions` → `adminPageActions`, `canEditField`, the `saveWithMedia` wiring, and the filter type (now `keyword`/`owner_sub`/`role`).
+- [ ] `lib/pages/constants.ts`: add `MAX_PAGES_PER_OWNER = 100`.
+- [ ] `lib/media/constants.ts`: add `MAX_PAGE_IMAGES = 20`.
+- [ ] `components/shared/page-editor/blocks/_shared/index.tsx:92` — delete the local `MAX_PAGE_IMAGES` and import it from `@/lib/pages`. There must be one copy in the web app.
+- [ ] `lib/user/`: delete `fetchUsersPage`, `fetchUserPage`, `userPageQueryOptions`, `UserSummary`, `UserCategory`, `toUserUploadItems`. Strip `media`, `slug`, `communities`, `category`, `is_page_public` and `page_content` from the hand-written `/me` zod parse in `constants.ts`.
+- [ ] `lib/user/functions.ts`: add a pure `slugFromName(name)` mirroring the backend's `base_slug`, plus cases in `lib/user/tests.ts`. This drives the create-form autofill.
+- [ ] `lib/slug.ts`: add `p`; remove `communities` and `u`. Update the docstring — it says the handle is "the only unique, user-writable column on both communities and users", which is no longer true of users.
+- [ ] `lib/media/{types,functions}.ts`: entityType union → `"pages"`. Keep `community_events` (that is events' misnomer and is out of scope). Update the `campuscurrent/events/…` path in the `selectMedia` docstring.
+- [ ] `hooks/use-session.ts`: delete the dead `canManageCommunity` and the `communities` array it consumed.
+- [ ] `api/query-keys.ts`: `qk.communities` → `qk.pages`, with a `mine(role, page)` key that includes both the role and the page. Delete `qk.users.list`.
+- [ ] `pnpm api:generate`, commit the regenerated `web/src/api/schema.d.ts`.
 
-### Phase 1
+---
 
-4. **A body carrying someone else's `sub` is a 422, not a 403.** `PATCH
-   /users/me` has no target sub to compare against — the route writes the
-   session's own account and nothing else — so a `sub` in the body is
-   `extra="forbid"`ed rather than compared. A 403 would have meant adding a
-   `sub` field with exactly one legal value, and a comparison that can never
-   fail. 422 is also the more honest answer: the plan's 403 assumed the field
-   was accepted and then rejected, and silently dropping an unknown field is
-   how a caller ends up believing they changed something they did not.
-   `UserPagePolicy.check_self` was dropped for the same reason — dead code.
-5. **`raise_slug_taken` moved from `communities/api.py` to
-   `modules/shared/slug.py`**, next to `validate_slug`, and both routers import
-   it. Copying eight lines into `auth/api.py` would have been the only other
-   option, and the two 409 paths have to say the same thing.
-6. **The media-ownership check is now `shared/media_ownership.py`**, not a
-   second copy. `CommunityService._delete_community_media` and
-   `UserPageService` were going to need the identical "these ids exist, and
-   they belong to *this* entity" check; the community one is 15 lines and its
-   403 detail is now generic, since it is no longer community-specific.
-7. **`GET /users` items are a `UserSummaryResponse`, not a `UserPageResponse`.**
-   A directory of people needs a name, a slug and an avatar, not a rendered
-   page's `page_content` and signed GCS media URLs. Two small types beat one
-   type that lies about what a list row carries.
+## Phase 4 — Web routes and components
 
-### Phase 2
+- [ ] Delete `src/routes/_app/communities/**` and `src/routes/_app/u/**` (8 files).
+- [ ] Add `src/routes/_app/p/$slug/index.tsx` — loader `ensureQueryData(pageDetailQueryOptions)`, 404 → `notFound()`, reads the optional `?admin=` token, custom `NotFound`. No width clamp on the body (the page *is* the design).
+- [ ] Add `src/routes/_app/p/$slug/editor/index.tsx`.
+- [ ] **Add the missing auth guard to the editor route.** Today `/communities/$slug/editor` checks 404 only; the only thing protecting it is `PATCH` rejecting the write. It must check `can_edit`, matching the settings guard.
+- [ ] Add `src/routes/_app/p/$slug/settings/{route,index,general,admin-controls}` — the two-tab layout (`General`, `Admin controls`) is unchanged from communities.
+- [ ] Add `src/routes/_app/account/index.tsx`:
+      ```ts
+      validateSearch: z.object({
+        page: z.coerce.number().int().min(1).default(1),
+        role: z.enum(["owned", "admin"]).optional(),
+      })
+      ```
+      Read with `Route.useSearch()`. Change pages with
+      `useNavigate({ from: Route.fullPath, search: prev => ({ ...prev, page: n }) })`
+      — the **functional updater** form. `search: { page: n }` would clobber the `role` filter.
+- [ ] `src/routes/_app/mynuspace/index.tsx`: search loses `category`; it becomes the pages browser. Keeps `useInfiniteList` + `CardGrid` — a browse grid is not a table.
+- [ ] `components/routes/communities/` → `components/routes/pages/` (`index.tsx` detail, `editor/`, `settings/{general,admin-controls,components/{admins-table,admin-access-link}}`).
+- [ ] `settings/general`: Details (name, description, slug, logo, banner) + a **Visibility** radio group + Danger zone. Delete the Info popover.
+- [ ] `settings/admin-controls`: admin link + admins table + the **transfer ownership** control. `useTransferCommunityOwner` lives in `lib/communities/functions.ts` and is already called from `components/routes/communities/settings/components/admins-table.tsx` — so the UI exists, it just moves with the file. Re-point the import; do not rebuild it.
+- [ ] `mynuspace`: render `PageCard` (from `community-card.tsx`, type/category badge removed). Delete `components/routes/mynuspace/components/user-card.tsx` — it was already a deliberate copy of `CommunityCard`.
+- [ ] `src/index.css`: the `--community` token becomes a page token. Update the three usages.
+- [ ] New `components/shared/pages/page-form.tsx` + `page-form-dialog.tsx` (from `community-form{,-dialog}.tsx`). Shared, not route-local, because `/mynuspace` and `/account`'s empty state both reach it. Fields: name, description (optional), slug, logo (optional), banner (optional).
+- [ ] **Slug autofill from the name.** One `useState` + a "user has touched the slug" flag. ~5 lines. Do not over-engineer it.
+- [ ] New `components/routes/account/index.tsx` = **Connecting Telegram** + **My Pages**. Nothing else. No identity row, no `MediaPicker`s, no avatar. Move `telegram-link.tsx` in from `u/$slug/settings/`.
+- [ ] New `components/routes/account/components/my-pages.tsx` — `PAGE_SIZE = 10`, `?page=` in the URL, `keepPreviousData`, and a `FilterTabs` row (the project's shadcn-`ui/tabs` filter strip) over **All / Owned / Admin**, mapping to `GET /pages?role=`. Row badge reads **Owner** or **Admin** rather than the old hardcoded `Owner`.
+- [ ] `components/shared/page-editor/components/template-dialog.tsx`: collapse to **one** source. One `useInfiniteList(qk.pages.list({ keyword }))`, one handler. The people/communities tabs go, and the extra `fetchUserPage` round-trip disappears — `ListPage` items already carry `page_content`.
+- [ ] `components/shared/page-editor/context.tsx`: `UploadContextData` narrows to `entityType: "pages"`.
+- [ ] `components/layouts/app/app-sidebar.tsx`: remove the `Communities` nav item (`My Nuspace` is the only pages entry). Account card links to `/account` — no `params` any more.
+- [ ] `components/layouts/app/index.tsx`: the app-shell bypass becomes `/p/$slug` and `/p/$slug/editor`.
+- [ ] `components/routes/landing/index.tsx:65`: the marketing link to `/communities` now points at `/mynuspace`.
+- [ ] **Verify:** `pnpm typecheck` is green again. `pnpm build` regenerates `routeTree.gen.ts` — commit it. `rg -n "communit" web/src/` returns only legitimate leftovers you can justify in the commit message.
 
-8. **`/me` now carries the surrogate `users.id`.** Media uploads address the
-   user by `users.id` — that is what phase 0's column is for and what
-   `authorize_user_media_upload` compares — but nothing in the API handed that
-   number to the client. `sub` is not an option: `Media.entity_id` is an
-   integer column shared with communities and events. So `/me` sends `id`
-   alongside `slug`/`is_page_public`/`page_content`/`media`. It is
-   session-only and deliberately absent from the public `UserPageResponse`: the
-   public page is a shareable artifact and its owner id is nobody else's
-   business.
-9. **`UserPageResponse.media` declares a plain `= []` default**, matching
-   `CommunityResponse`, instead of `Field(default_factory=list)`. Pydantic emits
-   a `default` for the former, which is what makes codegen emit
-   `media: MediaResponse[]` instead of `media?: MediaResponse[]`. The optional
-   form forced `?? 0` at every read site — including `isReady` in the upload
-   refresh, where a silent `0` would have meant "the media already landed".
+### Pagination
 
-### Phase 3
+- [ ] New `components/shared/table/page-numbers.ts` — `pageNumbers(current, total, window = 1) → (number | "…")[]`. First and last always present, ellipsis inserted, current clamped into range. This is the fiddly part, so it is the part that gets pinned.
+- [ ] New `components/shared/table/page-numbers.test.ts` covering: single page, two pages, exact-fit window, both ellipses, current on the first and last page, current out of range.
+- [ ] Rewrite `components/shared/table/pagination.tsx` on the **`ui/pagination` primitives** — `Pagination` › `PaginationContent` › `PaginationItem` › `PaginationLink` / `PaginationEllipsis`, with `PaginationPrevious`/`PaginationNext` and the existing `pageRangeSummary` range text. Numbered pages, not chevron-only. Do not add project-specific props to `ui/pagination.tsx` itself.
+- [ ] Point both paginated tables at it: My Pages and the page admins table. `page-range.ts` stays.
+- [ ] **Verify:** `pnpm test` green. `pnpm typecheck && pnpm test && pnpm build && pnpm lint && pnpm format` all green.
 
-10. **3.1 and 3.2 landed with phase 2, not after it.** `useUpdateMe`'s
-    post-upload refresh has to re-read the page it just wrote — that is the
-    whole reason `refreshWhenMediaLands` exists (see the warning in
-    `lib/media/functions.ts`) — so `fetchUserPage` and `qk.users.detail` are
-    inputs to 2.3, not a follow-up. Splitting them across two commits would
-    have meant committing a media upload that silently never refreshes.
-11. **`qk.users.mine()` is deferred to phase 7.** The public directory has no
-    "owned by me" filter to key it by, and an unused query key is the exact
-    kind of speculative surface the rest of this plan is trying to delete. Add
-    it with "My Nuspace", which is the first thing that reads it.
+---
 
-### Phase 4
+## Phase 5 — Docs
 
-12. **`MediaPicker`'s `label` is now optional.** The two upload zones sit in
-    `Item` rows that already carry "Profile picture" and "Banner" as their
-    titles, and an empty `<Label>` is worse than no label. The counter and the
-    aspect hint still render, so the zone is never unlabelled — the file input
-    keeps its own generated id.
-13. **The pagination footer is two files: `pagination.tsx` and
-    `page-range.ts`.** The component is TSX and `node --test` cannot import
-    TSX, so the pure `pageRangeSummary` — the part with an off-by-one in it —
-    lives next door where it can be tested. Vite and `tsc` both resolve
-    `.ts` before `.tsx`, so they could not share one name.
-14. **`/profile/editor` and its component landed in phase 4.** The "Design
-    page" action is part of 4.1's actions, and a `Link` to a route that does
-    not exist fails `tsc` against the generated route tree. The editor itself
-    is the community editor with the upload context pointed at `users`; phase
-    5 still owns the public page and the template source.
-15. **`CommunityFilters` gained `owner_sub`.** `myCommunitiesQueryOptions` had
-    to spell its filter out inline because the shared `fetchCommunitiesPage`
-    could not express it. The My-communities tab wants the paginated fetcher,
-    so the filter moved into the type rather than into a second fetch function.
-16. **The old `components/routes/profile/index.tsx` is gone**, and with it the
-    Appearance row and its `ThemeToggle` import, as 4.3 asks. Nothing imported
-    it but the route that is now a redirect.
+- [ ] `web/CONVENTIONS.md`: route table rows (`/communities` → `/p/$slug…`), the `wide`/`prose` assignment, the two app-shell bypasses, the `lib/communities/tests.ts` example → `lib/pages/tests.ts`.
+- [ ] `web/CONVENTIONS.md`: add the new `shared/pages/` group to the `components/shared/` list.
+- [ ] `web/README.md:175` — it already points at `features/communities/url-validation.ts`, which stopped existing a while ago. Fix it.
+- [ ] `web/README.md:142` — the media-format note says `communities → profile + banner`. Update to `pages`.
+- [ ] `backend/README.md` — the Campus Current row is gone from Phase 1. Check the module table for anything else now stale.
+- [ ] Delete this file, or move it to `web/PROGRESS.done.md`, once Phase 6 is done.
 
-### Phase 5
+---
 
-17. **The root-colour tint is `pageChromeStyle`, not a second copy.** The
-    twenty-odd lines that turn a page's root colour into sidebar and border CSS
-    variables now live in `blocks/_lib/root-style.ts` and are shared by the
-    community and profile pages. Two copies of a colour-mix palette is how the
-    header on one page ends up disagreeing with the other.
-18. **`contrastColor` moved to its own `contrast.ts`.** It is the one pure
-    function in that directory that callers outside the editor need, and
-    `node --test` cannot import a `.tsx` file — so keeping it in
-    `style-fields.tsx` would have left `pageRootColors` untested.
-19. **The editor route has no loader of its own.** 5.1 asks for one that
-    ensures the session, but `/profile`'s `beforeLoad` has already resolved it
-    into the router context and redirected if it was absent; a second
-    `ensureQueryData` would fetch nothing. `useCurrentUser` suspends on the same
-    query, so the editor still cannot render without a session.
-20. **Publishing invalidates two caches.** The session holds the owner's copy
-    of the page content; `qk.users` holds the public `/u/{slug}` copy everyone
-    else reads. Invalidating only the session would leave a published page
-    invisible to the people it was published for.
+## Phase 6 — Push to prod
 
-### Phase 6
+**This is a hard cutover, not an expand/contract migration.** The `communities`
+table, the `/communities` routes, `/u/:slug` and the people directory all stop
+existing in the same deploy. There is no zero-downtime path, because the media
+rows have to *move* rather than be copied — `media.name` is the GCS object path
+and is unique, so a page's images cannot exist under two `entity_type` values at
+once. Plan a maintenance window. Do not pretend otherwise in the release notes.
 
-21. **`UserSummaryResponse` gained `has_design: bool`.** 6.1 asks the dialog to
-    reuse the existing "No design" check for people, and a summary has no
-    `page_content` to check — so the choice was a boolean in the list or a
-    per-row fetch to find out. The boolean keeps deviation #7 intact: a
-    directory row still carries no page content, it just says whether there is
-    any. Applying a person's design still costs one `GET /u/{slug}`, which is
-    the same request the row's own link would make.
-22. **The dialog branches once, on `source`, into two `InfiniteList`s** rather
-    than unifying the two item shapes. A `TemplateSource` union would have to
-    carry `page_content` on the community arm and `has_design` on the user arm
-    and then narrow at every read — for two lists that share a search box, a
-    chip row, and an empty state each.
+### 6a. Before you merge to `main`
 
-### Phase 8
+- [ ] **Staging first.** Merge to `dev`, wait for the pipeline, and exercise the whole flow on staging: create a page, edit it in the Puck editor, upload a logo and a banner, set each visibility level and check it as guest / signed-in / owner / admin, transfer ownership and confirm you keep editing, list admins, redeem an admin link, hit the 100-page cap, hit the 20-image cap, search a page by keyword.
+- [ ] Confirm on staging that no `communities` index lingers in Meilisearch. `bootstrap/meilisearch.py:46-52` deletes **every** existing index and re-syncs from the DB on boot, so the new `pages` index is built fresh and the old one is dropped. Search is briefly empty while that runs — it self-heals, do not chase it.
+- [ ] **Take a fresh verified backup on prod.** This is the only rollback that exists.
+      ```sh
+      docker exec backup /bin/bash /scripts/pg-dump-backup.sh
+      docker exec backup /bin/bash /scripts/walg-backup-push.sh
+      docker logs backup --tail 50          # expect "pg_dump backup uploaded to gs://..."
+      gcloud storage ls gs://nuspace-backups-prod/pg-dump/postgres/<DB_NAME>/
+      ```
+      Do not proceed until you see a **new** object with a current timestamp.
+- [ ] Confirm you know how to restore it. The procedure is in `infra/backup/README.md` (Вариант A — pg_dump). Read it now, not during the incident. **Test the restore on staging first.**
+- [ ] Note the media reality: GCS media is **not** in the pg_dump. If you must roll back, the `Media` rows come back from the dump but the image files were never at risk — they live in the `nuspace-media` bucket. Orphaned rows are recoverable; orphaned files are not the risk here.
 
-23. **`FieldRow` replaces the per-field `Label` + `space-y-1` div in
-    `community-form.tsx`.** The `ItemTitle` names the field, so the visible
-    `Label` was dropped; the ids stay on the controls, and each `Input` is
-    associated by wrapping. The selects moved into `ItemActions` per decision
-    #5, which is why they got a fixed `w-36` — an `ItemContent`-wide trigger
-    would have pushed the buttons off the row on narrow screens.
-24. **The danger zone kept its own colours and only swapped the wrapper.** It
-    is `<Item variant="outline" className="border-destructive/30 bg-destructive/5">`
-    rather than a `variant` of its own, so the destructive styling stays in
-    one place instead of spreading into `ui/item.tsx` for one caller.
-25. **`adminRowActions()` and the `excludeSub` comment are byte-identical.**
-    The pinned "You" row is the reason the server drops an admin from both the
-    rows and the count, so that comment is load-bearing and was copied, not
-    retyped.
+### 6b. Deploy
 
-### Phase 9
+- [ ] Pick a window. The site is usable except for pages and communities, which are **deliberately gone** after this deploy.
+- [ ] Merge to `main`. The pipeline builds the FastAPI image, builds the web static export on the runner, and runs Ansible. Order inside `ansible/playbook.yml` is: **backend (migrations → fastapi restart) → frontend (unpack `out/` → reload nginx) → infra services.**
+- [ ] **Know the window you are accepting.** `ansible/roles/backend/tasks/main.yml` runs `alembic upgrade head` (line 82) *before* `up --no-deps -d fastapi` (line 91). Between those two steps the **old code is running against the new schema**, so `/communities` 500s and the old `/me` shape is gone. The window is the migration duration plus container start. There is no way to shrink it without shipping compatibility shims, which are out of scope.
+- [ ] Expect 404s from **cached old frontend bundles** after the deploy — browsers holding the previous `web/out` still call `/communities` and `/u/:slug`. They resolve on next reload. Do not add a redirect shim to paper over this; it is the intended behaviour.
 
-26. **`pnpm format` reflowed nine files written in phases 1–7, and those
-    reflows are in the final commit, not the phase commits.** Line-width-only
-    changes, no behaviour. Each phase's own diff stays reviewable.
-27. **`pnpm format:check` is still red on `PROGRESS.md` and was already red
-    before this work started.** `vp fmt` rewrites `*italic*` as `_italic_` and
-    re-pads the decisions table, then `--check` disagrees with its own output,
-    so the file never converges. Left unformatted: it is a planning document,
-    and the fix belongs in the formatter config, not in this commit. Baseline,
-    like lint.
-28. **The lint baseline is 8, not the 9 this plan claimed** (measured at
-    phase 9 by stashing the uncommitted work and re-running). The 8 are
-    unchanged: 2 in `app-sidebar.tsx`, 1 in `announcements/index.tsx`, 4 in
-    `events/$eventId/index.tsx`, 1 in `events/components/event-form.tsx`. The
-    number in the preamble above is corrected to match.
-29. **The 9.3 round trip was walked over HTTP, not in a browser.** Mock OIDC
-    login, so there was no real browser session to drive. The design survived
-    logout and re-login with `users.id` unchanged, which is the phase-0 bug —
-    but nobody has looked at the editor, the template dialog, `/people` or
-    `/u/$slug` rendering. Do that before shipping.
+### 6c. After the deploy
 
-### Phase 10
+- [ ] `docker logs fastapi --tail 200` — no tracebacks, no `ProgrammingError` on a missing `communities` table.
+- [ ] `docker logs postgres 2>&1 | grep -i archive` — WAL archiving still healthy, so your PITR chain did not break.
+- [ ] `curl -s localhost/api/openapi.json | jq '.paths | keys' | grep -c pages` — the routes are live.
+- [ ] Logged out: a `public` page renders at `/p/<slug>`; an `internal` page 404s; a `private` page 404s.
+- [ ] Logged in: an `internal` page renders; a `private` page you do not own 404s; your own `private` page renders.
+- [ ] My Nuspace lists pages. `/account` shows Telegram + My Pages, and the My Pages filter switches Owned/Admin.
+- [ ] Create a page end to end: the dialog, the slug autofill, the editor, publish, and the image shows up after the Pub/Sub round trip.
+- [ ] Keyword search returns a page by name (Meilisearch re-indexed).
+- [ ] A community's old logo and banner are still on its migrated page. This is the single most likely thing to be silently wrong — the media rows moved by `entity_type` and nothing else. Check it by eye.
+- [ ] `/og/pages/?id=<id>` returns OG HTML. **It does not work today** — the old route 500s on every hit with a `TypeError`, so any working response here is new behaviour and proves the fix landed.
+- [ ] Confirm `alembic_version` on prod is at the head of the chain.
 
-30. **`UserSummaryResponse` gained `media` (deviation #21 extended).** #21 kept
-    the directory row free of `page_content` and gave it a `has_design` boolean
-    instead. That reasoning still holds for the page blob, but a card that
-    mirrors `CommunityCard` needs a banner, and the Keycloak avatar is not a
-    banner. So the row now carries `profile` and `banner` media and still no
-    page content: the card gets its two images, the template dialog gets its
-    boolean, and neither gets the blob. One batched `list_media` for the whole
-    page, so it is one query and not one per row.
-31. **Both halves of the tab bug were fixed, not one.** Moving the editor out
-    of the settings layout fixes the route that was reported. `RouteTabs`
-    passing `null` instead of `undefined` fixes the mechanism, which is a trap
-    for the next person who puts a non-tab route under a settings layout — the
-    symptom is a flash and a redirect that reads like a routing bug, and the
-    cause is two hundred lines away in `TabsRoot.js`.
-32. **Settings kept the guest redirect, and 404 for everyone else.** A guest
-    asking for `/u/$slug/settings` goes to `/`, because the landing page's
-    sign-in button returns to the path it came from, so the round trip through
-    Keycloak lands back here. A signed-in stranger gets the 404 the public page
-    would have given them: a private profile must not be discoverable by
-    walking one segment to the right.
-33. **The account card in the sidebar links to settings, not the public page.**
-    It shows a name and an email — the two things you change about an account —
-    and there was no other way to reach settings once `/profile` went away. The
-    public page is still one click away, from the directory and from a
-    community's member list.
-34. **Community rows on a profile carry `profile` media only.** Same reasoning
-    as the community's own list: the row shows an avatar, and a community with
-    fifty carousel photos would otherwise ship all fifty signed URLs to every
-    reader of someone's profile. Documented at the query, not just here.
-35. **`web/.tanstack/` is ignored.** The TanStack Router plugin writes its build
-    cache there; it was showing up as untracked noise after every route change.
+### 6d. Rollback, if you need it
 
-### Phase 11
+- [ ] **`git revert` is not a rollback.** By the time the pipeline finishes, revision 3 has dropped `communities` and the data is gone. Reverting the code puts the old app in front of a schema it cannot read, and it will not start.
+- [ ] The real rollback is a database restore, per `infra/backup/README.md` (Вариант A): stop `fastapi`, recreate the database from the dump taken in 6a, start `fastapi`. Budget real time for it — this is a full `DROP DATABASE` + `pg_restore`.
+- [ ] If you need the *schema* back but not the data, WAL-G PITR (Вариант B) can stop at a `recovery_target_time` just before the migration. Use a recovery VM, not prod.
+- [ ] Tell the user immediately. Do not start a restore on prod without saying so first.
 
-36. **`pageRangeSummary` grew a `pinned` count instead of the admins table
-    computing its own summary.** The admins table renders "You" and "Owner"
-    above the server page, so on a community with no admins it has two rows on
-    screen and `total: 0` — the honest server answer, and a footer with a blank
-    left half next to a two-row table. The count of pinned rows is passed in, and
-    only the `total === 0` case uses it. A page 2 of a community with admins
-    still describes the paged range only, which undercounts by the pinned rows:
-    that is pre-existing, and fixing it properly means the range stops being a
-    range and starts being a sentence about a list with a pinned prefix.
-37. **`GET /users` gained `category`, and it is filtered in SQL like
-    `keyword`.** Client-side filtering of a paginated list is always wrong — it
-    filters the twenty rows on screen and reports the unfiltered `total` — so it
-    went into the same `conditions` list the visibility clause is in, which is
-    also applied to the count query. A bad value is a 422, not an empty list,
-    because it is typed as `UserCategory` on the route.
+---
 
-### Migration safety — `e5f6a7b8c9d0`, walked against real rows
+## Phase 7 — Deferred cleanup (not this PR)
 
-The question "does this break anyone already in the database" is answerable, so
-it was answered rather than reasoned about. Downgraded one revision and upgraded
-again **against the dev database with three real users**, one of whom has a
-private page and one of whom has a three-zone design:
+Explicitly out of scope. The user will handle these after the prod push.
 
-| Checked | Result |
-| --- | --- |
-| `alembic downgrade -1` | clean; `category` column and `usercategory` type gone |
-| Other `users` columns across the round trip | zero field diffs on `sub`, `slug`, `id`, `is_page_public`, `page_content`, `picture`, `email`, `scope`, `name`, `surname` |
-| `alembic upgrade head` on existing rows | all three backfilled to `student`, `NOT NULL`, no NULLs |
-| `GET /me` per user | slug, `users.id` and page content intact for all three |
-| Private page, guest → self | `404` → `200`, still private |
-| **Logout + fresh login** | category and page content both survived — the phase-0 landmine, re-checked for the new column |
-| `?category=` filter | narrows the list and `total` |
+- [ ] Drop the now-inert PG enum values, which cannot be dropped in place: `community_category`, `community_type`, `collaborator_type.community`, `usercategory`, and the `communities` / `users` values in `entitytype`. This needs a type-recreation migration.
+- [ ] Decide whether `modules/courses`' two independent `BasePolicy` copies collapse into `modules/shared/base_policy.py`. They were left alone deliberately.
+- [ ] `MediaAttachmentResolver` lives in `modules/pages/interfaces.py` but is really a media port, and `shared/media_ownership.py` importing from `pages` is the kind of cycle that grows. `modules/media/interfaces.py` is the honest home.
+- [ ] `events` has a `MediaAttachmentResolver` copy identical to the one in `pages`. Collapse to one.
+- [ ] The `BotSubmission` / event-suggestion flow is untouched but adjacent. Not this PR.
 
-Two things this found, both of which are *not* migration defects:
+---
 
-- **The first request after any `ALTER TABLE` on a live process can 500** with
-  asyncpg's `InvalidCachedStatementError` — "cached statement plan is invalid
-  due to a database schema or configuration change". The prepared-statement
-  cache is bound to the column list it was planned against. SQLAlchemy
-  invalidates the whole cache when it sees this and the retry succeeds, so it
-  is a one-shot per connection pool. It is the reason a deploy that migrates
-  while the old process is still serving restarts rather than relying on the
-  retry. **Do not read this 500 as data loss** — the retry is the same query.
-- **A test that does not follow the mock-login redirect tests nothing.** The
-  login sets cookies on a `303`, so a `curl` without `-L` gets an empty jar and
-  every later request looks like a permission failure. Two of the "problems"
-  in this round were that.
+## Progress log
 
+Append one line per ticked box. Newest at the bottom.
 
+| Date | Phase | What | Notes |
+|---|---|---|---|
+| — | — | Plan written | `web/PROGRESS.md` created. No code changed yet. |
+| 2026-09-29 | 0 | Pre-flight | Stack already up. `pnpm build` ✓, 82 web tests, 181 backend tests, `black` ✓. Baselines: ruff **11** (as documented), web lint **8** pre-existing. Dump → `/tmp/nuspace-baseline.sql.gz`. Counts: 1 community, 0 community_admins, 2 admin links, 0 community media, 3 user pages, 3 orphan `users` media. Two plan corrections recorded above: the head id `e5f6a7b8c9d0` is already taken by `users_category`, and the `page-{id}` fallback keys on an *invalid* slug (`base_slug('🎉') == '-page'`), not an empty one. |
 
+## Open questions
+
+None blocking. If something surfaces that contradicts the decisions table, **stop
+and ask the user** rather than choosing. Specifically:
+
+- If the migration turns out to need slug collision handling beyond `-2`, `-3`, …
+- If `pg_restore` on staging does not complete in a sane time, the 6d rollback
+  plan needs revisiting before you merge to `main`.
+- If it turns out to be materially cheaper to keep the old endpoints around for
+  one release to avoid the maintenance window, that is a conversation to have,
+  not a decision to make unilaterally.
