@@ -13,65 +13,63 @@ import { saveWithMedia } from "@/lib/media"
 import type {
   AdminLink,
   AdminLinkAcceptResult,
-  Community,
-  CommunityCategory,
-  CommunityCreate,
-  CommunityType,
-  CommunityUpdate,
+  Page,
+  PageCreate,
+  PageUpdate,
 } from "./types"
 
-export interface CommunityFilters {
-  community_type?: CommunityType
-  community_category?: CommunityCategory
+export interface PageFilters {
   keyword?: string
-  /** `"me"` resolves to the caller server-side; `myCommunitiesQueryOptions` uses it. */
+  /** `"me"` resolves to the caller server-side; `myPagesQueryOptions` uses it. */
   owner_sub?: string
+  /** `owned` is pages you head, `admin` is pages you are an admin of. */
+  role?: "owned" | "admin"
 }
 
-/** One page of the communities list. Used by useInfiniteList. */
-export function fetchCommunitiesPage(
-  filters: CommunityFilters,
+/** One page of the pages list. Used by useInfiniteList. */
+export function fetchPagesPage(
+  filters: PageFilters,
   { page, size }: { page: number; size: number }
 ) {
   return unwrap(
-    api.GET("/communities", {
+    api.GET("/pages", {
       params: { query: { page, size, ...filters } },
     })
   )
 }
 
 /**
- * Communities the signed-in user owns.
+ * Pages the signed-in user owns.
  *
  * The filter is `owner_sub`, and `"me"` resolves to the caller server-side. The
  * old app sent `head=<sub>` — a parameter the backend does not declare, so
- * FastAPI dropped it and the profile page's "My Communities" was really the
- * first 100 of every community on campus.
+ * FastAPI dropped it and the profile page's "My Pages" was really the first 100
+ * of every page on campus.
  */
-export function myCommunitiesQueryOptions() {
+export function myPagesQueryOptions() {
   return queryOptions({
-    queryKey: qk.communities.mine(),
+    queryKey: qk.pages.mine(),
     queryFn: () =>
       unwrap(
-        api.GET("/communities", {
+        api.GET("/pages", {
           params: { query: { owner_sub: "me", page: 1, size: 100 } },
         })
       ),
   })
 }
 
-function fetchCommunity(slug: string) {
+function fetchPage(slug: string) {
   return unwrap(
-    api.GET("/communities/{slug}", {
+    api.GET("/pages/{slug}", {
       params: { path: { slug } },
     })
   )
 }
 
-export function communityDetailQueryOptions(slug: string) {
+export function pageDetailQueryOptions(slug: string) {
   return queryOptions({
-    queryKey: qk.communities.detail(slug),
-    queryFn: () => fetchCommunity(slug),
+    queryKey: qk.pages.detail(slug),
+    queryFn: () => fetchPage(slug),
   })
 }
 
@@ -79,7 +77,7 @@ export function communityDetailQueryOptions(slug: string) {
  * Refreshes once the newly uploaded images exist server-side.
  *
  * Not awaited by the mutation, for the reasons in `lib/media/functions.ts`. The
- * readiness test counts: a community can be saved with a new banner and no new
+ * readiness test counts: a page can be saved with a new banner and no new
  * profile picture, so waiting for "any media" would resolve immediately
  * against the profile picture it already had.
  */
@@ -89,11 +87,11 @@ function refreshWhenMediaLands(
   expected: number
 ) {
   void pollForMedia({
-    fetch: () => fetchCommunity(slug),
-    isReady: (community) => community.media.length >= expected,
-  }).then(async (community) => {
-    if (community) {
-      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    fetch: () => fetchPage(slug),
+    isReady: (page) => page.media.length >= expected,
+  }).then(async (page) => {
+    if (page) {
+      await queryClient.invalidateQueries({ queryKey: qk.pages.all() })
     }
   })
 }
@@ -101,11 +99,11 @@ function refreshWhenMediaLands(
 /**
  * Profile picture and banner, in one list.
  *
- * Both are `entity_type: communities` and are told apart only by their format,
+ * Both are `entity_type: pages` and are told apart only by their format,
  * so the pairing has to survive all the way to the signed URL. `mediaOrder` is
  * per-format, hence the two independent counters.
  */
-export function toCommunityUploadItems(
+export function toPageUploadItems(
   profile: readonly File[],
   banner: readonly File[]
 ): UploadItem[] {
@@ -123,7 +121,7 @@ export function toCommunityUploadItems(
   ]
 }
 
-export function useCreateCommunity() {
+export function useCreatePage() {
   const queryClient = useQueryClient()
   const { uploadMedia } = useMediaUpload()
 
@@ -132,20 +130,20 @@ export function useCreateCommunity() {
       body,
       items,
     }: {
-      body: CommunityCreate
+      body: PageCreate
       items: UploadItem[]
     }) => {
       return saveWithMedia({
         validate: () => {
           assertValidImageBatch(items.map((item) => item.file))
         },
-        saveEntity: () => unwrap(api.POST("/communities", { body })),
+        saveEntity: () => unwrap(api.POST("/pages", { body })),
         uploadMedia:
           items.length > 0
-            ? async (community) => {
+            ? async (page) => {
                 const uploaded = await uploadMedia({
-                  entityType: "communities",
-                  entityId: community.id,
+                  entityType: "pages",
+                  entityId: page.id,
                   items,
                 })
                 return uploaded.length
@@ -154,7 +152,7 @@ export function useCreateCommunity() {
       })
     },
     onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+      await queryClient.invalidateQueries({ queryKey: qk.pages.all() })
       if (result.successfulUploadCount > 0) {
         refreshWhenMediaLands(
           queryClient,
@@ -166,7 +164,7 @@ export function useCreateCommunity() {
   })
 }
 
-export function useUpdateCommunity() {
+export function useUpdatePage() {
   const queryClient = useQueryClient()
   const { uploadMedia } = useMediaUpload()
 
@@ -180,7 +178,7 @@ export function useUpdateCommunity() {
       slug: string
       id: number
       /** Removals from both zones ride along as `media_ids_to_delete`. */
-      body: CommunityUpdate
+      body: PageUpdate
       items: UploadItem[]
     }) => {
       return saveWithMedia({
@@ -189,7 +187,7 @@ export function useUpdateCommunity() {
         },
         saveEntity: () =>
           unwrap(
-            api.PATCH("/communities/{slug}", {
+            api.PATCH("/pages/{slug}", {
               params: { path: { slug } },
               body,
             })
@@ -198,7 +196,7 @@ export function useUpdateCommunity() {
           items.length > 0
             ? async () => {
                 const uploaded = await uploadMedia({
-                  entityType: "communities",
+                  entityType: "pages",
                   entityId: id,
                   items,
                 })
@@ -208,7 +206,7 @@ export function useUpdateCommunity() {
       })
     },
     onSuccess: async (result, { slug }) => {
-      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+      await queryClient.invalidateQueries({ queryKey: qk.pages.all() })
       if (result.successfulUploadCount > 0) {
         // The slug may have been edited in the same request, so poll the
         // entity's current address from the PATCH response, not the stale one
@@ -226,8 +224,8 @@ export function useUpdateCommunity() {
   })
 }
 
-/** One page of a community's admins. `excludeSub` drops the pinned "You" row. */
-export async function fetchCommunityAdminsPage(
+/** One page of a page's admins. `excludeSub` drops the pinned "You" row. */
+export async function fetchPageAdminsPage(
   slug: string,
   {
     page,
@@ -236,7 +234,7 @@ export async function fetchCommunityAdminsPage(
   }: { page: number; size: number; excludeSub?: string }
 ) {
   const response = await unwrap(
-    api.GET("/communities/{slug}/admins", {
+    api.GET("/pages/{slug}/admins", {
       params: {
         path: { slug },
         query: { page, size, exclude_sub: excludeSub },
@@ -250,29 +248,29 @@ export async function fetchCommunityAdminsPage(
   return { ...response, items: response.items ?? [] }
 }
 
-/** Admin only, per `CommunityPolicy` — the owner cannot delete their own club. */
-export function useDeleteCommunity() {
+/** Admin only, per `PagePolicy` — the owner cannot delete their own club. */
+export function useDeletePage() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (slug: string) =>
       unwrap(
-        api.DELETE("/communities/{slug}", {
+        api.DELETE("/pages/{slug}", {
           params: { path: { slug } },
         })
       ),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+      await queryClient.invalidateQueries({ queryKey: qk.pages.all() })
     },
   })
 }
 
-export function communityAdminLinkQueryOptions(slug: string) {
+export function pageAdminLinkQueryOptions(slug: string) {
   return queryOptions({
     queryKey: qk.adminLink.detail(slug),
     queryFn: () =>
       unwrap(
-        api.GET("/communities/{slug}/admin-link", {
+        api.GET("/pages/{slug}/admin-link", {
           params: { path: { slug } },
         })
       ),
@@ -289,7 +287,7 @@ export function useRotateAdminLink() {
   return useMutation({
     mutationFn: (slug: string): Promise<AdminLink> =>
       unwrap(
-        api.POST("/communities/{slug}/admin-link/rotate", {
+        api.POST("/pages/{slug}/admin-link/rotate", {
           params: { path: { slug } },
         })
       ),
@@ -300,79 +298,79 @@ export function useRotateAdminLink() {
 }
 
 /**
- * Hands the community to another admin. Owner or site admin only.
+ * Hands the page to another admin. Owner or site admin only.
  *
  * The backend drops the new owner's admin row but does not re-add the old one,
  * so an owner who transfers away loses access to these settings entirely. The
  * caller has to navigate out — see `admins-table.tsx`.
  */
-export function useTransferCommunityOwner() {
+export function useTransferPageOwner() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ slug, ownerSub }: { slug: string; ownerSub: string }) =>
       unwrap(
-        api.PATCH("/communities/{slug}/owner", {
+        api.PATCH("/pages/{slug}/owner", {
           params: { path: { slug } },
           body: { owner_sub: ownerSub },
         })
       ),
-    onSuccess: (community, { slug }) => {
-      queryClient.setQueryData(qk.communities.detail(slug), community)
-      void queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    onSuccess: (page, { slug }) => {
+      queryClient.setQueryData(qk.pages.detail(slug), page)
+      void queryClient.invalidateQueries({ queryKey: qk.pages.all() })
     },
   })
 }
 
 /** Removes another admin. Owner or site admin only. */
-export function useRemoveCommunityAdmin() {
+export function useRemovePageAdmin() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ slug, userSub }: { slug: string; userSub: string }) =>
       unwrap(
-        api.DELETE("/communities/{slug}/admins/{user_sub}", {
+        api.DELETE("/pages/{slug}/admins/{user_sub}", {
           params: { path: { slug, user_sub: userSub } },
         })
       ),
-    onSuccess: (community, { slug }) => {
-      queryClient.setQueryData(qk.communities.detail(slug), community)
-      void queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    onSuccess: (page, { slug }) => {
+      queryClient.setQueryData(qk.pages.detail(slug), page)
+      void queryClient.invalidateQueries({ queryKey: qk.pages.all() })
     },
   })
 }
 
-/** Leaves a community as an admin. Owners cannot leave this way. */
-export function useLeaveCommunity() {
+/** Leaves a page as an admin. Owners cannot leave this way. */
+export function useLeavePage() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (slug: string) =>
       unwrap(
-        api.DELETE("/communities/{slug}/admins/me", {
+        api.DELETE("/pages/{slug}/admins/me", {
           params: { path: { slug } },
         })
       ),
-    onSuccess: (community, slug) => {
-      queryClient.setQueryData(qk.communities.detail(slug), community)
-      void queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    onSuccess: (page, slug) => {
+      queryClient.setQueryData(qk.pages.detail(slug), page)
+      void queryClient.invalidateQueries({ queryKey: qk.pages.all() })
     },
   })
 }
 
 /** Redeems a shareable admin-access link. Idempotent. */
-export function useAcceptCommunityAdminLink() {
+export function useAcceptPageAdminLink() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (token: string): Promise<AdminLinkAcceptResult> =>
       unwrap(
-        api.POST("/communities/admin-links/accept", {
+        api.POST("/pages/admin-links/accept", {
           body: { token },
         })
       ),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+      await queryClient.invalidateQueries({ queryKey: qk.pages.all() })
     },
   })
 }
@@ -386,10 +384,10 @@ export function useAcceptCommunityAdminLink() {
  *    and a self-transfer would be a no-op, so neither button is offered;
  *  - you cannot remove or demote yourself, only leave;
  *  - `can_manage_admins` is the gate, NOT `can_change_owner` — the latter is
- *    site-admin-only (`get_community_permissions`), which would hide transfer
+ *    site-admin-only (`get_page_permissions`), which would hide transfer
  *    from the owner, who is the person who most needs it.
  */
-export function adminRowActions(
+export function adminPageActions(
   row: { isSelf: boolean; isOwner: boolean },
   canManageAdmins: boolean
 ): { canManage: boolean; canLeave: boolean } {
@@ -400,113 +398,15 @@ export function adminRowActions(
 }
 
 /**
- * Whether the signed-in user is a community admin (not the owner, not a site
- * admin) — which is what earns them a pinned "You" row with a Leave button.
- *
- * `ResourcePermissions` has no "I am an admin" flag, but the two fields
- * together are unambiguous: the owner and site admins both get
- * `can_manage_admins`, an ordinary member gets neither. Written with both
- * terms so it stays true if the route guard ever loosens.
- */
-export function isCommunityAdmin(community: Community): boolean {
-  return (
-    community.permissions.can_edit && !community.permissions.can_manage_admins
-  )
-}
-
-/**
- * URL checks for the community form.
- *
- * Ported from `frontend/src/lib/communities/url-validation.ts`,
- * which was the only tested module in the old app — its test came with it and
- * lives in this module's `tests.ts`.
- *
- * The zod schemas the original wrapped these rules in are gone; every one of
- * them ended in a `refine` that re-parsed the string with `new URL` anyway, so
- * the schema layer only obscured what was being checked.
- *
- * The interesting case, and the reason the tests exist, is that `new URL`
- * accepts far more than it looks like it does. `https://wtf://t.me/x` parses
- * happily, with `wtf:` as the *host* — so a bare protocol check would let it
- * through and someone would end up with a link that goes nowhere near Telegram.
- * Hence the "exactly one `://`" rule.
- */
-
-const TELEGRAM_HOSTS = new Set(["t.me", "telegram.me"])
-const INSTAGRAM_HOSTS = new Set(["instagram.com", "instagr.am"])
-
-/** Anything with a second `://` is not the URL it appears to be. */
-function hasSingleSchemeDelimiter(value: string): boolean {
-  const first = value.indexOf("://")
-  return first !== -1 && first === value.lastIndexOf("://")
-}
-
-/** Parses only what is genuinely an http(s) URL, and nothing else. */
-function parseHttpUrl(value: string): URL | null {
-  const trimmed = value.trim()
-  if (!hasSingleSchemeDelimiter(trimmed)) return null
-
-  let url: URL
-  try {
-    url = new URL(trimmed)
-  } catch {
-    return null
-  }
-
-  return url.protocol === "http:" || url.protocol === "https:" ? url : null
-}
-
-function hostMatches(value: string, hosts: ReadonlySet<string>): boolean {
-  const url = parseHttpUrl(value)
-  if (!url) return false
-  // Exact host match after dropping `www.`: `evil.t.me` is not `t.me`.
-  return hosts.has(url.hostname.toLowerCase().replace(/^www\./, ""))
-}
-
-/**
- * Adds a scheme to a bare domain so `t.me/nuspace` is accepted as typed.
- *
- * Only when there is no scheme at all. A value that already names one is left
- * exactly as it is, including a nonsensical one — rewriting `wtf://` to
- * `https://wtf://` would turn a typo into a plausible-looking wrong URL, and
- * the validators below are what should reject it.
- */
-export function normalizeHttpUrl(
-  value: string | undefined | null
-): string | undefined {
-  const trimmed = value?.trim()
-  if (!trimmed) return undefined
-  return /^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`
-}
-
-/** An error message, or undefined when the value is acceptable. */
-export function getHttpsUrlError(value: string): string | undefined {
-  return parseHttpUrl(value)?.protocol === "https:"
-    ? undefined
-    : "Enter an HTTPS URL"
-}
-
-export function getTelegramUrlError(value: string): string | undefined {
-  return hostMatches(value, TELEGRAM_HOSTS) ? undefined : "Enter a Telegram URL"
-}
-
-export function getInstagramUrlError(value: string): string | undefined {
-  return hostMatches(value, INSTAGRAM_HOSTS)
-    ? undefined
-    : "Enter an Instagram URL"
-}
-
-/**
  * Whether the server will accept an edit to this field, for this user.
  *
  * Read `editable_fields` and not a role check — see the equivalent on events.
  *
  * Note the server's editable_fields list also names `page_content` and
- * `owner`. `owner` has no matching field on `CommunityUpdateRequest` and is
- * changed through a dedicated endpoint, so it is not editable here. The rest
- * (`name`, `type`, `category`, `email`, `slug`) map directly onto the PATCH
- * body.
+ * `owner`. `owner` has no matching field on `PageUpdateRequest` and is changed
+ * through a dedicated endpoint, so it is not editable here. The rest (`name`,
+ * `description`, `slug`, `visibility`) map directly onto the PATCH body.
  */
-export function canEditField(community: Community, field: string): boolean {
-  return community.permissions.editable_fields.includes(field)
+export function canEditField(page: Page, field: string): boolean {
+  return page.permissions.editable_fields.includes(field)
 }

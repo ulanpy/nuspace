@@ -1,6 +1,11 @@
 import { createUsePuck, FieldLabel } from "@puckeditor/core"
-import { requestUploadUrls, uploadToSignedUrl } from "@/lib/media"
-import { validateImage, ACCEPTED_IMAGE_TYPES } from "@/lib/media"
+import {
+  requestUploadUrls,
+  uploadToSignedUrl,
+  validateImage,
+  ACCEPTED_IMAGE_TYPES,
+  MAX_PAGE_IMAGES,
+} from "@/lib/media"
 import { useResolvedFileUrl } from "@/components/shared/page-editor/hooks/use-resolved-file-url"
 import { useUploadContext } from "@/components/shared/page-editor/context"
 
@@ -88,8 +93,6 @@ export function ImageField({
     </FieldLabel>
   )
 }
-
-const MAX_PAGE_IMAGES = 20
 
 const usePuck = createUsePuck()
 

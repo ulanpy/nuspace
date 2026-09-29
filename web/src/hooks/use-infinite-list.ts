@@ -3,7 +3,7 @@ import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query"
 
 /**
  * The pagination envelope every list endpoint returns — ListEventResponse,
- * ListCommunity and the rest are all this shape.
+ * ListPage and the rest are all this shape.
  *
  * `items` is optional because the backend gives it a default, so it can be
  * absent rather than an empty array.

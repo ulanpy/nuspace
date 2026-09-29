@@ -57,9 +57,6 @@ export function usePermissions() {
     isSgMember,
     isSgLead: role === "boss",
     hasTelegramLinked: session?.tg_id != null,
-    /** True when the user heads this community, or is an admin. */
-    canManageCommunity: (communityId: number) =>
-      isAdmin || (user?.communities.includes(communityId) ?? false),
     /**
      * Authoring the opportunities digest. Mirrors
      * `backend/modules/opportunities/policy.py` exactly: the allowlist is not

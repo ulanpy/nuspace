@@ -134,7 +134,7 @@ export interface paths {
         patch: operations["update_user_scope_users__sub__scope_patch"];
         trace?: never;
     };
-    "/u/{slug}": {
+    "/pages": {
         parameters: {
             query?: never;
             header?: never;
@@ -142,89 +142,27 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get User Page
-         * @description A public profile page. Guests included; 404 on a private or banned one.
+         * Get Pages
+         * @description Retrieves a paginated list of pages the caller is allowed to see.
          */
-        get: operations["get_user_page_u__slug__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Users
-         * @description The directory of published profile pages. There is no way to widen the
-         *     visibility filter — `is_page_public` and `scope` are a hard WHERE.
-         */
-        get: operations["get_users_users_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update My Profile
-         * @description Edit the signed-in user's own profile page. There is no target sub: the
-         *     only account this can touch is the one in the session.
-         */
-        patch: operations["update_my_profile_users_me_patch"];
-        trace?: never;
-    };
-    "/communities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Communities
-         * @description Retrieves a paginated list of communities with flexible filtering.
-         */
-        get: operations["get_communities_communities_get"];
+        get: operations["get_pages_pages_get"];
         put?: never;
         /**
-         * Add Community
-         * @description Create a new community. Any registered user can create communities.
+         * Add Page
+         * @description Create a new page. Any registered user can create pages.
          *
          *     **Access Policy:**
-         *     - Any registered user can create communities
-         *     - Users can only create communities for themselves (owner must be "me" or their own sub)
+         *     - Any registered user can create pages
+         *     - Users can only create pages for themselves (owner must be "me" or their own sub)
          */
-        post: operations["add_community_communities_post"];
+        post: operations["add_page_pages_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/communities/{slug}": {
+    "/pages/{slug}": {
         parameters: {
             query?: never;
             header?: never;
@@ -232,27 +170,27 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Community
-         * @description Retrieves a specific community by slug.
+         * Get Page
+         * @description Retrieves a specific page by slug.
          */
-        get: operations["get_community_communities__slug__get"];
+        get: operations["get_page_pages__slug__get"];
         put?: never;
         post?: never;
         /**
-         * Delete Community
-         * @description Deletes a community. Admin only.
+         * Delete Page
+         * @description Deletes a page. Owner or site admin only.
          */
-        delete: operations["delete_community_communities__slug__delete"];
+        delete: operations["delete_page_pages__slug__delete"];
         options?: never;
         head?: never;
         /**
-         * Update Community
-         * @description Updates fields of an existing community. Head or admin only.
+         * Update Page
+         * @description Updates fields of an existing page. Owner, page admin or site admin only.
          */
-        patch: operations["update_community_communities__slug__patch"];
+        patch: operations["update_page_pages__slug__patch"];
         trace?: never;
     };
-    "/communities/{slug}/owner": {
+    "/pages/{slug}/owner": {
         parameters: {
             query?: never;
             header?: never;
@@ -266,33 +204,13 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Reassign Community Owner
-         * @description Reassign community owner. Admin only.
+         * Reassign Page Owner
+         * @description Reassign page owner. The previous owner becomes an admin. Site admin or owner only.
          */
-        patch: operations["reassign_community_owner_communities__slug__owner_patch"];
+        patch: operations["reassign_page_owner_pages__slug__owner_patch"];
         trace?: never;
     };
-    "/communities/{slug}/verified": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Toggle Community Verified
-         * @description Toggle community verified status. Admin only.
-         */
-        patch: operations["toggle_community_verified_communities__slug__verified_patch"];
-        trace?: never;
-    };
-    "/communities/{slug}/admin-link": {
+    "/pages/{slug}/admin-link": {
         parameters: {
             query?: never;
             header?: never;
@@ -300,10 +218,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Community Admin Link
-         * @description Get a shareable admin access link for the community. Owner or admin only.
+         * Get Page Admin Link
+         * @description Get a shareable admin access link for the page. Owner or page admin only.
          */
-        get: operations["get_community_admin_link_communities__slug__admin_link_get"];
+        get: operations["get_page_admin_link_pages__slug__admin_link_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -312,7 +230,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/communities/{slug}/admin-link/rotate": {
+    "/pages/{slug}/admin-link/rotate": {
         parameters: {
             query?: never;
             header?: never;
@@ -322,17 +240,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rotate Community Admin Link
-         * @description Rotate the admin access link, invalidating the previous one. Owner or admin only.
+         * Rotate Page Admin Link
+         * @description Rotate the admin access link, invalidating the previous one. Owner or page admin only.
          */
-        post: operations["rotate_community_admin_link_communities__slug__admin_link_rotate_post"];
+        post: operations["rotate_page_admin_link_pages__slug__admin_link_rotate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/communities/{slug}/admins": {
+    "/pages/{slug}/admins": {
         parameters: {
             query?: never;
             header?: never;
@@ -340,13 +258,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Community Admins
-         * @description Retrieves a paginated list of a community's admins. Any signed-in user may read.
+         * Get Page Admins
+         * @description Retrieves a paginated list of a page's admins. Owner, page admin or site admin only.
          *
          *     `exclude_sub` drops one user from the rows *and* the count, so a caller
          *     rendering that user in a separate pinned row keeps correct page boundaries.
          */
-        get: operations["get_community_admins_communities__slug__admins_get"];
+        get: operations["get_page_admins_pages__slug__admins_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -355,7 +273,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/communities/{slug}/admins/me": {
+    "/pages/{slug}/admins/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -366,16 +284,16 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Leave Community Admin
-         * @description Leave a community as an admin. Owner cannot leave this way.
+         * Leave Page Admin
+         * @description Leave a page as an admin. Owner cannot leave this way.
          */
-        delete: operations["leave_community_admin_communities__slug__admins_me_delete"];
+        delete: operations["leave_page_admin_pages__slug__admins_me_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/communities/{slug}/admins/{user_sub}": {
+    "/pages/{slug}/admins/{user_sub}": {
         parameters: {
             query?: never;
             header?: never;
@@ -386,16 +304,16 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Remove Community Admin
-         * @description Remove an admin from a community. Site-admin or owner only.
+         * Remove Page Admin
+         * @description Remove an admin from a page. Site admin or owner only.
          */
-        delete: operations["remove_community_admin_communities__slug__admins__user_sub__delete"];
+        delete: operations["remove_page_admin_pages__slug__admins__user_sub__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/communities/admin-links/accept": {
+    "/pages/admin-links/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -405,10 +323,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Accept Community Admin Link
+         * Accept Page Admin Link
          * @description Redeem an admin access link. Idempotent; no-op if already admin or owner.
          */
-        post: operations["accept_community_admin_link_communities_admin_links_accept_post"];
+        post: operations["accept_page_admin_link_pages_admin_links_accept_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -619,26 +537,6 @@ export interface paths {
         put?: never;
         /** Accept Event Access Invite */
         post: operations["accept_event_access_invite_events_access_invites_accept_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/test_endpoint": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Profile
-         * @description Test endpoint for load testing & benchmarking. Does nothing, returns nothing
-         */
-        get: operations["get_profile_test_endpoint_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2047,170 +1945,6 @@ export interface components {
             /** Count */
             count: number;
         };
-        /**
-         * CommunityCategory
-         * @enum {string}
-         */
-        CommunityCategory: "academic" | "professional" | "recreational" | "cultural" | "sports" | "social" | "art";
-        /** CommunityCreateRequest */
-        CommunityCreateRequest: {
-            /**
-             * Name
-             * @description The name of the community
-             * @example NU Fencing Club
-             */
-            name: string;
-            /**
-             * @description The type of the community
-             * @example club
-             */
-            type: components["schemas"]["CommunityType"];
-            /**
-             * @description The category of the community
-             * @example academic
-             */
-            category: components["schemas"]["CommunityCategory"];
-            /**
-             * Email
-             * @description The email of the community
-             * @example nufencingclub@gmail.com
-             */
-            email?: string | null;
-            /**
-             * Slug
-             * @description URL-friendly unique identifier
-             * @example nu-fencing-club
-             */
-            slug: string;
-            /**
-             * Page Content
-             * @description Free-form page content of the community
-             * @example {}
-             */
-            page_content?: {
-                [key: string]: unknown;
-            };
-            /**
-             * Owner
-             * @description The owner of the community (user_sub)
-             */
-            owner: string;
-        };
-        /** CommunityOwnerUpdateRequest */
-        CommunityOwnerUpdateRequest: {
-            /**
-             * Owner Sub
-             * @description Sub of the new owner user
-             */
-            owner_sub: string;
-        };
-        /** CommunityResponse */
-        CommunityResponse: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            type: components["schemas"]["CommunityType"];
-            category: components["schemas"]["CommunityCategory"];
-            /** Email */
-            email?: string | null;
-            /** Verified */
-            verified: boolean;
-            /** Slug */
-            slug: string;
-            /** Page Content */
-            page_content: {
-                [key: string]: unknown;
-            };
-            /** Owner */
-            owner: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            owner_user: components["schemas"]["ShortUserResponse"];
-            /**
-             * Media
-             * @default []
-             */
-            media: components["schemas"]["MediaResponse"][];
-            /**
-             * @default {
-             *       "can_edit": false,
-             *       "can_delete": false,
-             *       "can_view_attendees": false,
-             *       "can_share_access": false,
-             *       "can_change_owner": false,
-             *       "can_toggle_verified": false,
-             *       "can_manage_admins": false,
-             *       "can_view_admin_link": false,
-             *       "editable_fields": []
-             *     }
-             */
-            permissions: components["schemas"]["ResourcePermissions"];
-        };
-        /**
-         * CommunityType
-         * @enum {string}
-         */
-        CommunityType: "club" | "university" | "organization";
-        /** CommunityUpdateRequest */
-        CommunityUpdateRequest: {
-            /**
-             * Name
-             * @description The name of the community
-             * @example NU Fencing Club
-             */
-            name?: string | null;
-            /**
-             * @description The type of the community
-             * @example club
-             */
-            type?: components["schemas"]["CommunityType"] | null;
-            /**
-             * @description The category of the community
-             * @example academic
-             */
-            category?: components["schemas"]["CommunityCategory"] | null;
-            /**
-             * Email
-             * @description The email of the community
-             * @example nufencingclub@gmail.com
-             */
-            email?: string | null;
-            /**
-             * Slug
-             * @description URL-friendly unique identifier
-             * @example nu-fencing-club
-             */
-            slug?: string | null;
-            /**
-             * Page Content
-             * @description Free-form page content of the community
-             */
-            page_content?: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * Media Ids To Delete
-             * @description IDs of media attachments to delete as part of this update
-             */
-            media_ids_to_delete?: number[] | null;
-        };
-        /** CommunityVerifiedUpdateRequest */
-        CommunityVerifiedUpdateRequest: {
-            /**
-             * Verified
-             * @description New verified status
-             */
-            verified: boolean;
-        };
         /** CourseItemCreate */
         CourseItemCreate: {
             /**
@@ -2309,7 +2043,7 @@ export interface components {
          *     Alembic cannot auto-detect enum value changes, so manual migration is required!
          * @enum {string}
          */
-        EntityType: "community_events" | "communities" | "grade_reports" | "courses" | "tickets" | "messages" | "users";
+        EntityType: "community_events" | "pages" | "grade_reports" | "courses" | "tickets" | "messages" | "users";
         /** EventAccessInviteAcceptRequest */
         EventAccessInviteAcceptRequest: {
             /** Token */
@@ -2627,42 +2361,6 @@ export interface components {
              */
             total_pages: number;
         };
-        /** ListCommunity */
-        ListCommunity: {
-            /** Items */
-            items?: components["schemas"]["CommunityResponse"][];
-            /**
-             * Total Pages
-             * @default 1
-             */
-            total_pages: number;
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Size */
-            size: number;
-            /** Has Next */
-            has_next: boolean;
-        };
-        /** ListCommunityAdmins */
-        ListCommunityAdmins: {
-            /** Items */
-            items?: components["schemas"]["AdminResponse"][];
-            /**
-             * Total Pages
-             * @default 1
-             */
-            total_pages: number;
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Size */
-            size: number;
-            /** Has Next */
-            has_next: boolean;
-        };
         /** ListEventAccessInvitesResponse */
         ListEventAccessInvitesResponse: {
             /** Items */
@@ -2721,6 +2419,42 @@ export interface components {
         ListGradeTermsResponse: {
             /** Terms */
             terms?: string[];
+        };
+        /** ListPage */
+        ListPage: {
+            /** Items */
+            items?: components["schemas"]["PageResponse"][];
+            /**
+             * Total Pages
+             * @default 1
+             */
+            total_pages: number;
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Has Next */
+            has_next: boolean;
+        };
+        /** ListPageAdmins */
+        ListPageAdmins: {
+            /** Items */
+            items?: components["schemas"]["AdminResponse"][];
+            /**
+             * Total Pages
+             * @default 1
+             */
+            total_pages: number;
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Has Next */
+            has_next: boolean;
         };
         /** ListTemplateDTO */
         ListTemplateDTO: {
@@ -2952,6 +2686,142 @@ export interface components {
             /** By Category */
             by_category?: components["schemas"]["CategoryStat"][];
         };
+        /** PageCreateRequest */
+        PageCreateRequest: {
+            /**
+             * Name
+             * @description The name of the page
+             * @example NU Fencing Club
+             */
+            name: string;
+            /**
+             * Description
+             * @description A short summary of what the page is for
+             * @example Weekly beginner-friendly fencing sessions.
+             */
+            description?: string | null;
+            /**
+             * Slug
+             * @description URL-friendly unique identifier
+             * @example nu-fencing-club
+             */
+            slug: string;
+            /**
+             * Page Content
+             * @description Free-form page content
+             * @example {}
+             */
+            page_content?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Who may see this page
+             * @default public
+             * @example public
+             */
+            visibility: components["schemas"]["PageVisibility"];
+            /**
+             * Owner
+             * @description The owner of the page (user_sub, or 'me')
+             * @default me
+             */
+            owner: string;
+        };
+        /** PageOwnerUpdateRequest */
+        PageOwnerUpdateRequest: {
+            /**
+             * Owner Sub
+             * @description Sub of the new owner user
+             */
+            owner_sub: string;
+        };
+        /** PageResponse */
+        PageResponse: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            visibility: components["schemas"]["PageVisibility"];
+            /** Slug */
+            slug: string;
+            /** Page Content */
+            page_content: {
+                [key: string]: unknown;
+            };
+            /** Owner */
+            owner?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            owner_user?: components["schemas"]["ShortUserResponse"] | null;
+            /**
+             * Media
+             * @default []
+             */
+            media: components["schemas"]["MediaResponse"][];
+            /**
+             * @default {
+             *       "can_edit": false,
+             *       "can_delete": false,
+             *       "can_view_attendees": false,
+             *       "can_share_access": false,
+             *       "can_change_owner": false,
+             *       "can_manage_admins": false,
+             *       "can_view_admin_link": false,
+             *       "editable_fields": []
+             *     }
+             */
+            permissions: components["schemas"]["ResourcePermissions"];
+        };
+        /** PageUpdateRequest */
+        PageUpdateRequest: {
+            /**
+             * Name
+             * @description The name of the page
+             * @example NU Fencing Club
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description A short summary of what the page is for
+             */
+            description?: string | null;
+            /**
+             * Slug
+             * @description URL-friendly unique identifier
+             * @example nu-fencing-club
+             */
+            slug?: string | null;
+            /**
+             * Page Content
+             * @description Free-form page content
+             */
+            page_content?: {
+                [key: string]: unknown;
+            } | null;
+            /** @description Who may see this page */
+            visibility?: components["schemas"]["PageVisibility"] | null;
+            /**
+             * Media Ids To Delete
+             * @description IDs of media attachments to delete as part of this update
+             */
+            media_ids_to_delete?: number[] | null;
+        };
+        /**
+         * PageVisibility
+         * @description Who may see a page. Anything not visible to the viewer 404s, not 403s.
+         * @enum {string}
+         */
+        PageVisibility: "private" | "internal" | "public";
         /** PlannerAutoBuildResponse */
         PlannerAutoBuildResponse: {
             /** Scheduled */
@@ -3258,11 +3128,6 @@ export interface components {
              */
             can_change_owner: boolean;
             /**
-             * Can Toggle Verified
-             * @default false
-             */
-            can_toggle_verified: boolean;
-            /**
              * Can Manage Admins
              * @default false
              */
@@ -3449,104 +3314,6 @@ export interface components {
             /** Mm */
             mm: number;
         };
-        /**
-         * UserCategory
-         * @description Which side of the university a person is on.
-         *
-         *     Not a permission axis, which is what `UserRole` is: this is what the
-         *     directory badges people by, and what a card is filtered by. Someone on the
-         *     student government is a `capo` by role and a `student` by category, and both
-         *     facts are wanted at once.
-         * @enum {string}
-         */
-        UserCategory: "student" | "faculty" | "staff";
-        /**
-         * UserCommunityResponse
-         * @description A community this person heads, with the position they hold in it.
-         *
-         *     `position` is derived server-side rather than left to the client to
-         *     compare slugs: the owner of a community is not in `community_admins`, and a
-         *     badge that has to be computed in the browser is a badge that can be wrong.
-         */
-        UserCommunityResponse: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /** Slug */
-            slug: string;
-            /**
-             * Position
-             * @enum {string}
-             */
-            position: "owner" | "admin";
-            /**
-             * Media
-             * @default []
-             */
-            media: components["schemas"]["MediaResponse"][];
-        };
-        /** UserPageList */
-        UserPageList: {
-            /** Items */
-            items?: components["schemas"]["UserSummaryResponse"][];
-            /**
-             * Total Pages
-             * @default 1
-             */
-            total_pages: number;
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Size */
-            size: number;
-            /** Has Next */
-            has_next: boolean;
-        };
-        /** UserPageResponse */
-        UserPageResponse: {
-            /** Sub */
-            sub: string;
-            /** Name */
-            name: string;
-            /** Surname */
-            surname: string;
-            /** Slug */
-            slug: string;
-            /** Picture */
-            picture?: string | null;
-            /** @default student */
-            category: components["schemas"]["UserCategory"];
-            /** Page Content */
-            page_content?: {
-                [key: string]: unknown;
-            };
-            /**
-             * Communities
-             * @default []
-             */
-            communities: components["schemas"]["UserCommunityResponse"][];
-            /**
-             * Media
-             * @default []
-             */
-            media: components["schemas"]["MediaResponse"][];
-        };
-        /** UserPageUpdateRequest */
-        UserPageUpdateRequest: {
-            /** Slug */
-            slug?: string | null;
-            category?: components["schemas"]["UserCategory"] | null;
-            /** Page Content */
-            page_content?: {
-                [key: string]: unknown;
-            } | null;
-            /** Is Page Public */
-            is_page_public?: boolean | null;
-            /** Media Ids To Delete */
-            media_ids_to_delete?: number[];
-        };
         /** UserScheduleItem */
         UserScheduleItem: {
             /** Label */
@@ -3578,34 +3345,6 @@ export interface components {
         UserScopeUpdateRequest: {
             /** @description New scope: 'allowed' or 'banned' */
             scope: components["schemas"]["UserScope"];
-        };
-        /**
-         * UserSummaryResponse
-         * @description One row of the public profile directory. Carries no page content.
-         */
-        UserSummaryResponse: {
-            /** Sub */
-            sub: string;
-            /** Name */
-            name: string;
-            /** Surname */
-            surname: string;
-            /** Slug */
-            slug: string;
-            /** Picture */
-            picture?: string | null;
-            /** @default student */
-            category: components["schemas"]["UserCategory"];
-            /**
-             * Has Design
-             * @default false
-             */
-            has_design: boolean;
-            /**
-             * Media
-             * @default []
-             */
-            media: components["schemas"]["MediaResponse"][];
         };
         /** ValidationError */
         ValidationError: {
@@ -3867,128 +3606,16 @@ export interface operations {
             };
         };
     };
-    get_user_page_u__slug__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_users_users_get: {
+    get_pages_pages_get: {
         parameters: {
             query?: {
                 size?: number;
                 page?: number;
-                /** @description Search keyword for name or surname */
-                keyword?: string | null;
-                /** @description Category of people to list */
-                category?: components["schemas"]["UserCategory"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPageList"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_my_profile_users_me_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserPageUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_communities_communities_get: {
-        parameters: {
-            query?: {
-                size?: number;
-                page?: number;
-                community_type?: components["schemas"]["CommunityType"] | null;
-                community_category?: components["schemas"]["CommunityCategory"] | null;
                 /** @description if 'me' then current user's sub will be used */
                 owner_sub?: string | null;
-                /** @description Search keyword for community name */
+                /** @description 'owned' for pages you own, 'admin' for pages where you are an admin. Both are relative to the caller and cannot be widened by the client. */
+                role?: ("owned" | "admin") | null;
+                /** @description Search keyword for page name */
                 keyword?: string | null;
             };
             header?: never;
@@ -4007,7 +3634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListCommunity"];
+                    "application/json": components["schemas"]["ListPage"];
                 };
             };
             /** @description Validation Error */
@@ -4021,7 +3648,7 @@ export interface operations {
             };
         };
     };
-    add_community_communities_post: {
+    add_page_pages_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4034,7 +3661,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CommunityCreateRequest"];
+                "application/json": components["schemas"]["PageCreateRequest"];
             };
         };
         responses: {
@@ -4044,7 +3671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommunityResponse"];
+                    "application/json": components["schemas"]["PageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4058,7 +3685,7 @@ export interface operations {
             };
         };
     };
-    get_community_communities__slug__get: {
+    get_page_pages__slug__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4079,7 +3706,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommunityResponse"];
+                    "application/json": components["schemas"]["PageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4093,7 +3720,7 @@ export interface operations {
             };
         };
     };
-    delete_community_communities__slug__delete: {
+    delete_page_pages__slug__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -4126,7 +3753,7 @@ export interface operations {
             };
         };
     };
-    update_community_communities__slug__patch: {
+    update_page_pages__slug__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -4141,7 +3768,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CommunityUpdateRequest"];
+                "application/json": components["schemas"]["PageUpdateRequest"];
             };
         };
         responses: {
@@ -4151,7 +3778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommunityResponse"];
+                    "application/json": components["schemas"]["PageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4165,7 +3792,7 @@ export interface operations {
             };
         };
     };
-    reassign_community_owner_communities__slug__owner_patch: {
+    reassign_page_owner_pages__slug__owner_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -4180,7 +3807,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CommunityOwnerUpdateRequest"];
+                "application/json": components["schemas"]["PageOwnerUpdateRequest"];
             };
         };
         responses: {
@@ -4190,7 +3817,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommunityResponse"];
+                    "application/json": components["schemas"]["PageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4204,46 +3831,7 @@ export interface operations {
             };
         };
     };
-    toggle_community_verified_communities__slug__verified_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CommunityVerifiedUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CommunityResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_community_admin_link_communities__slug__admin_link_get: {
+    get_page_admin_link_pages__slug__admin_link_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4278,7 +3866,7 @@ export interface operations {
             };
         };
     };
-    rotate_community_admin_link_communities__slug__admin_link_rotate_post: {
+    rotate_page_admin_link_pages__slug__admin_link_rotate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4313,7 +3901,7 @@ export interface operations {
             };
         };
     };
-    get_community_admins_communities__slug__admins_get: {
+    get_page_admins_pages__slug__admins_get: {
         parameters: {
             query?: {
                 size?: number;
@@ -4338,7 +3926,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListCommunityAdmins"];
+                    "application/json": components["schemas"]["ListPageAdmins"];
                 };
             };
             /** @description Validation Error */
@@ -4352,7 +3940,7 @@ export interface operations {
             };
         };
     };
-    leave_community_admin_communities__slug__admins_me_delete: {
+    leave_page_admin_pages__slug__admins_me_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -4373,7 +3961,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommunityResponse"];
+                    "application/json": components["schemas"]["PageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4387,7 +3975,7 @@ export interface operations {
             };
         };
     };
-    remove_community_admin_communities__slug__admins__user_sub__delete: {
+    remove_page_admin_pages__slug__admins__user_sub__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -4409,7 +3997,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommunityResponse"];
+                    "application/json": components["schemas"]["PageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4423,7 +4011,7 @@ export interface operations {
             };
         };
     };
-    accept_community_admin_link_communities_admin_links_accept_post: {
+    accept_page_admin_link_pages_admin_links_accept_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4933,26 +4521,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_test_endpoint_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
         };

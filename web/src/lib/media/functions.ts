@@ -104,7 +104,7 @@ export async function uploadToSignedUrl(
  * query rather than returning everything:
  *
  *   events      → `carousel` only  (events/repository.list_media)
- *   communities → `profile` and `banner`
+ *   pages → `profile` and `banner`
  *
  * So asking an entity for a format it never carries renders nothing, with no
  * error anywhere — the generated types can't catch it, since `media_format` is

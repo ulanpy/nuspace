@@ -19,3 +19,12 @@ export const ACCEPTED_IMAGE_TYPES = [
  * costing a student their mobile data.
  */
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+
+/**
+ * Content images on one page. Mirrors
+ * `backend/modules/pages/constants.py`, which returns 400 past the cap.
+ *
+ * The editor counts photo blocks against this, so the limit is the same number
+ * the user is told about and the one the server enforces.
+ */
+export const MAX_PAGE_IMAGES = 20

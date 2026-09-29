@@ -12,8 +12,6 @@ export const qk = {
 
   users: {
     all: () => ["users"] as const,
-    list: (filters: Record<string, unknown>) =>
-      ["users", "list", filters] as const,
     detail: (slug: string) => ["users", "detail", slug] as const,
   },
 
@@ -24,29 +22,30 @@ export const qk = {
     detail: (id: number) => ["events", "detail", id] as const,
   },
 
-  communities: {
-    all: () => ["communities"] as const,
+  pages: {
+    all: () => ["pages"] as const,
     list: (filters: Record<string, unknown>) =>
-      ["communities", "list", filters] as const,
-    detail: (slug: string) => ["communities", "detail", slug] as const,
-    mine: () => ["communities", "mine"] as const,
+      ["pages", "list", filters] as const,
+    detail: (slug: string) => ["pages", "detail", slug] as const,
+    mine: (role?: "owned" | "admin", page?: number) =>
+      ["pages", "mine", role ?? null, page ?? null] as const,
     /**
      * The page number is part of the key, not a filter inside it, so that
-     * `invalidateQueries({ queryKey: qk.communities.all() })` after a removal
+     * `invalidateQueries({ queryKey: qk.pages.all() })` after a removal
      * refreshes every page the user could be looking at — and a single page
      * can be prefetched or refetched on its own.
      *
      * `excludeSub` changes which rows come back, so it belongs here too.
      */
     admins: (slug: string, page: number, excludeSub?: string) =>
-      ["communities", "admins", slug, page, excludeSub ?? null] as const,
+      ["pages", "admins", slug, page, excludeSub ?? null] as const,
   },
 
   /**
-   * The shareable admin-access link is a secret artifact, not community data —
-   * and the backend issues a fresh token on every GET. Kept OUT of the
-   * `communities` prefix so list/detail invalidations can never silently
-   * rotate the link the user is currently looking at.
+   * The shareable admin-access link is a secret artifact, not page data — and
+   * the backend issues a fresh token on every GET. Kept OUT of the `pages`
+   * prefix so list/detail invalidations can never silently rotate the link the
+   * user is currently looking at.
    */
   adminLink: {
     detail: (slug: string) => ["admin-link", slug] as const,

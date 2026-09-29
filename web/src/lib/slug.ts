@@ -3,11 +3,12 @@ import { z } from "zod"
 /**
  * Slug rules, mirroring `backend/modules/shared/slug.py`.
  *
- * The handle is the only unique, user-writable column on both communities and
- * users, so the two forms validating it identically is not a nicety — it is what
- * keeps the client from accepting a handle the server will reject with a 422.
- * `RESERVED_SLUGS` here must stay the same set as the backend's, including `"u"`
- * from phase 0, which reserves the `/u/{slug}` prefix.
+ * The handle is the only unique, user-writable column on `Page`, so the forms
+ * validating it identically is not a nicety — it is what keeps the client from
+ * accepting a handle the server will reject with a 422. `RESERVED_SLUGS` here
+ * must stay the same set as the backend's: `"p"` reserves the `/p/{slug}`
+ * prefix, and `"communities"` and `"u"` are gone because neither route exists
+ * any more.
  */
 export const RESERVED_SLUGS: readonly string[] = [
   "edit",
@@ -19,7 +20,7 @@ export const RESERVED_SLUGS: readonly string[] = [
   "about",
   "terms-of-service",
   "privacy-policy",
-  "communities",
+  "pages",
   "users",
   "events",
   "courses",
@@ -28,7 +29,7 @@ export const RESERVED_SLUGS: readonly string[] = [
   "opportunities",
   "profile",
   "sgotinish",
-  "u",
+  "p",
 ]
 
 /** Lowercase letters, digits and single hyphens — the server's `SLUG_RE`. */

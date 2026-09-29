@@ -2,8 +2,12 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import { currentUserSchema } from "./constants.ts"
-import { currentBrowserPath, loginHref, requestLogout } from "./functions.ts"
-import type { Media } from "@/lib/media"
+import {
+  currentBrowserPath,
+  loginHref,
+  requestLogout,
+  slugFromName,
+} from "./functions.ts"
 
 /**
  * `/me` is one opaque dict in the OpenAPI schema, so its profile fields are
@@ -11,25 +15,72 @@ import type { Media } from "@/lib/media"
  * session, not one tab.
  */
 describe("session profile payload", () => {
-  it("fills in the profile page and keeps media usable by the pickers", () => {
+  it("parses the identity fields and ignores the ones the backend dropped", () => {
+    // The user page is gone, so a stale cookie still carrying `slug` and
+    // `page_content` must not fail the parse — zod strips unknown keys.
     const parsed = currentUserSchema.parse({
       sub: "user-1",
       email: "ada@example.com",
       given_name: "Ada",
       family_name: "Lovelace",
       name: "Ada Lovelace",
-      id: 7,
+      picture: "",
+      role: "default",
+      department_id: null,
       slug: "ada-lovelace",
+      page_content: {},
+      media: [],
     })
 
-    // The annotation is the check: the hand-written zod mirror of MediaResponse
-    // has to stay assignable to the generated type, or `entity_type` and
-    // `media_format` have drifted from `lib/media/types.ts`.
-    const media: Media[] = parsed.media
-    assert.deepEqual(media, [])
-    assert.equal(parsed.slug, "ada-lovelace")
-    assert.equal(parsed.is_page_public, false)
-    assert.deepEqual(parsed.page_content, {})
+    assert.equal(parsed.sub, "user-1")
+    assert.equal(parsed.picture, undefined)
+    assert.equal(parsed.department_id, null)
+    assert.equal("slug" in parsed, false)
+  })
+})
+
+describe("slugFromName", () => {
+  // Every expected value here was read off the backend's `base_slug`, not
+  // reasoned about: a suggestion the server then rejects is worse than none.
+  const cases: [string, string][] = [
+    ["Robotics Club", "robotics-club"],
+    ["  NU  Fencing  ", "nu-fencing"],
+    // A non-ASCII name loses the accented character and the space collapses
+    // into a single hyphen — not one hyphen per character.
+    ["Café Society", "caf-society"],
+    // `[a-z0-9]+` collapses a run, so `---` is one separator, not three.
+    ["Hello---World", "hello-world"],
+    ["A  B", "a-b"],
+    // Truncated at 50, and the cut lands mid-word.
+    [
+      "My Very Long Page Name That Exceeds Fifty Characters Easily",
+      "my-very-long-page-name-that-exceeds-fifty-characte",
+    ],
+  ]
+
+  for (const [name, expected] of cases) {
+    it(`slugifies ${JSON.stringify(name)}`, () => {
+      assert.equal(slugFromName(name), expected)
+    })
+  }
+
+  it("pads a too-short slug with -page", () => {
+    // The backend's length floor. `ab` is 2, which SLUG_RE would accept but
+    // validate_slug rejects, so the autofill has to pad or the server 422s.
+    assert.equal(slugFromName("a"), "a-page")
+    assert.equal(slugFromName("ab"), "ab-page")
+    assert.equal(slugFromName("N"), "n-page")
+    assert.equal(slugFromName("abc"), "abc")
+  })
+
+  it("returns -page for a name that slugifies to nothing", () => {
+    // The quirk worth pinning: an empty result plus "-page" still starts with
+    // a hyphen, and the backend does NOT strip it. The migration reproduces
+    // this, so a "fixed" version here would disagree with both.
+    assert.equal(slugFromName("🎉"), "-page")
+    assert.equal(slugFromName("---"), "-page")
+    assert.equal(slugFromName(""), "-page")
+    assert.equal(slugFromName("   "), "-page")
   })
 })
 

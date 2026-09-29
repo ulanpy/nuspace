@@ -123,12 +123,12 @@ The only thing this work does for it: `POST /pages` accepts `page_content` and
       `docker compose -f infra/prod.docker-compose.yml exec -T postgres pg_dump -U "$DB_USER" -d "$DB_NAME" | gzip > /tmp/nuspace-baseline.sql.gz`
 - [x] Count the rows you are about to migrate and write them down. They are the thing you will be asked about:
       `sql
-  SELECT count(*) AS communities, count(DISTINCT owner) AS owners FROM communities;
-  SELECT count(*) AS community_admins FROM community_admins;
-  SELECT count(*) AS media FROM media WHERE entity_type = 'communities';
-  SELECT count(*) AS user_pages FROM users WHERE page_content <> '{}'::jsonb;
-  SELECT count(*) AS orphan_media FROM media WHERE entity_type = 'users';
-  `
+SELECT count(*) AS communities, count(DISTINCT owner) AS owners FROM communities;
+SELECT count(*) AS community_admins FROM community_admins;
+SELECT count(*) AS media FROM media WHERE entity_type = 'communities';
+SELECT count(*) AS user_pages FROM users WHERE page_content <> '{}'::jsonb;
+SELECT count(*) AS orphan_media FROM media WHERE entity_type = 'users';
+`
 - [x] Note any community whose name will not slugify cleanly (non-latin names, emoji, punctuation-only). These need the `page-{id}` fallback in the migration.
 
 ### Phase 0 findings — read these before Phase 2
@@ -267,9 +267,9 @@ two same-shaped files arbitrarily. The file _contents_ at each path are correct
 - [x] `create_page`: make `owner` optional, defaulting to `"me"`. `page_content` is already accepted at create, so an agent can produce a finished page in one call. Do not build anything else for automation.
 - [x] `authorize_media_upload(page_id, user, count)`: after the existing `can_edit` check, cap content images at `MAX_PAGE_IMAGES`:
       `sql
-  SELECT count(*) FROM media
-   WHERE entity_type='pages' AND entity_id=:id AND media_format='carousel'
-  `
+SELECT count(*) FROM media
+ WHERE entity_type='pages' AND entity_id=:id AND media_format='carousel'
+`
       `existing + count > 20` ⇒ **400**, matching the sibling `MAX_UPLOAD_URLS` limit in the same endpoint. Add a `ponytail:` comment naming the ceiling: the count is read before GCS's Pub/Sub hook creates the row, so two concurrent uploads can overshoot by one.
 - [x] `google_bucket/interfaces.py`: `MediaUploadAuthorizer.authorize_media_upload` gains `count: int`.
 - [x] `google_bucket/api.py:58-64`: replace the `upload_targets` set with a `Counter` of `(entity_type, entity_id)` and pass the per-target count. The authorizer is called once per _target_, not per file, so without this the batch size is invisible to the cap.
@@ -297,10 +297,10 @@ two same-shaped files arbitrarily. The file _contents_ at each path are correct
 - [x] Verify the copy against the Phase 0 counts: `SELECT count(*) FROM pages` equals the old `communities` count; every page has a non-null, unique, reserved-word-free slug; every old media row now has `entity_type='pages'`.
 - [x] Verify no page image was orphaned:
       `sql
-  SELECT p.id FROM pages p
-  LEFT JOIN media m ON m.entity_id = p.id AND m.entity_type='pages'
-  WHERE m.id IS NULL;
-  `
+SELECT p.id FROM pages p
+LEFT JOIN media m ON m.entity_id = p.id AND m.entity_type='pages'
+WHERE m.id IS NULL;
+`
       A non-empty result is a bug in the copy, not a page that legitimately has no images. Cross-check against the pre-migration count.
 
 ### Backend tests
@@ -398,17 +398,89 @@ restored from `/tmp/nuspace-baseline.sql.gz`.
 `pnpm typecheck` **will be red** at the end of this phase. Routes still reference
 the old keys. That is expected; Phase 4 fixes it. Do not paper over it.
 
-- [ ] `lib/communities/` → `lib/pages/` (5 files). Delete `COMMUNITY_TYPES`, `COMMUNITY_CATEGORIES`, `COMMUNITY_CREATE_ONLY`, the telegram/instagram URL validators (`email` is gone), `isCommunityAdmin`. Keep `adminRowActions` → `adminPageActions`, `canEditField`, the `saveWithMedia` wiring, and the filter type (now `keyword`/`owner_sub`/`role`).
-- [ ] `lib/pages/constants.ts`: add `MAX_PAGES_PER_OWNER = 100`.
-- [ ] `lib/media/constants.ts`: add `MAX_PAGE_IMAGES = 20`.
-- [ ] `components/shared/page-editor/blocks/_shared/index.tsx:92` — delete the local `MAX_PAGE_IMAGES` and import it from `@/lib/pages`. There must be one copy in the web app.
-- [ ] `lib/user/`: delete `fetchUsersPage`, `fetchUserPage`, `userPageQueryOptions`, `UserSummary`, `UserCategory`, `toUserUploadItems`. Strip `media`, `slug`, `communities`, `category`, `is_page_public` and `page_content` from the hand-written `/me` zod parse in `constants.ts`.
-- [ ] `lib/user/functions.ts`: add a pure `slugFromName(name)` mirroring the backend's `base_slug`, plus cases in `lib/user/tests.ts`. This drives the create-form autofill.
-- [ ] `lib/slug.ts`: add `p`; remove `communities` and `u`. Update the docstring — it says the handle is "the only unique, user-writable column on both communities and users", which is no longer true of users.
-- [ ] `lib/media/{types,functions}.ts`: entityType union → `"pages"`. Keep `community_events` (that is events' misnomer and is out of scope). Update the `campuscurrent/events/…` path in the `selectMedia` docstring.
-- [ ] `hooks/use-session.ts`: delete the dead `canManageCommunity` and the `communities` array it consumed.
-- [ ] `api/query-keys.ts`: `qk.communities` → `qk.pages`, with a `mine(role, page)` key that includes both the role and the page. Delete `qk.users.list`.
-- [ ] `pnpm api:generate`, commit the regenerated `web/src/api/schema.d.ts`.
+- [x] `lib/communities/` → `lib/pages/` (5 files). Delete `COMMUNITY_TYPES`, `COMMUNITY_CATEGORIES`, `COMMUNITY_CREATE_ONLY`, the telegram/instagram URL validators (`email` is gone), `isCommunityAdmin`. Keep `adminRowActions` → `adminPageActions`, `canEditField`, the `saveWithMedia` wiring, and the filter type (now `keyword`/`owner_sub`/`role`).
+- [x] `lib/pages/constants.ts`: add `MAX_PAGES_PER_OWNER = 100`.
+- [x] `lib/media/constants.ts`: add `MAX_PAGE_IMAGES = 20`.
+- [x] `components/shared/page-editor/blocks/_shared/index.tsx:92` — delete the local `MAX_PAGE_IMAGES` and import it from `@/lib/pages`. There must be one copy in the web app.
+- [x] `lib/user/`: delete `fetchUsersPage`, `fetchUserPage`, `userPageQueryOptions`, `UserSummary`, `UserCategory`, `toUserUploadItems`. Strip `media`, `slug`, `communities`, `category`, `is_page_public` and `page_content` from the hand-written `/me` zod parse in `constants.ts`.
+- [x] `lib/user/functions.ts`: add a pure `slugFromName(name)` mirroring the backend's `base_slug`, plus cases in `lib/user/tests.ts`. This drives the create-form autofill.
+- [x] `lib/slug.ts`: add `p`; remove `communities` and `u`. Update the docstring — it says the handle is "the only unique, user-writable column on both communities and users", which is no longer true of users.
+- [x] `lib/media/{types,functions}.ts`: entityType union → `"pages"`. Keep `community_events` (that is events' misnomer and is out of scope). Update the `campuscurrent/events/…` path in the `selectMedia` docstring.
+- [x] `hooks/use-session.ts`: delete the dead `canManageCommunity` and the `communities` array it consumed.
+- [x] `api/query-keys.ts`: `qk.communities` → `qk.pages`, with a `mine(role, page)` key that includes both the role and the page. Delete `qk.users.list`.
+- [x] `pnpm api:generate`, commit the regenerated `web/src/api/schema.d.ts`.
+
+### Phase 3 — what reality added
+
+Three things the plan did not anticipate, all consequences of deleting the
+user-page feature rather than separate decisions.
+
+1. **The `/me` zod parse had more to lose than the plan listed.** The plan
+   enumerates `media`, `slug`, `communities`, `category`, `is_page_public` and
+   `page_content`. Stripping them takes `id` with them — it was the surrogate
+   `users.id` that media uploads were addressed by, and `b3` drops the column —
+   and it takes the whole hand-written `mediaSchema` and its `ENTITY_TYPES` /
+   `MEDIA_FORMATS` mirrors with it, since `media` was the only field using
+   them. `USER_CATEGORIES` and `userCategorySchema` go too: nothing in the
+   parse referenced them, and their only consumers were the `u/` and
+   `mynuspace` files Phase 4 deletes. What is left of `constants.ts` is 12
+   lines of identity fields.
+
+2. **`lib/user/functions.ts` lost more than the plan listed, in the same way.**
+   `toUserUploadItems` and `fetchUsersPage` are named, but
+   `fetchUserPage`, `userPageQueryOptions` and the private
+   `refreshWhenMediaLands` are all reachable only from them, and `useUpdateMe`
+   is dead with them — it PATCHes `/users/me`, an endpoint this branch
+   deleted. That took `useMutation`, `useQueryClient`, `useMediaUpload` and
+   the whole `lib/media` import with it. The file is 135 lines now and holds
+   only session and login transitions.
+
+3. **`MAX_PAGE_IMAGES` had to go to `@/lib/media`, not `@/lib/pages`.** The
+   plan says import it from `@/lib/pages`, but the editor block that needs it
+   (`page-editor/blocks/_shared/index.tsx`) already imports from `@/lib/media`
+   for `validateImage` and `ACCEPTED_IMAGE_TYPES`, and the file's own
+   constant sat next to those. The constant therefore went into
+   `lib/media/constants.ts` alongside `MAX_UPLOAD_BATCH` and
+   `MAX_IMAGE_BYTES` — one copy in the app, as required, and in the module
+   the consumer was already reading from. `MAX_PAGES_PER_OWNER` went to
+   `lib/pages/constants.ts` as planned, since only pages code needs it.
+
+4. **`COMMUNITY_CREATE_ONLY` was deleted, not renamed.** The plan lists it
+   among the things to drop and I had kept it as `PAGE_CREATE_ONLY`, which was
+   the wrong call: `git grep COMMUNITY_CREATE_ONLY` at `HEAD` finds only the
+   definition and the plan line itself, so it was already dead before this
+   phase. `git grep` for the rename then confirmed nothing picked it up in the
+   interim. `lib/pages/constants.ts` is one constant now. Anything that needs
+   it back can write the three lines.
+
+**`slugFromName` was verified against the backend, not reasoned about.** All
+18 cases were run through the real `base_slug` in the container and compared
+to the TypeScript. Two quirks had to be reproduced exactly, and both are
+asserted in `lib/user/tests.ts`:
+
+- a name that slugifies to nothing yields `"-page"` — the empty result plus
+  `"-page"` still starts with a hyphen and the backend does **not** strip it.
+  The Phase 0 note already recorded this on the migration; a "fixed" JS
+  version would disagree with both;
+- the 50-character cut happens **before** the length floor, so a long name is
+  truncated mid-word (`…fifty-characte`) rather than padded.
+
+`RESERVED_SLUGS` was compared the same way: 19 slugs, set-equal with the
+backend's.
+
+### Gate at the end of Phase 3
+
+`pnpm test` **83 passed** (was 82; the eleven `slugFromName` cases in, the
+~60 URL-validation cases out). `pnpm format` ✓.
+
+`pnpm typecheck` is **red with 120 errors**, as the phase header predicted.
+**Zero** of them are in `src/lib/`, `src/api/` or `src/hooks/` — the surface
+this phase owns. All 120 are in `routes/communities/**`, `routes/u/**`,
+`mynuspace`, `page-editor` and `app-sidebar`, every one of which Phase 4
+deletes or rewrites. `pnpm lint` is red for the same reason and the same
+reason only: the 9-error pre-existing baseline is intact and unchanged, with
+the 120 type-aware errors layered on the same Phase 4 files. Phase 4 is what
+turns both green.
 
 ---
 
@@ -421,11 +493,11 @@ the old keys. That is expected; Phase 4 fixes it. Do not paper over it.
 - [ ] Add `src/routes/_app/p/$slug/settings/{route,index,general,admin-controls}` — the two-tab layout (`General`, `Admin controls`) is unchanged from communities.
 - [ ] Add `src/routes/_app/account/index.tsx`:
       `ts
-  validateSearch: z.object({
-    page: z.coerce.number().int().min(1).default(1),
-    role: z.enum(["owned", "admin"]).optional(),
-  })
-  `
+validateSearch: z.object({
+page: z.coerce.number().int().min(1).default(1),
+role: z.enum(["owned", "admin"]).optional(),
+})
+`
       Read with `Route.useSearch()`. Change pages with
       `useNavigate({ from: Route.fullPath, search: prev => ({ ...prev, page: n }) })`
       — the **functional updater** form. `search: { page: n }` would clobber the `role` filter.
@@ -482,11 +554,11 @@ once. Plan a maintenance window. Do not pretend otherwise in the release notes.
 - [ ] Confirm on staging that no `communities` index lingers in Meilisearch. `bootstrap/meilisearch.py:46-52` deletes **every** existing index and re-syncs from the DB on boot, so the new `pages` index is built fresh and the old one is dropped. Search is briefly empty while that runs — it self-heals, do not chase it.
 - [ ] **Take a fresh verified backup on prod.** This is the only rollback that exists.
       `sh
-  docker exec backup /bin/bash /scripts/pg-dump-backup.sh
-  docker exec backup /bin/bash /scripts/walg-backup-push.sh
-  docker logs backup --tail 50          # expect "pg_dump backup uploaded to gs://..."
-  gcloud storage ls gs://nuspace-backups-prod/pg-dump/postgres/<DB_NAME>/
-  `
+docker exec backup /bin/bash /scripts/pg-dump-backup.sh
+docker exec backup /bin/bash /scripts/walg-backup-push.sh
+docker logs backup --tail 50          # expect "pg_dump backup uploaded to gs://..."
+gcloud storage ls gs://nuspace-backups-prod/pg-dump/postgres/<DB_NAME>/
+`
       Do not proceed until you see a **new** object with a current timestamp.
 - [ ] Confirm you know how to restore it. The procedure is in `infra/backup/README.md` (Вариант A — pg_dump). Read it now, not during the incident. **Test the restore on staging first.**
 - [ ] Note the media reality: GCS media is **not** in the pg_dump. If you must roll back, the `Media` rows come back from the dump but the image files were never at risk — they live in the `nuspace-media` bucket. Orphaned rows are recoverable; orphaned files are not the risk here.
@@ -537,12 +609,12 @@ Explicitly out of scope. The user will handle these after the prod push.
 
 Append one line per ticked box. Newest at the bottom.
 
-| Date       | Phase | What                     | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ---------- | ----- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| —          | —     | Plan written             | `web/PROGRESS.md` created. No code changed yet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| 2026-09-29 | 0     | Pre-flight               | Stack already up. `pnpm build` ✓, 82 web tests, 181 backend tests, `black` ✓. Baselines: ruff **11** (as documented), web lint **8** pre-existing. Dump → `/tmp/nuspace-baseline.sql.gz`. Counts: 1 community, 0 community_admins, 2 admin links, 0 community media, 3 user pages, 3 orphan `users` media. Two plan corrections recorded above: the head id `e5f6a7b8c9d0` is already taken by `users_category`, and the `page-{id}` fallback keys on an _invalid_ slug (`base_slug('🎉') == '-page'`), not an empty one.                                                                                                                                                                                                                                                                                                                                               |
-| 2026-09-29 | 1     | Dissolve `campuscurrent` | `campuscurrent/` gone. `base.py` → `shared/base_policy.py` (dropped `communities` + `_is_community_owner`, no callers), `communities/` → `pages/`, `events/` → `events/`, models split 5/13, search indexes split, `CAMPUSCURRENT_MEILI_INDEXES` → `PAGES_`+`EVENTS_`, `test_endpoint` dropped, `CampusCurrentMediaUploadAuthorizer` → `BucketMediaUploadAuthorizer`. DB-neutral: single head still `e5f6a7b8c9d0`, `alembic_version` unchanged, no migration written. Gate green — ruff 11 (same findings, 4 just moved to `modules/events/`), black ✓, 181 backend tests, 82 web tests, typecheck/build/format ✓, web lint 8 = baseline. Live: 76 OpenAPI paths, 10 still `/communities…`. Six `events/*.py` files needed the _events_ barrel, not the pages one — see the Phase 1 note. Plan's import list was 16 files; it was 17 (`auth/repository.py:8` missing). |
-| 2026-09-29 | 2     | Backend `pages/` entity | `Community` → `Page` across model/api/service/repository/schemas/policy/utils/og/search_indexes; `type`/`category`/`email`/`verified` dropped, `description`+`visibility` added; hidden pages 404; `list_admins` off `READ` onto the `can_edit` gate; user-page service, `GET /users`, `/u/$slug`, the `communities` claim and `UserRole.community_admin` all deleted; 100-page and 20-image caps; `EventCollaborator.community_id` dropped. Three migrations `f1e2d3c4b5a6` → `a2f3e4d5c6b7` → `b3a4c5d6e7f8`, head now `b3a4c5d6e7f8`; round-trip ✓ against the Phase 0 dump on a scratch DB. Four reality corrections recorded above: `transaction_per_migration=True` is required on top of the enum split; the dev DB self-migrates via `bootstrap/db.py`; `alembic check` needs two declarations added to `models/page.py`; and a private-page admin got a 404 on detail because both read paths skipped `is_page_admin`. Gate green — 195 backend tests (was 181), black ✓, ruff 11 = baseline, 82 web tests, build ✓, web lint 9 = baseline. `schema.d.ts` regeneration deferred to Phase 3 so the gate stays green. |
+| Date       | Phase | What                     | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------- | ----- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| —          | —     | Plan written             | `web/PROGRESS.md` created. No code changed yet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 2026-09-29 | 0     | Pre-flight               | Stack already up. `pnpm build` ✓, 82 web tests, 181 backend tests, `black` ✓. Baselines: ruff **11** (as documented), web lint **8** pre-existing. Dump → `/tmp/nuspace-baseline.sql.gz`. Counts: 1 community, 0 community_admins, 2 admin links, 0 community media, 3 user pages, 3 orphan `users` media. Two plan corrections recorded above: the head id `e5f6a7b8c9d0` is already taken by `users_category`, and the `page-{id}` fallback keys on an _invalid_ slug (`base_slug('🎉') == '-page'`), not an empty one.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 2026-09-29 | 1     | Dissolve `campuscurrent` | `campuscurrent/` gone. `base.py` → `shared/base_policy.py` (dropped `communities` + `_is_community_owner`, no callers), `communities/` → `pages/`, `events/` → `events/`, models split 5/13, search indexes split, `CAMPUSCURRENT_MEILI_INDEXES` → `PAGES_`+`EVENTS_`, `test_endpoint` dropped, `CampusCurrentMediaUploadAuthorizer` → `BucketMediaUploadAuthorizer`. DB-neutral: single head still `e5f6a7b8c9d0`, `alembic_version` unchanged, no migration written. Gate green — ruff 11 (same findings, 4 just moved to `modules/events/`), black ✓, 181 backend tests, 82 web tests, typecheck/build/format ✓, web lint 8 = baseline. Live: 76 OpenAPI paths, 10 still `/communities…`. Six `events/*.py` files needed the _events_ barrel, not the pages one — see the Phase 1 note. Plan's import list was 16 files; it was 17 (`auth/repository.py:8` missing).                                                                                                                                                                                                                                                      |
+| 2026-09-29 | 2     | Backend `pages/` entity  | `Community` → `Page` across model/api/service/repository/schemas/policy/utils/og/search_indexes; `type`/`category`/`email`/`verified` dropped, `description`+`visibility` added; hidden pages 404; `list_admins` off `READ` onto the `can_edit` gate; user-page service, `GET /users`, `/u/$slug`, the `communities` claim and `UserRole.community_admin` all deleted; 100-page and 20-image caps; `EventCollaborator.community_id` dropped. Three migrations `f1e2d3c4b5a6` → `a2f3e4d5c6b7` → `b3a4c5d6e7f8`, head now `b3a4c5d6e7f8`; round-trip ✓ against the Phase 0 dump on a scratch DB. Four reality corrections recorded above: `transaction_per_migration=True` is required on top of the enum split; the dev DB self-migrates via `bootstrap/db.py`; `alembic check` needs two declarations added to `models/page.py`; and a private-page admin got a 404 on detail because both read paths skipped `is_page_admin`. Gate green — 195 backend tests (was 181), black ✓, ruff 11 = baseline, 82 web tests, build ✓, web lint 9 = baseline. `schema.d.ts` regeneration deferred to Phase 3 so the gate stays green. |
 
 ## Open questions
 
