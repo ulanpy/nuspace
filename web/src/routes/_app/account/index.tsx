@@ -50,11 +50,11 @@ function AccountRoute() {
   const navigate = Route.useNavigate()
 
   const onSearchChange = useCallback(
-    (updater: (previous: AccountSearch) => AccountSearch, replace = false) => {
-      void navigate({
-        search: updater,
-        replace,
-      })
+    (updater: (previous: AccountSearch) => AccountSearch) => {
+      // Pushed, not replaced: a filter or a page is a history entry, so Back
+      // walks the reader out of the table the way it walked them in. The
+      // `replace` parameter this used to take was never passed by any caller.
+      void navigate({ search: updater })
     },
     [navigate]
   )

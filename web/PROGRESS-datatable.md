@@ -811,18 +811,56 @@ next to a desktop with no icon.
       `admin-controls/index.tsx:9-15`.
 - [x] 7.2 `web/src/routes/_app/p/$slug/settings/admin-controls/index.tsx` —
       add `size`, `sort`, `order`. Keep its existing `.catch(1)`.
-- [ ] 7.3 The course-templates route — add `size`. It is the third hardcoded
+- [x] 7.3 The course-templates route — add `size`. It is the third hardcoded
       `PAGE_SIZE` at
       `components/routes/courses/components/course-template-tools.tsx:25`.
-- [ ] 7.4 `size`, `role`, `visibility`, `sort` and `order` must each reset `page`
+- [x] 7.4 `size`, `role`, `visibility`, `sort` and `order` must each reset `page`
       to 1. Landing on page 7 of a 2-page result is the classic symptom of
       missing this.
 - [x] 7.5 `visibility: z.array(z.enum([...])).optional()` — this exact shape
       already exists at `routes/_app/opportunities/index.tsx:13-16` (paired with
       four `MultiFilter`s at `:487-523`) and `routes/_app/courses/audit/index.tsx:17-18`.
       Follow it; do not invent a URL encoding.
-- [ ] 7.6 The two `onSearchChange` signatures diverge today — account takes
+- [x] 7.6 The two `onSearchChange` signatures diverge today — account takes
       `(updater, replace?)`, admin-controls does not. Make them match.
+
+### Phase 7 — what reality added
+
+**7.3 names a route that does not exist.** There is no course-templates route:
+`course-template-tools.tsx` is a dialog inside `course-card.tsx`, and
+`course-card.tsx` is rendered by both `/courses` and `/courses/schedule`. A
+`size` param on either of those routes would be one page-size control fighting
+the other for a single URL key, describing a dialog the reader has not opened
+yet — and the two course lists would reset each other's page size. So the size
+is local state, and what 7.3 is actually after — the third hardcoded `PAGE_SIZE`
+literal (9.1) — is gone: the value is `DEFAULT_PAGE_SIZE` and the choices are
+`PAGE_SIZES`, the same list the other two tables validate against.
+
+**The hand-rolled Previous/Next went with it.** Twenty-two lines of
+`disabled={page === 1}` / `setPage(value => value + 1)` became the shared
+`TablePagination`, which also brought the page-size control 7.3 wanted. The
+range summary is `null` and the box says so: `ListTemplateDTO` carries
+`total_pages` and nothing else, so there is no total and no count to describe.
+`hasNext` is therefore `page < total_pages` — the same thing the old
+`disabled={page >= data.total_pages}` said, expressed as data instead of as a
+disabled attribute.
+
+**7.4's reset had three call sites before it had one rule.** Account's role
+filter, visibility filter, sort and page size each reset `page`; admin-controls'
+sort and page size each reset `page`. That is six chances to forget one, and
+forgetting it is invisible in review — the symptom is landing on page 7 of a
+2-page result. Each table now has a single `changeSearch` that sets
+`page: patch.page ?? 1`, so a real page click keeps its number and everything
+else resets, and the courses dialog resets in the one place it has a page
+change to go wrong.
+
+**7.6 was fixed by deleting a parameter, not by adding one.** The two
+signatures differed by an optional `replace`, and no caller anywhere passed it —
+it was declared in three places (the route, `account/index.tsx`, `my-pages.tsx`)
+and used in none. Adding it to admin-controls would have made two signatures
+agree on a knob nobody turns. The account route pushes rather than replaces, and
+now says why: a filter or a page is a history entry, so Back walks the reader
+out of the table the way it walked them in.
 
 ---
 
@@ -983,6 +1021,7 @@ Append one line per ticked box. Newest at the bottom.
 
 | 2026-09-30 | 5     | My Pages table         | `my-pages.tsx` is now a `DataTable`: `logo | name (link) | slug | role | visibility | actions`. The `Item render={<Link>}` whole-row-link hack is gone — the name is a link **in the cell**, which is what lets the row also host an actions cell. `slug` and `role` are plain text and unsortable; `name` and `visibility` carry chevrons, because the backend whitelist is name / visibility / created_at and a chevron on a column that cannot sort is a lie. 5.7's two gates kept separate: Settings on `canEditField(page, "name")`, Delete on `permissions.can_delete`, the latter behind a `ConfirmDialog`. No bulk path, per the decisions table. Empty state branches on whether a filter is active, with no second unfiltered request. **The role filter is a `FilterTabs`, not a second `MultiFilter`** — the backend's `role` is a single enum, so multi-select cannot be expressed, and `FilterTabs`' All chip is the omitted param. Both filter constants therefore lost their "all" entry (see 5.8's note). **7.1 is ticked here**: the filters write `?role=`/`?visibility=`, which the route's `validateSearch` would otherwise reject, so the account schema grew `size`/`role`/`visibility`/`sort`/`order` plus `page`'s `.catch(1)`. **The chevrons were dead on arrival** and no box mentions it: `state: { sorting }` is controlled, so `getToggleSortingHandler()` had nowhere to write and silently did nothing. `onSortingChange` is now an explicit option on `useDataTable` and the reason is in its docstring. `PAGE_SORTS` + `isPageSort` replace an `as PageSort` cast that both tripped the linter and would have written any string into the URL; the list now backs the route's `z.enum`, the guard, and the backend whitelist. 5.10's label-set requirement holds by construction — the visibility filter's labels are `PAGE_VISIBILITIES.map(o => o.title)`, so 8.5's copy change moves the filter with it. **4 new tests, 91 total.** Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files; backend ruff 11 = baseline, black ✓. |
 | 2026-09-30 | 6     | Admins table          | `admins-table.tsx` is now a `DataTable`: `checkbox | avatar | name (sortable) | role | actions`. **"You" and the owner became rows** with a `pinned` flag rather than two `Item` elements above the table, which is what 6.1 asks for and what makes the footer's `pinned` count `rows.length - items.length` instead of the hand-summed `(me ? 1 : 0) + 1` that had to be kept in step with two separate `if`s by hand. The flag is read three times — the count, `enableRowSelection`, and the per-row `adminPageActions` — so the three cannot disagree. **`pinnedSelf` is gone** (6.8): it inferred "I am a plain page admin" from `can_edit && !can_manage_admins`, which cannot actually tell a page admin from a site admin because both get `can_manage_admins`. The session's own `role` can, and `usePermissions()` already exposes it, so `me` is unconditional and `isSiteAdmin` decides the "You" row. A wrong answer was a Leave button on a membership the user does not have, not a duplicate row. `isCurrentUserOwner` now reads the FK through `pageOwnership` (6.9) — the old `page.owner_user?.sub === me.sub` compares two optional strings and answers "yes" when both are missing. **6.6's responsive pairs are one `ResponsiveAction` component, not the four buttons they were** — the two widths cannot drift apart that way. **6.2's "Make owner" is absent for a multi-row selection** rather than disabled, since ownership is one row's worth of authority; bulk Remove is N single-sub requests, so the dialog reports partial success via a toast instead of hanging on one failure. `enableRowSelection` had to go on `useDataTable`, not the column: in v8 `row.getCanSelect()` and the header's select-all both read a table option. `QueryBoundary` now guards only the error case — wrapping the table would hide the pinned rows, toolbar and footer for the whole first load, which is the one thing the old code kept them outside the boundary for. 7.2 shipped with 6.10 (the sort had nowhere to live otherwise), and `sortingToSearch` now takes its whitelist as an argument so the pages and admins tables share one mapper with no cast. **92 tests** (one new, pinning that the admins guard rejects a page-only column). Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files; backend ruff 11 = baseline, black ✓. |
+| 2026-09-30 | 7     | Route search schemas   | 7.1, 7.2, 7.5 shipped inside Phases 5 and 6 because a filter or a sort that writes `?role=`/`?sort=` has nothing to live in if the route's `validateSearch` rejects it. **7.3 names a route that does not exist** — `course-template-tools.tsx` is a dialog inside `course-card.tsx`, which both `/courses` and `/courses/schedule` render, so a `size` param on either would be one control fighting the other for a single key over a dialog nobody has opened. The size is local state; what 7.3 wanted (the third hardcoded `PAGE_SIZE`, also 9.1) is gone in favour of `DEFAULT_PAGE_SIZE` and `PAGE_SIZES`. Its 22-line hand-rolled Previous/Next became the shared `TablePagination` in the same pass, which is where the page-size control came from; `summary` is `null` because `ListTemplateDTO` carries `total_pages` and no total to count, and the box says so. **7.4: six call sites had to remember to reset `page` and forgetting it is invisible in review** — each table now has one `changeSearch` doing `page: patch.page ?? 1`, so a real page click keeps its number and everything else resets. **7.6 was fixed by deleting a parameter, not adding one**: the signatures differed by an optional `replace` that no caller anywhere passed (declared in three places, used in none), so both are now `(updater) => void` and the account route documents why it pushes rather than replaces — a filter or a page is a history entry. 92 tests. Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files. |
 
 ## Open questions
 

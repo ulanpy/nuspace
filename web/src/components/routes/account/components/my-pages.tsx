@@ -58,10 +58,7 @@ export function MyPages({
   onPageCreated,
 }: {
   search: AccountSearch
-  onSearchChange: (
-    updater: (previous: AccountSearch) => AccountSearch,
-    replace?: boolean
-  ) => void
+  onSearchChange: (updater: (previous: AccountSearch) => AccountSearch) => void
   onPageCreated: (slug: string) => void
 }) {
   const me = useCurrentUser()

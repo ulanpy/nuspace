@@ -33,10 +33,7 @@ export function Page({
   onSearchChange,
 }: {
   search: AccountSearch
-  onSearchChange: (
-    updater: (previous: AccountSearch) => AccountSearch,
-    replace?: boolean
-  ) => void
+  onSearchChange: (updater: (previous: AccountSearch) => AccountSearch) => void
 }) {
   const me = useCurrentUser()
   const session = useSession()
