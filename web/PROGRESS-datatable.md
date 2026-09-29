@@ -1022,12 +1022,12 @@ the person, so "Account" is not an `h1` and an `h2` 30px apart.
 
 ## Phase 9 — Dead code
 
-- [ ] 9.1 Remove the three hardcoded `PAGE_SIZE` literals — now covered by
+- [x] 9.1 Remove the three hardcoded `PAGE_SIZE` literals — now covered by
       `PAGE_SIZES` / `DEFAULT_PAGE_SIZE`: `my-pages.tsx:31`,
       `admins-table.tsx:37`,
       `components/routes/courses/components/course-template-tools.tsx:25`.
-- [ ] 9.2 Remove the stale comments and duplicates listed in 8.9–8.12.
-- [ ] 9.3 **Do not delete anything from `web/src/components/ui/`.** 39 primitives
+- [x] 9.2 Remove the stale comments and duplicates listed in 8.9–8.12.
+- [x] 9.3 **Do not delete anything from `web/src/components/ui/`.** 39 primitives
       have no importer — `sidebar.tsx` (the app hand-rolls its own rail in
       `app-sidebar.tsx`), `toast.tsx` (the app uses `sonner` directly),
       `alert-dialog.tsx` (every confirm goes through `shared/confirm-dialog.tsx`),
@@ -1036,7 +1036,7 @@ the person, so "Account" is not an `h1` and an `h2` 30px apart.
       arrived via `shadcn init`, and `table.tsx` is arriving from the same
       registry in Phase 3. Deleting them would leave the next `shadcn add`
       unable to resolve a dependency. This was explicitly ruled in.
-- [ ] 9.4 Do not remove `useDeletePage` — it is still live through the Danger
+- [x] 9.4 Do not remove `useDeletePage` — it is still live through the Danger
       zone at `general/index.tsx:158`.
 
 ---
@@ -1045,21 +1045,21 @@ the person, so "Account" is not an `h1` and an `h2` 30px apart.
 
 Last, so the document describes the code that landed. Seven edits:
 
-- [ ] 10.1 `shared/table/` and `shared/data-table/` are missing from the shared
+- [x] 10.1 `shared/table/` and `shared/data-table/` are missing from the shared
       -domains list (`:81-89`).
-- [ ] 10.2 Note that `useDataTable` lives in `src/hooks/`, not beside the
+- [x] 10.2 Note that `useDataTable` lives in `src/hooks/`, not beside the
       component — `CONVENTIONS.md:179-183` puts shared _stateful_ behavior in
       `hooks/`, and putting it in `components/shared/` would have looked right
       and been wrong.
-- [ ] 10.3 Move `/account` and `/settings/admin-controls` to `wide` in the
+- [x] 10.3 Move `/account` and `/settings/admin-controls` to `wide` in the
       assignment table (`:138-145`). Six columns do not fit in `prose`.
-- [ ] 10.4 A new rule: a page hosting a datatable is `wide`.
-- [ ] 10.5 Styling: `overflow-x-auto` must be paired with `overflow-y-hidden` or
+- [x] 10.4 A new rule: a page hosting a datatable is `wide`.
+- [x] 10.5 Styling: `overflow-x-auto` must be paired with `overflow-y-hidden` or
       `overflow-y-clip`. This is 8.8 generalised from one bug to a rule.
-- [ ] 10.6 Pagination `size` comes from the route's `validateSearch`, and the
+- [x] 10.6 Pagination `size` comes from the route's `validateSearch`, and the
       allowed values from that module's `constants.ts` — no `PAGE_SIZE` literals
       in components.
-- [ ] 10.7 The page-layout section documents the header as "the title, spanning
+- [x] 10.7 The page-layout section documents the header as "the title, spanning
       the box" (`:113-115`). Add a line for the `media` prop and the
       avatar-in-header pattern.
 
@@ -1085,6 +1085,8 @@ Append one line per ticked box. Newest at the bottom.
 | 2026-09-30 | 6     | Admins table          | `admins-table.tsx` is now a `DataTable`: `checkbox | avatar | name (sortable) | role | actions`. **"You" and the owner became rows** with a `pinned` flag rather than two `Item` elements above the table, which is what 6.1 asks for and what makes the footer's `pinned` count `rows.length - items.length` instead of the hand-summed `(me ? 1 : 0) + 1` that had to be kept in step with two separate `if`s by hand. The flag is read three times — the count, `enableRowSelection`, and the per-row `adminPageActions` — so the three cannot disagree. **`pinnedSelf` is gone** (6.8): it inferred "I am a plain page admin" from `can_edit && !can_manage_admins`, which cannot actually tell a page admin from a site admin because both get `can_manage_admins`. The session's own `role` can, and `usePermissions()` already exposes it, so `me` is unconditional and `isSiteAdmin` decides the "You" row. A wrong answer was a Leave button on a membership the user does not have, not a duplicate row. `isCurrentUserOwner` now reads the FK through `pageOwnership` (6.9) — the old `page.owner_user?.sub === me.sub` compares two optional strings and answers "yes" when both are missing. **6.6's responsive pairs are one `ResponsiveAction` component, not the four buttons they were** — the two widths cannot drift apart that way. **6.2's "Make owner" is absent for a multi-row selection** rather than disabled, since ownership is one row's worth of authority; bulk Remove is N single-sub requests, so the dialog reports partial success via a toast instead of hanging on one failure. `enableRowSelection` had to go on `useDataTable`, not the column: in v8 `row.getCanSelect()` and the header's select-all both read a table option. `QueryBoundary` now guards only the error case — wrapping the table would hide the pinned rows, toolbar and footer for the whole first load, which is the one thing the old code kept them outside the boundary for. 7.2 shipped with 6.10 (the sort had nowhere to live otherwise), and `sortingToSearch` now takes its whitelist as an argument so the pages and admins tables share one mapper with no cast. **92 tests** (one new, pinning that the admins guard rejects a page-only column). Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files; backend ruff 11 = baseline, black ✓. |
 | 2026-09-30 | 7     | Route search schemas   | 7.1, 7.2, 7.5 shipped inside Phases 5 and 6 because a filter or a sort that writes `?role=`/`?sort=` has nothing to live in if the route's `validateSearch` rejects it. **7.3 names a route that does not exist** — `course-template-tools.tsx` is a dialog inside `course-card.tsx`, which both `/courses` and `/courses/schedule` render, so a `size` param on either would be one control fighting the other for a single key over a dialog nobody has opened. The size is local state; what 7.3 wanted (the third hardcoded `PAGE_SIZE`, also 9.1) is gone in favour of `DEFAULT_PAGE_SIZE` and `PAGE_SIZES`. Its 22-line hand-rolled Previous/Next became the shared `TablePagination` in the same pass, which is where the page-size control came from; `summary` is `null` because `ListTemplateDTO` carries `total_pages` and no total to count, and the box says so. **7.4: six call sites had to remember to reset `page` and forgetting it is invisible in review** — each table now has one `changeSearch` doing `page: patch.page ?? 1`, so a real page click keeps its number and everything else resets. **7.6 was fixed by deleting a parameter, not adding one**: the signatures differed by an optional `replace` that no caller anywhere passed (declared in three places, used in none), so both are now `(updater) => void` and the account route documents why it pushes rather than replaces — a filter or a page is a history entry. 92 tests. Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files. |
 | 2026-09-30 | 8     | The small fixes       | **8.4's suggested fix would have rebuilt the second label set Phases 4 and 5 just deleted** — the box's literal `items={{ public: \"Public\", ... }}` sits next to `SelectItem`s rendering `option.title` from `PAGE_VISIBILITIES`, which is the same two-sources bug one level down, agreeing today and drifting on the first edit to `constants.ts`. `items` is derived instead, and `capitalize` is gone rather than kept as a third rendering of one value. 5.10's \"one label set\" now covers the trigger, the dropdown, the table badge, the filter chips and the settings row. **8.7's warning moved rather than disappeared**: the section description being dropped is the only sentence deciding whether this link gets pasted into a public channel, so it is now the `Item`'s `ItemDescription` — a better home, since a section header scrolls out of view and the row does not. The comment that argued for the old shape went as instructed, but its observation was right and the fix was in the wrong place. Its un-cleared `setTimeout` is now a ref cleared on unmount (no new shared hook for one call site). **8.1 was a sizing bug, not a styling one**: a `size-12` image inside `ItemMedia`'s hardcoded `size-10 overflow-hidden rounded-sm` was larger than its clipper, so `rounded-full` was cropped away and no class on the image could have fixed it. `Avatar` is round and self-sizing, so the new `media` prop takes the caller's node and neither element needs a size override. **8.3's `prose` would have broken the table above it** — a six-column table in a centred `max-w-3xl` scrolls sideways, so `/account` is `wide`, which is the rule 10.3 asks `CONVENTIONS.md` to record. **8.8 is CSS and the diagnosis is the point**: `overflow-x: auto` forces `overflow-y: visible` to compute to `auto`, so `TabsTrigger`'s 5px `after` bar is real vertical overflow; the fix is `overflow-y-hidden` on the two `Tabs` roots, not in vendor `ui/tabs.tsx` whose other call sites get it free. The horizontal scrollbar legitimately stays. **8.12 needed no cast** — zod 4 takes `PAGE_VISIBILITY_VALUES` directly, as the account route's `z.array(z.enum(...))` has since Phase 5, so values now live in exactly two places as the box predicted. **8.11 was a delete**: the hook's `TelegramBindChallenge` had zero readers. 8.6/8.9/8.10 as written. 92 tests. Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline, 0 findings in touched files. |
+| 2026-09-30 | 9     | Dead code             | Nothing to delete, which is the finding. 9.1's three `PAGE_SIZE` literals were already gone — `my-pages.tsx` and `admins-table.tsx` read `size` from their route's `validateSearch` (Phases 5 and 6) and `course-template-tools.tsx` took `DEFAULT_PAGE_SIZE` in Phase 7, so `rg 'PAGE_SIZE\s*=\s*[0-9]'` over `src/` returns nothing. 9.2's stale comments and the duplicated `TelegramBindChallenge` went in Phase 8. 9.3 and 9.4 are guardrails rather than tasks, so they were verified instead of ticked on faith: `git log --name-only -- web/src/components/ui/` shows the directory has gained exactly one file since this plan started (`table.tsx`, in Phase 3) and lost none, and `useDeletePage` still has three live importers. A plan that ends with \"delete things\" and has nothing to delete is the plan having been written against the real code rather than an imagined version of it. |
+| 2026-09-30 | 10    | CONVENTIONS.md        | Seven edits, written last so they describe the code that landed. The shared-domains list gains `table/` and `data-table/`; the width table gains the rule 10.4 asks for and the two routes 10.3 moves, which also fixed a stale `/profile` that an earlier rename to `/account` had left behind. A new **Tables** section carries the three rules the two tables established rather than a restatement of them: URL-owned page/size/sort/order with no `PAGE_SIZE` literal in a component (generalised to sort whitelists, filter lists and badge copy — one list, derived); `manualPagination`/`manualSorting` with `onSortingChange` required, because a controlled `sorting` without it renders chevrons that do nothing; and `overflow-x-auto` needing `overflow-y-hidden`, which 8.8 generalised from one bug. 10.2's note is the one most likely to be undone by a well-meaning refactor: `useDataTable` lives in `hooks/`, not beside the `DataTable` it configures, because the shared-stateful-behavior rule beats the looks-like-a-component rule. 10.7's `media` line records the sizing bug as the reason the prop takes a caller's node rather than a variant. 92 tests. Web: typecheck ✓, build ✓, `api:check` ✓, lint 9 = baseline. |
 
 ## Open questions
 
