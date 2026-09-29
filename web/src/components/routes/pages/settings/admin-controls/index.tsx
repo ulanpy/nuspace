@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router"
 
 import type { AdminControlsSearch } from "@/routes/_app/p/$slug/settings/admin-controls"
-import { useCurrentUser } from "@/hooks/use-session"
-import type { Page as PageEntity } from "@/lib/pages"
+import { useCurrentUser, usePermissions } from "@/hooks/use-session"
+import { pageOwnership, type Page as PageEntity } from "@/lib/pages"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
 import { AdminAccessLink } from "@/components/routes/pages/settings/components/admin-access-link"
 import { AdminsTable } from "@/components/routes/pages/settings/components/admins-table"
@@ -19,19 +19,19 @@ export function Page({
   ) => void
 }) {
   const me = useCurrentUser()
+  // A site admin manages this table without being one of its admins, so the
+  // "You" row and its Leave button have to be suppressed for them. Read from
+  // the session's own role rather than inferred from the page's permissions —
+  // `usePermissions` already derives it, and the inference it replaces could
+  // not tell a site admin from a page admin.
+  const { isAdmin } = usePermissions()
   const navigate = useNavigate()
 
-  const isCurrentUserOwner = page.owner_user?.sub === me.sub
+  // The FK on the page, not the embedded `owner_user`: the latter is a profile
+  // summary that can be absent, and comparing two optional strings answers
+  // "yes" when both are missing. See `pageOwnership`.
+  const isCurrentUserOwner = pageOwnership(page, me.sub) === "owner"
   const canManageAdmins = page.permissions.can_manage_admins
-
-  // A page admin is the only role that gets both a row here and a Leave button;
-  // the owner and site admins manage the table without belonging to it.
-  // `ResourcePermissions` has no "I am an admin" flag, but the two fields
-  // together are unambiguous: the owner and site admins both get
-  // `can_manage_admins` and an ordinary member gets neither. Written with both
-  // terms so it stays true if the route guard ever loosens.
-  const pinnedSelf =
-    page.permissions.can_edit && !page.permissions.can_manage_admins
 
   return (
     <>
@@ -50,26 +50,21 @@ export function Page({
       >
         <AdminsTable
           slug={page.slug}
-          page={search.page}
-          onPageChange={(page) =>
-            onSearchChange((previous) => ({ ...previous, page }))
-          }
+          search={search}
+          onSearchChange={onSearchChange}
           owner={{
             sub: page.owner_user?.sub ?? "",
             name: page.owner_user?.name ?? "",
             surname: page.owner_user?.surname ?? "",
             picture: page.owner_user?.picture ?? null,
           }}
-          me={
-            pinnedSelf
-              ? {
-                  sub: me.sub,
-                  name: me.name,
-                  surname: me.family_name,
-                  picture: me.picture ?? null,
-                }
-              : null
-          }
+          me={{
+            sub: me.sub,
+            name: me.name,
+            surname: me.family_name,
+            picture: me.picture ?? null,
+          }}
+          isSiteAdmin={isAdmin}
           canManageAdmins={canManageAdmins}
           isCurrentUserOwner={isCurrentUserOwner}
           onOwnershipTransferredAway={() => {

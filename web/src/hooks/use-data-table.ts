@@ -3,6 +3,7 @@ import {
   useReactTable,
   type ColumnDef,
   type OnChangeFn,
+  type Row,
   type RowData,
   type SortingState,
 } from "@tanstack/react-table"
@@ -37,6 +38,16 @@ export interface UseDataTableOptions<TData extends RowData> {
    */
   onSortingChange?: OnChangeFn<SortingState>
   getRowId: (row: TData) => string
+  /**
+   * Which rows may be ticked in the checkbox column.
+   *
+   * A table option rather than a column one, because v8 derives
+   * `row.getCanSelect()` from here and the header's select-all counts only the
+   * rows this returns `true` for. The admins table needs it: "You" and the owner
+   * are rows, and a checkbox that can be ticked on either is a control that
+   * offers an action the server will refuse.
+   */
+  enableRowSelection?: (row: Row<TData>) => boolean
 }
 
 /**
@@ -66,6 +77,7 @@ export function useDataTable<TData extends RowData>({
   sorting = [],
   onSortingChange,
   getRowId,
+  enableRowSelection,
 }: UseDataTableOptions<TData>) {
   return useReactTable({
     data,
@@ -75,6 +87,7 @@ export function useDataTable<TData extends RowData>({
     manualSorting: true,
     onSortingChange,
     getRowId,
+    enableRowSelection,
     getCoreRowModel: getCoreRowModel(),
   })
 }

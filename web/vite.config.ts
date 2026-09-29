@@ -77,6 +77,7 @@ export default defineConfig({
           "src/hooks/use-data-table.ts",
           "src/components/shared/data-table/**",
           "src/components/routes/account/components/my-pages.tsx",
+          "src/components/routes/pages/settings/components/admins-table.tsx",
         ],
         rules: {
           // `useReactTable` hands back a table of unmemoizable functions, so the

@@ -22,7 +22,7 @@ import type {
   PageUpdate,
   PageVisibilityValue,
 } from "./types"
-import { isPageSort, PAGE_OWNERSHIP } from "./constants"
+import { PAGE_OWNERSHIP } from "./constants"
 
 /**
  * One page of the public directory, for `useInfiniteList`.
@@ -529,25 +529,24 @@ export function ownershipLabel(ownership: PageOwnership) {
 /**
  * Turns a react-table sort event into the route's `sort` / `order` pair.
  *
- * One column, one direction, because the backend has one sort key. The backend's
- * `PageSort` allows a second direction on a third click for multi-sort, and this
- * deliberately does not: the empty case *clears* the sort rather than stacking a
- * second one, because there is no UI here that would let a user remove the first
- * entry and a table stuck on an invisible compound sort is a support question.
+ * One column, one direction, because the backend has one sort key. react-table
+ * would happily stack a second sort on shift-click, and this deliberately does
+ * not: the empty case *clears* the sort rather than starting a compound one,
+ * because nothing in either table lets a user remove the first entry, and a
+ * table stuck on an invisible compound sort is a support question.
  *
- * An id the API cannot sort by — a column renamed out from under the table, or a
- * URL someone edited — is treated as no sort at all rather than passed through.
- * `validateSearch` would reject it on the next read, but the row would flicker
- * first, and dropping it here is the same answer with no flicker.
+ * `isSortable` is passed in rather than imported because the two tables sort by
+ * different whitelists — pages by name / visibility / created_at, admins by
+ * name / created_at — and an id neither accepts is treated as no sort at all
+ * rather than written to the URL. A renamed column, or a link someone edited,
+ * would otherwise flash a row before `validateSearch` rejected it.
  */
-export function sortingToSearch(
-  sorting: {
-    id: string
-    desc: boolean
-  }[]
-): { sort?: PageSort; order?: PageOrder } {
+export function sortingToSearch<T extends PageSort | PageAdminSort>(
+  sorting: { id: string; desc: boolean }[],
+  isSortable: (id: string) => id is T
+): { sort?: T; order?: PageOrder } {
   const first = sorting[0]
-  if (!first || !isPageSort(first.id)) {
+  if (!first || !isSortable(first.id)) {
     return { sort: undefined, order: undefined }
   }
   return {

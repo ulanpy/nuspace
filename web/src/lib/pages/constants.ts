@@ -1,4 +1,9 @@
-import type { PageOwnership, PageSort, PageVisibilityValue } from "./types"
+import type {
+  PageAdminSort,
+  PageOwnership,
+  PageSort,
+  PageVisibilityValue,
+} from "./types"
 
 /**
  * How many pages one account may own. Mirrors
@@ -118,3 +123,18 @@ export const PAGE_SORTS = [
 /** Narrows a react-table column id to a column the API will sort by. */
 export const isPageSort = (value: string): value is PageSort =>
   (PAGE_SORTS as readonly string[]).includes(value)
+
+/**
+ * The columns a page's admins list can be ordered by.
+ *
+ * `created_at` again has no column — an admin row is checkbox, avatar, name,
+ * role and actions — so it is a URL-only sort here too.
+ */
+export const PAGE_ADMIN_SORTS = [
+  "name",
+  "created_at",
+] as const satisfies readonly PageAdminSort[]
+
+/** Narrows a react-table column id to a column the admins API will sort by. */
+export const isPageAdminSort = (value: string): value is PageAdminSort =>
+  (PAGE_ADMIN_SORTS as readonly string[]).includes(value)

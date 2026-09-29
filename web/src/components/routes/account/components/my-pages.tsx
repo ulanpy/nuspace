@@ -16,6 +16,7 @@ import {
   useDeletePage,
 } from "@/lib/pages"
 import {
+  isPageSort,
   PAGE_OWNERSHIP_FILTERS,
   PAGE_SIZES,
   PAGE_VISIBILITY_FILTERS,
@@ -224,7 +225,8 @@ export function MyPages({
       const current = sort ? [{ id: sort, desc: order !== "asc" }] : []
       changeSearch(
         sortingToSearch(
-          typeof updater === "function" ? updater(current) : updater
+          typeof updater === "function" ? updater(current) : updater,
+          isPageSort
         )
       )
     },

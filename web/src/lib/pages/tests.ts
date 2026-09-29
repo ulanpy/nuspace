@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
+import { isPageAdminSort, isPageSort } from "./constants"
 import { adminPageActions, pageOwnership, sortingToSearch } from "./functions"
 import type { Page } from "./types"
 
@@ -115,21 +116,27 @@ describe("adminPageActions", () => {
 
 describe("sortingToSearch", () => {
   it("turns a column click into the route's sort and order", () => {
-    assert.deepEqual(sortingToSearch([{ id: "name", desc: true }]), {
-      sort: "name",
-      order: "desc",
-    })
-    assert.deepEqual(sortingToSearch([{ id: "visibility", desc: false }]), {
-      sort: "visibility",
-      order: "asc",
-    })
+    assert.deepEqual(
+      sortingToSearch([{ id: "name", desc: true }], isPageSort),
+      {
+        sort: "name",
+        order: "desc",
+      }
+    )
+    assert.deepEqual(
+      sortingToSearch([{ id: "visibility", desc: false }], isPageSort),
+      {
+        sort: "visibility",
+        order: "asc",
+      }
+    )
   })
 
   it("clears the sort when the table asks for none", () => {
     // react-table's third click on an already-sorted column clears it. Writing
     // `sort: undefined, order: undefined` is what removes both from the URL —
     // returning the previous sort here would leave the chevron cycling forever.
-    assert.deepEqual(sortingToSearch([]), {
+    assert.deepEqual(sortingToSearch([], isPageSort), {
       sort: undefined,
       order: undefined,
     })
@@ -138,19 +145,42 @@ describe("sortingToSearch", () => {
   it("drops a column the API cannot sort by", () => {
     // A renamed column, or a URL someone edited. `validateSearch` would reject
     // it on the next read, but the table would flicker first.
-    assert.deepEqual(sortingToSearch([{ id: "slug", desc: false }]), {
-      sort: undefined,
-      order: undefined,
-    })
+    assert.deepEqual(
+      sortingToSearch([{ id: "slug", desc: false }], isPageSort),
+      {
+        sort: undefined,
+        order: undefined,
+      }
+    )
   })
 
   it("keeps only the first column, because the backend sorts by one", () => {
     assert.deepEqual(
-      sortingToSearch([
-        { id: "name", desc: false },
-        { id: "visibility", desc: true },
-      ]),
+      sortingToSearch(
+        [
+          { id: "name", desc: false },
+          { id: "visibility", desc: true },
+        ],
+        isPageSort
+      ),
       { sort: "name", order: "asc" }
+    )
+  })
+
+  it("reads the admins table through the admins whitelist, not the pages one", () => {
+    // "visibility" is a valid page sort and an invalid admin sort, so passing
+    // the wrong guard is a type error at the call site but a wrong URL at
+    // runtime if the two lists ever get mixed up.
+    assert.deepEqual(
+      sortingToSearch([{ id: "name", desc: true }], isPageAdminSort),
+      {
+        sort: "name",
+        order: "desc",
+      }
+    )
+    assert.deepEqual(
+      sortingToSearch([{ id: "visibility", desc: true }], isPageAdminSort),
+      { sort: undefined, order: undefined }
     )
   })
 })
