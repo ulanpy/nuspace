@@ -77,12 +77,19 @@ Access the application at [localhost](http://localhost) to confirm everything is
 
 ## Documentation
 
-- [Frontend Conventions](web/CONVENTIONS.md) - how the frontend is structured, named, split, and written
-- [Workload Identity Federation](docs/wif-setup.md) - GitHub Actions authentication with GCP for the deployment pipeline
-- [Monitoring Guide](infra/README.md) - Local and production monitoring stack configuration
-- [Terraform Setup](terraform/README.md) - GCP infrastructure for staging and production
-- [WireGuard VPN](infra/wg-easy/README.md) - Secure access to monitoring tools and internal services
-- [SSH Access](docs/ssh-access.md) - Staging and production access through VPN and OS Login
+- [ADR-0003: Backend Module Architecture](docs/adr/0003-backend-module-architecture.md) - backend module layering, DI, and cross-module boundaries
+- [ADR-0004: Frontend Conventions](docs/adr/0004-frontend-conventions.md) - frontend file organization, naming, and page layout
+- [ADR-0005: Frontend Architecture](docs/adr/0005-frontend-architecture.md) - frontend stack, API generation, and media upload flow
+- [ADR-0006: Monitoring Stack](docs/adr/0006-monitoring-stack.md) - observability stack (Grafana, Prometheus, Loki, Alloy)
+- [ADR-0007: Database Backup Strategy](docs/adr/0007-database-backup-strategy.md) - WAL-G + pg_dump off-site backups
+- [ADR-0008: WireGuard VPN](docs/adr/0008-wireguard-vpn.md) - VPN access for internal services
+- [ADR-0009: Terraform Infrastructure](docs/adr/0009-terraform-infrastructure.md) - GCP infrastructure, remote state, and IAM
+
+## Agent Skills
+
+This repo uses [Matt Pocock's AI engineering skills](https://github.com/mattpocock/skills). They live in `.agents/skills/` and are not tracked in git.
+
+To install them, follow the [official installation instructions](https://github.com/mattpocock/skills#installation-30-second-setup) (via [skills.sh](https://skills.sh/mattpocock/skills) or your agent's plugin system).
 
 ## Contributing
 

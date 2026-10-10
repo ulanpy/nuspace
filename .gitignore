@@ -67,6 +67,7 @@ frontend/android
 # Promt files
 .github/prompts
 .kiro/
+.agents
 
 # Next.js
 ./frontend/next-env.d.ts

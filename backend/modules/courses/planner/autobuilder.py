@@ -12,6 +12,12 @@ from backend.modules.courses.models.grade_report import (
     PlannerScheduleSection,
 )
 
+# Caps keep the backtracking search bounded: raw combinatorics (course combos x
+# schedule assignments) can explode to multi-GB memory and multi-minute
+# responses. Both are soft ceilings — if fewer combos/candidates exist, we keep
+# them all. Hitting a cap doesn't break correctness, it just means we rely on a
+# random sample of solutions. Tune as course loads change; higher numbers yield
+# more variety but cost more CPU/RAM.
 MAX_SECTION_COMBINATIONS = 200
 MAX_ASSIGNMENT_CANDIDATES = 32
 

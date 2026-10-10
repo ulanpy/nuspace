@@ -258,9 +258,9 @@ Also verify the changed user flow manually when automated coverage does not exis
 
 We use `pre-commit` hooks with Ruff and Black for backend code quality.
 
-**Backend (Python/FastAPI):** `uv`, Ruff, Black, pytest, module layering from [backend/README.md](backend/README.md)
+**Backend (Python/FastAPI):** `uv`, Ruff, Black, pytest, module layering from [ADR-0003](docs/adr/0003-backend-module-architecture.md)
 
-**Frontend (TypeScript/React):** pnpm (see `web/CONVENTIONS.md`), TypeScript strict mode, Vite production build
+**Frontend (TypeScript/React):** pnpm (see [ADR-0004](docs/adr/0004-frontend-conventions.md)), TypeScript strict mode, Vite production build
 
 **General:** Clear code, meaningful names, small functions, follow existing style
 
