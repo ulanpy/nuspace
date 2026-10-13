@@ -1,4 +1,9 @@
 @import "tailwindcss";
+
+/* The workbench runs as its own Vite app, so Tailwind's automatic source base
+   points at that folder and misses every component it renders. This has to sit
+   beside the @import above: a @source in any other file is never compiled. */
+@source "./**/*.{ts,tsx}";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/onest";

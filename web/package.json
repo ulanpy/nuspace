@@ -18,7 +18,9 @@
     "lint:fix": "vp lint --fix",
     "check": "vp check",
     "check:fix": "vp check --fix",
-    "check:staged": "vp staged"
+    "check:staged": "vp staged",
+    "workbench": "vp dev ui-workbench",
+    "test:workbench": "node --test ui-workbench/src/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
