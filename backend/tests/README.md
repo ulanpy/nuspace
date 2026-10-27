@@ -36,6 +36,14 @@ below the service still pass.
 
 Stop the stores with `docker compose -f infra/test.docker-compose.yml down`.
 
+To run two suites at once (say, in two worktrees), give each its own project and
+ports, and export the same ports when running pytest:
+
+```sh
+export NUSPACE_TEST_PG_PORT=55433 NUSPACE_TEST_MEILI_PORT=57701
+docker compose -p nuspace-test-2 -f infra/test.docker-compose.yml up -d --wait
+```
+
 CI (`.github/workflows/test.yml`) runs the same two commands on every push and
 pull request.
 

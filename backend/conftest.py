@@ -12,17 +12,22 @@ throwaway ones in `infra/test.docker-compose.yml`. See `tests/README.md`.
 
 import os
 
+# Only these two may come from the shell, so parallel suites (one per worktree)
+# can each start their own stores; see infra/test.docker-compose.yml.
+PG_PORT = os.environ.get("NUSPACE_TEST_PG_PORT", "55432")
+MEILI_PORT = os.environ.get("NUSPACE_TEST_MEILI_PORT", "57700")
+
 TEST_ENV = {
     "IS_DEBUG": "false",
     "MOCK_KEYCLOAK": "true",
     "NUSPACE": "https://nuspace.kz",
     # Stores: infra/test.docker-compose.yml
     "DB_HOST": "127.0.0.1",
-    "DB_PORT": "55432",
+    "DB_PORT": PG_PORT,
     "DB_NAME": "nuspace_test",
     "DB_USER": "postgres",
     "DB_PASSWORD": "postgres",
-    "MEILISEARCH_URL": "http://127.0.0.1:57700",
+    "MEILISEARCH_URL": f"http://127.0.0.1:{MEILI_PORT}",
     "MEILISEARCH_MASTER_KEY": "test-master-key",
     # Never connected to: the harness replaces these clients (tests/harness.py).
     "REDIS_HOST": "127.0.0.1",

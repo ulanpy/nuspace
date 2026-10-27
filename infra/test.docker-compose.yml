@@ -6,7 +6,9 @@
 # rather than copied so their images cannot drift apart. Three things differ,
 # all so that a test run can never touch the dev stack:
 # - its own project, container names and network;
-# - host ports 55432 and 57700, not the dev ports;
+# - host ports 55432 and 57700, not the dev ports (override with
+#   NUSPACE_TEST_PG_PORT / NUSPACE_TEST_MEILI_PORT and `-p <project>` to run
+#   several suites side by side, e.g. one per git worktree);
 # - data on tmpfs, gone when the container stops.
 name: nuspace-test
 
@@ -15,7 +17,7 @@ services:
     extends:
       file: docker-compose.yml
       service: postgres
-    container_name: nuspace-test-postgres
+    container_name: !reset null
     restart: "no"
     environment:
       POSTGRES_USER: postgres
@@ -27,7 +29,7 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
     ports:
-      - "127.0.0.1:55432:5432"
+      - "127.0.0.1:${NUSPACE_TEST_PG_PORT:-55432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d nuspace_test"]
       interval: 1s
@@ -38,7 +40,7 @@ services:
     extends:
       file: docker-compose.yml
       service: meilisearch
-    container_name: nuspace-test-meilisearch
+    container_name: !reset null
     restart: "no"
     environment:
       MEILI_MASTER_KEY: test-master-key
@@ -46,7 +48,7 @@ services:
     networks: !override
       - default
     ports: !override
-      - "127.0.0.1:57700:7700"
+      - "127.0.0.1:${NUSPACE_TEST_MEILI_PORT:-57700}:7700"
     tmpfs:
       - /meili_data
     healthcheck:
