@@ -268,7 +268,7 @@ class EventRepository:
         if event_filter.keyword:
             meili_result = await meilisearch.get(
                 client=meilisearch_client,
-                storage_name=EntityType.community_events.value,
+                storage_name=Event.__tablename__,
                 keyword=event_filter.keyword,
                 page=event_filter.page,
                 size=event_filter.size,
