@@ -1,0 +1,56 @@
+# Stores for the backend test suite (backend/tests/README.md).
+#
+#   docker compose -f infra/test.docker-compose.yml up -d --wait
+#
+# The same Postgres and Meilisearch services as docker-compose.yml, extended
+# rather than copied so their images cannot drift apart. Three things differ,
+# all so that a test run can never touch the dev stack:
+# - its own project, container names and network;
+# - host ports 55432 and 57700, not the dev ports;
+# - data on tmpfs, gone when the container stops.
+name: nuspace-test
+
+services:
+  postgres:
+    extends:
+      file: docker-compose.yml
+      service: postgres
+    container_name: nuspace-test-postgres
+    restart: "no"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nuspace_test
+    networks: !override
+      - default
+    volumes: !reset []
+    tmpfs:
+      - /var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nuspace_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  meilisearch:
+    extends:
+      file: docker-compose.yml
+      service: meilisearch
+    container_name: nuspace-test-meilisearch
+    restart: "no"
+    environment:
+      MEILI_MASTER_KEY: test-master-key
+      MEILI_NO_ANALYTICS: "true"
+    networks: !override
+      - default
+    ports: !override
+      - "127.0.0.1:57700:7700"
+    tmpfs:
+      - /meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:7700/health || exit 1"]
+      interval: 1s
+      timeout: 3s
+      retries: 30

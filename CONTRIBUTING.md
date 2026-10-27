@@ -198,26 +198,16 @@ Run the checks relevant to your change.
 **Backend:**
 
 ```bash
+docker compose -f infra/test.docker-compose.yml up -d --wait   # once, from the repo root
 cd backend
 uv run ruff check .
 uv run black --check .
-PYTHONPATH="$(dirname "$PWD")" uv run python -c "
-from dotenv import load_dotenv
-load_dotenv('../infra/.env')
-import pytest, sys
-sys.exit(pytest.main(['-q']))"
+uv run pytest
 ```
 
-Note the shape of the `pytest` line. A bare `uv run pytest` has never worked on a
-host checkout, for two reasons the container hides:
-
-- the importable package is `backend/` itself, so its **parent** has to be on
-  `PYTHONPATH`. The container sets `PYTHONPATH=/nuros`; the host must be told.
-- `core.configs.Config` requires ~25 variables that live in `infra/.env`. The
-  container mounts that file at `/.env`; the host has to load it.
-
-Load the env in-process rather than `source infra/.env` — two of its values are
-unquoted and abort `zsh` with `command not found`.
+The tests over HTTP need the throwaway Postgres and Meilisearch the first line
+starts; the rest need nothing. `backend/conftest.py` sets the environment, so
+`infra/.env` is not read. See [`backend/tests/README.md`](backend/tests/README.md).
 
 You cannot fall back to the container: `backend/Dockerfile` builds with
 `uv sync --frozen --no-dev`, so **pytest, ruff and black are not installed in

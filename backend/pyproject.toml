@@ -6,7 +6,7 @@ authors = [{ name = "Ulan", email = "ulan.sharipov@nu.edu.kz" }]
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "sqlalchemy>=2.0.37",
+    "sqlalchemy[asyncio]>=2.0.37",
     "fastapi>=0.115.6",
     # Uses uvloop and httptools on Linux instead of asyncio and h11.
     "uvicorn[standard]>=0.34.0",
@@ -78,6 +78,14 @@ package = false
 [tool.ty.environment]
 root = [".."]
 python = ".venv/bin/python"
+
+[tool.pytest.ini_options]
+# `backend` is the importable package, so its parent goes on the path.
+pythonpath = [".."]
+# The HTTP harness starts the app once per session (tests/README.md); its
+# clients and every async test must share that one event loop.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 
 [tool.black]
 line-length = 100
