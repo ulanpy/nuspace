@@ -639,26 +639,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/search/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Full Search
-         * @description Full search implementation returning complete entity details
-         */
-        get: operations["full_search_search__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/bucket/upload-url": {
         parameters: {
             query?: never;
@@ -5044,44 +5024,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventAccessInviteAcceptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    full_search_search__get: {
-        parameters: {
-            query: {
-                keyword: string;
-                storage_name: components["schemas"]["EntityType"];
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

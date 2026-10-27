@@ -2,7 +2,6 @@ import json
 import os
 import re
 from functools import cached_property
-from typing import List
 from urllib.parse import urlsplit
 
 import requests
@@ -46,7 +45,6 @@ class Config(BaseSettings):
     PUSH_AUTH_AUDIENCE: str
     VM_SERVICE_ACCOUNT_EMAIL: str
     GCP_SIGNING_SERVICE_ACCOUNT_KEY_JSON: str | None = None
-    ORIGINS: List[str] = ["*"]
     MOCK_KEYCLOAK: bool  # always set True in local dev
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
