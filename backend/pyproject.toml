@@ -6,7 +6,7 @@ authors = [{ name = "Ulan", email = "ulan.sharipov@nu.edu.kz" }]
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "sqlalchemy>=2.0.37",
+    "sqlalchemy[asyncio]>=2.0.37",
     "fastapi>=0.115.6",
     # Uses uvloop and httptools on Linux instead of asyncio and h11.
     "uvicorn[standard]>=0.34.0",
