@@ -1,0 +1,38 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # The same compose file a developer starts locally (backend/tests/README.md).
+      - name: Start test stores
+        run: docker compose -f infra/test.docker-compose.yml up -d --wait
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Run backend tests
+        working-directory: backend
+        run: uv run pytest
+
+      - name: Stop test stores
+        if: always()
+        run: docker compose -f infra/test.docker-compose.yml down
