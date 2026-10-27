@@ -8,6 +8,7 @@ from backend.common.schemas import Infra, ShortUserResponse
 from backend.common.utils import response_builder
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.uow import UnitOfWork
+from backend.modules.auth.dependencies import is_guest
 from backend.modules.auth.models import UserRole
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.media.schemas import MediaResponse
@@ -291,8 +292,8 @@ class PageService:
         check, and the repository puts the visibility restriction in the WHERE
         itself. Asking anyway dereferenced a `None` page.
         """
-        is_guest = bool(user[1].get("is_guest"))
-        if scope == "mine" and is_guest:
+        guest = is_guest(user)
+        if scope == "mine" and guest:
             # `/pages/mine` is about the caller's own pages, and a guest has
             # none. Reachable only by a hand-written URL, since the UI shows
             # the table to signed-in users only.
@@ -304,12 +305,12 @@ class PageService:
 
         async with self.uow:
             repo = self.uow.get_repo(PageRepository)
-            if not is_guest:
+            if not guest:
                 admin_page_ids = await repo.admin_page_ids(user[0]["sub"])
             pages, count, keyword_no_results = await repo.list_pages(
                 page=page,
                 size=size,
-                viewer_sub=None if is_guest else user[0]["sub"],
+                viewer_sub=None if guest else user[0]["sub"],
                 is_site_admin=self._is_site_admin(user),
                 scope=scope,
                 keyword=keyword,

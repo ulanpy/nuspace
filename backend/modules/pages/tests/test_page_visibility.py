@@ -26,7 +26,8 @@ OWNER = ({"sub": "owner"}, {"role": "user"})
 ADMIN_OF_PAGE = ({"sub": "helper"}, {"role": "user"})
 STRANGER = ({"sub": "stranger"}, {"role": "user"})
 SITE_ADMIN = ({"sub": "root"}, {"role": "admin"})
-GUEST = ({"sub": None, "is_guest": True}, {"role": "default", "is_guest": True})
+# The shape `get_creds_or_guest` returns: `is_guest` rides in the app claims only.
+GUEST = ({"sub": "guest"}, {"role": "default", "is_guest": True, "scope": "allowed"})
 
 
 def _page(visibility: PageVisibility, owner: str | None = "owner") -> SimpleNamespace:

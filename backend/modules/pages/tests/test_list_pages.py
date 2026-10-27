@@ -22,7 +22,8 @@ from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
 SIGNED_IN = ({"sub": "owner"}, {"role": "user"})
-GUEST = ({"sub": None, "is_guest": True}, {"role": "default", "is_guest": True})
+# The shape `get_creds_or_guest` returns: `is_guest` rides in the app claims only.
+GUEST = ({"sub": "guest"}, {"role": "default", "is_guest": True, "scope": "allowed"})
 
 # The SQL text of each whitelisted sort column. Read out of the whitelist
 # rather than written out here, so adding a sort column is one edit and not two.

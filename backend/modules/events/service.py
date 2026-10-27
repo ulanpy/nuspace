@@ -11,6 +11,7 @@ from backend.common.datetime_utils import utc_now
 from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
 from backend.core.database.uow import UnitOfWork
+from backend.modules.auth.dependencies import is_guest
 from backend.modules.events import schemas, utils
 from backend.modules.events.attendees_export import (
     build_attendees_csv,
@@ -151,9 +152,6 @@ class EventService:
         await self.media_attachment_resolver.delete_many(media_objects)
         await EventRepository.delete_from_search(self.meilisearch_client, event_id)
 
-    def _is_guest(self, user: tuple[dict, dict]) -> bool:
-        return bool(user[1].get("is_guest")) or user[0].get("sub") == "guest"
-
     async def _build_event_responses(
         self,
         events: List[Event],
@@ -173,7 +171,7 @@ class EventService:
             creators_by_event_id = await repo.list_creators_by_event_ids(event_ids)
             going_event_ids: set[int] = set()
             viewer_event_ids: set[int] = set()
-            if not self._is_guest(user):
+            if not is_guest(user):
                 user_sub = user[0].get("sub")
                 going_event_ids = await repo.list_going_event_ids(event_ids, user_sub)
                 viewer_event_ids = await repo.list_attendee_viewer_event_ids(event_ids, user_sub)
@@ -358,7 +356,7 @@ class EventService:
                 event_filter=event_filter,
                 creator_sub=creator_sub,
                 meilisearch_client=self.meilisearch_client,
-                viewer_sub=None if self._is_guest(user) else user[0].get("sub"),
+                viewer_sub=None if is_guest(user) else user[0].get("sub"),
             )
 
             if keyword_no_results:

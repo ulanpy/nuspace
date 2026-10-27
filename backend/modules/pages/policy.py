@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 
 from backend.common.utils.enums import ResourceAction
+from backend.modules.auth.dependencies import is_guest
 from backend.modules.auth.models import UserRole
 from backend.modules.pages.models.page import Page
 from backend.modules.pages.schemas import PageCreateRequest
@@ -39,7 +40,7 @@ class PagePolicy:
             return
         if page.visibility.value == "public":
             return
-        if page.visibility.value == "internal" and not self.user[1].get("is_guest"):
+        if page.visibility.value == "internal" and not is_guest(self.user):
             return
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found")
 
