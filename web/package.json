@@ -5,8 +5,10 @@
   "type": "module",
   "packageManager": "pnpm@11.15.0",
   "scripts": {
-    "dev": "vp dev",
-    "build": "tsc -b && vp build",
+    "dev": "pnpm hosts:generate && vp dev",
+    "build": "pnpm hosts:check && tsc -b && vp build",
+    "hosts:generate": "node --import ./scripts/test-imports.mjs scripts/hosts.mjs",
+    "hosts:check": "node --import ./scripts/test-imports.mjs scripts/hosts.mjs --check",
     "lint": "vp lint",
     "format": "vp fmt",
     "format:check": "vp fmt --check",

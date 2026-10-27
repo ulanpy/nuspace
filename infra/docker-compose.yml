@@ -63,6 +63,8 @@ services:
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
+      # Route-table include and 404 pages; `pnpm dev` in `web` regenerates them.
+      - ../web/nginx:/etc/nginx/nuspace:ro
       - nginx-logs:/var/log/nginx
     depends_on:
       fastapi:
@@ -77,7 +79,7 @@ services:
           rm /var/log/nginx/access.log && touch /var/log/nginx/access.log;
         fi &&
         apk -u add inotify-tools &&
-        (while inotifywait -e modify /etc/nginx/nginx.conf; do
+        (while inotifywait -e modify /etc/nginx/nginx.conf /etc/nginx/nuspace/hosts.conf; do
         echo 'nginx config changed, copying and reloading Nginx...' &&
         nginx -t && nginx -s reload;
         done) &

@@ -28,15 +28,17 @@
     group: "{{ ansible_user }}"
   when: frontend_tarball_path | default('') | length > 0
 
+# One index.html per host lives under _hosts/ (web/src/lib/hosts); the root
+# host's is always there. The nginx include is in the repo checkout, not here.
 - name: Verify out files were created
   ansible.builtin.stat:
-    path: "/home/{{ ansible_user }}/nuspace/web/out/index.html"
+    path: "/home/{{ ansible_user }}/nuspace/web/out/_hosts/root/index.html"
   register: dist_check
   when: frontend_tarball_path | default('') | length > 0
 
 - name: Fail if out files are missing
   ansible.builtin.fail:
-    msg: "Frontend artifact missing index.html after unpack."
+    msg: "Frontend artifact missing _hosts/root/index.html after unpack."
   when:
     - frontend_tarball_path | default('') | length > 0
     - not dist_check.stat.exists
