@@ -59,8 +59,8 @@ class PageService:
 
     @staticmethod
     def _build_admin_link_url(infra: Infra, page: Page, raw_token: str) -> str:
-        origin = infra.config.HOME_URL.rstrip("/")
-        return f"{origin}/p/{page.slug}?admin={raw_token}"
+        origin = infra.config.service_origin("pages")
+        return f"{origin}/{page.slug}?admin={raw_token}"
 
     async def create_page(
         self, infra: Infra, page_data: schemas.PageCreateRequest, user: tuple[dict, dict]
