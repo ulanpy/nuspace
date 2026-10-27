@@ -55,15 +55,15 @@ def format_grade_item(grade: schemas.BaseGradeReportSchema) -> str:
     )
 
 
-def build_site_grades_url(public_url: str, keyword: str) -> str:
-    base = public_url.rstrip("/")
-    return f"{base}/courses/?tab=course-stats&keyword={quote(keyword)}"
+def build_site_grades_url(courses_origin: str, keyword: str) -> str:
+    base = courses_origin.rstrip("/")
+    return f"{base}/stats?keyword={quote(keyword)}"
 
 
 def build_grades_message(
-    keyword: str, response: schemas.ListGradeReportResponse, public_url: str
+    keyword: str, response: schemas.ListGradeReportResponse, courses_origin: str
 ) -> str:
-    site_link = build_site_grades_url(public_url, keyword)
+    site_link = build_site_grades_url(courses_origin, keyword)
     footer = f'\n<a href="{site_link}">смотреть на сайте</a>'
 
     if not response.items:
@@ -125,7 +125,7 @@ async def send_grades_page(
     redis: Redis,
     keyword: str,
     page: int,
-    public_url: str,
+    courses_origin: str,
 ) -> None:
     if message.from_user is None:
         return
@@ -137,6 +137,6 @@ async def send_grades_page(
         keyword=keyword,
         page=page,
     )
-    text = build_grades_message(keyword, response, public_url)
+    text = build_grades_message(keyword, response, courses_origin)
     keyboard = build_grades_keyboard(response.page, response.total_pages)
     await message.answer(text, parse_mode="HTML", reply_markup=keyboard)

@@ -69,8 +69,8 @@ async def _claim_unavailable(message: Message) -> None:
 
 
 def _site_url() -> str:
-    # Telegram rejects http://localhost URL buttons; use public tunnel/prod origin.
-    return config.PUBLIC_WEBHOOK_URL.rstrip("/")
+    # Telegram rejects http://localhost URL buttons; the caller only shows https origins.
+    return config.service_origin("root")
 
 
 def _kb_link_required() -> InlineKeyboardMarkup:

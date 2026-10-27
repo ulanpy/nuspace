@@ -3,8 +3,10 @@ import os
 import re
 from functools import cached_property
 from typing import List
+from urllib.parse import urlsplit
 
 import requests
+from backend.common.service_origin import Environment, Service, environment_from, service_origin
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -110,6 +112,15 @@ class Config(BaseSettings):
         if not self.IS_DEBUG:
             return self.NUSPACE.rstrip("/")
         return self.DEV_APP_URL.rstrip("/")
+
+    @cached_property
+    def ENVIRONMENT(self) -> Environment:
+        return environment_from(is_debug=self.IS_DEBUG, nuspace_url=self.NUSPACE)
+
+    def service_origin(self, service: Service) -> str:
+        """Origin of a service host here (dev: `*.localhost` on DEV_APP_URL's port)."""
+        dev_port = urlsplit(self.DEV_APP_URL).port if self.ENVIRONMENT == "dev" else None
+        return service_origin(service, self.ENVIRONMENT, dev_port)
 
     @cached_property
     def PUBLIC_WEBHOOK_URL(self) -> str:
