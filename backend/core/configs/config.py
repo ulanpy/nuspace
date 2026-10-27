@@ -5,7 +5,14 @@ from functools import cached_property
 from urllib.parse import urlsplit
 
 import requests
-from backend.common.service_origin import Environment, Service, environment_from, service_origin
+from backend.common.service_origin import (
+    Environment,
+    Service,
+    cookie_domain,
+    environment_from,
+    service_hosts,
+    service_origin,
+)
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -119,6 +126,24 @@ class Config(BaseSettings):
         """Origin of a service host here (dev: `*.localhost` on DEV_APP_URL's port)."""
         dev_port = urlsplit(self.DEV_APP_URL).port if self.ENVIRONMENT == "dev" else None
         return service_origin(service, self.ENVIRONMENT, dev_port)
+
+    @cached_property
+    def APP_HOSTS(self) -> frozenset[str]:
+        """Hostnames a browser reaches the app on here: the six service hosts.
+
+        Dev also accepts DEV_APP_URL's host and the cloudflared tunnel's host.
+        """
+        hosts = set(service_hosts(self.ENVIRONMENT))
+        hosts.add(urlsplit(self.HOME_URL).hostname or "")
+        if self.ENVIRONMENT == "dev":
+            hosts.add(urlsplit(self.PUBLIC_WEBHOOK_URL).hostname or "")
+        hosts.discard("")
+        return frozenset(hosts)
+
+    @cached_property
+    def COOKIE_DOMAIN(self) -> str | None:
+        """`Domain` of the auth cookies: `.nuspace.kz`, or host-only (None) in dev."""
+        return cookie_domain(self.ENVIRONMENT)
 
     @cached_property
     def PUBLIC_WEBHOOK_URL(self) -> str:

@@ -43,3 +43,24 @@ def service_origin(service: Service, environment: Environment, dev_port: int | N
         host = "localhost" if service == "root" else f"{service}.localhost"
         return f"http://{host}" + (f":{dev_port}" if dev_port else "")
     raise ValueError(f"Unknown environment: {environment!r}")
+
+
+def service_hosts(environment: Environment, dev_port: int | None = None) -> frozenset[str]:
+    """Hostnames of the six service hosts in an environment (no scheme, no port)."""
+    return frozenset(
+        urlsplit(service_origin(service, environment, dev_port)).hostname or ""
+        for service in SERVICES
+    )
+
+
+def cookie_domain(environment: Environment) -> str | None:
+    """`Domain` of the session cookies, so one sign-in covers every host.
+
+    production and staging: `.nuspace.kz`. Staging's hosts (`stage.` and
+    `*_staging.`) sit under the same parent, so staging and production share one
+    cookie slot and signing into one signs out of the other (accepted, #397).
+    dev: None (host-only). Browsers reject `Domain=.localhost`.
+    """
+    if environment == "dev":
+        return None
+    return f".{PRODUCTION_APEX}"

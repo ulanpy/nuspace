@@ -15,6 +15,7 @@ from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.cookies import (
     set_app_token_cookie,
     set_kc_auth_cookies,
+    unset_app_token_cookie,
     unset_kc_auth_cookies,
 )
 from backend.modules.auth.keycloak_manager import KeyCloakManager
@@ -78,7 +79,7 @@ class AuthService:
             except Exception:
                 pass
         unset_kc_auth_cookies(response)
-        response.delete_cookie(key=config.COOKIE_APP_NAME)
+        unset_app_token_cookie(response)
 
     def get_authorize_redirect(
         self,

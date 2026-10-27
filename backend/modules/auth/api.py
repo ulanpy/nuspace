@@ -13,6 +13,7 @@ from backend.modules.auth import dependencies as deps
 from backend.modules.auth.cookies import (
     set_app_token_cookie,
     set_kc_auth_cookies,
+    unset_app_token_cookie,
     unset_kc_auth_cookies,
 )
 from backend.modules.auth.dependencies import (
@@ -180,7 +181,7 @@ async def logout(
         ) from exc
 
     unset_kc_auth_cookies(response)
-    response.delete_cookie(key=config.COOKIE_APP_NAME)
+    unset_app_token_cookie(response)
     return status.HTTP_200_OK
 
 

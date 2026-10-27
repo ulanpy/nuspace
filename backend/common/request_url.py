@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from backend.core.configs.config import Config
 from fastapi import Request
 
@@ -6,17 +8,31 @@ def request_app_base_url(request: Request, app_config: Config) -> str:
     """
     Base URL for browser-facing redirects (OAuth, mock login, post-login return).
 
-    Production: configured NUSPACE origin.
-    Debug: origin of the incoming request (localhost vs ephemeral tunnel).
+    The origin the browser is on, from `Host` and `X-Forwarded-Proto`, in every
+    environment: a login started on events.nuspace.kz returns to events.nuspace.kz.
+    Falls back to the configured apex (HOME_URL) when `Host` is missing or is not
+    one of this environment's hosts (`Config.APP_HOSTS`), so a forged `Host`
+    cannot point a redirect elsewhere.
+
+    `X-Forwarded-Host` is never read: nginx does not set it, so only a client could.
     """
-    if not app_config.IS_DEBUG:
-        return app_config.NUSPACE.rstrip("/")
+    fallback = app_config.HOME_URL.rstrip("/")
 
-    forwarded_proto = request.headers.get("x-forwarded-proto")
-    forwarded_host = request.headers.get("x-forwarded-host")
-    host = forwarded_host or request.headers.get("host")
-    if host:
-        scheme = forwarded_proto or request.url.scheme
-        return f"{scheme}://{host}".rstrip("/")
+    host = request.headers.get("host")
+    if not host:
+        return fallback
+    try:
+        parsed = urlsplit(f"//{host}")
+        hostname, port = parsed.hostname, parsed.port
+    except ValueError:
+        return fallback
+    if not hostname or hostname not in app_config.APP_HOSTS:
+        return fallback
 
-    return app_config.HOME_URL.rstrip("/")
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
+    if forwarded_proto in ("http", "https"):
+        scheme = forwarded_proto
+    else:
+        # From the scope, not `request.url`, which a malformed `Host` can garble.
+        scheme = request.scope.get("scheme") or "http"
+    return f"{scheme}://{hostname}" + (f":{port}" if port else "")
