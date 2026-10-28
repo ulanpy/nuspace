@@ -39,6 +39,10 @@ export const RESERVED_SLUGS: readonly string[] = [
   "index.html",
   "404.html",
   "_hosts",
+  // Development only: the GCS emulator and Vite's module graph.
+  "gcs",
+  "src",
+  "node_modules",
   // Every top-level entry of `web/public/`, which the build copies to its root.
   "data",
   "favicon.svg",

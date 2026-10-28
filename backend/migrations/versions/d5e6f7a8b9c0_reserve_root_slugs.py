@@ -13,8 +13,8 @@ the database held at this revision, and the app's set will keep changing.
 
 A Page already holding a slug that is now reserved could never be reached at its
 address, and any later write to its row would trip the constraint, so it is
-moved to `page-<id>`, as the pages migration does for a name with no usable
-slug. No redirect is left behind.
+moved to `page-<id>` (with a suffix if that is taken), as the pages migration
+does for a name with no usable slug. No redirect is left behind.
 
 Revision ID: d5e6f7a8b9c0
 Revises: c4b5d6e7f8a9
@@ -59,6 +59,9 @@ RESERVED = (
     "index.html",
     "404.html",
     "_hosts",
+    "gcs",
+    "src",
+    "node_modules",
     # The build root, from web/public.
     "data",
     "favicon.svg",
@@ -109,7 +112,17 @@ def _validate_slug(reserved: tuple[str, ...]) -> str:
 
 def upgrade() -> None:
     op.execute(_validate_slug(RESERVED))
-    op.execute("UPDATE pages SET slug = 'page-' || id WHERE NOT validate_slug(slug)")
+    # `page-<id>` is unique among moved Pages by construction; a Page someone
+    # already named `page-<id>` keeps it, and the moved one takes a suffix.
+    op.execute("""
+        UPDATE pages AS p
+        SET slug = CASE
+            WHEN EXISTS (SELECT 1 FROM pages AS q WHERE q.slug = 'page-' || p.id)
+            THEN 'page-' || p.id || '-' || left(md5(p.slug), 6)
+            ELSE 'page-' || p.id
+        END
+        WHERE NOT validate_slug(p.slug)
+        """)
 
 
 def downgrade() -> None:

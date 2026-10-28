@@ -43,11 +43,13 @@ _RESERVED_WORDS = {
 }
 
 # Slugs sit at the root of `pages.nuspace.kz` (`/<slug>`), so a slug may not be
-# a path nginx answers itself on that host (`infra/nginx/nginx.conf`): the
-# proxied prefixes, the internal locations, and what the build writes at its
-# root (`assets/`, one `index.html` per host under `_hosts/`). A Page there
-# would never be reached. Some of these can never pass `SLUG_RE`; they are
-# listed anyway, so this set reads as the whole list of paths nginx keeps.
+# a path nginx answers itself on that host (`infra/nginx/nginx.conf`, and
+# `nginx.dev.conf` in development): the proxied prefixes, the internal
+# locations, and what the build writes at its root (`assets/`, one
+# `index.html` per host under `_hosts/`). A Page there would never be reached.
+# `tests/test_reserved_slugs.py` reads both files and fails on a location
+# whose first segment is missing here. Some of these can never pass
+# `SLUG_RE`; they are listed anyway, so this set reads as the whole list.
 NGINX_PATHS = {
     "api",
     "ws",
@@ -56,6 +58,10 @@ NGINX_PATHS = {
     "index.html",
     "404.html",
     "_hosts",
+    # Development only: the GCS emulator and Vite's module graph.
+    "gcs",
+    "src",
+    "node_modules",
 }
 
 # Every top-level entry of `web/public/`, which the build copies to its root,

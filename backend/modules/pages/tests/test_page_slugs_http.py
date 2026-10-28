@@ -21,6 +21,16 @@ async def test_a_page_cannot_take_a_path_nginx_answers(member: Viewer, slug: str
 
 
 @pytest.mark.asyncio
+async def test_a_slug_may_start_with_a_path_nginx_answers(member: Viewer) -> None:
+    """nginx proxies `/api/`, not every path starting `/api`, so `api-club` is
+    reachable (`tests/test_reserved_slugs.py` holds nginx to that)."""
+    response = await member.client.post("/api/pages", json={"name": "API Club", "slug": "api-club"})
+
+    assert response.status_code == 200
+    assert (await member.client.get("/api/pages/api-club")).status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_a_page_cannot_take_a_directory_at_the_build_root(member: Viewer) -> None:
     """`web/public/data/` is copied to the build root, so `/data` is a directory."""
     response = await member.client.post("/api/pages", json={"name": "Data", "slug": "data"})
