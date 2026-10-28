@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/opportunities"
+import { OpportunitiesScreen } from "@/components/routes/opportunities"
 import {
   EDUCATION_LEVELS,
   OPPORTUNITY_MAJORS,
@@ -42,5 +42,5 @@ function OpportunitiesRoute() {
     [navigate]
   )
 
-  return <Page search={search} onSearchChange={onSearchChange} />
+  return <OpportunitiesScreen search={search} onSearchChange={onSearchChange} />
 }

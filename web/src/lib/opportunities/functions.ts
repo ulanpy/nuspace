@@ -12,7 +12,9 @@ import type {
 import { EDUCATION_LEVEL_LABELS, OPPORTUNITY_MAJORS } from "./constants"
 import { CAMPUS_TIME_ZONE } from "@/lib/utils"
 
-export interface OpportunityFilters {
+// A type alias, not an interface: the query key takes `Record<string, unknown>`
+// and only an alias is assignable to it.
+export type OpportunityFilters = {
   type?: OpportunityType[]
   majors?: OpportunityMajor[]
   education_level?: EducationLevel[]

@@ -132,7 +132,6 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
       "/courses/statistics",
       "/degree-audit-info",
       "/mynuspace",
-      "/opportunities",
       "/p/$slug",
       "/p/$slug/editor",
       "/p/$slug/settings",
@@ -146,5 +145,10 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     mount: "/events",
     routes: ["/", "/$eventId"],
     params: { eventId: "[0-9]+" },
+  },
+  {
+    service: "opportunities",
+    mount: "/opportunities",
+    routes: ["/"],
   },
 ]

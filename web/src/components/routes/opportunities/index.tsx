@@ -1,375 +1,47 @@
 import { useEffect, useMemo, useState } from "react"
-import {
-  Building2Icon,
-  CalendarClockIcon,
-  CalendarPlusIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ExternalLinkIcon,
-  GraduationCapIcon,
-  MapPinIcon,
-  PencilIcon,
-  PlusIcon,
-  Trash2Icon,
-  WalletIcon,
-} from "lucide-react"
+import { PlusIcon, SlidersHorizontalIcon } from "lucide-react"
 
 import { apiErrorMessage } from "@/api/errors"
-import { ApiError } from "@/api/client"
 import { qk } from "@/api/query-keys"
 import type { OpportunitiesSearch } from "@/routes/_app/opportunities"
+import { useDebounced } from "@/hooks/use-debounced"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
+import { useIsWide } from "@/hooks/use-is-wide"
 import { usePermissions } from "@/hooks/use-session"
-import { beginReauthentication } from "@/lib/user"
 import {
+  activeFilterCount,
   fetchOpportunitiesPage,
+  toApiFilters,
   useCreateOpportunity,
   useDeleteOpportunity,
-  useAddOpportunityToCalendar,
   useUpdateOpportunity,
 } from "@/lib/opportunities"
+import type { Opportunity, OpportunitiesSearchState } from "@/lib/opportunities"
+import { FilterRail } from "@/components/routes/opportunities/components/filter-rail"
+import { OpportunityCard } from "@/components/routes/opportunities/components/opportunity-card"
 import { OpportunityForm } from "@/components/routes/opportunities/components/opportunity-form"
-import {
-  OPPORTUNITY_TYPES,
-  OPPORTUNITY_TYPE_LABELS,
-  EDUCATION_LEVELS,
-  EDUCATION_LEVEL_LABELS,
-  OPPORTUNITY_MAJORS,
-  formatEligibilities,
-  normalizeMajors,
-  type EducationLevel,
-  type OpportunityMajor,
-  type Opportunity,
-} from "@/lib/opportunities"
-import { getDeadlinePresentation } from "@/lib/opportunities"
-import { useDebounced } from "@/hooks/use-debounced"
-import {
-  MultiFilter,
-  SearchFilter,
-  type FilterOption,
-} from "@/components/shared/list-filters"
-import { formatCampusDate } from "@/lib/utils"
+import { SearchFilter } from "@/components/shared/list-filters"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { Markdown } from "@/components/shared/markdown/renderer"
-import { toPlainText } from "@/lib/markdown"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
 import { CardGrid } from "@/components/shared/page/card-grid"
 import { Page as PageLayout } from "@/components/shared/page"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Toggle } from "@/components/ui/toggle"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
-function OpportunityCard({
-  opportunity,
-  onEdit,
-  onDelete,
-}: {
-  opportunity: Opportunity
-  /** Both omitted for readers, which is everyone but the digest's authors. */
-  onEdit?: () => void
-  onDelete?: () => void
-}) {
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
-  const [areMajorsExpanded, setAreMajorsExpanded] = useState(false)
-  const calendar = useAddOpportunityToCalendar()
-  const majors = normalizeMajors(opportunity.majors)
-  const eligibilities = formatEligibilities(opportunity.eligibilities)
-  const deadline = getDeadlinePresentation(opportunity.deadline)
-  const expired = deadline.kind === "closed"
-  const description = opportunity.description
-    ? toPlainText(opportunity.description)
-    : ""
-  const canExpandDescription = description.length > 280
-  const visibleMajors = areMajorsExpanded ? majors : majors.slice(0, 5)
-
-  return (
-    <Card className="p-5 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Badge variant="secondary">
-          {OPPORTUNITY_TYPE_LABELS[opportunity.type]}
-        </Badge>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant={
-              deadline.kind === "closing-soon"
-                ? "default"
-                : deadline.kind === "closed"
-                  ? "outline"
-                  : "secondary"
-            }
-          >
-            {deadline.label}
-          </Badge>
-          {opportunity.deadline && (
-            <span className="text-xs text-muted-foreground">
-              {formatCampusDate(opportunity.deadline)}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <h3 className="text-lg/snug font-semibold text-balance">
-          {opportunity.name}
-        </h3>
-        {opportunity.host && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Building2Icon className="size-4 shrink-0" aria-hidden />
-            {opportunity.host}
-          </p>
-        )}
-      </div>
-
-      {opportunity.description && (
-        <div className="space-y-2">
-          {isDescriptionExpanded ? (
-            <Markdown className="text-sm text-muted-foreground">
-              {opportunity.description}
-            </Markdown>
-          ) : (
-            <p
-              className={
-                canExpandDescription
-                  ? "line-clamp-4 text-sm/relaxed text-muted-foreground"
-                  : "text-sm/relaxed text-muted-foreground"
-              }
-            >
-              {description}
-            </p>
-          )}
-          {canExpandDescription && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="-ml-3"
-              aria-expanded={isDescriptionExpanded}
-              onClick={() => {
-                setIsDescriptionExpanded((value) => !value)
-              }}
-            >
-              {isDescriptionExpanded ? (
-                <ChevronUpIcon aria-hidden />
-              ) : (
-                <ChevronDownIcon aria-hidden />
-              )}
-              {isDescriptionExpanded ? "Show less" : "Read full description"}
-            </Button>
-          )}
-        </div>
-      )}
-
-      <dl className="flex flex-wrap gap-2 text-xs">
-        {opportunity.deadline && (
-          <Badge
-            variant="secondary"
-            className="h-auto px-2.5 py-1 text-muted-foreground"
-            render={<div />}
-          >
-            <dt className="sr-only">Deadline</dt>
-            <CalendarClockIcon className="size-3.5 shrink-0" aria-hidden />
-            <dd>{deadline.relative}</dd>
-          </Badge>
-        )}
-        {opportunity.location && (
-          <Badge
-            variant="secondary"
-            className="h-auto px-2.5 py-1 text-muted-foreground"
-            render={<div />}
-          >
-            <dt className="sr-only">Location</dt>
-            <MapPinIcon className="size-3.5 shrink-0" aria-hidden />
-            <dd>{opportunity.location}</dd>
-          </Badge>
-        )}
-        {opportunity.funding && (
-          <Badge
-            variant="secondary"
-            className="h-auto px-2.5 py-1 text-muted-foreground"
-            render={<div />}
-          >
-            <dt className="sr-only">Funding</dt>
-            <WalletIcon className="size-3.5 shrink-0" aria-hidden />
-            <dd>{opportunity.funding}</dd>
-          </Badge>
-        )}
-      </dl>
-
-      {eligibilities.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Eligibility
-          </h4>
-          <div className="flex flex-wrap gap-1.5">
-            {eligibilities.map((label) => (
-              <Badge key={label} variant="outline">
-                {label}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {majors.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Eligible majors
-          </h4>
-          <div className="flex flex-wrap gap-1.5">
-            {visibleMajors.map((major) => (
-              <Badge key={major} variant="secondary">
-                <GraduationCapIcon aria-hidden />
-                {major}
-              </Badge>
-            ))}
-            {majors.length > 5 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                aria-expanded={areMajorsExpanded}
-                onClick={() => {
-                  setAreMajorsExpanded((value) => !value)
-                }}
-              >
-                {areMajorsExpanded
-                  ? "Show fewer"
-                  : `Show ${String(majors.length - 5)} more`}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        {opportunity.link ? (
-          <Button
-            nativeButton={false}
-            size="sm"
-            render={
-              <a
-                href={opportunity.link}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLinkIcon aria-hidden />
-                Application link
-              </a>
-            }
-          />
-        ) : (
-          <span className="text-sm text-muted-foreground">
-            No application link provided
-          </span>
-        )}
-
-        {opportunity.deadline && !expired && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={calendar.isPending}
-            onClick={() => {
-              calendar.mutate(opportunity.id)
-            }}
-          >
-            <CalendarPlusIcon aria-hidden />
-            {calendar.isPending ? "Adding…" : "Add deadline to calendar"}
-          </Button>
-        )}
-
-        {onEdit && (
-          <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
-            <PencilIcon aria-hidden />
-            Edit
-          </Button>
-        )}
-        {onDelete && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onDelete}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2Icon aria-hidden />
-            Delete
-          </Button>
-        )}
-      </div>
-
-      {opportunity.deadline && !expired && (
-        <div>
-          {calendar.isSuccess && (
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span
-                className={
-                  calendar.data.google_errors.length > 0
-                    ? "text-warning"
-                    : "text-success"
-                }
-              >
-                {calendar.data.google_errors.includes(
-                  "insufficient_google_scope"
-                )
-                  ? "Google Calendar permission needs to be renewed."
-                  : calendar.data.google_errors.length > 0
-                    ? "Calendar added with warnings from Google."
-                    : "Added to Google Calendar."}
-              </span>
-              {calendar.data.google_errors.includes(
-                "insufficient_google_scope"
-              ) && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={beginReauthentication}
-                >
-                  Sign in again
-                </Button>
-              )}
-            </div>
-          )}
-          {calendar.isError && (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-destructive">
-              <span>
-                {calendar.error instanceof ApiError &&
-                (calendar.error.status === 401 || calendar.error.status === 403)
-                  ? "Google permission needs to be renewed."
-                  : apiErrorMessage(
-                      calendar.error,
-                      "Could not add this deadline."
-                    )}
-              </span>
-              {calendar.error instanceof ApiError &&
-                (calendar.error.status === 401 ||
-                  calendar.error.status === 403) && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={beginReauthentication}
-                  >
-                    Sign in again
-                  </Button>
-                )}
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
-  )
-}
-
-export function Page({
+export function OpportunitiesScreen({
   search,
   onSearchChange,
 }: {
@@ -379,29 +51,13 @@ export function Page({
     replace?: boolean
   ) => void
 }) {
-  const {
-    type = [],
-    majors = [],
-    education = [],
-    years = [],
-    hideExpired,
-    q,
-  } = search
+  const { q } = search
   const [searchInput, setSearchInput] = useState(q ?? "")
   const debouncedSearch = useDebounced(searchInput)
-  // Derived per render, so memoise: a fresh object is a new query key and
-  // restarts the infinite list.
-  const filters = useMemo(
-    () => ({
-      type: type.length > 0 ? type : undefined,
-      majors: majors.length > 0 ? majors : undefined,
-      education_level: education.length > 0 ? education : undefined,
-      years: years.length > 0 ? years : undefined,
-      q,
-      hide_expired: hideExpired,
-    }),
-    [type, majors, education, years, q, hideExpired]
-  )
+  // Memoised: a fresh object is a new query key and restarts the infinite
+  // list. The router shares structure, so `search` only changes identity when
+  // a filter does.
+  const filters = useMemo(() => toApiFilters(search), [search])
 
   const { canManageOpportunities } = usePermissions()
 
@@ -436,6 +92,26 @@ export function Page({
     )
   }, [debouncedSearch, onSearchChange])
 
+  const isWide = useIsWide()
+  const [isRailOpen, setIsRailOpen] = useState(false)
+  // The sheet and the sticky column are the same rail; only one is mounted.
+  // Growing past `xl` with the sheet open retires the sheet.
+  const sheetOpen = isRailOpen && !isWide
+  const activeCount = activeFilterCount(search)
+
+  /** The rail edits filters only; the search box has its own debounced path. */
+  const applyFilters = (next: OpportunitiesSearchState) => {
+    onSearchChange((previous) => ({
+      ...previous,
+      type: next.type,
+      education: next.education,
+      years: next.years,
+      majors: next.majors,
+      hideExpired: next.hideExpired,
+    }))
+  }
+  const rail = <FilterRail search={search} onSearchChange={applyFilters} />
+
   const saving = createOpportunity.isPending || updateOpportunity.isPending
   const saveError = createOpportunity.error ?? updateOpportunity.error
 
@@ -462,119 +138,109 @@ export function Page({
           </Button>
         ) : undefined
       }
-      width="prose"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <SearchFilter
-          value={searchInput}
-          onChange={setSearchInput}
-          placeholder="Search opportunities"
-        />
-        <Toggle
-          variant="outline"
-          pressed={hideExpired}
-          onPressedChange={(pressed) => {
-            onSearchChange((previous) => ({
-              ...previous,
-              hideExpired: pressed,
-            }))
-          }}
-        >
-          {hideExpired ? "Show expired" : "Hide expired"}
-        </Toggle>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <MultiFilter
-          label="Types"
-          selected={type}
-          options={TYPE_OPTIONS}
-          onChange={(next) => {
-            onSearchChange((previous) => ({
-              ...previous,
-              type: next.length > 0 ? next : undefined,
-            }))
-          }}
-        />
-        <MultiFilter
-          label="Education"
-          selected={education}
-          options={EDUCATION_OPTIONS}
-          onChange={(next) => {
-            onSearchChange((previous) => ({
-              ...previous,
-              education: next.length > 0 ? next : undefined,
-            }))
-          }}
-        />
-        <MultiFilter
-          label="Years"
-          selected={years.map(String)}
-          options={YEAR_OPTIONS}
-          onChange={(next) => {
-            onSearchChange((previous) => ({
-              ...previous,
-              years:
-                next.length > 0
-                  ? next.map((value) => Number(value))
-                  : undefined,
-            }))
-          }}
-        />
-        <MultiFilter
-          label="Majors"
-          selected={majors}
-          options={MAJOR_OPTIONS}
-          onChange={(next) => {
-            onSearchChange((previous) => ({
-              ...previous,
-              majors: next.length > 0 ? next : undefined,
-            }))
-          }}
-        />
+      <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start">
+        {isWide && (
+          // Below the 3.5rem header, with a little air.
+          <aside aria-label="Filters" className="sticky top-18">
+            {rail}
+          </aside>
+        )}
+
+        <div className="min-w-0 space-y-4">
+          <Card className="flex-row flex-wrap items-center gap-3 p-3">
+            <SearchFilter
+              className="w-64 min-w-0 flex-none max-sm:w-full max-sm:flex-1"
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Search opportunities"
+            />
+            {!isWide && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsRailOpen(true)
+                }}
+              >
+                <SlidersHorizontalIcon aria-hidden />
+                Filters
+                {activeCount > 0 && (
+                  <span className="rounded-full bg-primary px-1.5 text-xs text-primary-foreground tabular-nums">
+                    {activeCount}
+                  </span>
+                )}
+              </Button>
+            )}
+            {list.total > 0 && (
+              <span className="ml-auto hidden shrink-0 text-sm text-muted-foreground sm:block">
+                {list.total}{" "}
+                {list.total === 1 ? "opportunity" : "opportunities"}
+              </span>
+            )}
+          </Card>
+
+          <InfiniteList
+            items={list.items}
+            getKey={(opportunity) => opportunity.id}
+            renderItem={(opportunity) => (
+              <OpportunityCard
+                opportunity={opportunity}
+                onEdit={
+                  canManageOpportunities
+                    ? () => {
+                        setEditing({ opportunity })
+                      }
+                    : undefined
+                }
+                onDelete={
+                  canManageOpportunities
+                    ? () => {
+                        setDeleting(opportunity)
+                      }
+                    : undefined
+                }
+              />
+            )}
+            isPending={list.isPending}
+            isError={list.isError}
+            error={list.error}
+            refetch={() => {
+              void list.refetch()
+            }}
+            hasNextPage={list.hasNextPage}
+            isFetchingNextPage={list.isFetchingNextPage}
+            fetchNextPage={() => {
+              void list.fetchNextPage()
+            }}
+            empty={
+              <EmptyState
+                title="No opportunities"
+                description={
+                  activeCount > 0 || q
+                    ? "Nothing matches these filters. Try clearing some."
+                    : "Nothing open right now. Check back soon."
+                }
+              />
+            }
+          >
+            {(rendered) => <CardGrid columns={1}>{rendered}</CardGrid>}
+          </InfiniteList>
+        </div>
       </div>
 
-      <InfiniteList
-        items={list.items}
-        getKey={(opportunity) => opportunity.id}
-        renderItem={(opportunity) => (
-          <OpportunityCard
-            opportunity={opportunity}
-            onEdit={
-              canManageOpportunities
-                ? () => {
-                    setEditing({ opportunity })
-                  }
-                : undefined
-            }
-            onDelete={
-              canManageOpportunities
-                ? () => {
-                    setDeleting(opportunity)
-                  }
-                : undefined
-            }
-          />
-        )}
-        isPending={list.isPending}
-        isError={list.isError}
-        error={list.error}
-        refetch={() => {
-          void list.refetch()
+      <Sheet
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          setIsRailOpen(open)
         }}
-        hasNextPage={list.hasNextPage}
-        isFetchingNextPage={list.isFetchingNextPage}
-        fetchNextPage={() => {
-          void list.fetchNextPage()
-        }}
-        empty={
-          <EmptyState
-            title="No opportunities"
-            description="Nothing open right now. Check back soon."
-          />
-        }
       >
-        {(rendered) => <CardGrid columns={1}>{rendered}</CardGrid>}
-      </InfiniteList>
+        <SheetContent side="left">
+          <SheetHeader>
+            <SheetTitle className="sr-only">Filters</SheetTitle>
+          </SheetHeader>
+          <div className="overflow-y-auto px-4 pb-4">{rail}</div>
+        </SheetContent>
+      </Sheet>
 
       <Dialog
         open={editing !== null}
@@ -663,23 +329,3 @@ export function Page({
     </PageLayout>
   )
 }
-
-const TYPE_OPTIONS = OPPORTUNITY_TYPES.map((value) => ({
-  value,
-  label: OPPORTUNITY_TYPE_LABELS[value],
-}))
-
-const EDUCATION_OPTIONS = EDUCATION_LEVELS.map((value) => ({
-  value,
-  label: EDUCATION_LEVEL_LABELS[value],
-})) satisfies FilterOption<EducationLevel>[]
-
-const YEAR_OPTIONS = [1, 2, 3, 4].map((value) => ({
-  value: String(value),
-  label: `Year ${String(value)}`,
-}))
-
-const MAJOR_OPTIONS = OPPORTUNITY_MAJORS.map((value) => ({
-  value,
-  label: value,
-})) satisfies FilterOption<OpportunityMajor>[]
