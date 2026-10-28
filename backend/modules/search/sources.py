@@ -43,6 +43,12 @@ COURSES = SourceIndex("course", SearchKind.course, "courses")
 GRADE_REPORTS = SourceIndex("grade_report", SearchKind.course, "grade_reports")
 CATALOGUE = SourceIndex("catalogue", SearchKind.course, "course_schedule_catalog")
 
+
+def source_key(source: SourceIndex, primary_key: int | str) -> str:
+    """A Source's id in results, unique across sources: `page:12`, `catalogue:825-ANT-101`."""
+    return f"{source.name}:{primary_key}"
+
+
 # Order breaks ties between equal ranking scores.
 SOURCES: tuple[SourceIndex, ...] = (
     PAGES,
@@ -52,6 +58,16 @@ SOURCES: tuple[SourceIndex, ...] = (
     GRADE_REPORTS,
     CATALOGUE,
 )
+
+
+SOURCES_BY_NAME = {source.name: source for source in SOURCES}
+
+
+def parse_source_key(key: str) -> tuple[SourceIndex, int | str]:
+    """The inverse of `source_key`. Table-backed sources have integer keys."""
+    name, _, primary_key = key.partition(":")
+    source = SOURCES_BY_NAME[name]
+    return source, primary_key if source is CATALOGUE else int(primary_key)
 
 
 @dataclass(frozen=True)

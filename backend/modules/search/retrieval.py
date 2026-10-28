@@ -15,7 +15,7 @@ import httpx
 
 from backend.modules.search import snippets
 from backend.modules.search.schemas import Snippet
-from backend.modules.search.sources import SourceIndex
+from backend.modules.search.sources import SourceIndex, source_key
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class Hit:
 
     @property
     def key(self) -> str:
-        return f"{self.source.name}:{self.primary_key}"
+        return source_key(self.source, self.primary_key)
 
 
 @dataclass(frozen=True)

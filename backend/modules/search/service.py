@@ -25,10 +25,18 @@ from urllib.parse import urlsplit
 from backend.common.service_origin import Service
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.dependencies import is_guest
-from backend.modules.search import records as build
 from backend.modules.search import snippets
 from backend.modules.search.fusion import fuse
-from backend.modules.search.records import Record, Viewer
+from backend.modules.search.records import (
+    Principal,
+    Record,
+    catalogue_record,
+    course_record,
+    event_record,
+    grade_report_record,
+    opportunity_record,
+    page_record,
+)
 from backend.modules.search.repository import SearchRepository
 from backend.modules.search.retrieval import (
     MAX_TOTAL_HITS,
@@ -50,13 +58,14 @@ from backend.modules.search.sources import (
     OPPORTUNITIES,
     PAGES,
     SOURCES,
+    SOURCES_BY_NAME,
     Reach,
     SourceIndex,
     coarse_filter,
+    parse_source_key,
+    source_key,
 )
 from backend.modules.shared.visibility import is_site_admin, tiers_open_to
-
-SOURCES_BY_NAME = {source.name: source for source in SOURCES}
 
 # Records are read in batches of at least this many candidates, best first,
 # until a page's worth has passed the predicate.
@@ -76,7 +85,7 @@ class SearchService:
 
     async def search(
         self,
-        viewer: Viewer,
+        viewer: Principal,
         *,
         query: str,
         kind: SearchKind | None = None,
@@ -127,7 +136,7 @@ class SearchService:
             next_offset=wanted if has_next else None,
         )
 
-    async def _reach(self, repo: SearchRepository, viewer: Viewer) -> Reach:
+    async def _reach(self, repo: SearchRepository, viewer: Principal) -> Reach:
         if is_site_admin(viewer):
             return Reach(page_tiers=None, event_statuses=None)
         tiers = tiers_open_to(viewer)
@@ -144,7 +153,7 @@ class SearchService:
     async def _admit(
         self,
         repo: SearchRepository,
-        viewer: Viewer,
+        viewer: Principal,
         ranked: Sequence[str],
         hits: dict[str, Hit],
         *,
@@ -166,20 +175,19 @@ class SearchService:
         return admitted
 
     async def _records(
-        self, repo: SearchRepository, viewer: Viewer, keys: Sequence[str], hits: dict[str, Hit]
+        self, repo: SearchRepository, viewer: Principal, keys: Sequence[str], hits: dict[str, Hit]
     ) -> dict[str, Record]:
         wanted: dict[SourceIndex, list] = defaultdict(list)
         for key in keys:
-            name, _, primary_key = key.partition(":")
-            source = SOURCES_BY_NAME[name]
-            wanted[source].append(primary_key if source is CATALOGUE else int(primary_key))
+            source, primary_key = parse_source_key(key)
+            wanted[source].append(primary_key)
 
         found: list[Record] = []
         if ids := wanted.get(PAGES):
             sub = None if is_guest(viewer) else viewer[0]["sub"]
             administered = await repo.administered_among(sub, ids) if sub else set()
             found += [
-                build.page_record(
+                page_record(
                     page,
                     owner_name=_full_name(page.owner_user),
                     viewer_sub=sub,
@@ -188,17 +196,19 @@ class SearchService:
                 for page in await repo.pages(ids)
             ]
         if ids := wanted.get(EVENTS):
-            found += [build.event_record(event) for event in await repo.events(ids)]
+            found += [event_record(event) for event in await repo.events(ids)]
         if ids := wanted.get(OPPORTUNITIES):
-            found += [build.opportunity_record(row) for row in await repo.opportunities(ids)]
+            found += [opportunity_record(row) for row in await repo.opportunities(ids)]
         if ids := wanted.get(COURSES):
-            found += [build.course_record(row) for row in await repo.courses(ids)]
+            found += [course_record(row) for row in await repo.courses(ids)]
         if ids := wanted.get(GRADE_REPORTS):
-            found += [build.grade_report_record(row) for row in await repo.grade_reports(ids)]
+            found += [grade_report_record(row) for row in await repo.grade_reports(ids)]
         for primary_key in wanted.get(CATALOGUE, []):
             # The catalogue lives only in Meilisearch: its hit is its record.
-            if hit := hits.get(f"{CATALOGUE.name}:{primary_key}"):
-                found.append(build.catalogue_record(hit.document))
+            # A catalogue key found only by dense retrieval (#441) needs its
+            # document fetched from the index by id here.
+            if hit := hits.get(source_key(CATALOGUE, primary_key)):
+                found.append(catalogue_record(hit.document))
         return {record.key: record for record in found}
 
     def _result(self, record: Record, hit: Hit | None) -> SearchResult:

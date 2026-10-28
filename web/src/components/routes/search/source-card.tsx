@@ -7,6 +7,7 @@ import {
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
+import { visibilityLabel } from "@/components/shared/pages/visibilities"
 import { Badge } from "@/components/ui/badge"
 import {
   snippetSegments,
@@ -22,12 +23,6 @@ const KIND_ICON: Record<SearchKind, LucideIcon> = {
   course: GraduationCapIcon,
 }
 
-const VISIBILITY_LABEL = {
-  internal: "Members only",
-  private: "Private",
-  public: null,
-} as const
-
 /**
  * One result, Google's card: favicon, host › path, the badge and the date on
  * the breadcrumb line; the title as the link; the snippet with its matches in
@@ -39,7 +34,7 @@ const VISIBILITY_LABEL = {
 export function SourceCard({ source }: { source: SearchResult }) {
   const Icon = KIND_ICON[source.kind]
   const segments = source.path.split("/").filter(Boolean)
-  const badge = source.visibility ? VISIBILITY_LABEL[source.visibility] : null
+  const badge = source.visibility ? visibilityLabel(source.visibility) : null
   const date = sourceDateLabel(source.date)
   const facts = source.facts ?? []
 

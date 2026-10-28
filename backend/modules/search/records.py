@@ -36,19 +36,21 @@ from backend.modules.search.sources import (
     OPPORTUNITIES,
     PAGES,
     SourceIndex,
+    source_key,
 )
 from backend.modules.shared.visibility import RecordVisibility, is_site_admin, visible_to
 
-Viewer = tuple[dict, dict]
+# The credentials pair `get_creds_or_guest` returns.
+Principal = tuple[dict, dict]
 
 
 class Gate(Protocol):
-    def admits(self, viewer: Viewer) -> bool: ...
+    def admits(self, viewer: Principal) -> bool: ...
 
 
 @dataclass(frozen=True)
 class Ungated:
-    def admits(self, viewer: Viewer) -> bool:
+    def admits(self, viewer: Principal) -> bool:
         return True
 
 
@@ -56,7 +58,7 @@ class Ungated:
 class Tiered:
     visibility: RecordVisibility
 
-    def admits(self, viewer: Viewer) -> bool:
+    def admits(self, viewer: Principal) -> bool:
         return visible_to(viewer, self.visibility)
 
 
@@ -65,7 +67,7 @@ class EventGate:
     status: EventStatus
     creator_sub: str | None
 
-    def admits(self, viewer: Viewer) -> bool:
+    def admits(self, viewer: Principal) -> bool:
         if self.status in OPEN_EVENT_STATUSES or is_site_admin(viewer):
             return True
         return not is_guest(viewer) and viewer[0].get("sub") == self.creator_sub
@@ -86,7 +88,7 @@ class Record:
 
     @property
     def key(self) -> str:
-        return f"{self.source.name}:{self.primary_key}"
+        return source_key(self.source, self.primary_key)
 
     @property
     def kind(self) -> SearchKind:

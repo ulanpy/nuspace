@@ -168,8 +168,13 @@ export function Results({ q, kind }: { q: string; kind?: SearchKind }) {
       <>
         {/* #445: the AI Overview goes here, above the results, for a signed-in viewer. */}
         <ol>
-          {results.map((source) => (
-            <li key={source.id}>
+          {/* `source-N` is the anchor an Overview citation [N] jumps to (#445). */}
+          {results.map((source, index) => (
+            <li
+              key={source.id}
+              id={`source-${index + 1}`}
+              className="scroll-mt-24"
+            >
               <SourceCard source={source} />
             </li>
           ))}
