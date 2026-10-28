@@ -11,7 +11,7 @@ import { useAssignmentEditor } from "@/components/routes/courses/components/use-
 import { CourseDetail } from "@/components/routes/courses/components/course-detail"
 import { CourseList } from "@/components/routes/courses/components/course-list"
 import { CourseSummary } from "@/components/routes/courses/components/course-summary"
-import { GpaSummary } from "@/components/routes/courses/components/gpa-summary"
+import { GpaSummaryCard } from "@/components/routes/courses/components/gpa-summary"
 import { RegistrarSync } from "@/components/routes/courses/components/registrar-sync"
 import { RegisteredScheduleDialog } from "@/components/routes/courses/components/registered-schedule-dialog"
 import { EmptyState, QueryBoundary } from "@/components/shared/query/boundary"
@@ -64,7 +64,7 @@ export function MyCoursesScreen({
 
         return (
           <div className="space-y-4">
-            <GpaSummary summary={summarizeGpa(courses, excludedIds)} />
+            <GpaSummaryCard summary={summarizeGpa(courses, excludedIds)} />
 
             <div className="grid items-start gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
               <section

@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import { Page } from "@/components/shared/page"
 
-import { StatisticsScreen } from "@/components/routes/courses/statistics"
+import { StatisticsScreen } from "@/components/routes/courses/stats"
 
 const statisticsSearchSchema = z.object({
   q: z.string().optional(),

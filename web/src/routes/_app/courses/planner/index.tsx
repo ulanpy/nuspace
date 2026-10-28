@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import { Page } from "@/components/shared/page"
 
-import { ScheduleBuilderScreen } from "@/components/routes/courses/schedule"
+import { ScheduleBuilderScreen } from "@/components/routes/courses/planner"
 
 const scheduleSearchSchema = z.object({
   /**

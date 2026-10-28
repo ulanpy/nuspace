@@ -18,7 +18,6 @@ export type { RailSection, ShellOptions } from "./types"
  *
  *     export const Route = createFileRoute("/_app/courses")({
  *       staticData: { shell: { sections: COURSES_SECTIONS } },
- *       component: CoursesLayout,
  *     })
  */
 export function SiteLayout() {

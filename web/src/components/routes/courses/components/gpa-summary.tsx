@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react"
 
 import { Card } from "@/components/ui/card"
 import { formatGpa, gpaBarFill } from "@/lib/courses/gpa"
-import type { GpaSummary as GpaFigures } from "@/lib/courses/gpa"
+import type { GpaSummary } from "@/lib/courses/gpa"
 
 function Metric({
   icon: Icon,
@@ -31,7 +31,7 @@ function Metric({
  * The term's GPA: the figure, a two-tone bar of where it stands against where
  * it is heading, and the projected and ceiling readings beside it.
  */
-export function GpaSummary({ summary }: { summary: GpaFigures }) {
+export function GpaSummaryCard({ summary }: { summary: GpaSummary }) {
   const { current, projected, ceiling, excludedCount } = summary
 
   return (
