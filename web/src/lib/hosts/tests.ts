@@ -156,7 +156,6 @@ describe("nginx include", () => {
     assert.match(include, /"root:\/about" +1;/)
     assert.match(include, /"root:\/about\/" +1;/)
     assert.match(include, /"~\^events:\/\[0-9\]\+\/\?\$" +1;/)
-    assert.match(include, /"~\^root:\/p\/\[\^\/\]\+\/editor\/\?\$" +1;/)
   })
 
   it("serves the legal pages at their short paths, and 404s the old ones", () => {
@@ -253,6 +252,56 @@ describe("host rewrite", () => {
     assert.equal(
       rewrite.output({ url: new URL("http://127.0.0.1/events/42") }),
       undefined
+    )
+  })
+})
+
+describe("the pages host", () => {
+  const include = renderNginxInclude(ROUTE_TABLE, SERVICES)
+  const regexes = [...include.matchAll(/"~(\^pages:[^"]+)"/g)].map(
+    ([, pattern]) => new RegExp(pattern)
+  )
+  const owned = (path: string) =>
+    include.includes(`"pages:${path}"`) ||
+    regexes.some((pattern) => pattern.test(`pages:${path}`))
+
+  it("serves the directory, a Page, its settings and its editor", () => {
+    for (const path of [
+      "/",
+      "/chess-club",
+      "/chess-club/",
+      "/2026",
+      "/chess-club/settings",
+      "/chess-club/edit",
+    ]) {
+      assert.ok(owned(path), path)
+    }
+  })
+
+  it("404s in nginx what can be no Page's address", () => {
+    for (const path of [
+      "/Chess-Club",
+      "/chess_club",
+      "/chess--club",
+      "/chess-club/editor",
+      "/chess-club/settings/general",
+      "/p/chess-club",
+    ]) {
+      assert.ok(!owned(path), path)
+    }
+  })
+
+  it("renders a Page's address at the host's root", () => {
+    const rewrite = createHostRewrite()
+    const url = new URL("https://pages.nuspace.kz/chess-club?admin=s3cret")
+    assert.equal(
+      rewrite.input({ url })?.href,
+      "https://pages.nuspace.kz/pages/chess-club?admin=s3cret"
+    )
+    const out = new URL("https://nuspace.kz/pages/chess-club/edit")
+    assert.equal(
+      rewrite.output({ url: out })?.href,
+      "https://pages.nuspace.kz/chess-club/edit"
     )
   })
 })

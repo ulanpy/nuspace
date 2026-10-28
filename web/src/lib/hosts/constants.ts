@@ -126,11 +126,6 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
       "/announcements",
       "/contacts",
       "/mynuspace",
-      "/p/$slug",
-      "/p/$slug/editor",
-      "/p/$slug/settings",
-      "/p/$slug/settings/admin-controls",
-      "/p/$slug/settings/general",
       "/sgotinish",
     ],
   },
@@ -156,5 +151,14 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     service: "courses",
     mount: "/courses",
     routes: ["/", "/stats", "/planner", "/audit", "/audit/guide"],
+  },
+  {
+    service: "pages",
+    mount: "/pages",
+    routes: ["/", "/$slug", "/$slug/settings", "/$slug/edit"],
+    // The slug rule (`lib/slug.ts`), so `pages.nuspace.kz/Chess_Club` is a
+    // 404 before any JavaScript loads. The words a slug may not be are kept
+    // out by `RESERVED_SLUGS`, not here: nginx answers its own paths first.
+    params: { slug: "[a-z0-9]+(-[a-z0-9]+)*" },
   },
 ]

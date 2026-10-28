@@ -61,9 +61,9 @@ const PRODUCTS: Product[] = [
   {
     title: "Pages",
     description: "Find student groups and follow the pages you care about.",
-    // `/communities` is gone; `/mynuspace` is the pages directory, and the
+    // `/communities` is gone; `/pages` is the pages directory, and the
     // categories it used to filter by went with their backend columns.
-    to: "/mynuspace",
+    to: "/pages",
     icon: UsersIcon,
     accent: "bg-page",
     iconClassName: "bg-page/15 text-page",

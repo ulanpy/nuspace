@@ -69,7 +69,8 @@ export function AdminAccessLink({ slug }: { slug: string }) {
           />
           <ItemDescription>
             Anyone signed in who opens this link becomes an admin. Do not share
-            it publicly.
+            it publicly. It names the page's address, so changing the address
+            breaks it.
           </ItemDescription>
         </ItemContent>
         <ItemActions>

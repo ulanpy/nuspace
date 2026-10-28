@@ -5,7 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { toast } from "sonner"
 
 import { qk } from "@/api/query-keys"
-import type { AdminControlsSearch } from "@/routes/_app/p/$slug/settings/admin-controls"
+import type { PageSettingsSearch as AdminControlsSearch } from "@/routes/_app/pages/$slug/settings"
 import {
   adminPageActions,
   fetchPageAdminsPage,

@@ -21,7 +21,7 @@ export function PageCard({ page }: { page: Page }) {
   return (
     <Card className="h-full p-0 transition-shadow hover:shadow-md">
       <Link
-        to="/p/$slug"
+        to="/pages/$slug"
         params={{ slug: page.slug }}
         className="flex h-full flex-col focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >

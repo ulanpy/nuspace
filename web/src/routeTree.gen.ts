@@ -20,6 +20,7 @@ import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppMynuspaceIndexRouteImport } from './routes/_app/mynuspace/index'
 import { Route as AppOpportunitiesIndexRouteImport } from './routes/_app/opportunities/index'
+import { Route as AppPagesIndexRouteImport } from './routes/_app/pages/index'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
 import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/index'
 import { Route as PublicPrivacyIndexRouteImport } from './routes/_public/privacy/index'
@@ -28,15 +29,12 @@ import { Route as AppCoursesAuditIndexRouteImport } from './routes/_app/courses/
 import { Route as AppCoursesPlannerIndexRouteImport } from './routes/_app/courses/planner/index'
 import { Route as AppCoursesStatsIndexRouteImport } from './routes/_app/courses/stats/index'
 import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$eventId/index'
-import { Route as AppPSlugIndexRouteImport } from './routes/_app/p/$slug/index'
-import { Route as AppPSlugSettingsRouteRouteImport } from './routes/_app/p/$slug/settings/route'
+import { Route as AppPagesSlugIndexRouteImport } from './routes/_app/pages/$slug/index'
 import { Route as AppAccountMyAccountIndexRouteImport } from './routes/_app/_account/my/account/index'
 import { Route as AppAccountMyPagesIndexRouteImport } from './routes/_app/_account/my/pages/index'
 import { Route as AppCoursesAuditGuideIndexRouteImport } from './routes/_app/courses/audit/guide/index'
-import { Route as AppPSlugEditorIndexRouteImport } from './routes/_app/p/$slug/editor/index'
-import { Route as AppPSlugSettingsIndexRouteImport } from './routes/_app/p/$slug/settings/index'
-import { Route as AppPSlugSettingsAdminControlsIndexRouteImport } from './routes/_app/p/$slug/settings/admin-controls/index'
-import { Route as AppPSlugSettingsGeneralIndexRouteImport } from './routes/_app/p/$slug/settings/general/index'
+import { Route as AppPagesSlugEditIndexRouteImport } from './routes/_app/pages/$slug/edit/index'
+import { Route as AppPagesSlugSettingsIndexRouteImport } from './routes/_app/pages/$slug/settings/index'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -90,6 +88,11 @@ const AppOpportunitiesIndexRoute = AppOpportunitiesIndexRouteImport.update({
   path: '/opportunities/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppPagesIndexRoute = AppPagesIndexRouteImport.update({
+  id: '/pages/',
+  path: '/pages/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppSgotinishIndexRoute = AppSgotinishIndexRouteImport.update({
   id: '/sgotinish/',
   path: '/sgotinish/',
@@ -130,14 +133,9 @@ const AppEventsEventIdIndexRoute = AppEventsEventIdIndexRouteImport.update({
   path: '/events/$eventId/',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppPSlugIndexRoute = AppPSlugIndexRouteImport.update({
-  id: '/p/$slug/',
-  path: '/p/$slug/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppPSlugSettingsRouteRoute = AppPSlugSettingsRouteRouteImport.update({
-  id: '/p/$slug/settings',
-  path: '/p/$slug/settings',
+const AppPagesSlugIndexRoute = AppPagesSlugIndexRouteImport.update({
+  id: '/pages/$slug/',
+  path: '/pages/$slug/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppAccountMyAccountIndexRoute =
@@ -157,27 +155,16 @@ const AppCoursesAuditGuideIndexRoute =
     path: '/audit/guide/',
     getParentRoute: () => AppCoursesRouteRoute,
   } as any)
-const AppPSlugEditorIndexRoute = AppPSlugEditorIndexRouteImport.update({
-  id: '/p/$slug/editor/',
-  path: '/p/$slug/editor/',
+const AppPagesSlugEditIndexRoute = AppPagesSlugEditIndexRouteImport.update({
+  id: '/pages/$slug/edit/',
+  path: '/pages/$slug/edit/',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppPSlugSettingsIndexRoute = AppPSlugSettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppPSlugSettingsRouteRoute,
-} as any)
-const AppPSlugSettingsAdminControlsIndexRoute =
-  AppPSlugSettingsAdminControlsIndexRouteImport.update({
-    id: '/admin-controls/',
-    path: '/admin-controls/',
-    getParentRoute: () => AppPSlugSettingsRouteRoute,
-  } as any)
-const AppPSlugSettingsGeneralIndexRoute =
-  AppPSlugSettingsGeneralIndexRouteImport.update({
-    id: '/general/',
-    path: '/general/',
-    getParentRoute: () => AppPSlugSettingsRouteRoute,
+const AppPagesSlugSettingsIndexRoute =
+  AppPagesSlugSettingsIndexRouteImport.update({
+    id: '/pages/$slug/settings/',
+    path: '/pages/$slug/settings/',
+    getParentRoute: () => AppRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -189,23 +176,21 @@ export interface FileRoutesByFullPath {
   '/events/': typeof AppEventsIndexRoute
   '/mynuspace/': typeof AppMynuspaceIndexRoute
   '/opportunities/': typeof AppOpportunitiesIndexRoute
+  '/pages/': typeof AppPagesIndexRoute
   '/sgotinish/': typeof AppSgotinishIndexRoute
   '/about/': typeof PublicAboutIndexRoute
   '/privacy/': typeof PublicPrivacyIndexRoute
   '/terms/': typeof PublicTermsIndexRoute
-  '/p/$slug/settings': typeof AppPSlugSettingsRouteRouteWithChildren
   '/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/courses/planner/': typeof AppCoursesPlannerIndexRoute
   '/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/events/$eventId/': typeof AppEventsEventIdIndexRoute
-  '/p/$slug/': typeof AppPSlugIndexRoute
+  '/pages/$slug/': typeof AppPagesSlugIndexRoute
   '/my/account/': typeof AppAccountMyAccountIndexRoute
   '/my/pages/': typeof AppAccountMyPagesIndexRoute
   '/courses/audit/guide/': typeof AppCoursesAuditGuideIndexRoute
-  '/p/$slug/editor/': typeof AppPSlugEditorIndexRoute
-  '/p/$slug/settings/': typeof AppPSlugSettingsIndexRoute
-  '/p/$slug/settings/admin-controls/': typeof AppPSlugSettingsAdminControlsIndexRoute
-  '/p/$slug/settings/general/': typeof AppPSlugSettingsGeneralIndexRoute
+  '/pages/$slug/edit/': typeof AppPagesSlugEditIndexRoute
+  '/pages/$slug/settings/': typeof AppPagesSlugSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
@@ -215,6 +200,7 @@ export interface FileRoutesByTo {
   '/events': typeof AppEventsIndexRoute
   '/mynuspace': typeof AppMynuspaceIndexRoute
   '/opportunities': typeof AppOpportunitiesIndexRoute
+  '/pages': typeof AppPagesIndexRoute
   '/sgotinish': typeof AppSgotinishIndexRoute
   '/about': typeof PublicAboutIndexRoute
   '/privacy': typeof PublicPrivacyIndexRoute
@@ -223,14 +209,12 @@ export interface FileRoutesByTo {
   '/courses/planner': typeof AppCoursesPlannerIndexRoute
   '/courses/stats': typeof AppCoursesStatsIndexRoute
   '/events/$eventId': typeof AppEventsEventIdIndexRoute
-  '/p/$slug': typeof AppPSlugIndexRoute
+  '/pages/$slug': typeof AppPagesSlugIndexRoute
   '/my/account': typeof AppAccountMyAccountIndexRoute
   '/my/pages': typeof AppAccountMyPagesIndexRoute
   '/courses/audit/guide': typeof AppCoursesAuditGuideIndexRoute
-  '/p/$slug/editor': typeof AppPSlugEditorIndexRoute
-  '/p/$slug/settings': typeof AppPSlugSettingsIndexRoute
-  '/p/$slug/settings/admin-controls': typeof AppPSlugSettingsAdminControlsIndexRoute
-  '/p/$slug/settings/general': typeof AppPSlugSettingsGeneralIndexRoute
+  '/pages/$slug/edit': typeof AppPagesSlugEditIndexRoute
+  '/pages/$slug/settings': typeof AppPagesSlugSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -245,23 +229,21 @@ export interface FileRoutesById {
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/mynuspace/': typeof AppMynuspaceIndexRoute
   '/_app/opportunities/': typeof AppOpportunitiesIndexRoute
+  '/_app/pages/': typeof AppPagesIndexRoute
   '/_app/sgotinish/': typeof AppSgotinishIndexRoute
   '/_public/about/': typeof PublicAboutIndexRoute
   '/_public/privacy/': typeof PublicPrivacyIndexRoute
   '/_public/terms/': typeof PublicTermsIndexRoute
-  '/_app/p/$slug/settings': typeof AppPSlugSettingsRouteRouteWithChildren
   '/_app/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/_app/courses/planner/': typeof AppCoursesPlannerIndexRoute
   '/_app/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/_app/events/$eventId/': typeof AppEventsEventIdIndexRoute
-  '/_app/p/$slug/': typeof AppPSlugIndexRoute
+  '/_app/pages/$slug/': typeof AppPagesSlugIndexRoute
   '/_app/_account/my/account/': typeof AppAccountMyAccountIndexRoute
   '/_app/_account/my/pages/': typeof AppAccountMyPagesIndexRoute
   '/_app/courses/audit/guide/': typeof AppCoursesAuditGuideIndexRoute
-  '/_app/p/$slug/editor/': typeof AppPSlugEditorIndexRoute
-  '/_app/p/$slug/settings/': typeof AppPSlugSettingsIndexRoute
-  '/_app/p/$slug/settings/admin-controls/': typeof AppPSlugSettingsAdminControlsIndexRoute
-  '/_app/p/$slug/settings/general/': typeof AppPSlugSettingsGeneralIndexRoute
+  '/_app/pages/$slug/edit/': typeof AppPagesSlugEditIndexRoute
+  '/_app/pages/$slug/settings/': typeof AppPagesSlugSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -274,23 +256,21 @@ export interface FileRouteTypes {
     | '/events/'
     | '/mynuspace/'
     | '/opportunities/'
+    | '/pages/'
     | '/sgotinish/'
     | '/about/'
     | '/privacy/'
     | '/terms/'
-    | '/p/$slug/settings'
     | '/courses/audit/'
     | '/courses/planner/'
     | '/courses/stats/'
     | '/events/$eventId/'
-    | '/p/$slug/'
+    | '/pages/$slug/'
     | '/my/account/'
     | '/my/pages/'
     | '/courses/audit/guide/'
-    | '/p/$slug/editor/'
-    | '/p/$slug/settings/'
-    | '/p/$slug/settings/admin-controls/'
-    | '/p/$slug/settings/general/'
+    | '/pages/$slug/edit/'
+    | '/pages/$slug/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -300,6 +280,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/mynuspace'
     | '/opportunities'
+    | '/pages'
     | '/sgotinish'
     | '/about'
     | '/privacy'
@@ -308,14 +289,12 @@ export interface FileRouteTypes {
     | '/courses/planner'
     | '/courses/stats'
     | '/events/$eventId'
-    | '/p/$slug'
+    | '/pages/$slug'
     | '/my/account'
     | '/my/pages'
     | '/courses/audit/guide'
-    | '/p/$slug/editor'
-    | '/p/$slug/settings'
-    | '/p/$slug/settings/admin-controls'
-    | '/p/$slug/settings/general'
+    | '/pages/$slug/edit'
+    | '/pages/$slug/settings'
   id:
     | '__root__'
     | '/_app'
@@ -329,23 +308,21 @@ export interface FileRouteTypes {
     | '/_app/events/'
     | '/_app/mynuspace/'
     | '/_app/opportunities/'
+    | '/_app/pages/'
     | '/_app/sgotinish/'
     | '/_public/about/'
     | '/_public/privacy/'
     | '/_public/terms/'
-    | '/_app/p/$slug/settings'
     | '/_app/courses/audit/'
     | '/_app/courses/planner/'
     | '/_app/courses/stats/'
     | '/_app/events/$eventId/'
-    | '/_app/p/$slug/'
+    | '/_app/pages/$slug/'
     | '/_app/_account/my/account/'
     | '/_app/_account/my/pages/'
     | '/_app/courses/audit/guide/'
-    | '/_app/p/$slug/editor/'
-    | '/_app/p/$slug/settings/'
-    | '/_app/p/$slug/settings/admin-controls/'
-    | '/_app/p/$slug/settings/general/'
+    | '/_app/pages/$slug/edit/'
+    | '/_app/pages/$slug/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -432,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOpportunitiesIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/pages/': {
+      id: '/_app/pages/'
+      path: '/pages'
+      fullPath: '/pages/'
+      preLoaderRoute: typeof AppPagesIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/sgotinish/': {
       id: '/_app/sgotinish/'
       path: '/sgotinish'
@@ -488,18 +472,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEventsEventIdIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/p/$slug/': {
-      id: '/_app/p/$slug/'
-      path: '/p/$slug'
-      fullPath: '/p/$slug/'
-      preLoaderRoute: typeof AppPSlugIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/p/$slug/settings': {
-      id: '/_app/p/$slug/settings'
-      path: '/p/$slug/settings'
-      fullPath: '/p/$slug/settings'
-      preLoaderRoute: typeof AppPSlugSettingsRouteRouteImport
+    '/_app/pages/$slug/': {
+      id: '/_app/pages/$slug/'
+      path: '/pages/$slug'
+      fullPath: '/pages/$slug/'
+      preLoaderRoute: typeof AppPagesSlugIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/_account/my/account/': {
@@ -523,33 +500,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCoursesAuditGuideIndexRouteImport
       parentRoute: typeof AppCoursesRouteRoute
     }
-    '/_app/p/$slug/editor/': {
-      id: '/_app/p/$slug/editor/'
-      path: '/p/$slug/editor'
-      fullPath: '/p/$slug/editor/'
-      preLoaderRoute: typeof AppPSlugEditorIndexRouteImport
+    '/_app/pages/$slug/edit/': {
+      id: '/_app/pages/$slug/edit/'
+      path: '/pages/$slug/edit'
+      fullPath: '/pages/$slug/edit/'
+      preLoaderRoute: typeof AppPagesSlugEditIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/p/$slug/settings/': {
-      id: '/_app/p/$slug/settings/'
-      path: '/'
-      fullPath: '/p/$slug/settings/'
-      preLoaderRoute: typeof AppPSlugSettingsIndexRouteImport
-      parentRoute: typeof AppPSlugSettingsRouteRoute
-    }
-    '/_app/p/$slug/settings/admin-controls/': {
-      id: '/_app/p/$slug/settings/admin-controls/'
-      path: '/admin-controls'
-      fullPath: '/p/$slug/settings/admin-controls/'
-      preLoaderRoute: typeof AppPSlugSettingsAdminControlsIndexRouteImport
-      parentRoute: typeof AppPSlugSettingsRouteRoute
-    }
-    '/_app/p/$slug/settings/general/': {
-      id: '/_app/p/$slug/settings/general/'
-      path: '/general'
-      fullPath: '/p/$slug/settings/general/'
-      preLoaderRoute: typeof AppPSlugSettingsGeneralIndexRouteImport
-      parentRoute: typeof AppPSlugSettingsRouteRoute
+    '/_app/pages/$slug/settings/': {
+      id: '/_app/pages/$slug/settings/'
+      path: '/pages/$slug/settings'
+      fullPath: '/pages/$slug/settings/'
+      preLoaderRoute: typeof AppPagesSlugSettingsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
   }
 }
@@ -588,24 +551,6 @@ const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
   AppCoursesRouteRouteChildren,
 )
 
-interface AppPSlugSettingsRouteRouteChildren {
-  AppPSlugSettingsIndexRoute: typeof AppPSlugSettingsIndexRoute
-  AppPSlugSettingsAdminControlsIndexRoute: typeof AppPSlugSettingsAdminControlsIndexRoute
-  AppPSlugSettingsGeneralIndexRoute: typeof AppPSlugSettingsGeneralIndexRoute
-}
-
-const AppPSlugSettingsRouteRouteChildren: AppPSlugSettingsRouteRouteChildren = {
-  AppPSlugSettingsIndexRoute: AppPSlugSettingsIndexRoute,
-  AppPSlugSettingsAdminControlsIndexRoute:
-    AppPSlugSettingsAdminControlsIndexRoute,
-  AppPSlugSettingsGeneralIndexRoute: AppPSlugSettingsGeneralIndexRoute,
-}
-
-const AppPSlugSettingsRouteRouteWithChildren =
-  AppPSlugSettingsRouteRoute._addFileChildren(
-    AppPSlugSettingsRouteRouteChildren,
-  )
-
 interface AppRouteRouteChildren {
   AppAccountRouteRoute: typeof AppAccountRouteRouteWithChildren
   AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
@@ -614,11 +559,12 @@ interface AppRouteRouteChildren {
   AppEventsIndexRoute: typeof AppEventsIndexRoute
   AppMynuspaceIndexRoute: typeof AppMynuspaceIndexRoute
   AppOpportunitiesIndexRoute: typeof AppOpportunitiesIndexRoute
+  AppPagesIndexRoute: typeof AppPagesIndexRoute
   AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
-  AppPSlugSettingsRouteRoute: typeof AppPSlugSettingsRouteRouteWithChildren
   AppEventsEventIdIndexRoute: typeof AppEventsEventIdIndexRoute
-  AppPSlugIndexRoute: typeof AppPSlugIndexRoute
-  AppPSlugEditorIndexRoute: typeof AppPSlugEditorIndexRoute
+  AppPagesSlugIndexRoute: typeof AppPagesSlugIndexRoute
+  AppPagesSlugEditIndexRoute: typeof AppPagesSlugEditIndexRoute
+  AppPagesSlugSettingsIndexRoute: typeof AppPagesSlugSettingsIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -629,11 +575,12 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppEventsIndexRoute: AppEventsIndexRoute,
   AppMynuspaceIndexRoute: AppMynuspaceIndexRoute,
   AppOpportunitiesIndexRoute: AppOpportunitiesIndexRoute,
+  AppPagesIndexRoute: AppPagesIndexRoute,
   AppSgotinishIndexRoute: AppSgotinishIndexRoute,
-  AppPSlugSettingsRouteRoute: AppPSlugSettingsRouteRouteWithChildren,
   AppEventsEventIdIndexRoute: AppEventsEventIdIndexRoute,
-  AppPSlugIndexRoute: AppPSlugIndexRoute,
-  AppPSlugEditorIndexRoute: AppPSlugEditorIndexRoute,
+  AppPagesSlugIndexRoute: AppPagesSlugIndexRoute,
+  AppPagesSlugEditIndexRoute: AppPagesSlugEditIndexRoute,
+  AppPagesSlugSettingsIndexRoute: AppPagesSlugSettingsIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

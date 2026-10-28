@@ -10,7 +10,7 @@ import { pageDetailQueryOptions } from "@/lib/pages"
  * layout it inherited a tab bar with no selected tab, and base-ui reports its
  * fallback selection as a change — which navigated away on mount.
  */
-export const Route = createFileRoute("/_app/p/$slug/editor/")({
+export const Route = createFileRoute("/_app/pages/$slug/edit/")({
   // The Puck canvas is the page itself, so it gets the whole viewport.
   staticData: { shell: { bare: true } },
   loader: async ({ context, params }) => {

@@ -1,13 +1,13 @@
 import { useNavigate } from "@tanstack/react-router"
 
-import type { AdminControlsSearch } from "@/routes/_app/p/$slug/settings/admin-controls"
+import type { PageSettingsSearch as AdminControlsSearch } from "@/routes/_app/pages/$slug/settings"
 import { useCurrentUser, usePermissions } from "@/hooks/use-session"
 import { pageOwnership, type Page as PageEntity } from "@/lib/pages"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
 import { AdminAccessLink } from "@/components/routes/pages/settings/components/admin-access-link"
 import { AdminsTable } from "@/components/routes/pages/settings/components/admins-table"
 
-export function Page({
+export function AdminControls({
   page,
   search,
   onSearchChange,
@@ -68,7 +68,7 @@ export function Page({
             // Leave and transfer both end with the current user no longer
             // holding settings on this page, so the route guard will redirect
             // them. Go there directly instead of bouncing.
-            void navigate({ to: "/p/$slug", params: { slug: page.slug } })
+            void navigate({ to: "/pages/$slug", params: { slug: page.slug } })
           }}
         />
       </SettingsSection>

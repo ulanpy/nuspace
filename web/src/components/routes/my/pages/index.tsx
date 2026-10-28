@@ -143,7 +143,7 @@ export function MyPagesScreen({
               description={row.description}
               banner={selectMedia(row.media, "banner")?.url}
               avatar={selectMedia(row.media, "profile")?.url}
-              link={{ to: "/p/$slug", params: { slug: row.slug } }}
+              link={{ to: "/pages/$slug", params: { slug: row.slug } }}
               actions={
                 <>
                   <Badge variant="secondary">
@@ -161,7 +161,7 @@ export function MyPagesScreen({
                         nativeButton={false}
                         render={
                           <Link
-                            to="/p/$slug/editor"
+                            to="/pages/$slug/edit"
                             params={{ slug: row.slug }}
                           />
                         }
@@ -177,7 +177,7 @@ export function MyPagesScreen({
                         nativeButton={false}
                         render={
                           <Link
-                            to="/p/$slug/settings"
+                            to="/pages/$slug/settings"
                             params={{ slug: row.slug }}
                           />
                         }
