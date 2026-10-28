@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/courses/schedule"
+import { Page } from "@/components/shared/page"
+
+import { ScheduleBuilderScreen } from "@/components/routes/courses/schedule"
 
 const scheduleSearchSchema = z.object({
   /**
@@ -27,7 +29,7 @@ const scheduleSearchSchema = z.object({
 
 export type ScheduleSearch = z.infer<typeof scheduleSearchSchema>
 
-export const Route = createFileRoute("/_app/courses/schedule/")({
+export const Route = createFileRoute("/_app/courses/planner/")({
   validateSearch: scheduleSearchSchema,
   component: ScheduleBuilderRoute,
 })
@@ -45,5 +47,9 @@ function ScheduleBuilderRoute() {
     [navigate]
   )
 
-  return <Page search={search} onSearchChange={onSearchChange} />
+  return (
+    <Page title="Schedule Builder">
+      <ScheduleBuilderScreen search={search} onSearchChange={onSearchChange} />
+    </Page>
+  )
 }

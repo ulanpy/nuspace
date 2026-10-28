@@ -16,12 +16,12 @@ import type { RailSection } from "@/components/layouts/site"
 export const COURSES_SECTIONS: readonly RailSection[] = [
   { to: "/courses", label: "My Courses", icon: BookOpenIcon, exact: true },
   {
-    to: "/courses/statistics",
+    to: "/courses/stats",
     label: "Statistics",
     icon: ChartNoAxesColumnIcon,
   },
   {
-    to: "/courses/schedule",
+    to: "/courses/planner",
     label: "Schedule Builder",
     icon: CalendarDaysIcon,
   },

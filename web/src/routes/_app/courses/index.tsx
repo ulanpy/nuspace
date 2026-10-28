@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/courses"
+import { MyCoursesScreen } from "@/components/routes/courses"
+import { Page } from "@/components/shared/page"
 
 const myCoursesSearchSchema = z.object({
   course: z.coerce.number().optional(),
@@ -28,5 +29,9 @@ function MyCoursesRoute() {
     [navigate]
   )
 
-  return <Page search={search} onCourseSelect={onCourseSelect} />
+  return (
+    <Page title="My Courses">
+      <MyCoursesScreen search={search} onCourseSelect={onCourseSelect} />
+    </Page>
+  )
 }

@@ -173,3 +173,167 @@ export function formatWeight(value: number | null | undefined): string {
   if (value == null) return "—"
   return `${formatPoints(value)}%`
 }
+
+/** The top of NU's scale, which the GPA bar is drawn against. */
+const GPA_CEILING = 4
+
+/** A `Weighted` course the dashboard can exclude: it needs an id to match on. */
+interface Excludable extends Weighted {
+  id: number
+}
+
+export interface GpaSummary {
+  /** Where the semester stands if nothing else were submitted. */
+  current: number
+  /** Where it lands if current performance holds. */
+  projected: number
+  /** The best still reachable. */
+  ceiling: number
+  /** Courses actually left out, so a stale id does not inflate the count. */
+  excludedCount: number
+}
+
+/**
+ * The dashboard's GPA summary with some courses left out.
+ *
+ * Exclusion is a what-if: the caller holds the ids for the session and nothing
+ * here is stored. With every course excluded the figures are 0, as for an
+ * empty term, never NaN.
+ */
+export function summarizeGpa(
+  courses: readonly Excludable[],
+  excludedIds: ReadonlySet<number>
+): GpaSummary {
+  const counted = courses.filter((course) => !excludedIds.has(course.id))
+  return {
+    current: semesterGpa(counted),
+    projected: projectedGpa(counted),
+    ceiling: ceilingGpa(counted),
+    excludedCount: courses.length - counted.length,
+  }
+}
+
+/** The ids with `id` flipped in or out, as a new set. */
+export function toggleExcluded(
+  excludedIds: ReadonlySet<number>,
+  id: number
+): Set<number> {
+  const next = new Set(excludedIds)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  return next
+}
+
+/** How far along the 0 to 4.0 bar a GPA sits, as a percentage. */
+export function gpaBarFill(gpa: number): number {
+  if (!Number.isFinite(gpa)) return 0
+  return (Math.min(GPA_CEILING, Math.max(0, gpa)) / GPA_CEILING) * 100
+}
+
+/** Items still waiting on a usable score. */
+export function pendingCount(items: readonly ScoredItem[]): number {
+  return items.filter((item) => !isGraded(item)).length
+}
+
+/** What to do next in a course: the first ungraded item, or why there is none. */
+export function nextUp(
+  items: readonly (ScoredItem & { item_name: string })[]
+): string {
+  const first = items.find((item) => !isGraded(item))
+  if (first) return first.item_name
+  return items.length === 0
+    ? "Add assignments to track progress"
+    : "All assignments graded"
+}
+
+/** The two-letter mark on a course's tinted chip: `CSCI 151` → `CS`. */
+export function courseCodeChip(courseCode: string): string {
+  return courseCode.slice(0, 2).toUpperCase()
+}
+
+/**
+ * Tailwind classes are written out whole so the compiler can see them; a
+ * template string like `border-l-chart-${n}` would never reach the stylesheet.
+ */
+const DEPARTMENT_ACCENTS = [
+  {
+    words: ["computing", "data science", "software", "informatics"],
+    border: "border-l-chart-3",
+    chip: "bg-chart-3/15 text-chart-3",
+  },
+  {
+    words: ["mathematics", "math"],
+    border: "border-l-chart-2",
+    chip: "bg-chart-2/15 text-chart-2",
+  },
+  {
+    words: ["physics", "engineering", "digital"],
+    border: "border-l-chart-5",
+    chip: "bg-chart-5/15 text-chart-5",
+  },
+  {
+    words: ["economics", "management", "business"],
+    border: "border-l-chart-1",
+    chip: "bg-chart-1/15 text-chart-1",
+  },
+  {
+    words: ["chemistry", "science and technology"],
+    border: "border-l-chart-4",
+    chip: "bg-chart-4/15 text-chart-4",
+  },
+] as const
+
+export interface DepartmentAccent {
+  /** The coloured left edge of a course row. */
+  border: string
+  /** The tinted code chip. */
+  chip: string
+}
+
+/**
+ * A department's colour pair. Named departments get theirs; any other school
+ * is hashed onto the palette, so it is still stable between renders and
+ * between visits, which is what lets a student learn "orange is Humanities".
+ */
+export function departmentAccent(school: string): DepartmentAccent {
+  const normalized = school.toLowerCase()
+  const named = DEPARTMENT_ACCENTS.find((accent) =>
+    accent.words.some((word) => normalized.includes(word))
+  )
+  if (named) return named
+
+  let hash = 0
+  for (const character of normalized) hash += character.charCodeAt(0)
+  return DEPARTMENT_ACCENTS[hash % DEPARTMENT_ACCENTS.length]
+}
+
+export type BreakdownKind = "earned" | "lost" | "pending" | "unassigned"
+
+export interface GradeBreakdown {
+  segments: { kind: BreakdownKind; value: number }[]
+  /** What a full bar stands for: 100, or more when weights overshoot it. */
+  scale: number
+}
+
+/**
+ * Where a course's weight stands: marks earned, marks lost on graded work,
+ * weight still waiting on a score, and weight no assignment has claimed yet.
+ * Slivers under 0.05 are dropped so rounding noise never draws a segment.
+ */
+export function gradeBreakdown(items: readonly ScoredItem[]): GradeBreakdown {
+  const weight = (item: ScoredItem) => item.total_weight_pct ?? 0
+  const totalWeight = items.reduce((sum, item) => sum + weight(item), 0)
+  const gradedWeight = items
+    .filter(isGraded)
+    .reduce((sum, item) => sum + weight(item), 0)
+  const earned = courseScore(items)
+
+  const segments: GradeBreakdown["segments"] = [
+    { kind: "earned" as const, value: earned },
+    { kind: "lost" as const, value: Math.max(0, gradedWeight - earned) },
+    { kind: "pending" as const, value: totalWeight - gradedWeight },
+    { kind: "unassigned" as const, value: Math.max(0, 100 - totalWeight) },
+  ].filter((segment) => segment.value > 0.05)
+
+  return { segments, scale: Math.max(100, totalWeight) }
+}
