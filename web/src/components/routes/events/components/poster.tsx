@@ -342,8 +342,13 @@ export function Poster({ event, delay }: { event: Event; delay: number }) {
   return (
     <Pinned hang={hangPoster(event.id)} delay={delay} tone="#fffdf8">
       <Link
+        from="/events"
         to="/events/$eventId"
         params={{ eventId: String(event.id) }}
+        // The event opens as a dialog over this board, which stays mounted:
+        // keep its filters in the address and leave the scroll where it is.
+        search={(previous) => previous}
+        resetScroll={false}
         className="flex min-h-0 flex-1 flex-col text-left outline-none focus-visible:ring-2 focus-visible:ring-stone-900/60 focus-visible:ring-inset"
       >
         <PosterFace event={event} />

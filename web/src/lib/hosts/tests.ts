@@ -107,6 +107,7 @@ describe("route tree", () => {
     assert.deepEqual(tree.files("/events/$eventId"), [
       "routes/__root",
       "routes/_app/route",
+      "routes/_app/events/route",
       "routes/_app/events/$eventId/index",
     ])
     // The generator wraps long declarations onto a second line.
