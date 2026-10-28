@@ -15,7 +15,7 @@ const statisticsSearchSchema = z.object({
    * Coerced because the router JSON-encodes search values: `?keyword=161`
    * parses as the number 161, which a bare `z.string()` would reject.
    */
-  keyword: z.coerce.string().optional(),
+  keyword: z.union([z.string(), z.number()]).transform(String).optional(),
   /** A term code like `FA2025`; absent means every term. */
   term: z.string().optional(),
 })

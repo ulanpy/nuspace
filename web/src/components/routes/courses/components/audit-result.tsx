@@ -360,6 +360,15 @@ export function AuditResult({ audit }: { audit: AuditResponse }) {
 
               <SummaryBadges program={program} />
 
+              <p className="text-xs text-muted-foreground">
+                {
+                  program.results.filter(
+                    (requirement) => requirement.status !== "Satisfied"
+                  ).length
+                }{" "}
+                of {program.results.length} requirements outstanding
+              </p>
+
               <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
                 {csv && (
                   <Button
