@@ -516,6 +516,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/search/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Results
+         * @description Ranked Sources from every structured source that this viewer may open.
+         *
+         *     Anyone may search; what comes back follows the viewer (ADR 0011). The pager
+         *     is stateless: ask again with a larger `offset`, and dedupe by `id`. Past
+         *     Meilisearch's `maxTotalHits` (1,000) the results are empty.
+         */
+        get: operations["search_results_search_results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -2866,6 +2890,16 @@ export interface components {
             total_pages: number;
         };
         /**
+         * MatchSpan
+         * @description A matched stretch of the snippet, in UTF-16 code units (JavaScript string indices).
+         */
+        MatchSpan: {
+            /** Start */
+            start: number;
+            /** Length */
+            length: number;
+        };
+        /**
          * MediaFormat
          * @enum {string}
          */
@@ -3714,6 +3748,79 @@ export interface components {
             start: components["schemas"]["TimeSchema"];
             end: components["schemas"]["TimeSchema"];
         };
+        /**
+         * SearchKind
+         * @description What a Source is, as the kind chips name it.
+         *
+         *     One kind may span several indexes: `course` is enrolled-course records, grade
+         *     reports and the registrar catalogue alike.
+         * @enum {string}
+         */
+        SearchKind: "page" | "event" | "opportunity" | "course";
+        /** SearchResponse */
+        SearchResponse: {
+            /** Query */
+            query: string;
+            kind: components["schemas"]["SearchKind"] | null;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /** Results */
+            results: components["schemas"]["SearchResult"][];
+            /**
+             * Estimated Total
+             * @description Estimated matches for `kind` (or every kind), before the visibility predicate. Shown as "About N".
+             */
+            estimated_total: number;
+            /**
+             * Counts
+             * @description Estimated matches per kind, whatever `kind` is.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Next Offset
+             * @description Where the next page starts; null past the last page or `maxTotalHits`.
+             */
+            next_offset: number | null;
+        };
+        /** SearchResult */
+        SearchResult: {
+            /**
+             * Id
+             * @description Unique across kinds: `<source>:<primary key>`, e.g. `page:12`.
+             */
+            id: string;
+            kind: components["schemas"]["SearchKind"];
+            /** Title */
+            title: string;
+            /**
+             * Url
+             * @description The Source's canonical address, bare.
+             */
+            url: string;
+            /**
+             * Host
+             * @description The breadcrumb's host, e.g. `pages.nuspace.kz`.
+             */
+            host: string;
+            /**
+             * Path
+             * @description The breadcrumb's path, without a leading slash; may be empty.
+             */
+            path: string;
+            date?: components["schemas"]["SourceDate"] | null;
+            snippet?: components["schemas"]["Snippet"] | null;
+            /** @description Set only when the Source is not public. */
+            visibility?: components["schemas"]["PageVisibility"] | null;
+            /**
+             * Facts
+             * @description Kind-specific facts, in display order.
+             */
+            facts?: string[];
+        };
         /** SemesterOption */
         SemesterOption: {
             /** Label */
@@ -3766,6 +3873,26 @@ export interface components {
             mime_type: string;
             /** Purpose */
             purpose?: string | null;
+        };
+        /** Snippet */
+        Snippet: {
+            /** Text */
+            text: string;
+            /** Matches */
+            matches?: components["schemas"]["MatchSpan"][];
+        };
+        /**
+         * SourceDate
+         * @description The date a result shows, and what it is the date of.
+         */
+        SourceDate: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "updated" | "starts" | "deadline";
+            /** Value */
+            value: string;
         };
         /** SpaceBlock */
         SpaceBlock: {
@@ -4931,6 +5058,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_results_search_results_get: {
+        parameters: {
+            query: {
+                /** @description What to search for. */
+                q: string;
+                /** @description Only this kind of Source. */
+                kind?: components["schemas"]["SearchKind"] | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
                 };
             };
             /** @description Validation Error */

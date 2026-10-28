@@ -12,7 +12,7 @@ so deleting the account deletes the profile with it:
   save one; the editor then opens on the About and Links template.
 
 Revision ID: a7c4e2d9b1f3
-Revises: c4b5d6e7f8a9
+Revises: d5c6e7f8a9b0
 Create Date: 2026-10-28 00:00:00.000000
 
 """
@@ -25,7 +25,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "a7c4e2d9b1f3"
-down_revision: Union[str, Sequence[str], None] = "c4b5d6e7f8a9"
+down_revision: Union[str, Sequence[str], None] = "d5c6e7f8a9b0"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

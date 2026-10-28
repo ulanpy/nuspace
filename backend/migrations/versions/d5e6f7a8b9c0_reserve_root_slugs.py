@@ -17,7 +17,7 @@ moved to `page-<id>` (with a suffix if that is taken), as the pages migration
 does for a name with no usable slug. No redirect is left behind.
 
 Revision ID: d5e6f7a8b9c0
-Revises: c4b5d6e7f8a9
+Revises: a7c4e2d9b1f3
 Create Date: 2026-10-28 00:00:00.000000
 
 """
@@ -28,7 +28,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "d5e6f7a8b9c0"
-down_revision: Union[str, Sequence[str], None] = "c4b5d6e7f8a9"
+down_revision: Union[str, Sequence[str], None] = "a7c4e2d9b1f3"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
