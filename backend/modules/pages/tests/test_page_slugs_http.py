@@ -6,15 +6,13 @@ at the build root): a Page there would never be reached.
 """
 
 import pytest
-from backend.modules.shared.slug import RESERVED_SLUGS
 from backend.tests.harness import Viewer
-from sqlalchemy import text
 
-NGINX_PATHS = ["api", "ws", "assets", "favicon.ico", "index.html"]
+SHADOWED_SLUGS = ["api", "ws", "assets", "favicon.ico", "index.html"]
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("slug", NGINX_PATHS)
+@pytest.mark.parametrize("slug", SHADOWED_SLUGS)
 async def test_a_page_cannot_take_a_path_nginx_answers(member: Viewer, slug: str) -> None:
     response = await member.client.post("/api/pages", json={"name": "Shadowed", "slug": slug})
 
@@ -70,18 +68,3 @@ async def test_a_rename_breaks_the_admin_invite_link(
     await owner.client.patch("/api/pages/chess-club", json={"slug": "chess-society"})
 
     assert (await member.client.get("/api/pages/chess-club")).status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_the_database_refuses_every_reserved_slug(db) -> None:
-    """The `chk_pages_slug` constraint asks `validate_slug()`, so a writer that
-    skips the app still cannot store a reserved slug. Its list is the app's."""
-    async with db.begin() as session:
-        accepted = (
-            await session.execute(
-                text("SELECT s FROM unnest(CAST(:slugs AS text[])) AS s WHERE validate_slug(s)"),
-                {"slugs": sorted(RESERVED_SLUGS)},
-            )
-        ).scalars()
-        assert list(accepted) == []
-        assert (await session.execute(text("SELECT validate_slug('chess-club')"))).scalar()

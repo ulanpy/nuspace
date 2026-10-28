@@ -25,6 +25,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 
+interface DirectoryProps {
+  search: PagesDirectorySearch
+  onSearchChange: (
+    updater: (previous: PagesDirectorySearch) => PagesDirectorySearch,
+    replace?: boolean
+  ) => void
+}
+
 /**
  * The Pages directory, at `pages.nuspace.kz/`: a grid of the Pages the viewer
  * may read, behind an access wall for anyone signed out.
@@ -32,13 +40,7 @@ import {
 export function PagesDirectoryScreen({
   search,
   onSearchChange,
-}: {
-  search: PagesDirectorySearch
-  onSearchChange: (
-    updater: (previous: PagesDirectorySearch) => PagesDirectorySearch,
-    replace?: boolean
-  ) => void
-}) {
+}: DirectoryProps) {
   const session = useSession()
 
   return (
@@ -105,16 +107,7 @@ function AccessWall() {
   )
 }
 
-function Directory({
-  search,
-  onSearchChange,
-}: {
-  search: PagesDirectorySearch
-  onSearchChange: (
-    updater: (previous: PagesDirectorySearch) => PagesDirectorySearch,
-    replace?: boolean
-  ) => void
-}) {
+function Directory({ search, onSearchChange }: DirectoryProps) {
   const { q } = search
   const [searchInput, setSearchInput] = useState(q ?? "")
   const debouncedSearch = useDebounced(searchInput)

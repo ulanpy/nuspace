@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 
-import type { PageSettingsSearch as AdminControlsSearch } from "@/routes/_app/pages/$slug/settings"
+import type { PageSettingsSearch } from "@/routes/_app/pages/$slug/settings"
 import { useCurrentUser, usePermissions } from "@/hooks/use-session"
 import { pageOwnership, type Page as PageEntity } from "@/lib/pages"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
@@ -13,9 +13,9 @@ export function AdminControls({
   onSearchChange,
 }: {
   page: PageEntity
-  search: AdminControlsSearch
+  search: PageSettingsSearch
   onSearchChange: (
-    updater: (previous: AdminControlsSearch) => AdminControlsSearch
+    updater: (previous: PageSettingsSearch) => PageSettingsSearch
   ) => void
 }) {
   const me = useCurrentUser()

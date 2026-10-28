@@ -5,7 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { toast } from "sonner"
 
 import { qk } from "@/api/query-keys"
-import type { PageSettingsSearch as AdminControlsSearch } from "@/routes/_app/pages/$slug/settings"
+import type { PageSettingsSearch } from "@/routes/_app/pages/$slug/settings"
 import {
   adminPageActions,
   fetchPageAdminsPage,
@@ -53,9 +53,9 @@ function initialsOf(name: string, surname: string): string {
 
 interface AdminsTableProps {
   slug: string
-  search: AdminControlsSearch
+  search: PageSettingsSearch
   onSearchChange: (
-    updater: (previous: AdminControlsSearch) => AdminControlsSearch
+    updater: (previous: PageSettingsSearch) => PageSettingsSearch
   ) => void
   owner: AdminRow
   /**
@@ -159,7 +159,7 @@ export function AdminsTable({
     ? [{ id: search.sort, desc: search.order === "desc" }]
     : []
 
-  const changeSearch = (patch: Partial<AdminControlsSearch>) => {
+  const changeSearch = (patch: Partial<PageSettingsSearch>) => {
     onSearchChange((previous) => ({
       ...previous,
       ...patch,

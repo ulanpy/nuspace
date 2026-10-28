@@ -19,8 +19,9 @@ hand back a guest.
 
 **One predicate, `visible_to(viewer, record)`, in
 `backend/modules/shared/visibility.py`, is the enforcement for every read of a
-record with a Visibility tier.** A Page read by slug, the OG preview by id and
-both Page lists ask it today. Profile pages, the people directory and search
+record with a Visibility tier.** A Page read by slug, the OG preview at the
+Page's address (`pages.nuspace.kz/<slug>`, #431; it was by id) and both Page
+lists ask it today. Profile pages, the people directory and search
 are to ask it too, with no second copy.
 
 - `public`: everyone, anonymous viewers included.
@@ -35,6 +36,9 @@ into the credentials tuple. A caller that is told no answers **404, never
 403**, because a 403 tells a stranger the record exists. For the same reason,
 any action on a record the viewer cannot read (editing a Page, deleting it,
 listing its admins) answers 404 before any permission check can answer 403.
+A link-preview card is the one exception to the status code, not to the rule:
+a bot is never handed an error body, so a hidden record's preview is the
+generic card built from the path alone, which confirms nothing either.
 
 A list narrows its query with `tiers_open_to(viewer)`, which is the same
 predicate with managers left out, and then keeps only the rows `visible_to`
@@ -71,7 +75,8 @@ changes who can read every `internal` record.
   five-minute lifetime.
 - A banned viewer still reads `public` records, as everyone does.
 - Testing is a matrix of viewer kind × tier through the HTTP seam
-  (`pages/tests/test_page_visibility_http.py`), and every hidden cell is a 404.
+  (`pages/tests/test_page_visibility_http.py`), and every hidden cell is a 404
+  (the generic card, for a preview).
 
 ## Related
 

@@ -20,8 +20,8 @@ def raise_slug_taken() -> None:
 
 # Words a Page's slug may not be. Mirrored, value for value, by
 # `web/src/lib/slug.ts` and by the database's `validate_slug()` (the
-# `chk_pages_slug` constraint); `tests/test_reserved_slugs.py` and
-# `modules/pages/tests/test_page_slugs_http.py` fail when either drifts.
+# `chk_pages_slug` constraint); `tests/test_reserved_slugs.py` fails when
+# either drifts.
 _RESERVED_WORDS = {
     "edit",
     "admin",

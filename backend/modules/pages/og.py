@@ -1,6 +1,6 @@
-from fastapi import HTTPException, Request, status
+from fastapi import Request
 
-from backend.common.og import Card, canonical_url
+from backend.common.og import Card, canonical_url, readable
 from backend.common.schemas import Infra
 from backend.modules.pages.service import PageService
 
@@ -30,14 +30,12 @@ async def page_card(
     """The card for `pages.nuspace.kz/<slug>`, or None when the viewer may not read it.
 
     The read is the one `GET /pages/{slug}` makes, so the visibility predicate
-    decides. A Page the viewer may not read has no card, and the caller's generic
-    card is built from the path alone, so it does not confirm the Page exists.
+    decides.
     """
-    try:
-        page_response = await page_service.get_page_response(infra=infra, slug=slug, user=user)
-    except HTTPException as exc:
-        if exc.status_code not in (status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND):
-            raise
+    page_response = await readable(
+        page_service.get_page_response(infra=infra, slug=slug, user=user)
+    )
+    if page_response is None:
         return None
     title = page_response.name or "Page"
     return Card(

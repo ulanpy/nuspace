@@ -6,7 +6,7 @@ files the build writes at its root (#431). `validate_slug()`, which the
 `chk_pages_slug` constraint calls, is redefined over the same set as
 `backend.modules.shared.slug.RESERVED_SLUGS`. Its list had already drifted from
 the app's (it still held `communities` and lacked `pages`); this brings it back,
-and `test_the_database_refuses_every_reserved_slug` keeps it there.
+and `tests/test_reserved_slugs.py` keeps it there.
 
 The list is written out rather than imported: a migration is a record of what
 the database held at this revision, and the app's set will keep changing.
