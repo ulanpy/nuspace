@@ -13,6 +13,7 @@ export const qk = {
   users: {
     all: () => ["users"] as const,
     detail: (slug: string) => ["users", "detail", slug] as const,
+    eventNotifications: () => ["users", "event-notifications"] as const,
   },
 
   events: {

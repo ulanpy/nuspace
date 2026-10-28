@@ -31,6 +31,15 @@ class UserRepository:
         result = await self.db_session.execute(select(User).where(User.sub == sub))
         return result.scalars().first()
 
+    async def set_event_notifications(self, sub: str, enabled: bool) -> User | None:
+        user = await self.get_by_sub(sub)
+        if user is None:
+            return None
+        user.event_notifications = enabled
+        await self.db_session.flush()
+        await self.db_session.refresh(user)
+        return user
+
     async def update_scope(self, sub: str, scope: UserScope) -> User | None:
         user = await self.get_by_sub(sub)
         if user is None:

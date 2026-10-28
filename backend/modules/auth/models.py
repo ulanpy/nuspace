@@ -1,6 +1,6 @@
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, true
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,6 +35,10 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
     sg_assigned_at = Column(DateTime(timezone=True), nullable=True, index=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
+    # Whether attended events that are cancelled or moved reach this person on Telegram.
+    event_notifications: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true()
+    )
 
     # SG hierarchy column lives on users; one-way load only (no reverse graph on User).
     department_id: Mapped[int] = mapped_column(
