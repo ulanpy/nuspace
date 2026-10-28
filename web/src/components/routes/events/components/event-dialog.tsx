@@ -325,6 +325,7 @@ export function EventDialog({
               <Button
                 disabled={isTogglingGoing}
                 aria-pressed={event.is_going}
+                title={event.is_going ? "Tap to cancel" : undefined}
                 onClick={onToggleGoing}
                 className={cn(
                   "h-11 w-full bg-stone-50 text-stone-900 hover:bg-white sm:w-auto",
