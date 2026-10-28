@@ -71,7 +71,15 @@ docker compose up --build
 docker-compose up --build
 ```
 
-### 4. Verify Setup
+### 4. Fill the search indexes
+
+Meilisearch keeps its indexes on a volume, and the app does not rebuild them when it starts. On a fresh volume they are empty; fill them from Postgres once (and again after a bulk change made outside the app):
+
+```bash
+docker compose exec fastapi /nuros/backend/.venv/bin/python -m backend.bootstrap.rebuild_search
+```
+
+### 5. Verify Setup
 
 Access the application at [localhost](http://localhost) to confirm everything is running correctly.
 

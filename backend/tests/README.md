@@ -100,12 +100,21 @@ fixture from inside a running async test.
 ### Data
 
 - **Every test starts empty.** Before each test, `db` truncates every table a
-  migration did not fill and empties every Meilisearch index. Every viewer
-  fixture depends on `db`, so any test that asks for a viewer gets this.
+  migration did not fill and empties every Meilisearch index (documents, not
+  settings). Every viewer fixture depends on `db`, so any test that asks for a
+  viewer gets this.
   Reference data a migration inserts, such as `sg_ministries`, stays.
 - **Arrange through the API when you can.** Otherwise write rows with the
   app's own session factory: `async with db.begin() as session: ...`
   commits on exit.
+- **Indexes are created by the harness.** The app does not fill indexes at
+  boot, so the harness creates and configures every index itself, once per
+  session (`backend.bootstrap.meilisearch.ensure_indexes`). A test starts from
+  empty indexes with the right settings and fills them the way production
+  does: by writing over HTTP.
+- **Searching after a write.** The app indexes without waiting. Ask for the
+  `search_settled` fixture and `await search_settled()` between a write and a
+  search.
 - **`make_page(...)`** stores a Page, its owner and its admins directly. It
   does not index the Page in Meilisearch. Create it through `POST /api/pages`
   if a search has to find it.

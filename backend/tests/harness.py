@@ -12,6 +12,7 @@ faked by the app's own `MOCK_KEYCLOAK` path: each viewer carries the cookies
 the mock login would have set.
 """
 
+import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -201,6 +202,8 @@ async def app(_database: _Database) -> AsyncIterator[FastAPI]:
     # Imported here, not at the top: the routers import most of the backend,
     # which tests that never touch the app should not pay for.
     from backend import lifespan as app_lifespan
+    from backend.bootstrap.meilisearch import ensure_indexes
+    from backend.bootstrap.search_indexes import ALL_MEILISEARCH_INDEXES
     from backend.main import app
 
     with pytest.MonkeyPatch.context() as mp:
@@ -212,9 +215,11 @@ async def app(_database: _Database) -> AsyncIterator[FastAPI]:
             [*mock_keycloak.MOCK_USERS, *(p.userinfo for p in PERSONAS.values())],
         )
         async with app.router.lifespan_context(app):
-            # Index creation runs in the background in production; a test must
-            # not race it.
-            await app.state.meili_init_task
+            # The app creates missing indexes in the background at boot, and only
+            # that: it never fills them. A test must not depend on that task, so
+            # the harness creates and configures every index itself. Idempotent,
+            # so it may overlap the boot task.
+            await ensure_indexes(app.state.meilisearch_client, ALL_MEILISEARCH_INDEXES)
             yield app
 
 
@@ -329,6 +334,31 @@ def viewers(
         viewer.kind: viewer
         for viewer in (guest, member, banned_member, owner, page_admin, site_admin)
     }
+
+
+@pytest.fixture
+def search_settled(app: FastAPI) -> Callable[[], Awaitable[None]]:
+    """Wait until Meilisearch has applied every write the app has sent it.
+
+    The app indexes without waiting, so a test that writes over HTTP and then
+    searches must wait first. This is the only synchronisation the harness does
+    for search; it does not index anything itself.
+    """
+
+    async def _settled() -> None:
+        client = app.state.meilisearch_client
+        deadline = asyncio.get_running_loop().time() + 30
+        while True:
+            pending = await client.get(
+                "/tasks", params={"statuses": "enqueued,processing", "limit": 1}
+            )
+            if pending.json()["total"] == 0:
+                return
+            if asyncio.get_running_loop().time() > deadline:
+                raise TimeoutError("Meilisearch still has pending tasks")
+            await asyncio.sleep(0.05)
+
+    return _settled
 
 
 # --- Data --------------------------------------------------------------------

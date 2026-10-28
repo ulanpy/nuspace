@@ -18,6 +18,7 @@ from backend.modules.events.models import (
     EventAttendeeViewer,
     EventType,
 )
+from backend.modules.events.search_indexes import EVENTS_INDEX
 from backend.modules.media.models import EntityType, Media, MediaFormat
 
 
@@ -195,24 +196,11 @@ class EventRepository:
 
     @staticmethod
     async def upsert_search(meilisearch_client: AsyncClient, event: Event) -> None:
-        await meilisearch.upsert(
-            client=meilisearch_client,
-            storage_name=Event.__tablename__,
-            json_values={
-                "id": event.id,
-                "name": event.name,
-                "description": event.description,
-                "policy": event.policy.value if event.policy else None,
-            },
-        )
+        await EVENTS_INDEX.upsert(meilisearch_client, event)
 
     @staticmethod
     async def delete_from_search(meilisearch_client: AsyncClient, event_id: int) -> None:
-        await meilisearch.delete(
-            client=meilisearch_client,
-            storage_name=Event.__tablename__,
-            primary_key=str(event_id),
-        )
+        await EVENTS_INDEX.delete(meilisearch_client, event_id)
 
     async def delete_event_and_media(
         self, event: Event, media_objects: List[Media]

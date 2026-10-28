@@ -4,8 +4,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict
 
+from backend.bootstrap.meilisearch import create_meilisearch_client
 from backend.core.database.manager import AsyncDatabaseManager
 from backend.modules.courses.models.grade_report import GradeReport
+from backend.modules.courses.search_indexes import GRADE_REPORTS_INDEX
+from httpx import AsyncClient
 
 logger = logging.getLogger(__name__)
 
@@ -116,14 +119,21 @@ def csv_row_to_grade_report(row: Dict[str, str]) -> GradeReport:
 
 
 async def dump_csv_to_database(
-    csv_file_path: str, db_manager: AsyncDatabaseManager, batch_size: int = 100
+    csv_file_path: str,
+    db_manager: AsyncDatabaseManager,
+    meilisearch_client: AsyncClient,
+    batch_size: int = 100,
 ) -> Dict[str, int]:
     """
     Dump CSV data into the PostgreSQL database without duplicate checking.
 
+    Each committed batch is indexed in Meilisearch straight after, so the new grade
+    reports are searchable without a rebuild.
+
     Args:
         csv_file_path: Path to the CSV file
         db_manager: Database manager instance
+        meilisearch_client: Client of the index the committed rows are added to
         batch_size: Number of records to process in each batch
 
     Returns:
@@ -156,6 +166,7 @@ async def dump_csv_to_database(
                         # Process batch when it reaches batch_size
                         if len(batch) >= batch_size:
                             await session.commit()
+                            await GRADE_REPORTS_INDEX.upsert_many(meilisearch_client, batch)
                             logger.info(f"Processed batch of {len(batch)} records")
                             batch = []
 
@@ -168,6 +179,7 @@ async def dump_csv_to_database(
                 # Process remaining records in the last batch
                 if batch:
                     await session.commit()
+                    await GRADE_REPORTS_INDEX.upsert_many(meilisearch_client, batch)
                     logger.info(f"Processed final batch of {len(batch)} records")
 
                 logger.info(f"CSV dump completed. Stats: {stats}")
@@ -194,12 +206,17 @@ async def dump_grades_csv(csv_file_path: str, batch_size: int = 100) -> Dict[str
 
     # Create database manager
     db_manager = AsyncDatabaseManager()
+    meilisearch_client = create_meilisearch_client()
 
     try:
         return await dump_csv_to_database(
-            csv_file_path=str(resolved), db_manager=db_manager, batch_size=batch_size
+            csv_file_path=str(resolved),
+            db_manager=db_manager,
+            meilisearch_client=meilisearch_client,
+            batch_size=batch_size,
         )
     finally:
+        await meilisearch_client.aclose()
         await db_manager.async_engine.dispose()
 
 

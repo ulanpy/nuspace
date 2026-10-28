@@ -10,6 +10,8 @@ from backend.modules.courses.models.grade_report import (
     StudentCourse,
     StudentSchedule,
 )
+from backend.modules.courses.search_indexes import COURSES_INDEX
+from httpx import AsyncClient
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -201,6 +203,10 @@ class CourseRepository:
         await self.db_session.flush()
         await self.db_session.refresh(course)
         return course
+
+    @staticmethod
+    async def upsert_search(meilisearch_client: AsyncClient, course: Course) -> None:
+        await COURSES_INDEX.upsert(meilisearch_client, course)
 
     async def fetch_courses_by_ids(
         self,

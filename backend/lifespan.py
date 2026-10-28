@@ -8,6 +8,7 @@ from backend.bootstrap.meilisearch import cleanup_meilisearch, setup_meilisearch
 from backend.bootstrap.pyroscope import setup_pyroscope
 from backend.bootstrap.rbq import cleanup_rbq, setup_rbq
 from backend.bootstrap.redis import cleanup_redis, setup_redis
+from backend.bootstrap.search_indexes import ALL_MEILISEARCH_INDEXES
 from backend.bootstrap.tracing import cleanup_tracing, setup_tracing
 from backend.core.configs.config import Config
 from backend.modules.auth.app_token import AppTokenManager
@@ -16,18 +17,6 @@ from backend.modules.bot.startup import cleanup_bot, setup_bot
 from backend.modules.courses.registrar.startup import (
     cleanup_schedule_catalog,
     setup_schedule_catalog,
-)
-from backend.modules.courses.search_indexes import (
-    MEILISEARCH_INDEXES as COURSES_MEILI_INDEXES,
-)
-from backend.modules.events.search_indexes import (
-    MEILISEARCH_INDEXES as EVENTS_MEILI_INDEXES,
-)
-from backend.modules.opportunities.search_indexes import (
-    MEILISEARCH_INDEXES as OPPORTUNITIES_MEILI_INDEXES,
-)
-from backend.modules.pages.search_indexes import (
-    MEILISEARCH_INDEXES as PAGES_MEILI_INDEXES,
 )
 from backend.modules.routers import routers
 
@@ -45,17 +34,8 @@ async def lifespan(app: FastAPI):
         await setup_rbq(app)
         await setup_db(app)
         await setup_redis(app)
-        await setup_meilisearch(
-            app,
-            index_configs=[
-                *PAGES_MEILI_INDEXES,
-                *EVENTS_MEILI_INDEXES,
-                *COURSES_MEILI_INDEXES,
-                *OPPORTUNITIES_MEILI_INDEXES,
-            ],
-            after_sync=[setup_schedule_catalog],
-            on_cleanup=[cleanup_schedule_catalog],
-        )
+        await setup_meilisearch(app, index_configs=ALL_MEILISEARCH_INDEXES)
+        await setup_schedule_catalog(app)
 
         await setup_bot(app)
 
@@ -66,6 +46,7 @@ async def lifespan(app: FastAPI):
     finally:
         await cleanup_rbq(app)
         await cleanup_bot(app)
+        await cleanup_schedule_catalog(app)
         await cleanup_meilisearch(app)
         await cleanup_redis(app)
         await cleanup_db(app)
