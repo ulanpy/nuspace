@@ -1,9 +1,9 @@
 """Who can read a Page, as a matrix over viewer kind × tier, through the real app.
 
 `visible_to` (`modules/shared/visibility.py`) decides every cell, and every
-path that reads a Page asks it: the read by slug, the OG preview by id, and the
-directory. A Page the viewer may not read is a 404, never a 403, because a 403
-tells a stranger the Page exists.
+path that reads a Page asks it: the read by slug, the preview card at its
+address, and the directory. A Page the viewer may not read is a 404 (its preview
+the generic card), never a 403, because a 403 tells a stranger the Page exists.
 
 - `public`: everyone.
 - `internal` ("Members only"): signed in and not banned.
@@ -60,19 +60,20 @@ async def test_reading_a_page_by_slug(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("tier", "kind", "reads"), MATRIX)
-async def test_reading_a_page_preview_by_id(
+async def test_reading_a_page_preview_at_its_address(
     viewers: dict[str, Viewer], club, tier: PageVisibility, kind: str, reads: bool
 ) -> None:
-    page = await club(tier)
+    """A link-preview bot on `pages.nuspace.kz/chess-club`. One the viewer may not
+    read gets the generic card, built from the path alone, so it neither errors
+    nor confirms the Page exists."""
+    await club(tier)
 
-    response = await viewers[kind].client.get("/api/og/pages", params={"id": page.id})
+    response = await viewers[kind].client.get(
+        "/api/og/chess-club", headers={"host": "pages.nuspace.kz"}
+    )
 
-    if reads:
-        assert response.status_code == 200
-        assert "Chess Club" in response.text
-    else:
-        assert response.status_code == 404
-        assert "Chess Club" not in response.text
+    assert response.status_code == 200
+    assert ("Learn about Chess Club" in response.text) == reads
 
 
 # The directory lists by tier alone: a `private` Page is not a directory entry,

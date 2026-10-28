@@ -23,6 +23,7 @@ import type {
   PageVisibilityValue,
 } from "./types"
 import { MAX_PAGES_PER_OWNER, PAGE_OWNERSHIP } from "./constants"
+import { hostOf, serviceByKey } from "@/lib/hosts"
 
 /**
  * One page of the public directory, for `useInfiniteList`.
@@ -97,6 +98,17 @@ export function myPagesQueryOptions({
     queryFn: () =>
       fetchMyPages({ role, visibility, sort, order }, { page, size }),
   })
+}
+
+/**
+ * A Page's address as a visitor reads it, `pages.nuspace.kz/chess-club`, on
+ * the pages host of the environment `hostname` is in (production when it is in
+ * none). For copy that names the address, not for links: a link is a router
+ * path, and the host rewrite gives it its host.
+ */
+export function pageAddress(slug: string, hostname: string): string {
+  const environment = hostOf(hostname)?.environment ?? "production"
+  return `${serviceByKey("pages").hosts[environment]}/${slug}`
 }
 
 function fetchPage(slug: string) {

@@ -8,18 +8,22 @@ so a bot is never handed an error body for a path the host owns.
 """
 
 import re
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from html import escape
+from typing import TypeVar
 
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
-from fastapi import Request
+from fastapi import HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 
 SITE_NAME = "Nuspace"
 SITE_DESCRIPTION = "Nuspace is the NU student superapp: campus services in one place."
 
 OG_PREFIX = "/api/og"
+
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -108,6 +112,21 @@ def title_from_path(path: str) -> str | None:
         if words and not words.isdigit():
             return truncate(words.title(), 80)
     return None
+
+
+async def readable(read: Awaitable[T]) -> T | None:
+    """What `read` returns, or None when the viewer may not read the record.
+
+    A record a viewer may not read has no card of its own: the caller falls back
+    to the generic card, which is built from the path alone and so does not
+    confirm the record exists.
+    """
+    try:
+        return await read
+    except HTTPException as exc:
+        if exc.status_code not in (status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND):
+            raise
+        return None
 
 
 def generic_card(request: Request) -> Card:

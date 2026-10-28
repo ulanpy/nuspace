@@ -5,17 +5,18 @@ import { z } from "zod"
  *
  * The handle is the only unique, user-writable column on `Page`, so the forms
  * validating it identically is not a nicety — it is what keeps the client from
- * accepting a handle the server will reject with a 422. `RESERVED_SLUGS` here
- * must stay the same set as the backend's: `"p"` reserves the `/p/{slug}`
- * prefix, and `"communities"` and `"u"` are gone because neither route exists
- * any more.
+ * accepting a handle the server will reject with a 422.
+ *
+ * `RESERVED_SLUGS` is the backend's set, value for value; the backend suite
+ * (`backend/tests/test_reserved_slugs.py`) reads this array and fails when the
+ * two differ, and fails when a file is added to `web/public/` without a line
+ * in both.
  */
 export const RESERVED_SLUGS: readonly string[] = [
   "edit",
   "admin",
   "new",
   "create",
-  "api",
   "settings",
   "about",
   "terms-of-service",
@@ -29,7 +30,22 @@ export const RESERVED_SLUGS: readonly string[] = [
   "opportunities",
   "profile",
   "sgotinish",
-  "p",
+  // A Page is `pages.nuspace.kz/<slug>`, so a slug may not be a path nginx
+  // answers itself on that host (some of these fail the pattern anyway).
+  "api",
+  "ws",
+  "assets",
+  "favicon.ico",
+  "index.html",
+  "404.html",
+  "_hosts",
+  // Development only: the GCS emulator and Vite's module graph.
+  "gcs",
+  "src",
+  "node_modules",
+  // Every top-level entry of `web/public/`, which the build copies to its root.
+  "data",
+  "favicon.svg",
 ]
 
 /** Lowercase letters, digits and single hyphens — the server's `SLUG_RE`. */

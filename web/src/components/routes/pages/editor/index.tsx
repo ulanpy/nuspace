@@ -37,7 +37,7 @@ export function PageEditorScreen({
           queryKey: qk.pages.all(),
         })
         void navigate({
-          to: "/p/$slug",
+          to: "/pages/$slug",
           params: { slug },
         })
       })
@@ -54,7 +54,7 @@ export function PageEditorScreen({
         <Editor
           data={pageContent}
           onPublish={handlePublish}
-          onCancel={() => navigate({ to: "/p/$slug", params: { slug } })}
+          onCancel={() => navigate({ to: "/pages/$slug", params: { slug } })}
         />
       </div>
     </UploadContext.Provider>

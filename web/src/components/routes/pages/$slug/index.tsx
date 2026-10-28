@@ -54,7 +54,7 @@ export function PageViewScreen({
       onSuccess: (result) => {
         toast.success(REDEMPTION_MESSAGES[result.status](page.name))
         void navigate({
-          to: "/p/$slug",
+          to: "/pages/$slug",
           params: { slug },
           search: {},
           replace: true,
@@ -65,7 +65,7 @@ export function PageViewScreen({
           apiErrorMessage(error, "This admin link is no longer valid.")
         )
         void navigate({
-          to: "/p/$slug",
+          to: "/pages/$slug",
           params: { slug },
           search: {},
           replace: true,
@@ -91,7 +91,7 @@ export function PageViewScreen({
                   variant="ghost"
                   size="icon"
                   aria-label="Back to pages"
-                  render={<Link to="/mynuspace" search={{}} />}
+                  render={<Link to="/pages" />}
                 >
                   <ArrowLeftIcon className="size-5" aria-hidden />
                 </Button>
@@ -131,7 +131,9 @@ export function PageViewScreen({
                       variant="ghost"
                       size="icon"
                       aria-label="Settings"
-                      render={<Link to="/p/$slug/settings" params={{ slug }} />}
+                      render={
+                        <Link to="/pages/$slug/settings" params={{ slug }} />
+                      }
                     >
                       <SettingsIcon className="size-5" aria-hidden />
                     </Button>

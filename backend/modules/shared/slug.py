@@ -18,12 +18,15 @@ def raise_slug_taken() -> None:
     )
 
 
-RESERVED_SLUGS = {
+# Words a Page's slug may not be. Mirrored, value for value, by
+# `web/src/lib/slug.ts` and by the database's `validate_slug()` (the
+# `chk_pages_slug` constraint); `tests/test_reserved_slugs.py` fails when
+# either drifts.
+_RESERVED_WORDS = {
     "edit",
     "admin",
     "new",
     "create",
-    "api",
     "settings",
     "about",
     "terms-of-service",
@@ -37,8 +40,39 @@ RESERVED_SLUGS = {
     "opportunities",
     "profile",
     "sgotinish",
-    "p",
 }
+
+# Slugs sit at the root of `pages.nuspace.kz` (`/<slug>`), so a slug may not be
+# a path nginx answers itself on that host (`infra/nginx/nginx.conf`, and
+# `nginx.dev.conf` in development): the proxied prefixes, the internal
+# locations, and what the build writes at its root (`assets/`, one
+# `index.html` per host under `_hosts/`). A Page there would never be reached.
+# `tests/test_reserved_slugs.py` reads both files and fails on a location
+# whose first segment is missing here. Some of these can never pass
+# `SLUG_RE`; they are listed anyway, so this set reads as the whole list.
+NGINX_PATHS = {
+    "api",
+    "ws",
+    "assets",
+    "favicon.ico",
+    "index.html",
+    "404.html",
+    "_hosts",
+    # Development only: the GCS emulator and Vite's module graph.
+    "gcs",
+    "src",
+    "node_modules",
+}
+
+# Every top-level entry of `web/public/`, which the build copies to its root,
+# where nginx serves it before the router. `tests/test_reserved_slugs.py` lists
+# that directory, so a file added there without a line here fails the suite.
+BUILD_ROOT_FILES = {
+    "data",
+    "favicon.svg",
+}
+
+RESERVED_SLUGS = _RESERVED_WORDS | NGINX_PATHS | BUILD_ROOT_FILES
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 

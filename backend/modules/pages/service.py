@@ -375,24 +375,6 @@ class PageService:
         await policy.check_permission(action=ResourceAction.READ, page=page)
         return await self._build_page_response(page, infra, user)
 
-    async def get_page_response_by_id(
-        self, infra: Infra, page_id: int, user: tuple[dict, dict]
-    ) -> schemas.PageResponse:
-        """Same as `get_page_response`, for callers that hold an id and not a slug.
-
-        The Page og card is addressed by `?id=` (`GET /api/og/pages`).
-        """
-        async with self.uow:
-            repo = self.uow.get_repo(PageRepository)
-            page = await repo.get_by_id(page_id)
-            if page is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found")
-            is_page_admin = await repo.is_admin(page.id, user[0]["sub"])
-        await PagePolicy(user=user, is_page_admin=is_page_admin).check_permission(
-            action=ResourceAction.READ, page=page
-        )
-        return await self._build_page_response(page, infra, user)
-
     @staticmethod
     def _to_admin_responses(admins: List[PageAdmin]) -> List[schemas.AdminResponse]:
         return [

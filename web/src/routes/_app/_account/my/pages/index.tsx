@@ -58,7 +58,7 @@ function MyPagesRoute() {
         onPageCreated={(slug) => {
           // Straight to the Page they just made. Leaving them on a list that
           // now has one more card they have to find is worse.
-          void navigate({ to: "/p/$slug", params: { slug } })
+          void navigate({ to: "/pages/$slug", params: { slug } })
         }}
       />
     </SignInGate>

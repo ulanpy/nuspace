@@ -41,7 +41,7 @@ const FRONT_DOORS: Record<
   courses: { to: "/courses", icon: BookOpenIcon },
   events: { to: "/events", icon: CalendarDaysIcon },
   opportunities: { to: "/opportunities", icon: BriefcaseIcon },
-  pages: { to: "/mynuspace", icon: FileTextIcon },
+  pages: { to: "/pages", icon: FileTextIcon },
   my: { to: "/my/account", icon: UserIcon },
 }
 

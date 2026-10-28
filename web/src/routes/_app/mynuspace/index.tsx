@@ -38,7 +38,7 @@ function MyNuspaceRoute() {
       onSearchChange={onSearchChange}
       onPageCreated={(slug) => {
         void navigate({
-          to: "/p/$slug",
+          to: "/pages/$slug",
           params: { slug },
         })
       }}

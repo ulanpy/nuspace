@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 import { isPageAdminSort, isPageSort } from "./constants"
 import {
   adminPageActions,
+  pageAddress,
   pageOwnership,
   pageStats,
   sortingToSearch,
@@ -209,5 +210,29 @@ describe("pageStats", () => {
       administered: 0,
       remaining: 100,
     })
+  })
+})
+
+describe("pageAddress", () => {
+  it("names the Page on the pages host of the visitor's environment", () => {
+    assert.equal(
+      pageAddress("chess-club", "nuspace.kz"),
+      "pages.nuspace.kz/chess-club"
+    )
+    assert.equal(
+      pageAddress("chess-club", "my_staging.nuspace.kz"),
+      "pages_staging.nuspace.kz/chess-club"
+    )
+    assert.equal(
+      pageAddress("chess-club", "pages.localhost"),
+      "pages.localhost/chess-club"
+    )
+  })
+
+  it("falls back to production on a host outside the table", () => {
+    assert.equal(
+      pageAddress("chess-club", "127.0.0.1"),
+      "pages.nuspace.kz/chess-club"
+    )
   })
 })
