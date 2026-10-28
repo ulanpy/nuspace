@@ -1,23 +1,20 @@
 import { useMemo, useState } from "react"
-import { PlusIcon, UsersIcon } from "lucide-react"
 
 import type { EventsListSearch } from "@/routes/_app/events"
 import type { Event } from "@/lib/events"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { qk } from "@/api/query-keys"
 import { fetchEventsPage, getEventTimeRange } from "@/lib/events"
-import { EventCard } from "@/components/routes/events/components/event-card"
 import { EventFormDialog } from "@/components/routes/events/components/event-form-dialog"
+import { EventPinboard } from "@/components/routes/events/components/pinboard"
 import { TelegramConnectPrompt } from "@/components/shared/telegram/connect-prompt"
-import { EmptyState } from "@/components/shared/query/boundary"
-import { InfiniteList } from "@/components/shared/query/infinite-list"
-import { FilterTabs, type FilterOption } from "@/components/shared/list-filters"
-import { CardGrid, CardGridSkeleton } from "@/components/shared/page/card-grid"
-import { Page as PageLayout } from "@/components/shared/page"
-import { Button } from "@/components/ui/button"
-import { Toggle } from "@/components/ui/toggle"
+import type { BoardFilterOption } from "@/components/routes/events/components/pinboard"
 
-export function Page({
+/**
+ * The events host's root: a cork board of posters. Opening one goes to the
+ * event's own route, `/$eventId`.
+ */
+export function EventsScreen({
   search,
   onSearchChange,
   onEventCreated,
@@ -47,73 +44,48 @@ export function Page({
   })
 
   return (
-    <PageLayout
-      title="Events"
-      description="Find what's happening across campus."
-      actions={
-        // The backend remains authoritative for event creation.
-        <Button
-          onClick={() => {
-            setIsCreating(true)
-          }}
-        >
-          <PlusIcon aria-hidden />
-          Create event
-        </Button>
-      }
-    >
+    <div className="space-y-4">
       <TelegramConnectPrompt
         storageKey="nuspace_events_tg_banner_dismissed"
         title="Connect Telegram for event updates"
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterTabs
-          label="Event time range"
-          value={time}
-          options={TIME_OPTIONS}
-          showAll={false}
-          onChange={onSelectTime}
-        />
-        <Toggle
-          variant="outline"
-          pressed={type === "recruitment"}
-          onPressedChange={(pressed) => {
-            onSearchChange((previous) => ({
-              ...previous,
-              type: pressed ? "recruitment" : undefined,
-            }))
-          }}
-        >
-          <UsersIcon aria-hidden /> Club Recruitments
-        </Toggle>
-      </div>
-
-      <InfiniteList
-        items={list.items}
-        getKey={(event) => event.id}
-        renderItem={(event) => <EventCard event={event} />}
-        isPending={list.isPending}
-        pending={<CardGridSkeleton columns={4} count={8} variant="banner" />}
+      <EventPinboard
+        events={list.items}
+        title="Events"
+        subtitle={
+          list.isPending
+            ? undefined
+            : list.total === 1
+              ? "1 on the board"
+              : `${list.total} on the board`
+        }
+        time={time}
+        timeOptions={TIME_OPTIONS}
+        onTimeChange={onSelectTime}
+        recruitmentOnly={type === "recruitment"}
+        onRecruitmentOnlyChange={(pressed) => {
+          onSearchChange((previous) => ({
+            ...previous,
+            type: pressed ? "recruitment" : undefined,
+          }))
+        }}
+        // The backend remains authoritative for event creation.
+        onCreate={() => {
+          setIsCreating(true)
+        }}
+        isLoading={list.isPending}
         isError={list.isError}
         error={list.error}
-        refetch={() => {
+        onRetry={() => {
           void list.refetch()
         }}
         hasNextPage={list.hasNextPage}
         isFetchingNextPage={list.isFetchingNextPage}
-        fetchNextPage={() => {
+        onLoadMore={() => {
           void list.fetchNextPage()
         }}
-        empty={
-          <EmptyState
-            title="No events"
-            description="Nothing scheduled for this period yet."
-          />
-        }
-      >
-        {(rendered) => <CardGrid columns={4}>{rendered}</CardGrid>}
-      </InfiniteList>
+      />
 
       <EventFormDialog
         open={isCreating}
@@ -122,13 +94,13 @@ export function Page({
         // filtered list, and "nothing visibly happened" is the worse outcome.
         onSaved={onEventCreated}
       />
-    </PageLayout>
+    </div>
   )
 }
 
 const TIME_OPTIONS = [
-  { value: "upcoming", label: "Upcoming" },
+  { value: "upcoming", label: "All upcoming" },
   { value: "today", label: "Today" },
   { value: "week", label: "This week" },
   { value: "month", label: "This month" },
-] satisfies FilterOption<NonNullable<EventsListSearch["time"]>>[]
+] satisfies BoardFilterOption<NonNullable<EventsListSearch["time"]>>[]
