@@ -9,6 +9,8 @@ import {
   pageStats,
 } from "@/lib/pages"
 import { EventNotificationsItem } from "@/components/routes/my/account/event-notifications"
+import { myProfileQueryOptions } from "@/lib/profiles"
+import { visibilityLabel } from "@/components/shared/pages/visibilities"
 import { Page } from "@/components/shared/page"
 import { CardGrid } from "@/components/shared/page/card-grid"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
@@ -65,6 +67,8 @@ export function AccountScreen() {
   const me = useCurrentUser()
   const session = useSession()
   const stats = usePageStats()
+  // The cards say what a new profile is (no handle, `private`) until it lands.
+  const profile = useQuery(myProfileQueryOptions())
   const isTelegramLinked = session?.tg_id != null
 
   return (
@@ -83,20 +87,18 @@ export function AccountScreen() {
     >
       <SettingsSection title="Profile">
         <CardGrid columns={2}>
-          {/* A handle and a profile Visibility do not exist on the user yet
-              (#434). Until then nobody has a handle, and a profile starts
-              out `private`, which is what both cards say. */}
-          <Stat value="Not set" label="Handle" />
-          <Stat value="Private" label="Visibility" />
+          <Stat value={profile.data?.handle ?? "Not set"} label="Handle" />
+          <Stat
+            value={visibilityLabel(profile.data?.visibility ?? "private")}
+            label="Visibility"
+          />
         </CardGrid>
 
         <Button
           variant="outline"
           size="sm"
           nativeButton={false}
-          // The Button supplies the anchor's content; the rule cannot see it.
-          // oxlint-disable-next-line jsx-a11y/anchor-has-content, jsx-a11y/control-has-associated-label
-          render={<a href="/profile" />}
+          render={<Link to="/my/profile" />}
         >
           Profile Settings
           <ChevronRightIcon aria-hidden />

@@ -33,9 +33,12 @@ import { Route as AppPSlugIndexRouteImport } from './routes/_app/p/$slug/index'
 import { Route as AppPSlugSettingsRouteRouteImport } from './routes/_app/p/$slug/settings/route'
 import { Route as AppAccountMyAccountIndexRouteImport } from './routes/_app/_account/my/account/index'
 import { Route as AppAccountMyPagesIndexRouteImport } from './routes/_app/_account/my/pages/index'
+import { Route as AppAccountMyProfileIndexRouteImport } from './routes/_app/_account/my/profile/index'
 import { Route as AppCoursesAuditGuideIndexRouteImport } from './routes/_app/courses/audit/guide/index'
 import { Route as AppPSlugEditorIndexRouteImport } from './routes/_app/p/$slug/editor/index'
 import { Route as AppPSlugSettingsIndexRouteImport } from './routes/_app/p/$slug/settings/index'
+import { Route as AppAccountMyProfileEditIndexRouteImport } from './routes/_app/_account/my/profile/edit/index'
+import { Route as AppAccountMyUHandleIndexRouteImport } from './routes/_app/_account/my/u/$handle/index'
 import { Route as AppPSlugSettingsAdminControlsIndexRouteImport } from './routes/_app/p/$slug/settings/admin-controls/index'
 import { Route as AppPSlugSettingsGeneralIndexRouteImport } from './routes/_app/p/$slug/settings/general/index'
 
@@ -157,6 +160,12 @@ const AppAccountMyPagesIndexRoute = AppAccountMyPagesIndexRouteImport.update({
   path: '/my/pages/',
   getParentRoute: () => AppAccountRouteRoute,
 } as any)
+const AppAccountMyProfileIndexRoute =
+  AppAccountMyProfileIndexRouteImport.update({
+    id: '/my/profile/',
+    path: '/my/profile/',
+    getParentRoute: () => AppAccountRouteRoute,
+  } as any)
 const AppCoursesAuditGuideIndexRoute =
   AppCoursesAuditGuideIndexRouteImport.update({
     id: '/audit/guide/',
@@ -173,6 +182,18 @@ const AppPSlugSettingsIndexRoute = AppPSlugSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppPSlugSettingsRouteRoute,
 } as any)
+const AppAccountMyProfileEditIndexRoute =
+  AppAccountMyProfileEditIndexRouteImport.update({
+    id: '/my/profile/edit/',
+    path: '/my/profile/edit/',
+    getParentRoute: () => AppAccountRouteRoute,
+  } as any)
+const AppAccountMyUHandleIndexRoute =
+  AppAccountMyUHandleIndexRouteImport.update({
+    id: '/my/u/$handle/',
+    path: '/my/u/$handle/',
+    getParentRoute: () => AppAccountRouteRoute,
+  } as any)
 const AppPSlugSettingsAdminControlsIndexRoute =
   AppPSlugSettingsAdminControlsIndexRouteImport.update({
     id: '/admin-controls/',
@@ -208,9 +229,12 @@ export interface FileRoutesByFullPath {
   '/p/$slug/': typeof AppPSlugIndexRoute
   '/my/account/': typeof AppAccountMyAccountIndexRoute
   '/my/pages/': typeof AppAccountMyPagesIndexRoute
+  '/my/profile/': typeof AppAccountMyProfileIndexRoute
   '/courses/audit/guide/': typeof AppCoursesAuditGuideIndexRoute
   '/p/$slug/editor/': typeof AppPSlugEditorIndexRoute
   '/p/$slug/settings/': typeof AppPSlugSettingsIndexRoute
+  '/my/profile/edit/': typeof AppAccountMyProfileEditIndexRoute
+  '/my/u/$handle/': typeof AppAccountMyUHandleIndexRoute
   '/p/$slug/settings/admin-controls/': typeof AppPSlugSettingsAdminControlsIndexRoute
   '/p/$slug/settings/general/': typeof AppPSlugSettingsGeneralIndexRoute
 }
@@ -233,9 +257,12 @@ export interface FileRoutesByTo {
   '/p/$slug': typeof AppPSlugIndexRoute
   '/my/account': typeof AppAccountMyAccountIndexRoute
   '/my/pages': typeof AppAccountMyPagesIndexRoute
+  '/my/profile': typeof AppAccountMyProfileIndexRoute
   '/courses/audit/guide': typeof AppCoursesAuditGuideIndexRoute
   '/p/$slug/editor': typeof AppPSlugEditorIndexRoute
   '/p/$slug/settings': typeof AppPSlugSettingsIndexRoute
+  '/my/profile/edit': typeof AppAccountMyProfileEditIndexRoute
+  '/my/u/$handle': typeof AppAccountMyUHandleIndexRoute
   '/p/$slug/settings/admin-controls': typeof AppPSlugSettingsAdminControlsIndexRoute
   '/p/$slug/settings/general': typeof AppPSlugSettingsGeneralIndexRoute
 }
@@ -265,9 +292,12 @@ export interface FileRoutesById {
   '/_app/p/$slug/': typeof AppPSlugIndexRoute
   '/_app/_account/my/account/': typeof AppAccountMyAccountIndexRoute
   '/_app/_account/my/pages/': typeof AppAccountMyPagesIndexRoute
+  '/_app/_account/my/profile/': typeof AppAccountMyProfileIndexRoute
   '/_app/courses/audit/guide/': typeof AppCoursesAuditGuideIndexRoute
   '/_app/p/$slug/editor/': typeof AppPSlugEditorIndexRoute
   '/_app/p/$slug/settings/': typeof AppPSlugSettingsIndexRoute
+  '/_app/_account/my/profile/edit/': typeof AppAccountMyProfileEditIndexRoute
+  '/_app/_account/my/u/$handle/': typeof AppAccountMyUHandleIndexRoute
   '/_app/p/$slug/settings/admin-controls/': typeof AppPSlugSettingsAdminControlsIndexRoute
   '/_app/p/$slug/settings/general/': typeof AppPSlugSettingsGeneralIndexRoute
 }
@@ -295,9 +325,12 @@ export interface FileRouteTypes {
     | '/p/$slug/'
     | '/my/account/'
     | '/my/pages/'
+    | '/my/profile/'
     | '/courses/audit/guide/'
     | '/p/$slug/editor/'
     | '/p/$slug/settings/'
+    | '/my/profile/edit/'
+    | '/my/u/$handle/'
     | '/p/$slug/settings/admin-controls/'
     | '/p/$slug/settings/general/'
   fileRoutesByTo: FileRoutesByTo
@@ -320,9 +353,12 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/my/account'
     | '/my/pages'
+    | '/my/profile'
     | '/courses/audit/guide'
     | '/p/$slug/editor'
     | '/p/$slug/settings'
+    | '/my/profile/edit'
+    | '/my/u/$handle'
     | '/p/$slug/settings/admin-controls'
     | '/p/$slug/settings/general'
   id:
@@ -351,9 +387,12 @@ export interface FileRouteTypes {
     | '/_app/p/$slug/'
     | '/_app/_account/my/account/'
     | '/_app/_account/my/pages/'
+    | '/_app/_account/my/profile/'
     | '/_app/courses/audit/guide/'
     | '/_app/p/$slug/editor/'
     | '/_app/p/$slug/settings/'
+    | '/_app/_account/my/profile/edit/'
+    | '/_app/_account/my/u/$handle/'
     | '/_app/p/$slug/settings/admin-controls/'
     | '/_app/p/$slug/settings/general/'
   fileRoutesById: FileRoutesById
@@ -533,6 +572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountMyPagesIndexRouteImport
       parentRoute: typeof AppAccountRouteRoute
     }
+    '/_app/_account/my/profile/': {
+      id: '/_app/_account/my/profile/'
+      path: '/my/profile'
+      fullPath: '/my/profile/'
+      preLoaderRoute: typeof AppAccountMyProfileIndexRouteImport
+      parentRoute: typeof AppAccountRouteRoute
+    }
     '/_app/courses/audit/guide/': {
       id: '/_app/courses/audit/guide/'
       path: '/audit/guide'
@@ -554,6 +600,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPSlugSettingsIndexRouteImport
       parentRoute: typeof AppPSlugSettingsRouteRoute
     }
+    '/_app/_account/my/profile/edit/': {
+      id: '/_app/_account/my/profile/edit/'
+      path: '/my/profile/edit'
+      fullPath: '/my/profile/edit/'
+      preLoaderRoute: typeof AppAccountMyProfileEditIndexRouteImport
+      parentRoute: typeof AppAccountRouteRoute
+    }
+    '/_app/_account/my/u/$handle/': {
+      id: '/_app/_account/my/u/$handle/'
+      path: '/my/u/$handle'
+      fullPath: '/my/u/$handle/'
+      preLoaderRoute: typeof AppAccountMyUHandleIndexRouteImport
+      parentRoute: typeof AppAccountRouteRoute
+    }
     '/_app/p/$slug/settings/admin-controls/': {
       id: '/_app/p/$slug/settings/admin-controls/'
       path: '/admin-controls'
@@ -574,11 +634,17 @@ declare module '@tanstack/react-router' {
 interface AppAccountRouteRouteChildren {
   AppAccountMyAccountIndexRoute: typeof AppAccountMyAccountIndexRoute
   AppAccountMyPagesIndexRoute: typeof AppAccountMyPagesIndexRoute
+  AppAccountMyProfileIndexRoute: typeof AppAccountMyProfileIndexRoute
+  AppAccountMyProfileEditIndexRoute: typeof AppAccountMyProfileEditIndexRoute
+  AppAccountMyUHandleIndexRoute: typeof AppAccountMyUHandleIndexRoute
 }
 
 const AppAccountRouteRouteChildren: AppAccountRouteRouteChildren = {
   AppAccountMyAccountIndexRoute: AppAccountMyAccountIndexRoute,
   AppAccountMyPagesIndexRoute: AppAccountMyPagesIndexRoute,
+  AppAccountMyProfileIndexRoute: AppAccountMyProfileIndexRoute,
+  AppAccountMyProfileEditIndexRoute: AppAccountMyProfileEditIndexRoute,
+  AppAccountMyUHandleIndexRoute: AppAccountMyUHandleIndexRoute,
 }
 
 const AppAccountRouteRouteWithChildren = AppAccountRouteRoute._addFileChildren(

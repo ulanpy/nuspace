@@ -17,8 +17,8 @@ import { MyPagesCount } from "./my-pages-count"
  * one thing on this host a signed-out visitor can open. Every other row is
  * `requiresSession`, so a signed-out visitor's rail is People alone.
  *
- * Profile and People have no route yet (#434, #436), so they go to the address
- * they will have on this host. Each ticket swaps its `href` for a `to`.
+ * People has no route yet (#436), so it goes to the address it will have on
+ * this host. That ticket swaps its `href` for a `to`.
  */
 export const ACCOUNT_SECTIONS: readonly RailSection[] = [
   {
@@ -35,7 +35,7 @@ export const ACCOUNT_SECTIONS: readonly RailSection[] = [
     requiresSession: true,
   },
   {
-    href: "/profile",
+    to: "/my/profile",
     label: "Profile",
     icon: SettingsIcon,
     requiresSession: true,
