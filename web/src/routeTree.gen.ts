@@ -13,6 +13,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AppAccountRouteRouteImport } from './routes/_app/_account/route'
 import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
+import { Route as AppEventsRouteRouteImport } from './routes/_app/events/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as AppAnnouncementsIndexRouteImport } from './routes/_app/announcements/index'
 import { Route as AppContactsIndexRouteImport } from './routes/_app/contacts/index'
@@ -55,6 +56,11 @@ const AppCoursesRouteRoute = AppCoursesRouteRouteImport.update({
   path: '/courses',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppEventsRouteRoute = AppEventsRouteRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -76,9 +82,9 @@ const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
   getParentRoute: () => AppCoursesRouteRoute,
 } as any)
 const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
-  id: '/events/',
-  path: '/events/',
-  getParentRoute: () => AppRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppEventsRouteRoute,
 } as any)
 const AppMynuspaceIndexRoute = AppMynuspaceIndexRouteImport.update({
   id: '/mynuspace/',
@@ -126,9 +132,9 @@ const AppCoursesStatsIndexRoute = AppCoursesStatsIndexRouteImport.update({
   getParentRoute: () => AppCoursesRouteRoute,
 } as any)
 const AppEventsEventIdIndexRoute = AppEventsEventIdIndexRouteImport.update({
-  id: '/events/$eventId/',
-  path: '/events/$eventId/',
-  getParentRoute: () => AppRouteRoute,
+  id: '/$eventId/',
+  path: '/$eventId/',
+  getParentRoute: () => AppEventsRouteRoute,
 } as any)
 const AppPSlugIndexRoute = AppPSlugIndexRouteImport.update({
   id: '/p/$slug/',
@@ -183,6 +189,7 @@ const AppPSlugSettingsGeneralIndexRoute =
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/courses': typeof AppCoursesRouteRouteWithChildren
+  '/events': typeof AppEventsRouteRouteWithChildren
   '/announcements/': typeof AppAnnouncementsIndexRoute
   '/contacts/': typeof AppContactsIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
@@ -238,6 +245,7 @@ export interface FileRoutesById {
   '/_public': typeof PublicRouteRouteWithChildren
   '/_app/_account': typeof AppAccountRouteRouteWithChildren
   '/_app/courses': typeof AppCoursesRouteRouteWithChildren
+  '/_app/events': typeof AppEventsRouteRouteWithChildren
   '/_public/': typeof PublicIndexRoute
   '/_app/announcements/': typeof AppAnnouncementsIndexRoute
   '/_app/contacts/': typeof AppContactsIndexRoute
@@ -268,6 +276,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/courses'
+    | '/events'
     | '/announcements/'
     | '/contacts/'
     | '/courses/'
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/_public'
     | '/_app/_account'
     | '/_app/courses'
+    | '/_app/events'
     | '/_public/'
     | '/_app/announcements/'
     | '/_app/contacts/'
@@ -383,6 +393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCoursesRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/events': {
+      id: '/_app/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof AppEventsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_public/': {
       id: '/_public/'
       path: '/'
@@ -413,10 +430,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/events/': {
       id: '/_app/events/'
-      path: '/events'
+      path: '/'
       fullPath: '/events/'
       preLoaderRoute: typeof AppEventsIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppEventsRouteRoute
     }
     '/_app/mynuspace/': {
       id: '/_app/mynuspace/'
@@ -483,10 +500,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/events/$eventId/': {
       id: '/_app/events/$eventId/'
-      path: '/events/$eventId'
+      path: '/$eventId'
       fullPath: '/events/$eventId/'
       preLoaderRoute: typeof AppEventsEventIdIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      parentRoute: typeof AppEventsRouteRoute
     }
     '/_app/p/$slug/': {
       id: '/_app/p/$slug/'
@@ -588,6 +605,20 @@ const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
   AppCoursesRouteRouteChildren,
 )
 
+interface AppEventsRouteRouteChildren {
+  AppEventsIndexRoute: typeof AppEventsIndexRoute
+  AppEventsEventIdIndexRoute: typeof AppEventsEventIdIndexRoute
+}
+
+const AppEventsRouteRouteChildren: AppEventsRouteRouteChildren = {
+  AppEventsIndexRoute: AppEventsIndexRoute,
+  AppEventsEventIdIndexRoute: AppEventsEventIdIndexRoute,
+}
+
+const AppEventsRouteRouteWithChildren = AppEventsRouteRoute._addFileChildren(
+  AppEventsRouteRouteChildren,
+)
+
 interface AppPSlugSettingsRouteRouteChildren {
   AppPSlugSettingsIndexRoute: typeof AppPSlugSettingsIndexRoute
   AppPSlugSettingsAdminControlsIndexRoute: typeof AppPSlugSettingsAdminControlsIndexRoute
@@ -609,14 +640,13 @@ const AppPSlugSettingsRouteRouteWithChildren =
 interface AppRouteRouteChildren {
   AppAccountRouteRoute: typeof AppAccountRouteRouteWithChildren
   AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
+  AppEventsRouteRoute: typeof AppEventsRouteRouteWithChildren
   AppAnnouncementsIndexRoute: typeof AppAnnouncementsIndexRoute
   AppContactsIndexRoute: typeof AppContactsIndexRoute
-  AppEventsIndexRoute: typeof AppEventsIndexRoute
   AppMynuspaceIndexRoute: typeof AppMynuspaceIndexRoute
   AppOpportunitiesIndexRoute: typeof AppOpportunitiesIndexRoute
   AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
   AppPSlugSettingsRouteRoute: typeof AppPSlugSettingsRouteRouteWithChildren
-  AppEventsEventIdIndexRoute: typeof AppEventsEventIdIndexRoute
   AppPSlugIndexRoute: typeof AppPSlugIndexRoute
   AppPSlugEditorIndexRoute: typeof AppPSlugEditorIndexRoute
 }
@@ -624,14 +654,13 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAccountRouteRoute: AppAccountRouteRouteWithChildren,
   AppCoursesRouteRoute: AppCoursesRouteRouteWithChildren,
+  AppEventsRouteRoute: AppEventsRouteRouteWithChildren,
   AppAnnouncementsIndexRoute: AppAnnouncementsIndexRoute,
   AppContactsIndexRoute: AppContactsIndexRoute,
-  AppEventsIndexRoute: AppEventsIndexRoute,
   AppMynuspaceIndexRoute: AppMynuspaceIndexRoute,
   AppOpportunitiesIndexRoute: AppOpportunitiesIndexRoute,
   AppSgotinishIndexRoute: AppSgotinishIndexRoute,
   AppPSlugSettingsRouteRoute: AppPSlugSettingsRouteRouteWithChildren,
-  AppEventsEventIdIndexRoute: AppEventsEventIdIndexRoute,
   AppPSlugIndexRoute: AppPSlugIndexRoute,
   AppPSlugEditorIndexRoute: AppPSlugEditorIndexRoute,
 }

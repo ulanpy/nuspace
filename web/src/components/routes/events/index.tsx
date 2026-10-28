@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 
-import type { EventsListSearch } from "@/routes/_app/events"
+import type { EventsListSearch } from "@/routes/_app/events/route"
 import type { Event } from "@/lib/events"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { qk } from "@/api/query-keys"
@@ -13,7 +13,8 @@ import type { BoardFilterOption } from "@/components/routes/events/components/pi
 
 /**
  * The events host's root: a cork board of posters. Opening one goes to the
- * event's own route, `/$eventId`.
+ * event's own route, `/$eventId`, which the parent route shows as a dialog
+ * over this board.
  */
 export function EventsScreen({
   search,

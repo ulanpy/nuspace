@@ -102,15 +102,14 @@ describe("what an event's dialog offers", () => {
     "2026-07-27T10:00:00.000Z",
     NOW
   )
-  const event = (overrides: Partial<Event>): Event =>
-    ({
-      id: 1,
-      policy: "open",
-      status: "approved",
-      type: "social",
-      registration_link: null,
-      ...overrides,
-    }) as Event
+  type Shown = Pick<Event, "policy" | "status" | "type" | "registration_link">
+  const event = (overrides: Partial<Shown>): Shown => ({
+    policy: "open",
+    status: "approved",
+    type: "social",
+    registration_link: null,
+    ...overrides,
+  })
 
   it("offers attending and the calendar on an approved open event", () => {
     assert.deepEqual(eventActions(event({}), upcoming), {
@@ -123,7 +122,10 @@ describe("what an event's dialog offers", () => {
   it("offers the organiser's registration link instead of attending", () => {
     assert.deepEqual(
       eventActions(
-        event({ policy: "registration", registration_link: "https://x.test/r" }),
+        event({
+          policy: "registration",
+          registration_link: "https://x.test/r",
+        }),
         upcoming
       ),
       { attend: false, registerAt: "https://x.test/r", calendar: true }

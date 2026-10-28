@@ -408,7 +408,10 @@ export interface EventActions {
  * recruitment closes rather than happens, so it has no seat to take and no
  * slot to diarise; a finished event has neither either.
  */
-export function eventActions(event: Event, timing: EventTiming): EventActions {
+export function eventActions(
+  event: Pick<Event, "policy" | "status" | "type" | "registration_link">,
+  timing: EventTiming
+): EventActions {
   const live = timing.kind !== "finished"
   const happens = event.type !== "recruitment"
   return {
