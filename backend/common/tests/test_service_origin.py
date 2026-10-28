@@ -3,7 +3,13 @@
 from types import SimpleNamespace
 
 import pytest
-from backend.common.service_origin import SERVICES, environment_from, service_origin
+from backend.common.service_origin import (
+    SERVICES,
+    app_hosts,
+    cookie_domain,
+    environment_from,
+    service_origin,
+)
 from backend.core.configs.config import Config
 from backend.modules.bot.routes.user.private.messages.post_event import _event_link
 from backend.modules.bot.services.grades import build_site_grades_url
@@ -39,6 +45,19 @@ def test_dev_uses_localhost_hosts_with_optional_port():
 def test_unknown_service_rejected():
     with pytest.raises(ValueError):
         service_origin("admin", "production")  # type: ignore[arg-type]
+
+
+def test_app_hosts_are_the_service_hosts_plus_extra_origins():
+    assert app_hosts("staging") == {"stage.nuspace.kz"} | {
+        f"{s}_staging.nuspace.kz" for s in SERVICES if s != "root"
+    }
+    assert "quick-fox.trycloudflare.com" in app_hosts("dev", "https://quick-fox.trycloudflare.com")
+
+
+def test_cookie_domain_per_environment():
+    assert cookie_domain("production") == ".nuspace.kz"
+    assert cookie_domain("staging") == ".nuspace.kz"
+    assert cookie_domain("dev") is None
 
 
 def test_environment_detection():

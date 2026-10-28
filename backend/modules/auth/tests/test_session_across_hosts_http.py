@@ -91,12 +91,24 @@ async def test_signing_in_on_one_host_signs_you_in_on_another(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("login_url", "headers"),
+    [
+        pytest.param("https://events.nuspace.kz/api/login", {}, id="plain"),
+        # nginx never sets X-Forwarded-Host, so only a client could.
+        pytest.param(
+            "https://events.nuspace.kz/api/login",
+            {"X-Forwarded-Host": "evil.example"},
+            id="client-supplied-forwarded-host-ignored",
+        ),
+        # Outside dev a port on Host is dropped.
+        pytest.param("https://events.nuspace.kz:9999/api/login", {}, id="port-dropped"),
+    ],
+)
 async def test_sign_in_returns_to_the_host_and_path_it_started_on(
-    guest: Viewer, redis: FakeRedis
+    guest: Viewer, redis: FakeRedis, login_url: str, headers: dict[str, str]
 ) -> None:
-    login = await guest.client.get(
-        "https://events.nuspace.kz/api/login", params={"return_to": "/123"}
-    )
+    login = await guest.client.get(login_url, params={"return_to": "/123"}, headers=headers)
 
     assert urlsplit(login.headers["location"]).netloc == "events.nuspace.kz"
     callback = await guest.client.get(login.headers["location"])
@@ -112,19 +124,6 @@ async def test_an_absolute_return_to_is_not_followed(guest: Viewer, redis: FakeR
     )
 
     assert callback.headers["location"] == "https://events.nuspace.kz"
-
-
-@pytest.mark.asyncio
-async def test_a_client_supplied_forwarded_host_is_ignored(guest: Viewer, redis: FakeRedis) -> None:
-    login = await guest.client.get(
-        "https://events.nuspace.kz/api/login",
-        params={"return_to": "/123"},
-        headers={"X-Forwarded-Host": "evil.example"},
-    )
-
-    assert urlsplit(login.headers["location"]).netloc == "events.nuspace.kz"
-    callback = await guest.client.get(login.headers["location"])
-    assert callback.headers["location"] == "https://events.nuspace.kz/123"
 
 
 @pytest.mark.asyncio

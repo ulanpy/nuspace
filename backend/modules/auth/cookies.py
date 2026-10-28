@@ -10,8 +10,7 @@ from backend.core.configs.config import config
 def _delete_cookie(response: Response, key: str) -> None:
     response.delete_cookie(key=key, domain=config.COOKIE_DOMAIN)
     if config.COOKIE_DOMAIN:
-        # Host-only cookies set before the parent domain was (on the apex) would
-        # otherwise survive a sign-out until they expire.
+        # Deliberate, not a duplicate: also clears host-only cookies set before the cutover.
         response.delete_cookie(key=key)
 
 

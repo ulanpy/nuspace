@@ -122,6 +122,8 @@ fixture from inside a running async test.
   - GCS: an anonymous client is built but never called.
   - The Telegram bot: `app.state.bot` is `None`.
   - The profiler and the registrar catalog sync are off.
+  - Redis: the client points at a port nothing listens on. A test whose route
+    reaches Redis (the login round-trip does) fakes it on `app.state.redis`.
 - **Faking a client a test needs.** If a test reaches one of these, fake the
   client in that test, for example with `monkeypatch.setattr(app.state, "bot",
   FakeBot())`. Don't fake the services that call it.

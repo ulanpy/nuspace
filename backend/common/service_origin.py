@@ -1,7 +1,9 @@
-"""Per-environment service origins for every absolute link the backend mints.
+"""Per-environment service origins: the hosts the app is served on.
 
 Mirrors the host-to-route table: six hosts (the root search host and five services).
-Origins come from the environment, never from a request header.
+Every absolute link the backend mints is built from these origins, which come from
+the environment, never from a request header. The same table bounds which `Host` a
+login may return to (`app_hosts`) and the domain the session cookies cover.
 """
 
 from typing import Literal, get_args
@@ -45,12 +47,10 @@ def service_origin(service: Service, environment: Environment, dev_port: int | N
     raise ValueError(f"Unknown environment: {environment!r}")
 
 
-def service_hosts(environment: Environment, dev_port: int | None = None) -> frozenset[str]:
-    """Hostnames of the six service hosts in an environment (no scheme, no port)."""
-    return frozenset(
-        urlsplit(service_origin(service, environment, dev_port)).hostname or ""
-        for service in SERVICES
-    )
+def app_hosts(environment: Environment, *origins: str) -> frozenset[str]:
+    """Hostnames (no scheme, no port) of the six service hosts, plus those of `origins`."""
+    urls = [*(service_origin(service, environment) for service in SERVICES), *origins]
+    return frozenset(host for url in urls if (host := urlsplit(url).hostname))
 
 
 def cookie_domain(environment: Environment) -> str | None:

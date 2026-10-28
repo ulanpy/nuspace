@@ -12,22 +12,24 @@ def request_app_base_url(request: Request, app_config: Config) -> str:
     environment: a login started on events.nuspace.kz returns to events.nuspace.kz.
     Falls back to the configured apex (HOME_URL) when `Host` is missing or is not
     one of this environment's hosts (`Config.APP_HOSTS`), so a forged `Host`
-    cannot point a redirect elsewhere.
+    cannot point a redirect elsewhere. Outside dev, a port on `Host` is dropped.
 
     `X-Forwarded-Host` is never read: nginx does not set it, so only a client could.
     """
-    fallback = app_config.HOME_URL.rstrip("/")
+    apex = app_config.HOME_URL.rstrip("/")
 
     host = request.headers.get("host")
     if not host:
-        return fallback
+        return apex
     try:
         parsed = urlsplit(f"//{host}")
         hostname, port = parsed.hostname, parsed.port
     except ValueError:
-        return fallback
+        return apex
     if not hostname or hostname not in app_config.APP_HOSTS:
-        return fallback
+        return apex
+    if app_config.ENVIRONMENT != "dev":
+        port = None
 
     forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
     if forwarded_proto in ("http", "https"):

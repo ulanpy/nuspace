@@ -8,9 +8,9 @@ import requests
 from backend.common.service_origin import (
     Environment,
     Service,
+    app_hosts,
     cookie_domain,
     environment_from,
-    service_hosts,
     service_origin,
 )
 from dotenv import load_dotenv
@@ -133,12 +133,9 @@ class Config(BaseSettings):
 
         Dev also accepts DEV_APP_URL's host and the cloudflared tunnel's host.
         """
-        hosts = set(service_hosts(self.ENVIRONMENT))
-        hosts.add(urlsplit(self.HOME_URL).hostname or "")
         if self.ENVIRONMENT == "dev":
-            hosts.add(urlsplit(self.PUBLIC_WEBHOOK_URL).hostname or "")
-        hosts.discard("")
-        return frozenset(hosts)
+            return app_hosts(self.ENVIRONMENT, self.HOME_URL, self.PUBLIC_WEBHOOK_URL)
+        return app_hosts(self.ENVIRONMENT, self.HOME_URL)
 
     @cached_property
     def COOKIE_DOMAIN(self) -> str | None:
