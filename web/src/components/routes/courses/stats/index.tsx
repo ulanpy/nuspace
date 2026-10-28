@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 
-import type { StatisticsSearch } from "@/routes/_app/courses/statistics"
+import type { StatisticsSearch } from "@/routes/_app/courses/stats"
 import { qk } from "@/api/query-keys"
 import { fetchGradesPage, gradeTermsQueryOptions } from "@/lib/courses"
 import { GradeReportCard } from "@/components/routes/courses/components/grade-report-card"
@@ -18,7 +18,7 @@ import { InfiniteList } from "@/components/shared/query/infinite-list"
 import { FilterTabs, type FilterOption } from "@/components/shared/list-filters"
 import { Input } from "@/components/ui/input"
 
-export function Page({
+export function StatisticsScreen({
   search,
   onSearchChange,
 }: {

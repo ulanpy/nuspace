@@ -53,7 +53,7 @@ function sameValues(left: readonly string[], right: readonly string[]) {
   )
 }
 
-export function Page({
+export function DegreeAuditScreen({
   search,
   onSearchChange,
 }: {
@@ -244,7 +244,7 @@ export function Page({
                 Checks your transcript against the requirements for your
                 admission year.{" "}
                 <Link
-                  to="/degree-audit-info"
+                  to="/courses/audit/guide"
                   className="underline underline-offset-3 hover:text-foreground"
                 >
                   How it works

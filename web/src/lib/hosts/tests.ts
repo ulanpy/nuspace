@@ -110,11 +110,11 @@ describe("route tree", () => {
       "routes/_app/events/$eventId/index",
     ])
     // The generator wraps long declarations onto a second line.
-    assert.deepEqual(tree.files("/courses/statistics"), [
+    assert.deepEqual(tree.files("/courses/stats"), [
       "routes/__root",
       "routes/_app/route",
       "routes/_app/courses/route",
-      "routes/_app/courses/statistics/index",
+      "routes/_app/courses/stats/index",
     ])
   })
 
@@ -144,7 +144,12 @@ describe("nginx include", () => {
   })
 
   it("leaves a host with no row unmapped, so nginx 404s all of it", () => {
-    assert.doesNotMatch(include, /courses\.nuspace\.kz +courses;/)
+    const withoutCourses = renderNginxInclude(
+      ROUTE_TABLE.filter((row) => row.service !== "courses"),
+      SERVICES
+    )
+    assert.doesNotMatch(withoutCourses, /courses\.nuspace\.kz +courses;/)
+    assert.match(include, /courses\.nuspace\.kz +courses;/)
   })
 
   it("matches a static path exactly and a root-level parameter by regex", () => {
@@ -212,8 +217,12 @@ describe("host rewrite", () => {
       "https://events.nuspace.kz/42"
     )
     assert.equal(
-      output("https://events_staging.nuspace.kz/courses"),
-      "https://stage.nuspace.kz/courses"
+      output("https://events_staging.nuspace.kz/courses/stats"),
+      "https://courses_staging.nuspace.kz/stats"
+    )
+    assert.equal(
+      output("https://events_staging.nuspace.kz/about"),
+      "https://stage.nuspace.kz/about"
     )
     assert.equal(
       output("http://localhost:5173/events"),

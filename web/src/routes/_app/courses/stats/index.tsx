@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/courses/statistics"
+import { Page } from "@/components/shared/page"
+
+import { StatisticsScreen } from "@/components/routes/courses/stats"
 
 const statisticsSearchSchema = z.object({
   q: z.string().optional(),
@@ -12,7 +14,7 @@ const statisticsSearchSchema = z.object({
 
 export type StatisticsSearch = z.infer<typeof statisticsSearchSchema>
 
-export const Route = createFileRoute("/_app/courses/statistics/")({
+export const Route = createFileRoute("/_app/courses/stats/")({
   validateSearch: statisticsSearchSchema,
   component: StatisticsRoute,
 })
@@ -34,5 +36,9 @@ function StatisticsRoute() {
     [navigate]
   )
 
-  return <Page search={search} onSearchChange={onSearchChange} />
+  return (
+    <Page title="Statistics">
+      <StatisticsScreen search={search} onSearchChange={onSearchChange} />
+    </Page>
+  )
 }

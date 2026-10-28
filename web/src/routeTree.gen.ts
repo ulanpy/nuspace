@@ -11,13 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
-import { Route as AppAccountRouteRouteImport } from './routes/_app/_account/route'
 import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as AppAccountIndexRouteImport } from './routes/_app/account/index'
 import { Route as AppAnnouncementsIndexRouteImport } from './routes/_app/announcements/index'
 import { Route as AppContactsIndexRouteImport } from './routes/_app/contacts/index'
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
-import { Route as AppDegreeAuditInfoIndexRouteImport } from './routes/_app/degree-audit-info/index'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppMynuspaceIndexRouteImport } from './routes/_app/mynuspace/index'
 import { Route as AppOpportunitiesIndexRouteImport } from './routes/_app/opportunities/index'
@@ -26,13 +25,12 @@ import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/ind
 import { Route as PublicPrivacyIndexRouteImport } from './routes/_public/privacy/index'
 import { Route as PublicTermsIndexRouteImport } from './routes/_public/terms/index'
 import { Route as AppCoursesAuditIndexRouteImport } from './routes/_app/courses/audit/index'
-import { Route as AppCoursesScheduleIndexRouteImport } from './routes/_app/courses/schedule/index'
-import { Route as AppCoursesStatisticsIndexRouteImport } from './routes/_app/courses/statistics/index'
+import { Route as AppCoursesPlannerIndexRouteImport } from './routes/_app/courses/planner/index'
+import { Route as AppCoursesStatsIndexRouteImport } from './routes/_app/courses/stats/index'
 import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$eventId/index'
 import { Route as AppPSlugIndexRouteImport } from './routes/_app/p/$slug/index'
 import { Route as AppPSlugSettingsRouteRouteImport } from './routes/_app/p/$slug/settings/route'
-import { Route as AppAccountMyAccountIndexRouteImport } from './routes/_app/_account/my/account/index'
-import { Route as AppAccountMyPagesIndexRouteImport } from './routes/_app/_account/my/pages/index'
+import { Route as AppCoursesAuditGuideIndexRouteImport } from './routes/_app/courses/audit/guide/index'
 import { Route as AppPSlugEditorIndexRouteImport } from './routes/_app/p/$slug/editor/index'
 import { Route as AppPSlugSettingsIndexRouteImport } from './routes/_app/p/$slug/settings/index'
 import { Route as AppPSlugSettingsAdminControlsIndexRouteImport } from './routes/_app/p/$slug/settings/admin-controls/index'
@@ -46,10 +44,6 @@ const PublicRouteRoute = PublicRouteRouteImport.update({
   id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppAccountRouteRoute = AppAccountRouteRouteImport.update({
-  id: '/_account',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppCoursesRouteRoute = AppCoursesRouteRouteImport.update({
   id: '/courses',
   path: '/courses',
@@ -59,6 +53,11 @@ const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PublicRouteRoute,
+} as any)
+const AppAccountIndexRoute = AppAccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppAnnouncementsIndexRoute = AppAnnouncementsIndexRouteImport.update({
   id: '/announcements/',
@@ -74,11 +73,6 @@ const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppCoursesRouteRoute,
-} as any)
-const AppDegreeAuditInfoIndexRoute = AppDegreeAuditInfoIndexRouteImport.update({
-  id: '/degree-audit-info/',
-  path: '/degree-audit-info/',
-  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
   id: '/events/',
@@ -120,17 +114,16 @@ const AppCoursesAuditIndexRoute = AppCoursesAuditIndexRouteImport.update({
   path: '/audit/',
   getParentRoute: () => AppCoursesRouteRoute,
 } as any)
-const AppCoursesScheduleIndexRoute = AppCoursesScheduleIndexRouteImport.update({
-  id: '/schedule/',
-  path: '/schedule/',
+const AppCoursesPlannerIndexRoute = AppCoursesPlannerIndexRouteImport.update({
+  id: '/planner/',
+  path: '/planner/',
   getParentRoute: () => AppCoursesRouteRoute,
 } as any)
-const AppCoursesStatisticsIndexRoute =
-  AppCoursesStatisticsIndexRouteImport.update({
-    id: '/statistics/',
-    path: '/statistics/',
-    getParentRoute: () => AppCoursesRouteRoute,
-  } as any)
+const AppCoursesStatsIndexRoute = AppCoursesStatsIndexRouteImport.update({
+  id: '/stats/',
+  path: '/stats/',
+  getParentRoute: () => AppCoursesRouteRoute,
+} as any)
 const AppEventsEventIdIndexRoute = AppEventsEventIdIndexRouteImport.update({
   id: '/events/$eventId/',
   path: '/events/$eventId/',
@@ -146,17 +139,12 @@ const AppPSlugSettingsRouteRoute = AppPSlugSettingsRouteRouteImport.update({
   path: '/p/$slug/settings',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppAccountMyAccountIndexRoute =
-  AppAccountMyAccountIndexRouteImport.update({
-    id: '/my/account/',
-    path: '/my/account/',
-    getParentRoute: () => AppAccountRouteRoute,
+const AppCoursesAuditGuideIndexRoute =
+  AppCoursesAuditGuideIndexRouteImport.update({
+    id: '/audit/guide/',
+    path: '/audit/guide/',
+    getParentRoute: () => AppCoursesRouteRoute,
   } as any)
-const AppAccountMyPagesIndexRoute = AppAccountMyPagesIndexRouteImport.update({
-  id: '/my/pages/',
-  path: '/my/pages/',
-  getParentRoute: () => AppAccountRouteRoute,
-} as any)
 const AppPSlugEditorIndexRoute = AppPSlugEditorIndexRouteImport.update({
   id: '/p/$slug/editor/',
   path: '/p/$slug/editor/',
@@ -183,10 +171,10 @@ const AppPSlugSettingsGeneralIndexRoute =
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/courses': typeof AppCoursesRouteRouteWithChildren
+  '/account/': typeof AppAccountIndexRoute
   '/announcements/': typeof AppAnnouncementsIndexRoute
   '/contacts/': typeof AppContactsIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
-  '/degree-audit-info/': typeof AppDegreeAuditInfoIndexRoute
   '/events/': typeof AppEventsIndexRoute
   '/mynuspace/': typeof AppMynuspaceIndexRoute
   '/opportunities/': typeof AppOpportunitiesIndexRoute
@@ -196,12 +184,11 @@ export interface FileRoutesByFullPath {
   '/terms/': typeof PublicTermsIndexRoute
   '/p/$slug/settings': typeof AppPSlugSettingsRouteRouteWithChildren
   '/courses/audit/': typeof AppCoursesAuditIndexRoute
-  '/courses/schedule/': typeof AppCoursesScheduleIndexRoute
-  '/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
+  '/courses/planner/': typeof AppCoursesPlannerIndexRoute
+  '/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/p/$slug/': typeof AppPSlugIndexRoute
-  '/my/account/': typeof AppAccountMyAccountIndexRoute
-  '/my/pages/': typeof AppAccountMyPagesIndexRoute
+  '/courses/audit/guide/': typeof AppCoursesAuditGuideIndexRoute
   '/p/$slug/editor/': typeof AppPSlugEditorIndexRoute
   '/p/$slug/settings/': typeof AppPSlugSettingsIndexRoute
   '/p/$slug/settings/admin-controls/': typeof AppPSlugSettingsAdminControlsIndexRoute
@@ -209,10 +196,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
+  '/account': typeof AppAccountIndexRoute
   '/announcements': typeof AppAnnouncementsIndexRoute
   '/contacts': typeof AppContactsIndexRoute
   '/courses': typeof AppCoursesIndexRoute
-  '/degree-audit-info': typeof AppDegreeAuditInfoIndexRoute
   '/events': typeof AppEventsIndexRoute
   '/mynuspace': typeof AppMynuspaceIndexRoute
   '/opportunities': typeof AppOpportunitiesIndexRoute
@@ -221,12 +208,11 @@ export interface FileRoutesByTo {
   '/privacy': typeof PublicPrivacyIndexRoute
   '/terms': typeof PublicTermsIndexRoute
   '/courses/audit': typeof AppCoursesAuditIndexRoute
-  '/courses/schedule': typeof AppCoursesScheduleIndexRoute
-  '/courses/statistics': typeof AppCoursesStatisticsIndexRoute
+  '/courses/planner': typeof AppCoursesPlannerIndexRoute
+  '/courses/stats': typeof AppCoursesStatsIndexRoute
   '/events/$eventId': typeof AppEventsEventIdIndexRoute
   '/p/$slug': typeof AppPSlugIndexRoute
-  '/my/account': typeof AppAccountMyAccountIndexRoute
-  '/my/pages': typeof AppAccountMyPagesIndexRoute
+  '/courses/audit/guide': typeof AppCoursesAuditGuideIndexRoute
   '/p/$slug/editor': typeof AppPSlugEditorIndexRoute
   '/p/$slug/settings': typeof AppPSlugSettingsIndexRoute
   '/p/$slug/settings/admin-controls': typeof AppPSlugSettingsAdminControlsIndexRoute
@@ -236,13 +222,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
   '/_public': typeof PublicRouteRouteWithChildren
-  '/_app/_account': typeof AppAccountRouteRouteWithChildren
   '/_app/courses': typeof AppCoursesRouteRouteWithChildren
   '/_public/': typeof PublicIndexRoute
+  '/_app/account/': typeof AppAccountIndexRoute
   '/_app/announcements/': typeof AppAnnouncementsIndexRoute
   '/_app/contacts/': typeof AppContactsIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
-  '/_app/degree-audit-info/': typeof AppDegreeAuditInfoIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/mynuspace/': typeof AppMynuspaceIndexRoute
   '/_app/opportunities/': typeof AppOpportunitiesIndexRoute
@@ -252,12 +237,11 @@ export interface FileRoutesById {
   '/_public/terms/': typeof PublicTermsIndexRoute
   '/_app/p/$slug/settings': typeof AppPSlugSettingsRouteRouteWithChildren
   '/_app/courses/audit/': typeof AppCoursesAuditIndexRoute
-  '/_app/courses/schedule/': typeof AppCoursesScheduleIndexRoute
-  '/_app/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
+  '/_app/courses/planner/': typeof AppCoursesPlannerIndexRoute
+  '/_app/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/_app/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/_app/p/$slug/': typeof AppPSlugIndexRoute
-  '/_app/_account/my/account/': typeof AppAccountMyAccountIndexRoute
-  '/_app/_account/my/pages/': typeof AppAccountMyPagesIndexRoute
+  '/_app/courses/audit/guide/': typeof AppCoursesAuditGuideIndexRoute
   '/_app/p/$slug/editor/': typeof AppPSlugEditorIndexRoute
   '/_app/p/$slug/settings/': typeof AppPSlugSettingsIndexRoute
   '/_app/p/$slug/settings/admin-controls/': typeof AppPSlugSettingsAdminControlsIndexRoute
@@ -268,10 +252,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/courses'
+    | '/account/'
     | '/announcements/'
     | '/contacts/'
     | '/courses/'
-    | '/degree-audit-info/'
     | '/events/'
     | '/mynuspace/'
     | '/opportunities/'
@@ -281,12 +265,11 @@ export interface FileRouteTypes {
     | '/terms/'
     | '/p/$slug/settings'
     | '/courses/audit/'
-    | '/courses/schedule/'
-    | '/courses/statistics/'
+    | '/courses/planner/'
+    | '/courses/stats/'
     | '/events/$eventId/'
     | '/p/$slug/'
-    | '/my/account/'
-    | '/my/pages/'
+    | '/courses/audit/guide/'
     | '/p/$slug/editor/'
     | '/p/$slug/settings/'
     | '/p/$slug/settings/admin-controls/'
@@ -294,10 +277,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/announcements'
     | '/contacts'
     | '/courses'
-    | '/degree-audit-info'
     | '/events'
     | '/mynuspace'
     | '/opportunities'
@@ -306,12 +289,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/courses/audit'
-    | '/courses/schedule'
-    | '/courses/statistics'
+    | '/courses/planner'
+    | '/courses/stats'
     | '/events/$eventId'
     | '/p/$slug'
-    | '/my/account'
-    | '/my/pages'
+    | '/courses/audit/guide'
     | '/p/$slug/editor'
     | '/p/$slug/settings'
     | '/p/$slug/settings/admin-controls'
@@ -320,13 +302,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_public'
-    | '/_app/_account'
     | '/_app/courses'
     | '/_public/'
+    | '/_app/account/'
     | '/_app/announcements/'
     | '/_app/contacts/'
     | '/_app/courses/'
-    | '/_app/degree-audit-info/'
     | '/_app/events/'
     | '/_app/mynuspace/'
     | '/_app/opportunities/'
@@ -336,12 +317,11 @@ export interface FileRouteTypes {
     | '/_public/terms/'
     | '/_app/p/$slug/settings'
     | '/_app/courses/audit/'
-    | '/_app/courses/schedule/'
-    | '/_app/courses/statistics/'
+    | '/_app/courses/planner/'
+    | '/_app/courses/stats/'
     | '/_app/events/$eventId/'
     | '/_app/p/$slug/'
-    | '/_app/_account/my/account/'
-    | '/_app/_account/my/pages/'
+    | '/_app/courses/audit/guide/'
     | '/_app/p/$slug/editor/'
     | '/_app/p/$slug/settings/'
     | '/_app/p/$slug/settings/admin-controls/'
@@ -369,13 +349,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/_account': {
-      id: '/_app/_account'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppAccountRouteRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/_app/courses': {
       id: '/_app/courses'
       path: '/courses'
@@ -389,6 +362,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof PublicIndexRouteImport
       parentRoute: typeof PublicRouteRoute
+    }
+    '/_app/account/': {
+      id: '/_app/account/'
+      path: '/account'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AppAccountIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/announcements/': {
       id: '/_app/announcements/'
@@ -410,13 +390,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/courses/'
       preLoaderRoute: typeof AppCoursesIndexRouteImport
       parentRoute: typeof AppCoursesRouteRoute
-    }
-    '/_app/degree-audit-info/': {
-      id: '/_app/degree-audit-info/'
-      path: '/degree-audit-info'
-      fullPath: '/degree-audit-info/'
-      preLoaderRoute: typeof AppDegreeAuditInfoIndexRouteImport
-      parentRoute: typeof AppRouteRoute
     }
     '/_app/events/': {
       id: '/_app/events/'
@@ -474,18 +447,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCoursesAuditIndexRouteImport
       parentRoute: typeof AppCoursesRouteRoute
     }
-    '/_app/courses/schedule/': {
-      id: '/_app/courses/schedule/'
-      path: '/schedule'
-      fullPath: '/courses/schedule/'
-      preLoaderRoute: typeof AppCoursesScheduleIndexRouteImport
+    '/_app/courses/planner/': {
+      id: '/_app/courses/planner/'
+      path: '/planner'
+      fullPath: '/courses/planner/'
+      preLoaderRoute: typeof AppCoursesPlannerIndexRouteImport
       parentRoute: typeof AppCoursesRouteRoute
     }
-    '/_app/courses/statistics/': {
-      id: '/_app/courses/statistics/'
-      path: '/statistics'
-      fullPath: '/courses/statistics/'
-      preLoaderRoute: typeof AppCoursesStatisticsIndexRouteImport
+    '/_app/courses/stats/': {
+      id: '/_app/courses/stats/'
+      path: '/stats'
+      fullPath: '/courses/stats/'
+      preLoaderRoute: typeof AppCoursesStatsIndexRouteImport
       parentRoute: typeof AppCoursesRouteRoute
     }
     '/_app/events/$eventId/': {
@@ -509,19 +482,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPSlugSettingsRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/_account/my/account/': {
-      id: '/_app/_account/my/account/'
-      path: '/my/account'
-      fullPath: '/my/account/'
-      preLoaderRoute: typeof AppAccountMyAccountIndexRouteImport
-      parentRoute: typeof AppAccountRouteRoute
-    }
-    '/_app/_account/my/pages/': {
-      id: '/_app/_account/my/pages/'
-      path: '/my/pages'
-      fullPath: '/my/pages/'
-      preLoaderRoute: typeof AppAccountMyPagesIndexRouteImport
-      parentRoute: typeof AppAccountRouteRoute
+    '/_app/courses/audit/guide/': {
+      id: '/_app/courses/audit/guide/'
+      path: '/audit/guide'
+      fullPath: '/courses/audit/guide/'
+      preLoaderRoute: typeof AppCoursesAuditGuideIndexRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
     }
     '/_app/p/$slug/editor/': {
       id: '/_app/p/$slug/editor/'
@@ -554,32 +520,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppAccountRouteRouteChildren {
-  AppAccountMyAccountIndexRoute: typeof AppAccountMyAccountIndexRoute
-  AppAccountMyPagesIndexRoute: typeof AppAccountMyPagesIndexRoute
-}
-
-const AppAccountRouteRouteChildren: AppAccountRouteRouteChildren = {
-  AppAccountMyAccountIndexRoute: AppAccountMyAccountIndexRoute,
-  AppAccountMyPagesIndexRoute: AppAccountMyPagesIndexRoute,
-}
-
-const AppAccountRouteRouteWithChildren = AppAccountRouteRoute._addFileChildren(
-  AppAccountRouteRouteChildren,
-)
-
 interface AppCoursesRouteRouteChildren {
   AppCoursesIndexRoute: typeof AppCoursesIndexRoute
   AppCoursesAuditIndexRoute: typeof AppCoursesAuditIndexRoute
-  AppCoursesScheduleIndexRoute: typeof AppCoursesScheduleIndexRoute
-  AppCoursesStatisticsIndexRoute: typeof AppCoursesStatisticsIndexRoute
+  AppCoursesPlannerIndexRoute: typeof AppCoursesPlannerIndexRoute
+  AppCoursesStatsIndexRoute: typeof AppCoursesStatsIndexRoute
+  AppCoursesAuditGuideIndexRoute: typeof AppCoursesAuditGuideIndexRoute
 }
 
 const AppCoursesRouteRouteChildren: AppCoursesRouteRouteChildren = {
   AppCoursesIndexRoute: AppCoursesIndexRoute,
   AppCoursesAuditIndexRoute: AppCoursesAuditIndexRoute,
-  AppCoursesScheduleIndexRoute: AppCoursesScheduleIndexRoute,
-  AppCoursesStatisticsIndexRoute: AppCoursesStatisticsIndexRoute,
+  AppCoursesPlannerIndexRoute: AppCoursesPlannerIndexRoute,
+  AppCoursesStatsIndexRoute: AppCoursesStatsIndexRoute,
+  AppCoursesAuditGuideIndexRoute: AppCoursesAuditGuideIndexRoute,
 }
 
 const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
@@ -605,11 +559,10 @@ const AppPSlugSettingsRouteRouteWithChildren =
   )
 
 interface AppRouteRouteChildren {
-  AppAccountRouteRoute: typeof AppAccountRouteRouteWithChildren
   AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
+  AppAccountIndexRoute: typeof AppAccountIndexRoute
   AppAnnouncementsIndexRoute: typeof AppAnnouncementsIndexRoute
   AppContactsIndexRoute: typeof AppContactsIndexRoute
-  AppDegreeAuditInfoIndexRoute: typeof AppDegreeAuditInfoIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
   AppMynuspaceIndexRoute: typeof AppMynuspaceIndexRoute
   AppOpportunitiesIndexRoute: typeof AppOpportunitiesIndexRoute
@@ -621,11 +574,10 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
-  AppAccountRouteRoute: AppAccountRouteRouteWithChildren,
   AppCoursesRouteRoute: AppCoursesRouteRouteWithChildren,
+  AppAccountIndexRoute: AppAccountIndexRoute,
   AppAnnouncementsIndexRoute: AppAnnouncementsIndexRoute,
   AppContactsIndexRoute: AppContactsIndexRoute,
-  AppDegreeAuditInfoIndexRoute: AppDegreeAuditInfoIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,
   AppMynuspaceIndexRoute: AppMynuspaceIndexRoute,
   AppOpportunitiesIndexRoute: AppOpportunitiesIndexRoute,

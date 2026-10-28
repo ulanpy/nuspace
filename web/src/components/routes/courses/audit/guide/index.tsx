@@ -10,11 +10,11 @@ import { Page as PageLayout } from "@/components/shared/page"
 import { Button } from "@/components/ui/button"
 
 /**
- * A sibling of the Courses tabs rather than a fifth tab: it is an article
+ * A child of the Degree Audit section rather than a fifth tab: it is an article
  * about the audit, not another thing to do with your courses, and the old app
  * placed it outside the tab strip too.
  */
-export function Page() {
+export function DegreeAuditGuideScreen() {
   const { author, disclaimer, signature, introduction, sections } =
     DEGREE_AUDIT_INFO
 

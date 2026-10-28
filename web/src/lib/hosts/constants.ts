@@ -125,11 +125,6 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     unmigrated: [
       "/announcements",
       "/contacts",
-      "/courses",
-      "/courses/audit",
-      "/courses/schedule",
-      "/courses/statistics",
-      "/degree-audit-info",
       "/mynuspace",
       "/p/$slug",
       "/p/$slug/editor",
@@ -156,5 +151,10 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     service: "my",
     mount: "/my",
     routes: ["/account", "/pages"],
+  },
+  {
+    service: "courses",
+    mount: "/courses",
+    routes: ["/", "/stats", "/planner", "/audit", "/audit/guide"],
   },
 ]

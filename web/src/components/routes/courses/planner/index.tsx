@@ -10,7 +10,7 @@ import {
 import { toast } from "sonner"
 import type { ReactNode } from "react"
 
-import type { ScheduleSearch } from "@/routes/_app/courses/schedule"
+import type { ScheduleSearch } from "@/routes/_app/courses/planner"
 import { semestersQueryOptions } from "@/lib/courses"
 import {
   plannerPlansQueryOptions,
@@ -408,7 +408,7 @@ function PlannerView({
   )
 }
 
-export function Page({
+export function ScheduleBuilderScreen({
   search,
   onSearchChange,
 }: {
