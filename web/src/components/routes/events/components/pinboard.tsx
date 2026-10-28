@@ -227,7 +227,7 @@ export function EventPinboard<T extends string>({
       style={BOARD_FRAME}
       // `isolate` keeps a lifted poster's z-index inside the board, so it can
       // never paint over the sticky header.
-      className="relative isolate mx-auto max-w-7xl rounded-2xl p-2.5 shadow-2xl ring-1 shadow-black/40 ring-black/50 sm:p-4"
+      className="relative isolate rounded-2xl p-2.5 shadow-2xl ring-1 shadow-black/40 ring-black/50 sm:p-4"
     >
       <div className="relative overflow-hidden rounded-lg">
         <div

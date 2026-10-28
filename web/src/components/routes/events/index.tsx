@@ -7,6 +7,7 @@ import { qk } from "@/api/query-keys"
 import { fetchEventsPage, getEventTimeRange } from "@/lib/events"
 import { EventFormDialog } from "@/components/routes/events/components/event-form-dialog"
 import { EventPinboard } from "@/components/routes/events/components/pinboard"
+import { Page } from "@/components/shared/page"
 import { TelegramConnectPrompt } from "@/components/shared/telegram/connect-prompt"
 import type { BoardFilterOption } from "@/components/routes/events/components/pinboard"
 
@@ -44,7 +45,8 @@ export function EventsScreen({
   })
 
   return (
-    <div className="space-y-4">
+    // No title: the board is the heading. `Page` still gives it the box.
+    <Page>
       <TelegramConnectPrompt
         storageKey="nuspace_events_tg_banner_dismissed"
         title="Connect Telegram for event updates"
@@ -94,7 +96,7 @@ export function EventsScreen({
         // filtered list, and "nothing visibly happened" is the worse outcome.
         onSaved={onEventCreated}
       />
-    </div>
+    </Page>
   )
 }
 

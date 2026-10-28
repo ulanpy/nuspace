@@ -3,10 +3,10 @@ import type { CSSProperties } from "react"
 /**
  * The board's fixed furniture: cork, wood and paper.
  *
- * These are the only colours on the events host that are not theme tokens. A
- * cork board is a picture of a material, and a token that changed with the
- * theme would stop it being one. What is printed on the paper uses the stone
- * ramp, which reads the same on cream in both themes.
+ * Colours here, and on the paper pinned to the board (the stone ink ramp, the
+ * paper tones, the pins), are deliberately not theme tokens. A cork board is
+ * a picture of a material, and a token that changed with the theme would stop
+ * it being one. Everything on the events host outside the board uses tokens.
  */
 
 const svgUrl = (svg: string) =>
