@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/events"
+import { EventsScreen } from "@/components/routes/events"
 
 const eventsSearchSchema = z.object({
   time: z.enum(["upcoming", "today", "week", "month"]).default("upcoming"),
@@ -59,7 +59,7 @@ function EventsListRoute() {
   )
 
   return (
-    <Page
+    <EventsScreen
       search={search}
       onSearchChange={onSearchChange}
       onSelectTime={(next) => {
