@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from typing import List, Literal, Tuple
 
 from httpx import AsyncClient
@@ -130,7 +131,7 @@ class PageRepository:
         cls,
         *,
         viewer_sub: str | None,
-        is_site_admin: bool,
+        tiers: Collection[PageVisibility],
         scope: Literal["browsable", "mine"],
         role: PageRole | None = None,
         visibility: list[PageVisibility] | None = None,
@@ -146,7 +147,10 @@ class PageRepository:
         shows up here as the absence of a concept rather than a new one:
 
         - `browsable` is a visibility question about pages the caller does not
-          run. It has no relationship filter, and needs a site-admin bypass.
+          run. It has no relationship filter: it is the `tiers` this viewer
+          reads without running the page, which the caller takes from
+          `shared.visibility.tiers_open_to` so the directory and a read by slug
+          ask one predicate. A site admin reads every tier.
         - `mine` is "pages I run" — you own it, or you administer it — at every
           visibility. `private` belongs here and only here, because this is
           where you manage your pages.
@@ -201,11 +205,9 @@ class PageRepository:
         # visibility alone, and the directory has no relationship filter to
         # narrow. Only `/pages/mine` exposes those params, so this is
         # unreachable rather than a silent ignore — see the docstring.
-        if is_site_admin:
+        if set(tiers) >= set(PageVisibility):
             return []
-        if viewer_sub:
-            return [Page.visibility.in_([PageVisibility.public, PageVisibility.internal])]
-        return [Page.visibility == PageVisibility.public]
+        return [Page.visibility.in_(sorted(tiers, key=list(PageVisibility).index))]
 
     @classmethod
     def _page_order_clauses(
@@ -274,7 +276,7 @@ class PageRepository:
         page: int,
         size: int,
         viewer_sub: str | None,
-        is_site_admin: bool,
+        tiers: Collection[PageVisibility],
         scope: Literal["browsable", "mine"],
         keyword: str | None,
         meilisearch_client: AsyncClient,
@@ -309,7 +311,7 @@ class PageRepository:
 
         conditions = self._list_conditions(
             viewer_sub=viewer_sub,
-            is_site_admin=is_site_admin,
+            tiers=tiers,
             scope=scope,
             role=role,
             visibility=visibility,

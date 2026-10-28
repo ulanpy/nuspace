@@ -1,10 +1,22 @@
+from collections.abc import Collection
+
 from fastapi import HTTPException, status
 
 from backend.common.utils.enums import ResourceAction
-from backend.modules.auth.dependencies import is_guest
 from backend.modules.auth.models import UserRole
 from backend.modules.pages.models.page import Page
 from backend.modules.pages.schemas import PageCreateRequest
+from backend.modules.shared.visibility import RecordVisibility, visible_to
+
+
+def page_visibility(page: Page, *, admins: Collection[str] = ()) -> RecordVisibility:
+    """A Page as `visible_to` sees it: its tier, managed by its owner and its admins.
+
+    `admins` only has to include the viewer when the viewer is one: the
+    predicate asks whether the viewer manages the page, nothing more, so a
+    caller that already knows that need not load every admin.
+    """
+    return RecordVisibility(tier=page.visibility, managers={page.owner, *admins})
 
 
 class PagePolicy:
@@ -29,20 +41,17 @@ class PagePolicy:
         return page.owner == self.user_sub
 
     def check_visible(self, page: Page) -> None:
-        """Private and internal pages 404 rather than 403 for those who cannot see them.
+        """A page the viewer may not read 404s rather than 403s.
 
         A 403 would confirm the page exists to someone with no business knowing
-        it does. The owner, the page's own admins and site admins still get
-        through, so a page can be previewed before it is published — and so a
-        private page is not unmanageable by anyone but its owner.
+        it does. `visible_to` decides; the owner, the page's own admins and site
+        admins read every tier, so a page can be previewed before it is
+        published, and a private page is not unmanageable by anyone but its
+        owner.
         """
-        if self.is_admin or self.is_page_admin or self._is_owner(page):
-            return
-        if page.visibility.value == "public":
-            return
-        if page.visibility.value == "internal" and not is_guest(self.user):
-            return
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found")
+        admins = [self.user_sub] if self.is_page_admin else []
+        if not visible_to(self.user, page_visibility(page, admins=admins)):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found")
 
     async def check_permission(
         self,

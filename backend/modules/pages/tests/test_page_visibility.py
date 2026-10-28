@@ -18,14 +18,20 @@ from backend.modules.pages.models.page import Page, PageVisibility
 from backend.modules.pages.policy import PagePolicy
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.service import PageService
+from backend.modules.shared.visibility import MEMBER_TIERS
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
-OWNER = ({"sub": "owner"}, {"role": "user"})
-ADMIN_OF_PAGE = ({"sub": "helper"}, {"role": "user"})
-STRANGER = ({"sub": "stranger"}, {"role": "user"})
-SITE_ADMIN = ({"sub": "root"}, {"role": "admin"})
+# The shape `get_creds_or_401` returns: the app claims carry `role` and `scope`.
+OWNER = ({"sub": "owner"}, {"role": "default", "scope": "allowed"})
+ADMIN_OF_PAGE = ({"sub": "helper"}, {"role": "default", "scope": "allowed"})
+STRANGER = ({"sub": "stranger"}, {"role": "default", "scope": "allowed"})
+SITE_ADMIN = ({"sub": "root"}, {"role": "admin", "scope": "allowed"})
+# Signed in but banned. Over HTTP `get_creds_or_guest` reads a banned member as
+# a guest before any policy runs, so only this matrix can hand the predicate a
+# banned principal and show that the scope clause holds on its own.
+BANNED = ({"sub": "banned"}, {"role": "default", "scope": "banned"})
 # The shape `get_creds_or_guest` returns: `is_guest` rides in the app claims only.
 GUEST = ({"sub": "guest"}, {"role": "default", "is_guest": True, "scope": "allowed"})
 
@@ -51,6 +57,10 @@ def _policy(viewer: tuple[dict, dict], *, is_page_admin: bool = False) -> PagePo
         (PageVisibility.internal, STRANGER, False, 200),
         (PageVisibility.internal, OWNER, False, 200),
         (PageVisibility.internal, ADMIN_OF_PAGE, True, 200),
+        # ...and not banned: a ban takes Members-only away
+        (PageVisibility.internal, BANNED, False, 404),
+        (PageVisibility.public, BANNED, False, 200),
+        (PageVisibility.private, BANNED, False, 404),
         # private: owner, page admins and site admins only
         (PageVisibility.private, GUEST, False, 404),
         (PageVisibility.private, STRANGER, False, 404),
@@ -232,6 +242,6 @@ async def test_the_new_visibility_filter_does_not_touch_the_directory(
             .split()
         )
 
-    base = {"viewer_sub": "owner", "is_site_admin": False, "scope": "browsable"}
+    base = {"viewer_sub": "owner", "tiers": MEMBER_TIERS, "scope": "browsable"}
 
     assert _compiled(visibility=visibility_filter, **base) == _compiled(**base)

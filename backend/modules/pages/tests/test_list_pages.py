@@ -18,10 +18,11 @@ from backend.modules.pages.constants import PageRole, PageSort
 from backend.modules.pages.models.page import Page, PageVisibility
 from backend.modules.pages.repository import _PAGE_SORT_COLUMNS, PageRepository
 from backend.modules.pages.service import PageService
+from backend.modules.shared.visibility import ALL_TIERS, ANONYMOUS_TIERS, MEMBER_TIERS
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
-SIGNED_IN = ({"sub": "owner"}, {"role": "user"})
+SIGNED_IN = ({"sub": "owner"}, {"role": "default", "scope": "allowed"})
 # The shape `get_creds_or_guest` returns: `is_guest` rides in the app claims only.
 GUEST = ({"sub": "guest"}, {"role": "default", "is_guest": True, "scope": "allowed"})
 
@@ -98,7 +99,7 @@ def _where(
     *,
     scope: Literal["browsable", "mine"] = "browsable",
     viewer_sub: str | None = "owner",
-    is_site_admin: bool = False,
+    tiers: frozenset[PageVisibility] = MEMBER_TIERS,
     role: PageRole | None = None,
     visibility: list[PageVisibility] | None = None,
 ) -> str:
@@ -115,7 +116,7 @@ def _where(
         .where(
             *PageRepository._list_conditions(
                 viewer_sub=viewer_sub,
-                is_site_admin=is_site_admin,
+                tiers=tiers,
                 scope=scope,
                 role=role,
                 visibility=visibility,
@@ -167,7 +168,7 @@ def test_every_list_compiles_to_real_sql() -> None:
 
 
 def test_a_guest_gets_public_only() -> None:
-    where = _where(scope="browsable", viewer_sub=None)
+    where = _where(scope="browsable", viewer_sub=None, tiers=ANONYMOUS_TIERS)
 
     assert "'public'" in where
     assert "'internal'" not in where and "OR" not in where
@@ -175,8 +176,7 @@ def test_a_guest_gets_public_only() -> None:
 
 def test_a_site_admin_gets_no_restriction_on_the_directory() -> None:
     assert (
-        PageRepository._list_conditions(viewer_sub="root", is_site_admin=True, scope="browsable")
-        == []
+        PageRepository._list_conditions(viewer_sub="root", tiers=ALL_TIERS, scope="browsable") == []
     )
 
 
@@ -185,7 +185,7 @@ def test_a_site_admin_still_gets_only_their_own_pages_on_my_pages() -> None:
     about which pages you *run*, so it must not widen this list into every
     page on campus — that is what an unfiltered `browsable` rule here would
     do."""
-    where = _where(scope="mine", viewer_sub="root", is_site_admin=True)
+    where = _where(scope="mine", viewer_sub="root", tiers=ALL_TIERS)
 
     assert "page_admins" in where
 
@@ -236,7 +236,7 @@ def test_role_admin_treats_an_ownerless_page_as_not_owned() -> None:
     which is what "NOT owned by me" means.
     """
     conditions = PageRepository._list_conditions(
-        viewer_sub="owner", is_site_admin=False, scope="mine", role=PageRole.admin
+        viewer_sub="owner", tiers=MEMBER_TIERS, scope="mine", role=PageRole.admin
     )
 
     assert any("IS DISTINCT FROM" in str(condition) for condition in conditions)

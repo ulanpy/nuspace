@@ -1,8 +1,7 @@
 """Reading a Page over HTTP: the worked example of the harness (tests/README.md).
 
-The viewer × tier matrix itself still lives in `test_page_visibility.py`,
-against `PagePolicy`. These drive `GET /api/pages/{slug}` through the real
-app and the real database instead.
+The viewer × tier matrix itself lives in `test_page_visibility_http.py`. These
+drive `GET /api/pages/{slug}` through the real app and the real database.
 """
 
 import pytest

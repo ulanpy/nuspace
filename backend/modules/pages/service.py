@@ -9,7 +9,6 @@ from backend.common.utils import response_builder
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.dependencies import is_guest
-from backend.modules.auth.models import UserRole
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.media.schemas import MediaResponse
 from backend.modules.pages import schemas
@@ -22,10 +21,11 @@ from backend.modules.pages.constants import (
 )
 from backend.modules.pages.interfaces import MediaAttachmentResolver
 from backend.modules.pages.models.page import Page, PageAdmin, PageVisibility
-from backend.modules.pages.policy import PagePolicy
+from backend.modules.pages.policy import PagePolicy, page_visibility
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.utils import get_page_permissions
 from backend.modules.shared.media_ownership import delete_owned_media
+from backend.modules.shared.visibility import tiers_open_to, visible_to
 
 
 class PageService:
@@ -36,10 +36,6 @@ class PageService:
     ):
         self.uow = uow
         self.media_attachment_resolver = media_attachment_resolver
-
-    @staticmethod
-    def _is_site_admin(user: tuple[dict, dict]) -> bool:
-        return user[1]["role"] == UserRole.admin.value
 
     async def _ensure_user_exists(self, sub: str) -> None:
         async with self.uow:
@@ -288,9 +284,12 @@ class PageService:
         pages the caller does not run, so it has no relationship to filter by
         and no owner-first ordering to disturb.
 
-        No policy check here: this is a list, so there is no single page to
-        check, and the repository puts the visibility restriction in the WHERE
-        itself. Asking anyway dereferenced a `None` page.
+        No `PagePolicy` check here: this is a list, so there is no single page
+        to check, and asking anyway dereferenced a `None` page. The WHERE is
+        narrowed by `tiers_open_to`, and every row it returns is then put to
+        `visible_to`, the same predicate a read by slug asks. The WHERE is
+        built from that predicate, so it should drop nothing; the second
+        question is what makes the predicate, not the query, the enforcement.
         """
         guest = is_guest(user)
         if scope == "mine" and guest:
@@ -311,7 +310,7 @@ class PageService:
                 page=page,
                 size=size,
                 viewer_sub=None if guest else user[0]["sub"],
-                is_site_admin=self._is_site_admin(user),
+                tiers=tiers_open_to(user),
                 scope=scope,
                 keyword=keyword,
                 meilisearch_client=infra.meilisearch_client,
@@ -320,6 +319,16 @@ class PageService:
                 sort=sort,
                 order=order,
             )
+            pages = [
+                page
+                for page in pages
+                if visible_to(
+                    user,
+                    page_visibility(
+                        page, admins=[user[0]["sub"]] if page.id in admin_page_ids else []
+                    ),
+                )
+            ]
             media_objs: List[Media] = await repo.list_media(
                 page_ids=[page.id for page in pages],
                 media_formats=[MediaFormat.profile, MediaFormat.banner],
