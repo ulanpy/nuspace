@@ -137,6 +137,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/event-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Notifications
+         * @description Whether the signed-in user hears on Telegram about cancelled or moved events.
+         */
+        get: operations["get_event_notifications_users_me_event_notifications_get"];
+        /** Set Event Notifications */
+        put: operations["set_event_notifications_users_me_event_notifications_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{sub}/scope": {
         parameters: {
             query?: never;
@@ -238,11 +259,11 @@ export interface paths {
          *
          *     `sort` and `visibility` are **silently ignored when `keyword` is set**. The
          *     keyword path short-circuits to Meilisearch, which ranks by relevance and
-         *     has `filterable_attributes=None`, so there is no facet to filter on either.
+         *     is not asked to filter on `visibility`, although the index now carries it
+         *     as a filterable attribute (`modules/pages/search_indexes.py`).
          *     No error, just wrong rows — which is how you get "the sort button does
-         *     nothing". My Pages has no search box today, so this is unreachable. Adding
-         *     one means `filterableAttributes` in `modules/pages/search_indexes.py` plus
-         *     a reindex, not just a UI control.
+         *     nothing". My Pages has no search box today, so this is unreachable.
+         *     Adding one means passing the filter to Meilisearch, not just a UI control.
          */
         get: operations["get_my_pages_pages_mine_get"];
         put?: never;
@@ -2263,6 +2284,21 @@ export interface components {
             /** Is Going */
             is_going: boolean;
         };
+        /** EventNotificationsRequest */
+        EventNotificationsRequest: {
+            /**
+             * Enabled
+             * @description Whether to hear about cancelled or moved events
+             */
+            enabled: boolean;
+        };
+        /** EventNotificationsResponse */
+        EventNotificationsResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Telegram Connected */
+            telegram_connected: boolean;
+        };
         /** EventResponse */
         EventResponse: {
             /** Id */
@@ -4025,6 +4061,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_notifications_users_me_event_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventNotificationsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_event_notifications_users_me_event_notifications_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventNotificationsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventNotificationsResponse"];
                 };
             };
             /** @description Validation Error */

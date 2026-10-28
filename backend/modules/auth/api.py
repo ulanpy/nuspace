@@ -24,6 +24,8 @@ from backend.modules.auth.dependencies import (
 from backend.modules.auth.models import UserRole
 from backend.modules.auth.schemas import (
     CurrentUserResponse,
+    EventNotificationsRequest,
+    EventNotificationsResponse,
     Sub,
     UserScopeResponse,
     UserScopeUpdateRequest,
@@ -183,6 +185,26 @@ async def logout(
     unset_kc_auth_cookies(response)
     unset_app_token_cookie(response)
     return status.HTTP_200_OK
+
+
+@router.get("/users/me/event-notifications", response_model=EventNotificationsResponse)
+async def get_event_notifications(
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    auth_service: AuthService = Depends(deps.get_auth_service),
+) -> EventNotificationsResponse:
+    """Whether the signed-in user hears on Telegram about cancelled or moved events."""
+    enabled, connected = await auth_service.get_event_notifications(user[0]["sub"])
+    return EventNotificationsResponse(enabled=enabled, telegram_connected=connected)
+
+
+@router.put("/users/me/event-notifications", response_model=EventNotificationsResponse)
+async def set_event_notifications(
+    body: EventNotificationsRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    auth_service: AuthService = Depends(deps.get_auth_service),
+) -> EventNotificationsResponse:
+    enabled, connected = await auth_service.set_event_notifications(user[0]["sub"], body.enabled)
+    return EventNotificationsResponse(enabled=enabled, telegram_connected=connected)
 
 
 @router.patch("/users/{sub}/scope", response_model=UserScopeResponse)

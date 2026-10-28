@@ -363,6 +363,20 @@ class EventRepository:
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 
+    async def list_notifiable_telegram_ids(self, event_id: int) -> List[int]:
+        """Chats of attendees who connected Telegram and left event notices on."""
+        stmt = (
+            select(User.telegram_id)
+            .join(EventAttendee, EventAttendee.user_sub == User.sub)
+            .where(
+                EventAttendee.event_id == event_id,
+                User.telegram_id.is_not(None),
+                User.event_notifications.is_(True),
+            )
+            .order_by(EventAttendee.created_at)
+        )
+        return list((await self.db_session.execute(stmt)).scalars().all())
+
     async def add_attendee(self, event_id: int, user_sub: str) -> EventAttendee:
         existing = await self.get_attendee(event_id, user_sub)
         if existing is not None:

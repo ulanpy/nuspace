@@ -215,6 +215,21 @@ class AuthService:
             )
         return True
 
+    async def get_event_notifications(self, sub: str) -> tuple[bool, bool]:
+        """(switch, Telegram connected) for the signed-in user."""
+        async with self.uow:
+            user = await self.uow.get_repo(UserRepository).get_by_sub(sub)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return user.event_notifications, user.telegram_id is not None
+
+    async def set_event_notifications(self, sub: str, enabled: bool) -> tuple[bool, bool]:
+        async with self.uow:
+            user = await self.uow.get_repo(UserRepository).set_event_notifications(sub, enabled)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return user.event_notifications, user.telegram_id is not None
+
     async def get_user_role_or_403(self, sub: str) -> UserRole:
         async with self.uow:
             user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized

@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import secrets
 from collections import defaultdict
 from datetime import timedelta
@@ -19,9 +20,12 @@ from backend.modules.events.attendees_export import (
 )
 from backend.modules.events.interfaces import MediaAttachmentResolver
 from backend.modules.events.models import Event, EventAccessPurpose
+from backend.modules.events.notices import EventNotifier, EventSnapshot, describe_change
 from backend.modules.events.policy import EventPolicy
 from backend.modules.events.repository import EventRepository
 from backend.modules.media.models import EntityType, Media, MediaFormat
+
+logger = logging.getLogger(__name__)
 
 _ACCESS_INVITE_TTL = timedelta(days=7)
 
@@ -32,10 +36,12 @@ class EventService:
         media_attachment_resolver: MediaAttachmentResolver,
         meilisearch_client: AsyncClient,
         uow: UnitOfWork,
+        notifier: EventNotifier | None = None,
     ):
         self.media_attachment_resolver = media_attachment_resolver
         self.meilisearch_client = meilisearch_client
         self.uow = uow
+        self.notifier = notifier
 
     async def _get_event_or_404(self, event_id: int) -> Event:
         async with self.uow:
@@ -89,7 +95,10 @@ class EventService:
             if event is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
             EventPolicy(user=user).check_update(event=event, event_data=event_data)
+            before = EventSnapshot.of(event)
             event: Event = await event_repo.update_event(event=event, event_data=event_data)
+
+        await self._notify_attendees(before, event)
 
         # add to meilisearch index after commit
         await event_repo.upsert_search(self.meilisearch_client, event)
@@ -99,6 +108,25 @@ class EventService:
 
         event_responses = await self._build_event_responses([event], user)
         return event_responses[0]
+
+    async def _notify_attendees(self, before: EventSnapshot, event: Event) -> None:
+        """Tell attendees on Telegram that the committed edit cancelled or moved the event.
+
+        Runs after commit. Never raises: the edit already happened, and a notice
+        that cannot be queued is only logged.
+        """
+        if self.notifier is None:
+            return
+        try:
+            text = describe_change(before, event)
+            if text is None:
+                return
+            async with self.uow:
+                repo = self.uow.get_repo(EventRepository)
+                telegram_ids = await repo.list_notifiable_telegram_ids(event.id)
+            self.notifier.notify(event.id, telegram_ids, text)
+        except Exception:
+            logger.exception("Could not queue notices for event %s", event.id)
 
     async def authorize_media_upload(
         self, event_id: int, user: tuple[dict, dict], count: int = 1

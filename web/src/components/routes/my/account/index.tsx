@@ -8,6 +8,7 @@ import {
   myPagesQueryOptions,
   pageStats,
 } from "@/lib/pages"
+import { EventNotificationsItem } from "@/components/routes/my/account/event-notifications"
 import { Page } from "@/components/shared/page"
 import { CardGrid } from "@/components/shared/page/card-grid"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
@@ -136,6 +137,7 @@ export function AccountScreen() {
               <TelegramLink sub={me.sub} isLinked={isTelegramLinked} />
             </ItemActions>
           </Item>
+          <EventNotificationsItem isTelegramLinked={isTelegramLinked} />
         </ItemGroup>
       </SettingsSection>
     </Page>
