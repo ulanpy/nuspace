@@ -96,8 +96,9 @@ export function PlanSwitcher({
           <DropdownMenuTrigger
             render={
               <Button
-                variant="ghost"
-                className="max-w-full gap-1.5 font-semibold"
+                variant="outline"
+                size="sm"
+                className="max-w-full gap-1.5"
               >
                 <span className="truncate">{active?.name ?? "Schedule"}</span>
                 <ChevronDownIcon className="opacity-60" aria-hidden />

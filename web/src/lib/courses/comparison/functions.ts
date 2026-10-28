@@ -32,12 +32,21 @@ export function bestValueIndexes(
     .map((entry) => entry.index)
 }
 
-export function difficultyLabel(avgGpa: number | null | undefined): string {
+/**
+ * How hard a section was graded, from its average and its spread.
+ *
+ * The spread matters: a 3.6 mean with a wide deviation means some students
+ * did badly, so it only counts as "Easy" when the marks also cluster.
+ */
+export function difficultyLabel(
+  avgGpa: number | null | undefined,
+  stdDev?: number | null
+): string {
   if (avgGpa == null) return "No signal"
-  if (avgGpa >= 3.5) return "Lighter"
+  if (avgGpa >= 3.5 && (stdDev ?? 0) <= 0.5) return "Easy"
   if (avgGpa >= 3) return "Moderate"
-  if (avgGpa >= 2.5) return "Challenging"
-  return "Very challenging"
+  if (avgGpa >= 2.5) return "Hard"
+  return "Very Hard"
 }
 
 export function toggleGradeComparison<T extends { id: number }>(
@@ -90,7 +99,9 @@ export function comparisonMetrics(
     },
     {
       label: "Difficulty",
-      values: selected.map((item) => difficultyLabel(item.avg_gpa)),
+      values: selected.map((item) =>
+        difficultyLabel(item.avg_gpa, item.std_dev)
+      ),
     },
     {
       label: "Spread",

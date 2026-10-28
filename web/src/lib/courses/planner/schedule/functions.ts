@@ -479,6 +479,40 @@ export function normalizeTitle(title: string | null | undefined): string {
   return title?.replace(/\s+/g, " ").trim() ?? ""
 }
 
+/** The registrar's requisite and priority fields for a course. */
+export interface CourseRequirements {
+  pre_req?: string | null
+  co_req?: string | null
+  anti_req?: string | null
+  priority_1?: string | null
+  priority_2?: string | null
+  priority_3?: string | null
+  priority_4?: string | null
+}
+
+/**
+ * The requisite and priority rows worth showing, as `[label, text]` pairs.
+ *
+ * The registrar leaves fields null or blank when they do not apply, so those
+ * are dropped rather than rendered as empty rows.
+ */
+export function requirementRows(
+  course: CourseRequirements
+): [label: string, text: string][] {
+  const rows: [string, string | null | undefined][] = [
+    ["Prerequisites", course.pre_req],
+    ["Corequisites", course.co_req],
+    ["Antirequisites", course.anti_req],
+    ["Priority 1", course.priority_1],
+    ["Priority 2", course.priority_2],
+    ["Priority 3", course.priority_3],
+    ["Priority 4", course.priority_4],
+  ]
+  return rows.flatMap(([label, text]) =>
+    text?.trim() ? [[label, text] as [string, string]] : []
+  )
+}
+
 /**
  * Turn a registrar room string into something that fits on a card.
  *

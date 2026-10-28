@@ -7,7 +7,15 @@ import { Page } from "@/components/shared/page"
 import { StatisticsScreen } from "@/components/routes/courses/stats"
 
 const statisticsSearchSchema = z.object({
-  q: z.string().optional(),
+  /**
+   * What to search for: a course code, a title or an instructor. The bot links
+   * here as `/stats?keyword=MATH%20161`, so this name is a contract with
+   * `backend/modules/bot/services/grades.py`.
+   *
+   * Coerced because the router JSON-encodes search values: `?keyword=161`
+   * parses as the number 161, which a bare `z.string()` would reject.
+   */
+  keyword: z.coerce.string().optional(),
   /** A term code like `FA2025`; absent means every term. */
   term: z.string().optional(),
 })

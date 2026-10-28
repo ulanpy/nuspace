@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { ChevronDownIcon } from "lucide-react"
 
 import type { StatisticsSearch } from "@/routes/_app/courses/stats"
 import { qk } from "@/api/query-keys"
@@ -10,13 +11,25 @@ import {
   MAX_GRADE_COMPARISONS,
   toggleGradeComparison,
 } from "@/lib/courses/comparison"
+import { normalizeKeyword } from "@/lib/courses/grades"
 import type { GradeReport } from "@/lib/courses"
 import { useDebounced } from "@/hooks/use-debounced"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { EmptyState } from "@/components/shared/query/boundary"
 import { InfiniteList } from "@/components/shared/query/infinite-list"
-import { FilterTabs, type FilterOption } from "@/components/shared/list-filters"
-import { Input } from "@/components/ui/input"
+import { CardGrid, CardGridSkeleton } from "@/components/shared/page/card-grid"
+import { SearchFilter } from "@/components/shared/list-filters"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+/** Base UI radio items need a value for "no term filter". */
+const ALL_TERMS = "__all__"
 
 export function StatisticsScreen({
   search,
@@ -28,13 +41,23 @@ export function StatisticsScreen({
     replace?: boolean
   ) => void
 }) {
-  const { q, term } = search
+  const { keyword: urlKeyword, term } = search
 
-  const [input, setInput] = useState(q ?? "")
+  const [input, setInput] = useState(urlKeyword ?? "")
   const [selected, setSelected] = useState<GradeReport[]>([])
+
+  // A link followed while this screen is already open (the field and the URL
+  // normally move together, so only a change that did not come from typing
+  // reaches here) replaces what the field shows.
+  const [seenKeyword, setSeenKeyword] = useState(urlKeyword)
+  if (seenKeyword !== urlKeyword) {
+    setSeenKeyword(urlKeyword)
+    if (urlKeyword !== normalizeKeyword(input)) setInput(urlKeyword ?? "")
+  }
+
   // Every keystroke would otherwise be its own request; the field stays
   // immediate and only the query lags behind.
-  const keyword = useDebounced(input)
+  const keyword = normalizeKeyword(useDebounced(input))
 
   const terms = useQuery(gradeTermsQueryOptions())
   // `terms` has a server-side default, so the field is optional in the schema.
@@ -43,7 +66,7 @@ export function StatisticsScreen({
   const list = useInfiniteList<GradeReport>({
     queryKey: qk.courses.grades({ keyword, term }),
     fetchPage: ({ page, size }) =>
-      fetchGradesPage({ page, size, keyword: keyword || undefined, term }),
+      fetchGradesPage({ page, size, keyword, term }),
   })
 
   return (
@@ -59,35 +82,62 @@ export function StatisticsScreen({
           setSelected([])
         }}
       />
-      <div>
-        <label htmlFor="grade-search" className="sr-only">
-          Search past grade statistics
-        </label>
-        <Input
-          id="grade-search"
+
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchFilter
           value={input}
-          onChange={(event) => {
-            const next = event.target.value
+          label="Search past grade statistics"
+          placeholder="Search by course code, title or instructor"
+          className="min-w-64"
+          onChange={(next) => {
             setInput(next)
             // `replace` so typing doesn't bury the previous page under one
             // history entry per character.
-            onSearchChange((prev) => ({ ...prev, q: next || undefined }), true)
+            onSearchChange(
+              (previous) => ({ ...previous, keyword: normalizeKeyword(next) }),
+              true
+            )
           }}
-          placeholder="Search by course code, title or instructor"
-          autoComplete="off"
         />
-      </div>
 
-      {termOptions.length > 0 && (
-        <FilterTabs
-          label="Term"
-          value={term}
-          options={TERM_OPTIONS(termOptions)}
-          onChange={(next) => {
-            onSearchChange((prev) => ({ ...prev, term: next }))
-          }}
-        />
-      )}
+        {termOptions.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  aria-label="Filter by term"
+                >
+                  {term ?? "All terms"}
+                  <ChevronDownIcon aria-hidden />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup
+                value={term ?? ALL_TERMS}
+                onValueChange={(next) => {
+                  onSearchChange((previous) => ({
+                    ...previous,
+                    term: next === ALL_TERMS ? undefined : next,
+                  }))
+                }}
+              >
+                <DropdownMenuRadioItem value={ALL_TERMS}>
+                  All terms
+                </DropdownMenuRadioItem>
+                {termOptions.map((option) => (
+                  <DropdownMenuRadioItem key={option} value={option}>
+                    {option}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
 
       <InfiniteList
         items={list.items}
@@ -102,6 +152,7 @@ export function StatisticsScreen({
             }}
           />
         )}
+        pending={<CardGridSkeleton columns={2} count={4} />}
         isPending={list.isPending}
         isError={list.isError}
         error={list.error}
@@ -123,10 +174,13 @@ export function StatisticsScreen({
             }
           />
         }
-      />
+      >
+        {(cards) => (
+          <CardGrid columns={1} className="lg:grid-cols-2">
+            {cards}
+          </CardGrid>
+        )}
+      </InfiniteList>
     </div>
   )
 }
-
-const TERM_OPTIONS = (terms: readonly string[]): FilterOption<string>[] =>
-  terms.map((term) => ({ value: term, label: term }))

@@ -1,60 +1,30 @@
-import { XIcon } from "lucide-react"
+import { Trash2Icon, XIcon } from "lucide-react"
 
 import {
   MAX_GRADE_COMPARISONS,
   comparisonMetrics,
 } from "@/lib/courses/comparison"
 import type { GradeReport } from "@/lib/courses"
-import { formatPoints } from "@/lib/courses/gpa"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-const MINI_BANDS = [
-  { key: "pct_A", label: "A", className: "bg-chart-2" },
-  { key: "pct_B", label: "B", className: "bg-chart-1" },
-  { key: "pct_C", label: "C", className: "bg-chart-4" },
-  { key: "pct_D", label: "D", className: "bg-chart-5" },
-  { key: "pct_F", label: "F", className: "bg-destructive" },
-  { key: "pct_W_AW", label: "withdrawn", className: "bg-muted-foreground/30" },
-] as const satisfies readonly {
-  key: keyof GradeReport
-  label: string
-  className: string
-}[]
+/** The header already says which course and section each column is. */
+const HEADER_METRICS = new Set(["Course", "Section"])
 
-function MiniDistribution({ report }: { report: GradeReport }) {
-  const summary = MINI_BANDS.flatMap(({ key, label }) => {
-    const value = report[key]
-    return typeof value === "number" && value > 0
-      ? [`${label} ${formatPoints(value)}%`]
-      : []
-  }).join(", ")
-
-  return (
-    <div className="mt-2">
-      <span className="sr-only">
-        Grade distribution: {summary || "not available"}.
-      </span>
-      <span
-        aria-hidden
-        className="flex h-1.5 overflow-hidden rounded-full bg-muted"
-      >
-        {MINI_BANDS.map(({ key, className }) => {
-          const value = report[key]
-          return typeof value === "number" && value > 0 ? (
-            <span
-              key={key}
-              className={className}
-              style={{ width: `${String(value)}%` }}
-            />
-          ) : null
-        })}
-      </span>
-    </div>
-  )
+function chipLabel(report: GradeReport): string {
+  return [
+    [report.course_code, report.section].filter(Boolean).join(" "),
+    report.term,
+  ]
+    .filter(Boolean)
+    .join(" · ")
 }
 
+/**
+ * The reports picked for comparison, pinned under the site header while the
+ * list scrolls beneath, so a pick can be made far down the list and the
+ * result stays in view.
+ */
 export function GradeComparison({
   selected,
   onRemove,
@@ -65,104 +35,114 @@ export function GradeComparison({
   onClear: () => void
 }) {
   if (selected.length === 0) return null
-  const metrics = comparisonMetrics(selected)
+  const metrics = comparisonMetrics(selected).filter(
+    (metric) => !HEADER_METRICS.has(metric.label)
+  )
 
   return (
-    <Card className="sticky top-16 z-20 space-y-3 bg-background/95 p-4 backdrop-blur md:top-2">
+    <section
+      aria-label="Compare grade reports"
+      className="sticky top-14 z-20 border-b border-border bg-background/95 pt-1 pb-3 backdrop-blur"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium">
-          Compare {selected.length}/{MAX_GRADE_COMPARISONS}
-        </p>
-        <Button size="sm" variant="ghost" onClick={onClear}>
-          Clear
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="text-sm font-medium">
+            Compare{" "}
+            <span className="text-muted-foreground tabular-nums">
+              {selected.length}/{MAX_GRADE_COMPARISONS}
+            </span>
+          </p>
+          {selected.length === 1 && (
+            <span className="text-[13px] text-muted-foreground">
+              Select one more to compare
+            </span>
+          )}
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 gap-1.5 text-[13px]"
+          onClick={onClear}
+        >
+          <Trash2Icon className="size-3.5" aria-hidden />
+          Clear all
         </Button>
       </div>
-      <div className="flex gap-2 overflow-x-auto">
+
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
         {selected.map((report) => (
-          <Button
+          <button
             key={report.id}
-            size="sm"
-            variant="outline"
+            type="button"
             onClick={() => {
               onRemove(report.id)
             }}
+            className="inline-flex max-w-[220px] shrink-0 items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-left text-[12px] transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            title="Remove from compare"
+            aria-label={`Remove ${chipLabel(report)} from compare`}
           >
-            {report.course_code} {report.section}
-            <XIcon aria-hidden />
-          </Button>
+            <span className="min-w-0 truncate font-medium">
+              {chipLabel(report)}
+            </span>
+            <XIcon
+              className="size-3 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+          </button>
         ))}
       </div>
 
-      {selected.length > 1 && (
-        <>
-          <div className="hidden overflow-x-auto rounded-md border sm:block">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className="px-3 py-2 text-left">Metric</th>
-                  {selected.map((report) => (
-                    <th
-                      key={report.id}
-                      className="px-3 py-2 text-left whitespace-nowrap"
-                    >
-                      {report.course_code} {report.section}
-                      <MiniDistribution report={report} />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {metrics.map((metric) => (
-                  <tr key={metric.label} className="border-t">
-                    <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                      {metric.label}
-                    </th>
-                    {metric.values.map((value, index) => (
-                      <td
-                        key={`${metric.label}-${selected[index]?.id ?? index}`}
-                        className={cn(
-                          "px-3 py-2 tabular-nums",
-                          metric.bestIndexes?.includes(index) &&
-                            "bg-primary/10 font-semibold text-primary"
-                        )}
-                      >
-                        {value}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="space-y-2 sm:hidden">
-            {selected.map((report, index) => (
-              <dl key={report.id} className="rounded-md border p-3 text-sm">
-                <div className="mb-2 font-semibold">
-                  {report.course_code} {report.section}
-                  <MiniDistribution report={report} />
-                </div>
-                {metrics.map((metric) => (
-                  <div
-                    key={metric.label}
-                    className="flex justify-between gap-3 py-0.5"
+      {selected.length >= 2 && (
+        <div className="mt-3 max-h-[50svh] overflow-auto rounded-xl border border-border bg-background">
+          <table className="w-full min-w-[520px] border-collapse text-[13px]">
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="sticky left-0 z-10 bg-muted px-3 py-2 text-left font-medium text-muted-foreground">
+                  Metric
+                </th>
+                {selected.map((report) => (
+                  <th
+                    key={report.id}
+                    className="px-3 py-2 text-left font-semibold whitespace-nowrap"
                   >
-                    <dt className="text-muted-foreground">{metric.label}</dt>
-                    <dd
+                    {report.course_code}
+                    {report.section && (
+                      <span className="ml-1 font-normal text-muted-foreground">
+                        {report.section}
+                      </span>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {metrics.map((metric) => (
+                <tr
+                  key={metric.label}
+                  className="border-b border-border last:border-0"
+                >
+                  <th className="sticky left-0 z-10 bg-background px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground">
+                    {metric.label}
+                  </th>
+                  {metric.values.map((value, index) => (
+                    <td
+                      key={`${metric.label}-${String(selected[index]?.id ?? index)}`}
                       className={cn(
-                        "text-right tabular-nums",
+                        "px-3 py-2 tabular-nums",
                         metric.bestIndexes?.includes(index) &&
-                          "font-semibold text-primary"
+                          "rounded-md bg-success/15 font-semibold text-success"
                       )}
                     >
-                      {metric.values[index]}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ))}
-          </div>
-        </>
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-    </Card>
+    </section>
   )
 }

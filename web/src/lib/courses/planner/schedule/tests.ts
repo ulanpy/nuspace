@@ -4,9 +4,33 @@ import {
   formatScheduleShortlist,
   gridHours,
   parseCollapseEmptyEdges,
+  requirementRows,
   selectionSnapshot,
   visibleDays,
 } from "./functions"
+
+describe("requirementRows", () => {
+  it("keeps only the fields the registrar filled in, in display order", () => {
+    assert.deepEqual(
+      requirementRows({
+        pre_req: "MATH 161",
+        co_req: "   ",
+        anti_req: null,
+        priority_2: "Seniors",
+        priority_1: "CS majors",
+      }),
+      [
+        ["Prerequisites", "MATH 161"],
+        ["Priority 1", "CS majors"],
+        ["Priority 2", "Seniors"],
+      ]
+    )
+  })
+
+  it("is empty when nothing applies", () => {
+    assert.deepEqual(requirementRows({}), [])
+  })
+})
 
 describe("planner selection snapshot", () => {
   it("captures selected section ids for every course, including empty ones", () => {

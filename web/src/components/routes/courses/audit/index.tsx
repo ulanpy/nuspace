@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { FileUp, Loader2, ShieldCheck } from "lucide-react"
+import {
+  ChevronDown,
+  GraduationCap,
+  Loader2,
+  ShieldCheck,
+  Upload,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import type { AuditSearch } from "@/routes/_app/courses/audit"
@@ -22,8 +28,20 @@ import type { AuditResponse, TransferCreditMapping } from "@/lib/courses"
 import type { TransferCreditMappingRow } from "@/lib/courses/audit"
 import { QueryBoundary } from "@/components/shared/query/boundary"
 import { ToggleChip } from "@/components/shared/toggle-chip"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -230,257 +248,274 @@ export function DegreeAuditScreen({
     }
   }
 
+  const hint = canRun
+    ? result
+      ? "Run again to refresh against your latest transcript."
+      : "Run the audit to match your transcript against these requirements."
+    : "Pick your admission year and at least one major to run an audit."
+
   return (
     <div className="space-y-4">
-      <QueryBoundary query={catalog}>
-        {() => (
-          <Card className="space-y-5 p-4 sm:p-5">
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Programme progress
-              </p>
-              <h2 className="text-lg font-semibold">Run a degree audit</h2>
-              <p className="text-sm text-muted-foreground">
-                Checks your transcript against the requirements for your
-                admission year.{" "}
+      <Card>
+        <CardHeader className="space-y-1.5 p-4 sm:p-5">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="size-5 text-primary" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <CardTitle className="text-base font-semibold">
+                  Degree Audit
+                </CardTitle>
                 <Link
                   to="/courses/audit/guide"
-                  className="underline underline-offset-3 hover:text-foreground"
+                  className="text-xs text-primary hover:underline"
                 >
                   How it works
                 </Link>
-                .
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Match your transcript against your degree requirements with
+                registrar or PDF upload.
               </p>
             </div>
+          </div>
+        </CardHeader>
 
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Admission year</legend>
-              <div className="flex flex-wrap gap-1">
-                {years.map((entry) => (
-                  <ToggleChip
-                    key={entry.year}
-                    label={entry.year}
-                    isActive={activeYear === entry.year}
-                    onClick={() => {
-                      // Majors are year-specific, so changing year clears them
-                      // rather than leaving a selection that may not exist.
-                      onSearchChange((prev) => ({
-                        ...prev,
-                        year: entry.year,
-                        majors: undefined,
-                      }))
-                    }}
-                  />
-                ))}
-              </div>
-            </fieldset>
-
-            {activeYear && (
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">Major</legend>
-                <div className="flex flex-wrap gap-1">
-                  {availableMajors.map((major) => (
-                    <ToggleChip
-                      key={major}
-                      label={major}
-                      isActive={majors.includes(major)}
-                      onClick={() => {
-                        toggle("majors", major)
-                      }}
-                    />
-                  ))}
-                </div>
-              </fieldset>
-            )}
-
-            {activeYear && availableMinors.length > 0 && (
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">
-                  Minor{" "}
-                  <span className="text-muted-foreground">(optional)</span>
-                </legend>
-                <div className="flex flex-wrap gap-1">
-                  {availableMinors.map((minor) => (
-                    <ToggleChip
-                      key={minor}
-                      label={minor}
-                      isActive={minors.includes(minor)}
-                      onClick={() => {
-                        toggle("minors", minor)
-                      }}
-                    />
-                  ))}
-                </div>
-              </fieldset>
-            )}
-
-            {usePdf ? (
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  const file = fileRef.current?.files?.[0]
-                  if (!file) return
-
-                  clearSensitiveAuditInput()
-                  setAuditError(null)
-                  const input: PendingAuditInput = {
-                    mode: "pdf",
-                    selection,
-                    file,
-                    tcMappings: [],
-                  }
-                  transcriptAudit.mutate(
-                    { ...selection, file },
-                    {
-                      onSuccess: (response) => {
-                        handleAuditSuccess(response, input)
-                      },
-                      onError: handleAuditFailure,
-                    }
-                  )
-                }}
-                className="space-y-3"
-              >
-                <div className="space-y-1">
-                  <Label htmlFor="transcript-pdf">Unofficial transcript</Label>
-                  <Input
-                    id="transcript-pdf"
-                    type="file"
-                    accept="application/pdf"
-                    ref={fileRef}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Download it from the registrar, then upload it here.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={!canRun || transcriptAudit.isPending}
-                  >
-                    {transcriptAudit.isPending && (
-                      <Loader2 className="animate-spin" aria-hidden />
-                    )}
-                    <FileUp aria-hidden />
-                    Run audit
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      clearSensitiveAuditInput()
-                      setAuditError(null)
-                      setUsePdf(false)
-                    }}
-                  >
-                    Use my password instead
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  const input: PendingAuditInput = {
-                    mode: "registrar",
-                    selection,
-                    password,
-                    tcMappings: [],
-                  }
-                  setAuditError(null)
-                  resetSensitiveMutationState()
-                  setPassword("")
-                  pendingAudit.current = null
-                  registrarAudit.mutate(
-                    { ...selection, password: input.password },
-                    {
-                      onSuccess: (response) => {
-                        handleAuditSuccess(response, input)
-                      },
-                      onError: handleAuditFailure,
-                    }
-                  )
-                }}
-                className="space-y-3"
-              >
-                <div className="space-y-1">
-                  <Label htmlFor="audit-password">Registrar password</Label>
-                  <Input
-                    id="audit-password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value)
-                    }}
-                    autoComplete="off"
-                    required
-                  />
-                </div>
-
-                <p className="flex items-start gap-2 text-xs text-muted-foreground">
+        <CardContent className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
+          <Accordion defaultValue={[]} className="rounded-lg border">
+            <AccordionItem value="disclaimer" className="border-0 px-3">
+              <AccordionTrigger className="py-3 hover:no-underline">
+                <span className="inline-flex items-center gap-2 text-sm font-medium">
                   <ShieldCheck
-                    className="mt-0.5 size-3.5 shrink-0"
+                    className="size-4 text-muted-foreground"
                     aria-hidden
                   />
-                  <span>
-                    Used once to fetch your transcript and never stored — not
-                    saved to your account, not written to our database, and not
-                    written to browser storage. If transfer credits need
-                    matching, it stays only in this page's memory for that rerun
-                    and is cleared when you finish, skip, cancel, hit an error,
-                    or leave the page.
-                  </span>
+                  Important note
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="text-[13px] leading-relaxed text-muted-foreground">
+                <p>
+                  Please note that the output is preliminary and is based on the
+                  Academic Handbook provided by the Academic Advising Office.
+                  The handbook itself may contain inaccuracies, and degree
+                  requirements may change over time and may not always be fully
+                  reflected in it.
                 </p>
+                <p>
+                  Therefore, this output should be used as a guiding reference
+                  only and not as a final confirmation. Final degree completion
+                  requirements are confirmed exclusively by Program Directors.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={
-                      !canRun ||
-                      registrarAudit.isPending ||
-                      password.length === 0
-                    }
-                  >
-                    {registrarAudit.isPending && (
-                      <Loader2 className="animate-spin" aria-hidden />
-                    )}
-                    Run audit
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
+          <QueryBoundary query={catalog}>
+            {() => (
+              <div className="space-y-5">
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-medium">
+                    Admission year
+                  </legend>
+                  <div className="flex flex-wrap gap-1">
+                    {years.map((entry) => (
+                      <ToggleChip
+                        key={entry.year}
+                        label={entry.year}
+                        isActive={activeYear === entry.year}
+                        onClick={() => {
+                          // Majors are year-specific, so changing year clears
+                          // them rather than leaving a selection that may not
+                          // exist.
+                          onSearchChange((prev) => ({
+                            ...prev,
+                            year: entry.year,
+                            majors: undefined,
+                          }))
+                        }}
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+
+                {activeYear && (
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-medium">Major</legend>
+                    <div className="flex flex-wrap gap-1">
+                      {availableMajors.map((major) => (
+                        <ToggleChip
+                          key={major}
+                          label={major}
+                          isActive={majors.includes(major)}
+                          onClick={() => {
+                            toggle("majors", major)
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+
+                {activeYear && availableMinors.length > 0 && (
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-medium">
+                      Minor{" "}
+                      <span className="text-muted-foreground">(optional)</span>
+                    </legend>
+                    <div className="flex flex-wrap gap-1">
+                      {availableMinors.map((minor) => (
+                        <ToggleChip
+                          key={minor}
+                          label={minor}
+                          isActive={minors.includes(minor)}
+                          onClick={() => {
+                            toggle("minors", minor)
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+
+                {usePdf ? (
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      const file = fileRef.current?.files?.[0]
+                      if (!file) return
+
                       clearSensitiveAuditInput()
                       setAuditError(null)
-                      setUsePdf(true)
+                      const input: PendingAuditInput = {
+                        mode: "pdf",
+                        selection,
+                        file,
+                        tcMappings: [],
+                      }
+                      transcriptAudit.mutate(
+                        { ...selection, file },
+                        {
+                          onSuccess: (response) => {
+                            handleAuditSuccess(response, input)
+                          },
+                          onError: handleAuditFailure,
+                        }
+                      )
                     }}
+                    className="space-y-3"
                   >
-                    Upload a transcript instead
-                  </Button>
-                </div>
-              </form>
-            )}
+                    <div className="space-y-1">
+                      <Label htmlFor="transcript-pdf">
+                        Unofficial transcript
+                      </Label>
+                      <Input
+                        id="transcript-pdf"
+                        type="file"
+                        accept="application/pdf"
+                        ref={fileRef}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Download it from the registrar, then upload it here.
+                      </p>
+                    </div>
 
-            {!canRun && (
-              <p className="text-xs text-muted-foreground">
-                Pick your admission year and at least one major to run an audit.
-              </p>
-            )}
+                    <RunActions
+                      hint={hint}
+                      hasResult={Boolean(result)}
+                      disabled={!canRun || transcriptAudit.isPending}
+                      isPending={transcriptAudit.isPending}
+                      switchLabel="Use my registrar password instead"
+                      onSwitch={() => {
+                        clearSensitiveAuditInput()
+                        setAuditError(null)
+                        setUsePdf(false)
+                      }}
+                    />
+                  </form>
+                ) : (
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      const input: PendingAuditInput = {
+                        mode: "registrar",
+                        selection,
+                        password,
+                        tcMappings: [],
+                      }
+                      setAuditError(null)
+                      resetSensitiveMutationState()
+                      setPassword("")
+                      pendingAudit.current = null
+                      registrarAudit.mutate(
+                        { ...selection, password: input.password },
+                        {
+                          onSuccess: (response) => {
+                            handleAuditSuccess(response, input)
+                          },
+                          onError: handleAuditFailure,
+                        }
+                      )
+                    }}
+                    className="space-y-3"
+                  >
+                    <div className="space-y-1">
+                      <Label htmlFor="audit-password">Registrar password</Label>
+                      <Input
+                        id="audit-password"
+                        type="password"
+                        value={password}
+                        onChange={(event) => {
+                          setPassword(event.target.value)
+                        }}
+                        autoComplete="off"
+                        required
+                      />
+                    </div>
 
-            {auditError !== null && (
-              <p className="text-sm text-destructive" role="alert">
-                {registrarErrorMessage(auditError, "running the audit")}
-              </p>
+                    <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <ShieldCheck
+                        className="mt-0.5 size-3.5 shrink-0"
+                        aria-hidden
+                      />
+                      <span>
+                        Used once to fetch your transcript and never stored —
+                        not saved to your account, not written to our database,
+                        and not written to browser storage. If transfer credits
+                        need matching, it stays only in this page's memory for
+                        that rerun and is cleared when you finish, skip, cancel,
+                        hit an error, or leave the page.
+                      </span>
+                    </p>
+
+                    <RunActions
+                      hint={hint}
+                      hasResult={Boolean(result)}
+                      disabled={
+                        !canRun ||
+                        registrarAudit.isPending ||
+                        password.length === 0
+                      }
+                      isPending={registrarAudit.isPending}
+                      switchLabel="Run audit from file"
+                      onSwitch={() => {
+                        clearSensitiveAuditInput()
+                        setAuditError(null)
+                        setUsePdf(true)
+                      }}
+                    />
+                  </form>
+                )}
+
+                {auditError !== null && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {registrarErrorMessage(auditError, "running the audit")}
+                  </p>
+                )}
+              </div>
             )}
-          </Card>
-        )}
-      </QueryBoundary>
+          </QueryBoundary>
+        </CardContent>
+      </Card>
 
       {result && <AuditResult audit={result} />}
 
@@ -495,6 +530,60 @@ export function DegreeAuditScreen({
           clearSensitiveAuditInput()
         }}
       />
+    </div>
+  )
+}
+
+/**
+ * The run button with a menu beside it for the other way to supply a
+ * transcript. The registrar password is the default; a PDF is the fallback for
+ * when the registrar is unreachable or the password is not to hand.
+ */
+function RunActions({
+  hint,
+  hasResult,
+  disabled,
+  isPending,
+  switchLabel,
+  onSwitch,
+}: {
+  hint: string
+  hasResult: boolean
+  disabled: boolean
+  isPending: boolean
+  switchLabel: string
+  onSwitch: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-[13px] text-muted-foreground">{hint}</p>
+      <div className="flex items-center gap-2">
+        <Button type="submit" size="sm" disabled={disabled}>
+          {isPending ? <Loader2 className="animate-spin" aria-hidden /> : null}
+          {hasResult ? "Run again" : "Run audit"}
+          {isPending ? null : <GraduationCap aria-hidden />}
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="outline"
+                aria-label="More audit options"
+              >
+                <ChevronDown aria-hidden />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onSwitch}>
+              <Upload aria-hidden />
+              {switchLabel}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   )
 }

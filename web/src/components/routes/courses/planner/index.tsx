@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
-  ClipboardCopy,
+  ChevronDownIcon,
+  ClipboardCopyIcon,
   CropIcon,
-  Loader2,
-  RotateCcw,
-  Wand2,
+  Loader2Icon,
+  RotateCcwIcon,
+  WandSparklesIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { ReactNode } from "react"
@@ -22,6 +23,7 @@ import {
 import { CourseSearch } from "@/components/routes/courses/planner/components/course-search"
 import { PlanSwitcher } from "@/components/routes/courses/planner/components/plan-switcher"
 import { PlannerCourseCard } from "@/components/routes/courses/planner/components/planner-course-card"
+import { ShortlistCard } from "@/components/routes/courses/planner/components/shortlist-card"
 import {
   ScheduleAgenda,
   WeeklyGrid,
@@ -45,10 +47,17 @@ import {
   QueryError,
   SkeletonLines,
 } from "@/components/shared/query/boundary"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { cn } from "@/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -56,6 +65,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 
 /** Every section the student has actually selected, as calendar events. */
 function selectedEvents(planner: PlannerSchedule): SectionEvent[] {
@@ -66,6 +77,35 @@ function selectedEvents(planner: PlannerSchedule): SectionEvent[] {
   )
 }
 
+/**
+ * The screen's two columns: a 18rem rail of finding and shortlisting courses
+ * beside the schedule at `xl`, stacked above it below.
+ */
+function PlannerLayout({
+  aside,
+  children,
+}: {
+  aside: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <aside className="w-full min-w-0 shrink-0 space-y-4 xl:w-72">
+        {aside}
+      </aside>
+      <section className="min-w-0 flex-1">{children}</section>
+    </div>
+  )
+}
+
+function PanelCard({ children }: { children: ReactNode }) {
+  return (
+    <section className="min-w-0 rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+      {children}
+    </section>
+  )
+}
+
 function PlannerView({
   planner,
   term,
@@ -73,7 +113,8 @@ function PlannerView({
   scheduleId,
   requestedCourseId,
   onCourseSelect,
-  management,
+  termSelect,
+  planSwitcher,
 }: {
   planner: PlannerSchedule
   term: string
@@ -81,7 +122,8 @@ function PlannerView({
   scheduleId: number | null
   requestedCourseId: number | undefined
   onCourseSelect: (id: number) => void
-  management: ReactNode
+  termSelect: ReactNode
+  planSwitcher: ReactNode
 }) {
   const [detail, setDetail] = useState<SectionEvent | null>(null)
   const [confirmingReset, setConfirmingReset] = useState(false)
@@ -124,8 +166,7 @@ function PlannerView({
     setDetail(null)
   }
 
-  const changeCrop = () => {
-    const next = !collapseEmptyEdges
+  const changeCrop = (next: boolean) => {
     setCollapseEmptyEdges(next)
     try {
       window.localStorage.setItem(
@@ -151,116 +192,180 @@ function PlannerView({
     }
   }
 
-  return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(17rem,0.85fr)_minmax(0,2fr)]">
-      <div className="space-y-4">
-        <Card className="space-y-4 p-4">
-          <h2 className="font-semibold">Plan and term</h2>
-          {management}
-        </Card>
+  const runAutoBuild = () => {
+    const snapshot = selectionSnapshot(planner)
+    autoBuild.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("Schedule built", {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              restoreSelections.mutate(snapshot, {
+                onSuccess: () => {
+                  toast.success("Previous selections restored")
+                },
+                onError: () => {
+                  toast.error(
+                    "Undo was incomplete; the latest server state has been reloaded"
+                  )
+                },
+              })
+            },
+          },
+        })
+      },
+    })
+  }
 
-        <Card className="space-y-4 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold">Add courses</h2>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={autoBuild.isPending || planner.courses.length === 0}
-                onClick={() => {
-                  const snapshot = selectionSnapshot(planner)
-                  autoBuild.mutate(undefined, {
-                    onSuccess: () => {
-                      toast.success("Schedule built", {
-                        action: {
-                          label: "Undo",
-                          onClick: () => {
-                            restoreSelections.mutate(snapshot, {
-                              onSuccess: () => {
-                                toast.success("Previous selections restored")
-                              },
-                              onError: () => {
-                                toast.error(
-                                  "Undo was incomplete; the latest server state has been reloaded"
-                                )
-                              },
-                            })
-                          },
-                        },
-                      })
-                    },
-                  })
-                }}
+  const noCourses = planner.courses.length === 0
+
+  return (
+    <PlannerLayout
+      aside={
+        <>
+          <PanelCard>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">Find a course</h2>
+              {termSelect}
+            </div>
+            <CourseSearch
+              term={term}
+              termLabel={termLabel}
+              addedCodes={addedCodes}
+              scheduleId={scheduleId}
+              syllabusLinks={syllabusLinks}
+            />
+          </PanelCard>
+
+          <section className="max-h-[500px] overflow-x-hidden overflow-y-auto rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">Courses</h2>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      Actions
+                      <ChevronDownIcon className="opacity-70" aria-hidden />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>Course actions</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    className="items-start py-2"
+                    disabled={autoBuild.isPending || noCourses}
+                    onClick={runAutoBuild}
+                  >
+                    {autoBuild.isPending ? (
+                      <Loader2Icon className="animate-spin" aria-hidden />
+                    ) : (
+                      <WandSparklesIcon aria-hidden />
+                    )}
+                    <div className="min-w-0">
+                      <p className="leading-none font-medium">Auto-build</p>
+                      <p className="mt-1 text-xs font-normal text-muted-foreground">
+                        Pick a conflict-free set of sections.
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="items-start py-2"
+                    variant="destructive"
+                    disabled={resetPlanner.isPending || noCourses}
+                    onClick={() => {
+                      setConfirmingReset(true)
+                    }}
+                  >
+                    <RotateCcwIcon aria-hidden />
+                    <div className="min-w-0">
+                      <p className="leading-none font-medium">Reset plan</p>
+                      <p className="mt-1 text-xs font-normal text-muted-foreground">
+                        Remove every course and section in this plan.
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {noCourses && (
+                <p className="text-sm text-muted-foreground">
+                  Search above and add a course to start planning.
+                </p>
+              )}
+              {planner.courses.map((course) => (
+                <ShortlistCard
+                  key={course.id}
+                  course={course}
+                  isActive={activeCourse?.id === course.id}
+                  scheduleId={scheduleId}
+                  syllabus={syllabusLink(syllabusLinks, course.course_code)}
+                  onSelect={() => {
+                    onCourseSelect(course.id)
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {planSwitcher}
+
+            {events.length > 0 && (
+              <Badge
+                variant={clashes.size > 0 ? "destructive" : "secondary"}
+                className="h-6 px-1.5 text-[11px] font-semibold"
               >
-                {autoBuild.isPending ? (
-                  <Loader2 className="animate-spin" aria-hidden />
-                ) : (
-                  <Wand2 aria-hidden />
-                )}
-                Auto-build
-              </Button>
-              <Button
+                {clashes.size > 0 ? "Conflicts" : "No conflicts"}
+              </Badge>
+            )}
+
+            <div className="flex items-center gap-1.5">
+              <Switch
+                id="collapse-empty-edges"
                 size="sm"
-                variant="ghost"
-                disabled={
-                  resetPlanner.isPending || planner.courses.length === 0
-                }
-                onClick={() => {
-                  setConfirmingReset(true)
-                }}
+                checked={collapseEmptyEdges}
+                onCheckedChange={changeCrop}
+              />
+              <Label
+                htmlFor="collapse-empty-edges"
+                className="cursor-pointer text-xs font-normal text-muted-foreground"
               >
-                <RotateCcw aria-hidden />
-                Reset
-              </Button>
+                <CropIcon
+                  className="size-3.5 shrink-0 opacity-70"
+                  aria-hidden
+                />
+                Crop
+              </Label>
             </div>
           </div>
 
-          <CourseSearch
-            term={term}
-            termLabel={termLabel}
-            addedCodes={addedCodes}
-            scheduleId={scheduleId}
-            syllabusLinks={syllabusLinks}
-          />
-        </Card>
+          <div className="flex items-center gap-2">
+            <span className="hidden text-xs text-muted-foreground sm:inline">
+              {events.length} selected{" "}
+              {events.length === 1 ? "section" : "sections"}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className="h-7 gap-1 px-2 font-medium text-muted-foreground hover:text-foreground"
+              disabled={events.length === 0}
+              onClick={() => {
+                void copyShortlist()
+              }}
+            >
+              <ClipboardCopyIcon aria-hidden />
+              Copy
+            </Button>
+          </div>
+        </div>
 
-        {planner.courses.length > 0 && (
-          <Card className="space-y-2 p-3">
-            <h2 className="px-1 text-sm font-semibold">Planned courses</h2>
-            {planner.courses.map((course) => (
-              <button
-                key={course.id}
-                type="button"
-                aria-current={
-                  activeCourse?.id === course.id ? "true" : undefined
-                }
-                onClick={() => {
-                  onCourseSelect(course.id)
-                }}
-                className={cn(
-                  "w-full rounded-lg border px-3 py-2 text-left transition-colors",
-                  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  activeCourse?.id === course.id
-                    ? "border-primary bg-primary/10"
-                    : "border-transparent hover:bg-muted/60"
-                )}
-              >
-                <span className="block text-sm font-semibold">
-                  {course.course_code}
-                </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {course.title || "Untitled course"} ·{" "}
-                  {course.sections.filter((section) => section.is_selected)
-                    .length || "no"}{" "}
-                  selected
-                </span>
-              </button>
-            ))}
-          </Card>
-        )}
-      </div>
-
-      <div className="min-w-0 space-y-4">
         {autoBuild.data && autoBuild.data.unscheduled_courses.length > 0 && (
           <p className="rounded-lg border border-warning bg-warning/10 p-3 text-sm">
             Could not fit {autoBuild.data.unscheduled_courses.join(", ")}{" "}
@@ -274,38 +379,6 @@ function PlannerView({
             below.
           </p>
         )}
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="font-semibold">Schedule preview</h2>
-            <p className="text-xs text-muted-foreground">
-              {events.length} selected{" "}
-              {events.length === 1 ? "section" : "sections"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={collapseEmptyEdges ? "secondary" : "outline"}
-              aria-pressed={collapseEmptyEdges}
-              onClick={changeCrop}
-            >
-              <CropIcon aria-hidden />
-              Crop empty edges
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={events.length === 0}
-              onClick={() => {
-                void copyShortlist()
-              }}
-            >
-              <ClipboardCopy aria-hidden />
-              Copy as text
-            </Button>
-          </div>
-        </div>
 
         {events.length > 0 && (
           <>
@@ -384,7 +457,6 @@ function PlannerView({
             course={activeCourse}
             clashes={clashes}
             scheduleId={scheduleId}
-            syllabusLinks={syllabusLinks}
           />
         )}
       </div>
@@ -404,7 +476,7 @@ function PlannerView({
           })
         }}
       />
-    </div>
+    </PlannerLayout>
   )
 }
 
@@ -489,69 +561,73 @@ export function ScheduleBuilderScreen({
   }
 
   const { options, planList, activeTerm, activeLabel } = loadState
-  const management = (
-    <>
-      <PlanSwitcher
-        plans={planList.items}
-        count={planList.count}
-        maxAllowed={planList.max_allowed}
-        activeId={activePlanId}
-        onSelect={(id) => {
-          onSearchChange((previous) => ({ ...previous, plan: id }))
-        }}
-      />
 
-      <div className="space-y-1">
-        <label htmlFor="term" className="text-sm font-medium">
-          Term
-        </label>
-        <Select
-          value={activeTerm}
-          onValueChange={(value) => {
-            // Base UI reports a cleared select as null; that reads as "no
-            // explicit term", the default-to-newest case. Keep the plan:
-            // changing term is not leaving it.
-            onSearchChange((previous) => ({
-              ...previous,
-              term: value ?? undefined,
-            }))
-          }}
-        >
-          <SelectTrigger id="term" className="w-full">
-            {/* Without this, the trigger shows registrar id "825" instead of
-						    a useful term label such as "Fall 2026". */}
-            <SelectValue>{activeLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </>
+  const termSelect = (
+    <Select
+      value={activeTerm}
+      onValueChange={(value) => {
+        // Base UI reports a cleared select as null; that reads as "no
+        // explicit term", the default-to-newest case. Keep the plan:
+        // changing term is not leaving it.
+        onSearchChange((previous) => ({
+          ...previous,
+          term: value ?? undefined,
+        }))
+      }}
+    >
+      <SelectTrigger size="sm" aria-label="Term" className="w-auto">
+        {/* Without this, the trigger shows registrar id "825" instead of
+            a useful term label such as "Fall 2026". */}
+        <SelectValue>{activeLabel}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+
+  const planSwitcher = (
+    <PlanSwitcher
+      plans={planList.items}
+      count={planList.count}
+      maxAllowed={planList.max_allowed}
+      activeId={activePlanId}
+      onSelect={(id) => {
+        onSearchChange((previous) => ({ ...previous, plan: id }))
+      }}
+    />
   )
 
   if (plannerQuery.isPending || plannerQuery.isError) {
     return (
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(17rem,0.85fr)_minmax(0,2fr)]">
-        <Card className="space-y-4 p-4">
-          <h2 className="font-semibold">Plan and term</h2>
-          {management}
-        </Card>
-        {plannerQuery.isPending ? (
-          <SkeletonLines />
-        ) : (
-          <QueryError
-            error={plannerQuery.error}
-            onRetry={() => {
-              void plannerQuery.refetch()
-            }}
-          />
-        )}
-      </div>
+      <PlannerLayout
+        aside={
+          <PanelCard>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">Find a course</h2>
+              {termSelect}
+            </div>
+          </PanelCard>
+        }
+      >
+        <div className="space-y-4">
+          {planSwitcher}
+          {plannerQuery.isPending ? (
+            <SkeletonLines />
+          ) : (
+            <QueryError
+              error={plannerQuery.error}
+              onRetry={() => {
+                void plannerQuery.refetch()
+              }}
+            />
+          )}
+        </div>
+      </PlannerLayout>
     )
   }
 
@@ -565,7 +641,8 @@ export function ScheduleBuilderScreen({
       onCourseSelect={(id) => {
         onSearchChange((previous) => ({ ...previous, course: id }))
       }}
-      management={management}
+      termSelect={termSelect}
+      planSwitcher={planSwitcher}
     />
   )
 }
