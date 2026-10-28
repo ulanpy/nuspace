@@ -50,11 +50,7 @@ function RailNav({
  * offset `<main>`. Sticky and `self-start`, so it is only as tall as its rows
  * and parks under the header (14 units) as the page scrolls.
  */
-export function SidebarRail({
-  sections,
-}: {
-  sections: readonly RailSection[]
-}) {
+export function Rail({ sections }: { sections: readonly RailSection[] }) {
   return (
     <aside className="sticky top-14 hidden max-h-[calc(100svh-3.5rem)] w-64 shrink-0 self-start overflow-y-auto bg-sidebar p-2 md:block">
       <RailNav sections={sections} />
@@ -69,11 +65,7 @@ export function SidebarRail({
  * It carries the mark, which the rail does not: without a band at the top the
  * sheet's close button lands on the first row.
  */
-export function SidebarSheet({
-  sections,
-}: {
-  sections: readonly RailSection[]
-}) {
+export function RailSheet({ sections }: { sections: readonly RailSection[] }) {
   const [open, setOpen] = useState(false)
 
   return (

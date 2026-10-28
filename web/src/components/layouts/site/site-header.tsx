@@ -5,7 +5,7 @@ import logoUrl from "@/assets/nuspace_logo.svg"
 import { ThemeToggle } from "@/components/shared/theme/toggle"
 import { AccountControl } from "./account-menu"
 import { Launcher } from "./launcher"
-import { SidebarSheet } from "./rail"
+import { RailSheet } from "./rail"
 import type { RailSection } from "./types"
 
 /**
@@ -26,7 +26,7 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-30 bg-background">
       <div className="flex h-14 items-center gap-1 pr-3 pl-2 sm:pl-3">
-        {sections ? <SidebarSheet sections={sections} /> : null}
+        {sections ? <RailSheet sections={sections} /> : null}
 
         <Link
           to="/"

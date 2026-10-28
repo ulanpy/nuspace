@@ -235,11 +235,10 @@ pnpm build
   `OPENAPI_URL=http://nginx/api/openapi.json`.
 - `pnpm format` rewrites *every* file that has drifted, not just the one you
   touched. Stage deliberately rather than `git add -A`.
-- `pnpm lint` currently exits 1 on a **pre-existing** baseline of 9 errors in
-  files you are not touching: `layouts/app/app-sidebar.tsx` (jsx-a11y — a click
-  handler on a non-interactive element), `routes/announcements/index.tsx`
-  (`Date.now()` called during render) and `routes/events/` (non-canonical
-  Tailwind classes). Check whether your change added to the count rather than
+- `pnpm lint` currently exits 1 on a **pre-existing** baseline of errors in
+  files you are not touching, among them `routes/announcements/index.tsx`
+  (`Date.now()` called during render), `routes/events/` (non-canonical
+  Tailwind classes) and the workbench's own scratch files. Check whether your change added to the count rather than
   assuming you caused it. `uv run ruff check .` has a similar baseline of 11.
 
 Also verify the changed user flow manually when automated coverage does not exist. Include the commands you ran and the result in the pull request description.

@@ -1,6 +1,6 @@
 import { Outlet, useMatches } from "@tanstack/react-router"
 
-import { SidebarRail } from "./rail"
+import { Rail } from "./rail"
 import { SiteFooter } from "./site-footer"
 import { SiteHeader } from "./site-header"
 import type { ShellOptions } from "./types"
@@ -36,7 +36,7 @@ export function SiteLayout() {
     <div className="flex min-h-svh flex-col bg-background">
       <SiteHeader sections={shell.sections} search={shell.search} />
       <div className="flex flex-1">
-        {shell.sections ? <SidebarRail sections={shell.sections} /> : null}
+        {shell.sections ? <Rail sections={shell.sections} /> : null}
         {/* The gutter lives here and nowhere else: screens never set their own
             padding, so they cannot end up padded twice. */}
         <main className="min-w-0 flex-1 px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
