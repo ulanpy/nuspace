@@ -42,7 +42,7 @@ const FRONT_DOORS: Record<
   events: { to: "/events", icon: CalendarDaysIcon },
   opportunities: { to: "/opportunities", icon: BriefcaseIcon },
   pages: { to: "/mynuspace", icon: FileTextIcon },
-  my: { to: "/account", icon: UserIcon },
+  my: { to: "/my/account", icon: UserIcon },
 }
 
 /** Read once: the hostname only decides which tile is lit. */

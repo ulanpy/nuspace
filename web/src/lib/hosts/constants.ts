@@ -123,7 +123,6 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     mount: "",
     routes: ["/", "/about", "/privacy", "/terms"],
     unmigrated: [
-      "/account",
       "/announcements",
       "/contacts",
       "/courses",
@@ -146,5 +145,12 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     mount: "/events",
     routes: ["/", "/$eventId"],
     params: { eventId: "[0-9]+" },
+  },
+  {
+    // The account host. `/` (the people directory), `/profile`,
+    // `/profile/edit` and `/u/$handle` join this row with #434 and #436.
+    service: "my",
+    mount: "/my",
+    routes: ["/account", "/pages"],
   },
 ]

@@ -1,5 +1,8 @@
 import { Outlet, useMatches } from "@tanstack/react-router"
+import { useQuery } from "@tanstack/react-query"
 
+import { visibleSections } from "@/lib/shell"
+import { sessionQueryOptions } from "@/lib/user"
 import { Rail } from "./rail"
 import { SiteFooter } from "./site-footer"
 import { SiteHeader } from "./site-header"
@@ -30,13 +33,18 @@ export function SiteLayout() {
       ),
   })
 
+  // The session is already in the cache: `_app` resolves it before any screen
+  // renders. A row that is about the signed-in person drops out without one.
+  const { data: session } = useQuery(sessionQueryOptions)
+  const sections = visibleSections(shell.sections, Boolean(session))
+
   if (shell.bare) return <Outlet />
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <SiteHeader sections={shell.sections} search={shell.search} />
+      <SiteHeader sections={sections} search={shell.search} />
       <div className="flex flex-1">
-        {shell.sections ? <Rail sections={shell.sections} /> : null}
+        {sections ? <Rail sections={sections} /> : null}
         {/* The gutter lives here and nowhere else: screens never set their own
             padding, so they cannot end up padded twice. */}
         <main className="min-w-0 flex-1 px-3 py-4 sm:px-4 sm:py-6 lg:px-6">

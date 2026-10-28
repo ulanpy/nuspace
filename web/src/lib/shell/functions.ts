@@ -24,3 +24,16 @@ export function launcherItems(
     current: service.key === here,
   }))
 }
+
+/**
+ * The rail rows a visitor may see. A row marked `requiresSession` is yours
+ * alone, so a signed-out visitor keeps only the rows open to everyone.
+ */
+export function visibleSections<T extends { requiresSession?: boolean }>(
+  sections: readonly T[] | undefined,
+  signedIn: boolean
+): readonly T[] | undefined {
+  return signedIn
+    ? sections
+    : sections?.filter((section) => !section.requiresSession)
+}
