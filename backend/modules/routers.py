@@ -20,6 +20,7 @@ from backend.modules.og import api as og_api
 from backend.modules.opportunities import api as opportunities_api
 from backend.modules.pages import api as pages_api
 from backend.modules.pages import og as pages_og
+from backend.modules.search import api as search_api
 from backend.modules.sgotinish import api as sgotinish_api
 
 routers: List[APIRouter] = [
@@ -27,6 +28,7 @@ routers: List[APIRouter] = [
     auth_api.router,
     pages_api.router,
     pages_og.router,
+    search_api.router,
     events_api.router,
     events_og.router,
     google_bucket_api.router,

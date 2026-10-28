@@ -235,7 +235,7 @@ async def test_startup_creates_missing_indexes_with_their_facets(app: FastAPI, d
 
     settings = (await client.get("/indexes/pages/settings")).json()
     assert settings["searchableAttributes"] == ["name"]
-    assert settings["filterableAttributes"] == ["visibility"]
+    assert settings["filterableAttributes"] == ["visibility", "id"]
     assert (await _documents(app, "pages")) == {}
 
 
