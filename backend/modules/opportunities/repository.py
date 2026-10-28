@@ -14,6 +14,7 @@ from backend.modules.opportunities.models import (
     OpportunityEligibility,
     OpportunityMajorMap,
 )
+from backend.modules.opportunities.search_indexes import OPPORTUNITIES_INDEX
 
 
 class OpportunitiesRepository:
@@ -235,6 +236,12 @@ class OpportunitiesRepository:
         record = await self.get(id)
         await self.db.refresh(record, attribute_names=["eligibilities", "majors"])
         return record
+
+    async def upsert_search(self, record: Opportunity) -> None:
+        await OPPORTUNITIES_INDEX.upsert(self.meilisearch_client, record)
+
+    async def delete_from_search(self, id: int) -> None:
+        await OPPORTUNITIES_INDEX.delete(self.meilisearch_client, id)
 
     async def delete(self, id: int) -> bool:
         record = await self.get(id)

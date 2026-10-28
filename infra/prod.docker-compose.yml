@@ -164,6 +164,10 @@ services:
     container_name: meilisearch
     ports:
       - "127.0.0.1:7700:7700"
+    # Indexes survive restarts; the app does not rebuild them at boot.
+    # Fill them with: python -m backend.bootstrap.rebuild_search
+    volumes:
+      - meili-data:/meili_data
 
   rabbitmq:
     image: rabbitmq:4.2.1
@@ -381,3 +385,4 @@ volumes:
   loki_data:
   tempo_data:
   pyroscope_data:
+  meili-data:

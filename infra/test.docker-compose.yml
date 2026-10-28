@@ -49,6 +49,7 @@ services:
       - default
     ports: !override
       - "127.0.0.1:${NUSPACE_TEST_MEILI_PORT:-57700}:7700"
+    volumes: !reset []
     tmpfs:
       - /meili_data
     healthcheck:

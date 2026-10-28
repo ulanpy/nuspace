@@ -76,9 +76,12 @@ class OpportunitiesDigestService:
 
     async def create(self, payload: schemas.OpportunityCreateDto) -> schemas.OpportunityResponseDto:
         async with self.uow:
-            record: Opportunity = await self.uow.get_repo(
+            repo = self.uow.get_repo(
                 lambda session: OpportunitiesRepository(session, self.meilisearch_client)
-            ).create(payload)
+            )
+            record: Opportunity = await repo.create(payload)
+        # Index after the commit, so search never lists a row that rolled back.
+        await repo.upsert_search(record)
         built = await self._build_opportunity_responses([record])
         return built[0]
 
@@ -86,19 +89,25 @@ class OpportunitiesDigestService:
         self, id: int, payload: schemas.OpportunityUpdateDto
     ) -> schemas.OpportunityResponseDto | None:
         async with self.uow:
-            record: Opportunity | None = await self.uow.get_repo(
+            repo = self.uow.get_repo(
                 lambda session: OpportunitiesRepository(session, self.meilisearch_client)
-            ).update(id, payload)
+            )
+            record: Opportunity | None = await repo.update(id, payload)
         if not record:
             return None
+        await repo.upsert_search(record)
         built = await self._build_opportunity_responses([record])
         return built[0] if built else None
 
     async def delete(self, id: int) -> bool:
         async with self.uow:
-            return await self.uow.get_repo(
+            repo = self.uow.get_repo(
                 lambda session: OpportunitiesRepository(session, self.meilisearch_client)
-            ).delete(id)
+            )
+            deleted = await repo.delete(id)
+        if deleted:
+            await repo.delete_from_search(id)
+        return deleted
 
     async def add_to_calendar(
         self,

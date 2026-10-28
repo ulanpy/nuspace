@@ -12,6 +12,7 @@ from backend.modules.auth.models import User
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.pages.constants import PageAdminSort, PageRole, PageSort
 from backend.modules.pages.models.page import Page, PageAdmin, PageAdminLink, PageVisibility
+from backend.modules.pages.search_indexes import PAGES_INDEX
 
 # Sort columns are whitelisted, never interpolated into an `order_by` from a
 # caller-supplied string. The keys are the `PageSort` members, so the value
@@ -74,22 +75,11 @@ class PageRepository:
 
     @staticmethod
     async def upsert_search(meilisearch_client: AsyncClient, page: Page) -> None:
-        await meilisearch.upsert(
-            client=meilisearch_client,
-            storage_name=Page.__tablename__,
-            json_values={
-                "id": page.id,
-                "name": page.name,
-            },
-        )
+        await PAGES_INDEX.upsert(meilisearch_client, page)
 
     @staticmethod
     async def delete_from_search(meilisearch_client: AsyncClient, page_id: int) -> None:
-        await meilisearch.delete(
-            client=meilisearch_client,
-            storage_name=Page.__tablename__,
-            primary_key=str(page_id),
-        )
+        await PAGES_INDEX.delete(meilisearch_client, page_id)
 
     async def list_media(
         self,

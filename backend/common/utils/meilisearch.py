@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from enum import Enum
 from typing import Any, Sequence, Type
 
@@ -71,7 +71,7 @@ async def upsert(
     if primary_key not in json_values:
         raise ValueError(f"Document must contain a '{primary_key}' field")
 
-    response = await client.post(f"/indexes/{storage_name}/documents", json=json_values)
+    response = await client.post(f"/indexes/{storage_name}/documents", json=[json_values])
     return response.json()
 
 
@@ -127,43 +127,65 @@ async def delete(
     return response.json()
 
 
+DEFAULT_BATCH_SIZE = 1000
+
+
+def to_plain(value: Any) -> Any:
+    """An enum member as its value; every other value as it is."""
+    return value.value if isinstance(value, Enum) else value
+
+
+def to_document(values: Mapping[str, Any]) -> dict[str, Any]:
+    """A row or ORM-column mapping as a JSON-ready document."""
+    return {key: to_plain(value) for key, value in values.items()}
+
+
+async def upsert_many(client: AsyncClient, storage_name: str, documents: Sequence[dict]) -> dict:
+    """Add or replace several documents in one request. The write is asynchronous."""
+    if not documents:
+        return {}
+    response = await client.post(f"/indexes/{storage_name}/documents", json=list(documents))
+    return response.json()
+
+
 async def sync_with_db(
     meilisearch_client: AsyncClient,
     storage_name: str,
     db_manager: AsyncDatabaseManager,
     model: Type[DeclarativeBase],
-    columns_for_searching: list[str],
+    document_columns: Sequence[str],
     primary_key: str = "id",
-    document_transformer: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
-):
-    async with db_manager.async_session_maker() as session:
-        pk_column = getattr(model, primary_key)
-        columns_to_select = [pk_column] + [getattr(model, col) for col in columns_for_searching]
-        result = await session.execute(select(*columns_to_select))
-        raw = result.mappings().all()  # list of RowMapping
+    make_document: Callable[[Mapping[str, Any]], dict[str, Any]] = to_document,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+) -> int:
+    """
+    Copy every row of ``model`` into the index, ``batch_size`` rows at a time.
 
-        # === NEW: convert enums to plain values ===
-        data = []
-        for row in raw:
-            doc = {}
-            for key, val in row.items():
-                if isinstance(val, Enum):
-                    doc[key] = val.value
-                else:
-                    doc[key] = val
-            if document_transformer:
-                doc = document_transformer(doc)
-            data.append(doc)
+    Rows are read by keyset on the primary key and each batch is added and awaited
+    before the next is read, so neither the table nor the index payload is held in
+    memory whole, and no database connection is held while Meilisearch works.
+    Returns the number of documents written. Failures raise.
+    """
+    pk_column = getattr(model, primary_key)
+    columns = [
+        pk_column,
+        *(getattr(model, name) for name in document_columns if name != primary_key),
+    ]
+    written = 0
+    last_key = None
+    while True:
+        stmt = select(*columns).order_by(pk_column).limit(batch_size)
+        if last_key is not None:
+            stmt = stmt.where(pk_column > last_key)
+        async with db_manager.async_session_maker() as session:
+            rows = (await session.execute(stmt)).mappings().all()
+        if not rows:
+            return written
 
-    try:
+        documents = [make_document(row) for row in rows]
         response = await meilisearch_client.post(
-            "/indexes", json={"uid": storage_name, "primaryKey": primary_key}
+            f"/indexes/{storage_name}/documents", json=documents
         )
         await wait_for_task(meilisearch_client, response)
-        response = await meilisearch_client.post(
-            f"/indexes/{storage_name}/documents",
-            json=data,
-        )
-        await wait_for_task(meilisearch_client, response)
-    except Exception as e:
-        print(f"Meilisearch error: {e}")
+        written += len(rows)
+        last_key = rows[-1][primary_key]
