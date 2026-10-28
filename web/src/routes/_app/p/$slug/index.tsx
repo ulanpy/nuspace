@@ -28,8 +28,6 @@ export const Route = createFileRoute("/_app/p/$slug/")({
     <NotFound
       title="Page not found"
       description="We couldn’t find a page at that address. It may be private, or the handle may be wrong."
-      to="/mynuspace"
-      actionLabel="Browse pages"
     />
   ),
   component: PageDetailRoute,

@@ -28,15 +28,17 @@
     group: "{{ ansible_user }}"
   when: frontend_tarball_path | default('') | length > 0
 
+# One index.html per host lives under _hosts/ (web/src/lib/hosts); the root
+# host's is always there. The nginx include is in the repo checkout, not here.
 - name: Verify out files were created
   ansible.builtin.stat:
-    path: "/home/{{ ansible_user }}/nuspace/web/out/index.html"
+    path: "/home/{{ ansible_user }}/nuspace/web/out/_hosts/root/index.html"
   register: dist_check
   when: frontend_tarball_path | default('') | length > 0
 
 - name: Fail if out files are missing
   ansible.builtin.fail:
-    msg: "Frontend artifact missing index.html after unpack."
+    msg: "Frontend artifact missing _hosts/root/index.html after unpack."
   when:
     - frontend_tarball_path | default('') | length > 0
     - not dist_check.stat.exists
@@ -53,4 +55,16 @@
   when:
     - (nginx_changed | default(false)) | bool or
       (container_analysis is defined and 'nginx' in container_analysis.stdout) or
+      (frontend_tarball_path | default('') | length > 0)
+
+# `up -d` leaves an unchanged container running on its old config, and the
+# route-table include (web/nginx/hosts.conf, synced with the repo) changes
+# with the frontend. Reload after the new _hosts/ entries are unpacked; a bad
+# include fails `nginx -t` here and the running config stays in place.
+- name: Reload nginx so it reads the route-table include
+  ansible.builtin.command: >
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    exec -T nginx sh -c 'nginx -t && nginx -s reload'
+  when:
+    - (nginx_changed | default(false)) | bool or
       (frontend_tarball_path | default('') | length > 0)

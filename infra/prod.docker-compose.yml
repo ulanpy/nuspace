@@ -127,6 +127,9 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ../web/out:/var/www/my-app/out
+      # Route-table include and 404 pages, committed under web/nginx and kept
+      # out of web/out, which the frontend role empties on every deploy.
+      - ../web/nginx:/etc/nginx/nuspace:ro
       - ../ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
       - ../ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
       - ./nginx/vpn-index.html:/etc/nginx/vpn-index.html:ro
