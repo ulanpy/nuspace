@@ -10,7 +10,7 @@ slug list's.
 from backend.modules.shared.slug import validate_slug
 
 # The account host's paths and the words it may grow into. Mirrors
-# `web/src/lib/profiles/handle.ts`.
+# `ACCOUNT_RESERVED_WORDS` in `web/src/lib/profiles/constants.ts`.
 ACCOUNT_RESERVED_WORDS = frozenset(
     {
         "account",

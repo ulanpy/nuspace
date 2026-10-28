@@ -31,7 +31,8 @@ export const PROFILE_VISIBILITY_COPY: Record<PageVisibilityValue, string> = {
     "Anyone, signed in or not, can open your profile and find you in the people directory.",
   internal:
     "Only signed-in NU members can open your profile and find you in the people directory.",
-  private: "Only you can open your profile. Nobody can find it.",
+  private:
+    "Only you and Nuspace's site admins can open your profile. Nobody can find it.",
 }
 
 /**

@@ -18,19 +18,19 @@ from backend.modules.profiles.service import ProfileService, raise_handle_taken
 
 router = APIRouter(tags=["Profile Routes"])
 
-Viewer = Annotated[tuple[dict, dict], Depends(get_creds_or_401)]
+SignedIn = Annotated[tuple[dict, dict], Depends(get_creds_or_401)]
 Service = Annotated[ProfileService, Depends(get_profile_service)]
 
 
 @router.get("/me/profile", response_model=schemas.ProfileSettingsResponse)
-async def get_my_profile(user: Viewer, service: Service) -> schemas.ProfileSettingsResponse:
+async def get_my_profile(user: SignedIn, service: Service) -> schemas.ProfileSettingsResponse:
     """The viewer's handle, profile visibility and design (null until first saved)."""
     return await service.get_settings(user[0]["sub"])
 
 
 @router.patch("/me/profile", response_model=schemas.ProfileSettingsResponse)
 async def update_my_profile(
-    body: schemas.ProfileSettingsUpdate, user: Viewer, service: Service
+    body: schemas.ProfileSettingsUpdate, user: SignedIn, service: Service
 ) -> schemas.ProfileSettingsResponse:
     """Set or change the handle, or the profile's visibility.
 
@@ -44,7 +44,7 @@ async def update_my_profile(
 
 @router.put("/me/profile/content", response_model=schemas.ProfileSettingsResponse)
 async def save_my_profile_content(
-    body: schemas.ProfileContentUpdate, user: Viewer, service: Service
+    body: schemas.ProfileContentUpdate, user: SignedIn, service: Service
 ) -> schemas.ProfileSettingsResponse:
     """Save the design the profile editor publishes."""
     return await service.save_content(user[0]["sub"], body.content)
