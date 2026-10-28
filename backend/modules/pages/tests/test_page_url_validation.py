@@ -111,12 +111,12 @@ def test_reserved_words_only_apply_to_exact_match(slug: str):
     assert page.slug == slug
 
 
-def test_the_page_route_prefix_is_reserved():
-    """`/p/$slug` cannot be shadowed, so `p` is reserved.
-
-    Asserted on the set rather than through a schema, because the 3-50 char
-    rule rejects a one-character slug before the reserved check ever runs.
-    """
-    assert "p" in RESERVED_SLUGS
+def test_the_paths_nginx_answers_are_reserved_even_where_the_pattern_already_fails():
+    """A Page is `pages.nuspace.kz/<slug>`, so `ws`, `favicon.ico` and
+    `index.html` are reserved too, though the 3-50 char rule or the pattern
+    rejects each before the reserved check runs. Asserted on the set for that
+    reason. `p` went with the `/p/` prefix it guarded."""
+    assert {"ws", "favicon.ico", "index.html"} <= RESERVED_SLUGS
+    assert "p" not in RESERVED_SLUGS
     assert "communities" not in RESERVED_SLUGS
     assert "u" not in RESERVED_SLUGS
