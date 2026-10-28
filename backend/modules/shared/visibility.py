@@ -1,8 +1,8 @@
 """Who may read a record that carries a Visibility tier. The one predicate.
 
 Every read of such a record asks `visible_to`: a Page by slug or by id, the
-Pages directory, and later search, the people directory and profile pages.
-Nothing else decides it. ADR 0011 records why, and what "member" rests on.
+Pages directory, a profile page by handle, and later search and the people
+directory. Nothing else decides it. ADR 0011 records why, and what "member" rests on.
 
 - `public`: everyone, anonymous viewers included.
 - `internal` ("Members only"): not a guest **and** `users.scope = allowed`, so

@@ -1,11 +1,13 @@
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Text
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.common.datetime_utils import utc_now
 from backend.core.database.models.base import Base
+from backend.modules.pages.models.page import PageVisibility
 
 
 class UserRole(PyEnum):
@@ -45,5 +47,16 @@ class User(Base):
         nullable=True,
         index=True,
     )
+
+    # The profile page (#434). It has no table of its own, so deleting the
+    # account deletes it. It exists only once `handle` is set.
+    handle: Mapped[str | None] = mapped_column(Text, nullable=True, unique=True, index=True)
+    profile_visibility: Mapped[PageVisibility] = mapped_column(
+        SQLEnum(PageVisibility, name="page_visibility"),
+        nullable=False,
+        default=PageVisibility.private,
+        server_default=PageVisibility.private.value,
+    )
+    profile_content: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     department = relationship("Department", foreign_keys=[department_id])
