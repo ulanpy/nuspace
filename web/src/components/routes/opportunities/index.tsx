@@ -95,8 +95,10 @@ export function OpportunitiesScreen({
   const isWide = useIsWide()
   const [isRailOpen, setIsRailOpen] = useState(false)
   // The sheet and the sticky column are the same rail; only one is mounted.
-  // Growing past `xl` with the sheet open retires the sheet.
-  const sheetOpen = isRailOpen && !isWide
+  // Growing past `xl` with the sheet open retires it for good, so narrowing
+  // again does not bring a stale sheet back.
+  if (isWide && isRailOpen) setIsRailOpen(false)
+  const sheetOpen = isRailOpen
   const activeCount = activeFilterCount(search)
 
   /** The rail edits filters only; the search box has its own debounced path. */
