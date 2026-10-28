@@ -1,5 +1,3 @@
-from collections.abc import Collection
-
 from fastapi import HTTPException, status
 
 from backend.common.utils.enums import ResourceAction
@@ -9,14 +7,14 @@ from backend.modules.pages.schemas import PageCreateRequest
 from backend.modules.shared.visibility import RecordVisibility, visible_to
 
 
-def page_visibility(page: Page, *, admins: Collection[str] = ()) -> RecordVisibility:
+def page_visibility(page: Page, viewer_sub: str, *, is_page_admin: bool) -> RecordVisibility:
     """A Page as `visible_to` sees it: its tier, managed by its owner and its admins.
 
-    `admins` only has to include the viewer when the viewer is one: the
-    predicate asks whether the viewer manages the page, nothing more, so a
-    caller that already knows that need not load every admin.
+    The predicate only asks whether this viewer manages the page, so the caller
+    says whether the viewer is one of its admins instead of loading every admin.
     """
-    return RecordVisibility(tier=page.visibility, managers={page.owner, *admins})
+    managers = {page.owner, viewer_sub} if is_page_admin else {page.owner}
+    return RecordVisibility(tier=page.visibility, managers=managers)
 
 
 class PagePolicy:
@@ -49,8 +47,8 @@ class PagePolicy:
         published, and a private page is not unmanageable by anyone but its
         owner.
         """
-        admins = [self.user_sub] if self.is_page_admin else []
-        if not visible_to(self.user, page_visibility(page, admins=admins)):
+        record = page_visibility(page, self.user_sub, is_page_admin=self.is_page_admin)
+        if not visible_to(self.user, record):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found")
 
     async def check_permission(
@@ -70,6 +68,16 @@ class PagePolicy:
         Raises:
             HTTPException: If the user doesn't have permission
         """
+        # Reads go to the predicate for every viewer, site admins included.
+        if action == ResourceAction.READ:
+            self.check_visible(page)
+            return True
+
+        # Every other action on an existing page answers 404 first to whoever
+        # may not read it, so a refusal never confirms a hidden page exists.
+        if page is not None:
+            self.check_visible(page)
+
         # Admin can do everything
         if self.is_admin:
             return True
@@ -81,10 +89,6 @@ class PagePolicy:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You can only create pages for yourself",
                 )
-            return True
-
-        elif action == ResourceAction.READ:
-            self.check_visible(page)
             return True
 
         elif action == ResourceAction.UPDATE:
@@ -110,6 +114,7 @@ class PagePolicy:
 
     async def check_manage_admins(self, page: Page) -> bool:
         """Site-admin or owner may add/remove OTHER page admins."""
+        self.check_visible(page)
         if self.is_admin or self._is_owner(page):
             return True
         raise HTTPException(
@@ -119,6 +124,7 @@ class PagePolicy:
 
     async def check_admin_link(self, page: Page) -> bool:
         """Site-admin, owner, or a page admin may view/rotate the access link."""
+        self.check_visible(page)
         if self.is_admin or self._is_owner(page) or self.is_page_admin:
             return True
         raise HTTPException(
@@ -128,6 +134,7 @@ class PagePolicy:
 
     async def check_self_leave(self, page: Page) -> bool:
         """Only a page admin may leave; an owner cannot resign via this path."""
+        self.check_visible(page)
         if self._is_owner(page):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

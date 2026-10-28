@@ -132,8 +132,12 @@ async def test_my_pages(
 async def test_a_banned_member_cannot_read_a_members_only_page(
     banned_member: Viewer, member: Viewer, owner: Viewer, make_page
 ) -> None:
-    """The ban is what changed: a member reads `internal`, the same person banned
-    does not, and is told it is not there rather than that it is forbidden."""
+    """A member reads `internal` and a banned member does not, and is told it is
+    not there rather than that it is forbidden.
+
+    Over HTTP `get_creds_or_guest` already reads a banned member as a guest, so
+    this holds with or without the predicate's scope clause. The clause on its
+    own is tested in `shared/tests/test_visibility.py` (ADR 0011)."""
     await make_page(owner=owner, slug="chess-club", visibility=PageVisibility.internal)
 
     assert (await member.client.get("/api/pages/chess-club")).status_code == 200
@@ -141,3 +145,40 @@ async def test_a_banned_member_cannot_read_a_members_only_page(
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Page not found"
+
+
+MANAGEMENT = [
+    pytest.param("GET", "/api/pages/chess-club/admins", None, id="list-admins"),
+    pytest.param("GET", "/api/pages/chess-club/admin-link", None, id="admin-link"),
+    pytest.param("PATCH", "/api/pages/chess-club", {"name": "Renamed"}, id="update"),
+    pytest.param("DELETE", "/api/pages/chess-club", None, id="delete"),
+    pytest.param("DELETE", "/api/pages/chess-club/admins/me", None, id="leave"),
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("method", "path", "body"), MANAGEMENT)
+@pytest.mark.parametrize(
+    ("tier", "status"),
+    [
+        pytest.param(PageVisibility.private, 404, id="hidden"),
+        pytest.param(PageVisibility.public, 403, id="visible"),
+    ],
+)
+async def test_managing_a_page_you_cannot_read_is_not_found(
+    member: Viewer,
+    club,
+    method: str,
+    path: str,
+    body: dict | None,
+    tier: PageVisibility,
+    status: int,
+) -> None:
+    """A member who runs nothing on the Page is refused every management action.
+    On a Page they can read that is a 403. On one they cannot, it is the same 404
+    a read gets, so the refusal does not confirm the Page exists."""
+    await club(tier)
+
+    response = await member.client.request(method, path, json=body)
+
+    assert response.status_code == status

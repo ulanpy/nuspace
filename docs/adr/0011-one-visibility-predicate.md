@@ -32,7 +32,9 @@ are to ask it too, with no second copy.
 A record is described to the predicate as a `RecordVisibility`: its tier, and
 the subs that manage it. The guest test is `is_guest()` (#414), never an index
 into the credentials tuple. A caller that is told no answers **404, never
-403**, because a 403 tells a stranger the record exists.
+403**, because a 403 tells a stranger the record exists. For the same reason,
+any action on a record the viewer cannot read (editing a Page, deleting it,
+listing its admins) answers 404 before any permission check can answer 403.
 
 A list narrows its query with `tiers_open_to(viewer)`, which is the same
 predicate with managers left out, and then keeps only the rows `visible_to`

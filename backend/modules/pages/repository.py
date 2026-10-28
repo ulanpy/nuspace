@@ -13,6 +13,7 @@ from backend.modules.auth.models import User
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.pages.constants import PageAdminSort, PageRole, PageSort
 from backend.modules.pages.models.page import Page, PageAdmin, PageAdminLink, PageVisibility
+from backend.modules.shared.visibility import ALL_TIERS
 
 # Sort columns are whitelisted, never interpolated into an `order_by` from a
 # caller-supplied string. The keys are the `PageSort` members, so the value
@@ -205,8 +206,10 @@ class PageRepository:
         # visibility alone, and the directory has no relationship filter to
         # narrow. Only `/pages/mine` exposes those params, so this is
         # unreachable rather than a silent ignore — see the docstring.
-        if set(tiers) >= set(PageVisibility):
+        if ALL_TIERS <= set(tiers):
             return []
+        # Sorted in declaration order only so the same tiers always compile to
+        # the same SQL.
         return [Page.visibility.in_(sorted(tiers, key=list(PageVisibility).index))]
 
     @classmethod

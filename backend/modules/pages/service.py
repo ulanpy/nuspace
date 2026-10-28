@@ -324,9 +324,7 @@ class PageService:
                 for page in pages
                 if visible_to(
                     user,
-                    page_visibility(
-                        page, admins=[user[0]["sub"]] if page.id in admin_page_ids else []
-                    ),
+                    page_visibility(page, user[0]["sub"], is_page_admin=page.id in admin_page_ids),
                 )
             ]
             media_objs: List[Media] = await repo.list_media(
