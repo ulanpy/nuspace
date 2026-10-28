@@ -1,28 +1,14 @@
-from html import escape
-
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
 from backend.common.dependencies import get_infra
+from backend.common.og import Card, canonical_url, card_response, generic_card
 from backend.common.schemas import Infra
 from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.modules.pages.dependencies import get_page_service
 from backend.modules.pages.service import PageService
 
 router = APIRouter(tags=["Pages OG"])
-
-
-def _build_public_url(request: Request) -> str:
-    scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
-    host = request.headers.get("x-forwarded-host", request.headers.get("host", ""))
-    path = request.url.path
-    if path.startswith("/api/og"):
-        path = path[len("/api/og") :] or "/"
-    if request.url.query:
-        path = f"{path}?{request.url.query}"
-    if host:
-        return f"{scheme}://{host}{path}"
-    return f"{request.base_url}".rstrip("/") + path
 
 
 def _select_og_image(page_response) -> str | None:
@@ -44,61 +30,33 @@ def _select_og_image(page_response) -> str | None:
     return profile_url or banner_url or fallback_url
 
 
-def _build_page_html(page_response, request: Request) -> str:
+def _page_card(page_response, request: Request) -> Card:
     title = page_response.name or "Page"
-    description = f"Learn about {title} on Nuspace."
-    og_image = _select_og_image(page_response)
-    public_url = _build_public_url(request)
-    site_name = "Nuspace"
-
-    twitter_card = "summary_large_image" if og_image else "summary"
-
-    def meta_tag(prop: str, content: str | None, name_attr: str = "property") -> str:
-        if not content:
-            return ""
-        return f'<meta {name_attr}="{prop}" content="{escape(content, quote=True)}" />'
-
-    meta_lines = [
-        meta_tag("og:title", title),
-        meta_tag("og:description", description),
-        meta_tag("og:type", "website"),
-        meta_tag("og:url", public_url),
-        meta_tag("og:site_name", site_name),
-        meta_tag("og:image", og_image),
-        meta_tag("twitter:card", twitter_card, name_attr="name"),
-        meta_tag("twitter:title", title, name_attr="name"),
-        meta_tag("twitter:description", description, name_attr="name"),
-        meta_tag("twitter:image", og_image, name_attr="name"),
-    ]
-
-    html = f"""<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{escape(title)}</title>
-    {''.join(meta_lines)}
-  </head>
-  <body>
-    <h1>{escape(title)}</h1>
-    <p>{escape(description)}</p>
-    <p><a href="{escape(public_url, quote=True)}">View page</a></p>
-  </body>
-</html>
-"""
-    return html
+    return Card(
+        title=title,
+        description=f"Learn about {title} on Nuspace.",
+        # The Page's address on the host the request came in on.
+        url=canonical_url(request, f"/p/{page_response.slug}"),
+        image=_select_og_image(page_response),
+        link_text="View page",
+    )
 
 
 @router.get("/og/pages", response_class=HTMLResponse, include_in_schema=False)
 @router.get("/og/pages/", response_class=HTMLResponse, include_in_schema=False)
 async def get_page_og_by_query(
     request: Request,
-    id: int,
+    id: int | None = None,
     user=Depends(get_creds_or_guest),
     infra: Infra = Depends(get_infra),
     page_service: PageService = Depends(get_page_service),
 ) -> HTMLResponse:
-    page_response = await page_service.get_page_response_by_id(infra=infra, page_id=id, user=user)
+    """The card for a Page, addressed by id. A Page the viewer may not read is a 404.
 
-    html = _build_page_html(page_response, request)
-    return HTMLResponse(content=html, status_code=status.HTTP_200_OK)
+    Without an id, `/og/pages` is only a path (the directory), so it gets the
+    generic card.
+    """
+    if id is None:
+        return card_response(generic_card(request))
+    page_response = await page_service.get_page_response_by_id(infra=infra, page_id=id, user=user)
+    return card_response(_page_card(page_response, request))

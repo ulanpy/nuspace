@@ -53,6 +53,17 @@ def app_hosts(environment: Environment, *origins: str) -> frozenset[str]:
     return frozenset(host for url in urls if (host := urlsplit(url).hostname))
 
 
+def service_of_host(hostname: str, environment: Environment) -> Service | None:
+    """The service a hostname is, in an environment; None for any other host.
+
+    The tunnel host and an unknown `Host` are not services. `hostname` has no port.
+    """
+    for service in SERVICES:
+        if urlsplit(service_origin(service, environment)).hostname == hostname:
+            return service
+    return None
+
+
 def cookie_domain(environment: Environment) -> str | None:
     """`Domain` of the session cookies, so one sign-in covers every host.
 

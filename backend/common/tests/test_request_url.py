@@ -7,7 +7,7 @@ these cover the hosts the HTTP suite (which runs as production) cannot reach.
 from types import SimpleNamespace
 
 import pytest
-from backend.common.request_url import request_app_base_url
+from backend.common.request_url import request_app_base_url, request_service
 from backend.common.service_origin import app_hosts
 from starlette.requests import Request
 
@@ -71,3 +71,25 @@ def test_forwarded_host_and_userinfo_are_ignored():
 def test_unusable_forwarded_proto_falls_back_to_the_request_scheme():
     request = _request("stage.nuspace.kz", scheme="https", x_forwarded_proto="javascript")
     assert request_app_base_url(request, STAGING) == "https://stage.nuspace.kz"
+
+
+@pytest.mark.parametrize(
+    ("config", "host", "expected"),
+    [
+        (STAGING, "events_staging.nuspace.kz", "events"),
+        (STAGING, "stage.nuspace.kz", "root"),
+        (STAGING, "events.nuspace.kz", None),
+        (STAGING, "evil.example", None),
+        (STAGING, None, None),
+        (DEV, "events.localhost:3000", "events"),
+        (DEV, "localhost", "root"),
+        (DEV, "quick-fox.trycloudflare.com", None),
+    ],
+)
+def test_the_service_is_the_validated_host(config, host, expected):
+    assert request_service(_request(host), config) == expected
+
+
+def test_forwarded_host_is_no_service():
+    request = _request("stage.nuspace.kz", x_forwarded_host="events_staging.nuspace.kz")
+    assert request_service(request, STAGING) == "root"

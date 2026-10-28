@@ -380,8 +380,7 @@ class PageService:
     ) -> schemas.PageResponse:
         """Same as `get_page_response`, for callers that hold an id and not a slug.
 
-        The OG routes are addressed by `?id=`, and the frontend and the Telegram
-        preview URL both build them that way.
+        The Page og card is addressed by `?id=` (`GET /api/og/pages`).
         """
         async with self.uow:
             repo = self.uow.get_repo(PageRepository)

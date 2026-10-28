@@ -1,7 +1,23 @@
 from urllib.parse import urlsplit
 
+from backend.common.service_origin import Service, service_of_host
 from backend.core.configs.config import Config
 from fastapi import Request
+
+
+def _validated_host(request: Request, app_config: Config) -> tuple[str, int | None] | None:
+    """`(hostname, port)` from `Host` if it is one of this environment's hosts."""
+    host = request.headers.get("host")
+    if not host:
+        return None
+    try:
+        parsed = urlsplit(f"//{host}")
+        hostname, port = parsed.hostname, parsed.port
+    except ValueError:
+        return None
+    if not hostname or hostname not in app_config.APP_HOSTS:
+        return None
+    return hostname, port
 
 
 def request_app_base_url(request: Request, app_config: Config) -> str:
@@ -16,18 +32,10 @@ def request_app_base_url(request: Request, app_config: Config) -> str:
 
     `X-Forwarded-Host` is never read: nginx does not set it, so only a client could.
     """
-    apex = app_config.HOME_URL.rstrip("/")
-
-    host = request.headers.get("host")
-    if not host:
-        return apex
-    try:
-        parsed = urlsplit(f"//{host}")
-        hostname, port = parsed.hostname, parsed.port
-    except ValueError:
-        return apex
-    if not hostname or hostname not in app_config.APP_HOSTS:
-        return apex
+    validated = _validated_host(request, app_config)
+    if validated is None:
+        return app_config.HOME_URL.rstrip("/")
+    hostname, port = validated
     if app_config.ENVIRONMENT != "dev":
         port = None
 
@@ -38,3 +46,14 @@ def request_app_base_url(request: Request, app_config: Config) -> str:
         # From the scope, not `request.url`, which a malformed `Host` can garble.
         scheme = request.scope.get("scheme") or "http"
     return f"{scheme}://{hostname}" + (f":{port}" if port else "")
+
+
+def request_service(request: Request, app_config: Config) -> Service | None:
+    """The service host the request came in on, or None if `Host` is not one of them.
+
+    Validated like `request_app_base_url`, so a forged `Host` is no service.
+    """
+    validated = _validated_host(request, app_config)
+    if validated is None:
+        return None
+    return service_of_host(validated[0], app_config.ENVIRONMENT)
