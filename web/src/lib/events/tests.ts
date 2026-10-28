@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import test, { describe, it } from "node:test"
+import type { Event } from "./types"
 import {
+  eventActions,
   eventGoogleCalendarUrl,
   eventPolicyLabel,
   formatEventDateRange,
@@ -87,4 +89,66 @@ test("formats a campus date interval without inventing a daily schedule", () => 
     ),
     "31 Dec 2026 – 2 Jan 2027"
   )
+})
+
+describe("what an event's dialog offers", () => {
+  const upcoming = getEventTiming(
+    "2026-07-29T15:00:00.000Z",
+    "2026-07-29T17:00:00.000Z",
+    NOW
+  )
+  const finished = getEventTiming(
+    "2026-07-27T08:00:00.000Z",
+    "2026-07-27T10:00:00.000Z",
+    NOW
+  )
+  const event = (overrides: Partial<Event>): Event =>
+    ({
+      id: 1,
+      policy: "open",
+      status: "approved",
+      type: "social",
+      registration_link: null,
+      ...overrides,
+    }) as Event
+
+  it("offers attending and the calendar on an approved open event", () => {
+    assert.deepEqual(eventActions(event({}), upcoming), {
+      attend: true,
+      registerAt: null,
+      calendar: true,
+    })
+  })
+
+  it("offers the organiser's registration link instead of attending", () => {
+    assert.deepEqual(
+      eventActions(
+        event({ policy: "registration", registration_link: "https://x.test/r" }),
+        upcoming
+      ),
+      { attend: false, registerAt: "https://x.test/r", calendar: true }
+    )
+  })
+
+  it("offers nothing once the event is over", () => {
+    assert.deepEqual(eventActions(event({}), finished), {
+      attend: false,
+      registerAt: null,
+      calendar: false,
+    })
+  })
+
+  it("does not take attendance on an event that is not approved", () => {
+    for (const status of ["pending", "rejected", "cancelled"] as const) {
+      assert.equal(eventActions(event({ status }), upcoming).attend, false)
+    }
+  })
+
+  it("treats a recruitment as a deadline, not something to attend or diarise", () => {
+    assert.deepEqual(eventActions(event({ type: "recruitment" }), upcoming), {
+      attend: false,
+      registerAt: null,
+      calendar: false,
+    })
+  })
 })

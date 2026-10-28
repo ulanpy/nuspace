@@ -393,3 +393,31 @@ export function eventPolicyLabel(policy: "open" | "registration"): string {
 export function canEditField(event: Event, field: string): boolean {
   return event.permissions?.editable_fields.includes(field) ?? false
 }
+
+export interface EventActions {
+  /** Whether "I'm going" is offered: an approved, open-entry event still to come. */
+  attend: boolean
+  /** The organiser's registration page, when entry needs registering there. */
+  registerAt: string | null
+  /** Whether adding it to a calendar makes sense. */
+  calendar: boolean
+}
+
+/**
+ * What a visitor can do about an event, given where it is in time. A
+ * recruitment closes rather than happens, so it has no seat to take and no
+ * slot to diarise; a finished event has neither either.
+ */
+export function eventActions(event: Event, timing: EventTiming): EventActions {
+  const live = timing.kind !== "finished"
+  const happens = event.type !== "recruitment"
+  return {
+    attend:
+      live && happens && event.policy === "open" && event.status === "approved",
+    registerAt:
+      live && event.policy === "registration"
+        ? (event.registration_link ?? null)
+        : null,
+    calendar: live && happens,
+  }
+}
