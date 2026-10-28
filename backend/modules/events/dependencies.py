@@ -2,7 +2,7 @@ from fastapi import BackgroundTasks, Depends, Request
 
 from backend.common.dependencies import get_uow
 from backend.core.database.uow import UnitOfWork
-from backend.modules.bot.services.direct_message import DirectMessenger
+from backend.modules.bot.dependencies import build_direct_messenger
 from backend.modules.events.notices import EventNotifier
 from backend.modules.events.service import EventService
 from backend.modules.media.dependencies import build_media_service
@@ -16,7 +16,7 @@ def build_event_notifier(
     if bot is None:
         return None
     return EventNotifier(
-        messenger=DirectMessenger(bot),
+        messenger=build_direct_messenger(bot),
         events_origin=request.app.state.config.service_origin("events"),
         schedule=background_tasks.add_task,
     )

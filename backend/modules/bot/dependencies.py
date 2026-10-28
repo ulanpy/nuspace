@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from aiogram import Bot
 from google.auth.credentials import Credentials
 from google.cloud import storage
 from httpx import AsyncClient
@@ -7,9 +8,15 @@ from redis.asyncio import Redis
 
 from backend.core.configs.config import Config, config
 from backend.core.database.uow import UnitOfWork
+from backend.modules.bot.services.direct_message import DirectMessenger
 from backend.modules.bot.services.event_post import EventPostService
 from backend.modules.bot.services.event_publisher import EventServicePublisher
 from backend.modules.bot.services.gemini_event_extractor import GeminiEventExtractor
+
+
+def build_direct_messenger(bot: Bot) -> DirectMessenger:
+    """The rate-limited DM sender over the app's bot (events' `AttendeeMessenger`)."""
+    return DirectMessenger(bot)
 
 
 def build_event_post_service(
