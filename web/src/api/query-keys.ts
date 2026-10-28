@@ -113,6 +113,10 @@ export const qk = {
     stats: () => ["sgotinish", "stats"] as const,
   },
 
-  search: (keyword: string, storageName: string) =>
-    ["search", storageName, keyword] as const,
+  search: {
+    all: () => ["search"] as const,
+    /** `q` and `kind` are the whole request; the offset is the page param. */
+    results: (filters: Record<string, unknown>) =>
+      ["search", "results", filters] as const,
+  },
 } as const
