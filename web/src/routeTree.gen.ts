@@ -23,8 +23,8 @@ import { Route as AppMynuspaceIndexRouteImport } from './routes/_app/mynuspace/i
 import { Route as AppOpportunitiesIndexRouteImport } from './routes/_app/opportunities/index'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
 import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/index'
-import { Route as PublicPrivacyPolicyIndexRouteImport } from './routes/_public/privacy-policy/index'
-import { Route as PublicTermsOfServiceIndexRouteImport } from './routes/_public/terms-of-service/index'
+import { Route as PublicPrivacyIndexRouteImport } from './routes/_public/privacy/index'
+import { Route as PublicTermsIndexRouteImport } from './routes/_public/terms/index'
 import { Route as AppCoursesAuditIndexRouteImport } from './routes/_app/courses/audit/index'
 import { Route as AppCoursesScheduleIndexRouteImport } from './routes/_app/courses/schedule/index'
 import { Route as AppCoursesStatisticsIndexRouteImport } from './routes/_app/courses/statistics/index'
@@ -104,18 +104,16 @@ const PublicAboutIndexRoute = PublicAboutIndexRouteImport.update({
   path: '/about/',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const PublicPrivacyPolicyIndexRoute =
-  PublicPrivacyPolicyIndexRouteImport.update({
-    id: '/privacy-policy/',
-    path: '/privacy-policy/',
-    getParentRoute: () => PublicRouteRoute,
-  } as any)
-const PublicTermsOfServiceIndexRoute =
-  PublicTermsOfServiceIndexRouteImport.update({
-    id: '/terms-of-service/',
-    path: '/terms-of-service/',
-    getParentRoute: () => PublicRouteRoute,
-  } as any)
+const PublicPrivacyIndexRoute = PublicPrivacyIndexRouteImport.update({
+  id: '/privacy/',
+  path: '/privacy/',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicTermsIndexRoute = PublicTermsIndexRouteImport.update({
+  id: '/terms/',
+  path: '/terms/',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
 const AppCoursesAuditIndexRoute = AppCoursesAuditIndexRouteImport.update({
   id: '/audit/',
   path: '/audit/',
@@ -183,8 +181,8 @@ export interface FileRoutesByFullPath {
   '/opportunities/': typeof AppOpportunitiesIndexRoute
   '/sgotinish/': typeof AppSgotinishIndexRoute
   '/about/': typeof PublicAboutIndexRoute
-  '/privacy-policy/': typeof PublicPrivacyPolicyIndexRoute
-  '/terms-of-service/': typeof PublicTermsOfServiceIndexRoute
+  '/privacy/': typeof PublicPrivacyIndexRoute
+  '/terms/': typeof PublicTermsIndexRoute
   '/p/$slug/settings': typeof AppPSlugSettingsRouteRouteWithChildren
   '/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/courses/schedule/': typeof AppCoursesScheduleIndexRoute
@@ -208,8 +206,8 @@ export interface FileRoutesByTo {
   '/opportunities': typeof AppOpportunitiesIndexRoute
   '/sgotinish': typeof AppSgotinishIndexRoute
   '/about': typeof PublicAboutIndexRoute
-  '/privacy-policy': typeof PublicPrivacyPolicyIndexRoute
-  '/terms-of-service': typeof PublicTermsOfServiceIndexRoute
+  '/privacy': typeof PublicPrivacyIndexRoute
+  '/terms': typeof PublicTermsIndexRoute
   '/courses/audit': typeof AppCoursesAuditIndexRoute
   '/courses/schedule': typeof AppCoursesScheduleIndexRoute
   '/courses/statistics': typeof AppCoursesStatisticsIndexRoute
@@ -236,8 +234,8 @@ export interface FileRoutesById {
   '/_app/opportunities/': typeof AppOpportunitiesIndexRoute
   '/_app/sgotinish/': typeof AppSgotinishIndexRoute
   '/_public/about/': typeof PublicAboutIndexRoute
-  '/_public/privacy-policy/': typeof PublicPrivacyPolicyIndexRoute
-  '/_public/terms-of-service/': typeof PublicTermsOfServiceIndexRoute
+  '/_public/privacy/': typeof PublicPrivacyIndexRoute
+  '/_public/terms/': typeof PublicTermsIndexRoute
   '/_app/p/$slug/settings': typeof AppPSlugSettingsRouteRouteWithChildren
   '/_app/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/_app/courses/schedule/': typeof AppCoursesScheduleIndexRoute
@@ -264,8 +262,8 @@ export interface FileRouteTypes {
     | '/opportunities/'
     | '/sgotinish/'
     | '/about/'
-    | '/privacy-policy/'
-    | '/terms-of-service/'
+    | '/privacy/'
+    | '/terms/'
     | '/p/$slug/settings'
     | '/courses/audit/'
     | '/courses/schedule/'
@@ -289,8 +287,8 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/sgotinish'
     | '/about'
-    | '/privacy-policy'
-    | '/terms-of-service'
+    | '/privacy'
+    | '/terms'
     | '/courses/audit'
     | '/courses/schedule'
     | '/courses/statistics'
@@ -316,8 +314,8 @@ export interface FileRouteTypes {
     | '/_app/opportunities/'
     | '/_app/sgotinish/'
     | '/_public/about/'
-    | '/_public/privacy-policy/'
-    | '/_public/terms-of-service/'
+    | '/_public/privacy/'
+    | '/_public/terms/'
     | '/_app/p/$slug/settings'
     | '/_app/courses/audit/'
     | '/_app/courses/schedule/'
@@ -435,18 +433,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicAboutIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/_public/privacy-policy/': {
-      id: '/_public/privacy-policy/'
-      path: '/privacy-policy'
-      fullPath: '/privacy-policy/'
-      preLoaderRoute: typeof PublicPrivacyPolicyIndexRouteImport
+    '/_public/privacy/': {
+      id: '/_public/privacy/'
+      path: '/privacy'
+      fullPath: '/privacy/'
+      preLoaderRoute: typeof PublicPrivacyIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/_public/terms-of-service/': {
-      id: '/_public/terms-of-service/'
-      path: '/terms-of-service'
-      fullPath: '/terms-of-service/'
-      preLoaderRoute: typeof PublicTermsOfServiceIndexRouteImport
+    '/_public/terms/': {
+      id: '/_public/terms/'
+      path: '/terms'
+      fullPath: '/terms/'
+      preLoaderRoute: typeof PublicTermsIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_app/courses/audit/': {
@@ -597,15 +595,15 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 interface PublicRouteRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
   PublicAboutIndexRoute: typeof PublicAboutIndexRoute
-  PublicPrivacyPolicyIndexRoute: typeof PublicPrivacyPolicyIndexRoute
-  PublicTermsOfServiceIndexRoute: typeof PublicTermsOfServiceIndexRoute
+  PublicPrivacyIndexRoute: typeof PublicPrivacyIndexRoute
+  PublicTermsIndexRoute: typeof PublicTermsIndexRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicIndexRoute: PublicIndexRoute,
   PublicAboutIndexRoute: PublicAboutIndexRoute,
-  PublicPrivacyPolicyIndexRoute: PublicPrivacyPolicyIndexRoute,
-  PublicTermsOfServiceIndexRoute: PublicTermsOfServiceIndexRoute,
+  PublicPrivacyIndexRoute: PublicPrivacyIndexRoute,
+  PublicTermsIndexRoute: PublicTermsIndexRoute,
 }
 
 const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(

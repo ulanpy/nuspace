@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
 import { ApiError } from "@/api/client"
-import { Page } from "@/components/routes/pages/editor"
+import { PageEditorScreen } from "@/components/routes/pages/editor"
 import { pageDetailQueryOptions } from "@/lib/pages"
 
 /**
@@ -11,6 +11,8 @@ import { pageDetailQueryOptions } from "@/lib/pages"
  * fallback selection as a change — which navigated away on mount.
  */
 export const Route = createFileRoute("/_app/p/$slug/editor/")({
+  // The Puck canvas is the page itself, so it gets the whole viewport.
+  staticData: { shell: { bare: true } },
   loader: async ({ context, params }) => {
     let page
     try {
@@ -38,5 +40,5 @@ function PageEditorRoute() {
   const { slug } = Route.useParams()
   const { queryClient } = Route.useRouteContext()
 
-  return <Page slug={slug} queryClient={queryClient} />
+  return <PageEditorScreen slug={slug} queryClient={queryClient} />
 }

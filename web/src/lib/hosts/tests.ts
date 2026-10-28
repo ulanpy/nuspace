@@ -110,10 +110,11 @@ describe("route tree", () => {
       "routes/_app/events/$eventId/index",
     ])
     // The generator wraps long declarations onto a second line.
-    assert.deepEqual(tree.files("/privacy-policy"), [
+    assert.deepEqual(tree.files("/courses/statistics"), [
       "routes/__root",
-      "routes/_public/route",
-      "routes/_public/privacy-policy/index",
+      "routes/_app/route",
+      "routes/_app/courses/route",
+      "routes/_app/courses/statistics/index",
     ])
   })
 
@@ -151,6 +152,13 @@ describe("nginx include", () => {
     assert.match(include, /"root:\/about\/" +1;/)
     assert.match(include, /"~\^events:\/\[0-9\]\+\/\?\$" +1;/)
     assert.match(include, /"~\^root:\/p\/\[\^\/\]\+\/editor\/\?\$" +1;/)
+  })
+
+  it("serves the legal pages at their short paths, and 404s the old ones", () => {
+    for (const path of ["/about", "/privacy", "/terms"]) {
+      assert.match(include, new RegExp(`"root:${path}" +1;`))
+    }
+    assert.doesNotMatch(include, /privacy-policy|terms-of-service/)
   })
 
   it("reads the staging environment off a staging host", () => {

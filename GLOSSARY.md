@@ -15,6 +15,7 @@ Domain terms for Nuspace. When naming concepts in code, issues, or specs, use th
 | **Citation** | A mark in the Overview's text pointing at the Source it came from. It is an index into the Sources the Overview was given, never a typed link. |
 | **Abstention** | The Overview declining to answer, for want of Sources or for want of anything in them worth saying. The results list is then the whole answer, and no Overview renders. |
 | **Route table** | The host→route table in `web/src/lib/hosts/constants.ts`: which of the six hosts serves which path. It generates the nginx include, the 404 pages and each host's `index.html`, and CI fails when it and the route tree disagree. A host's **mount** is the router path its routes live under (`events.nuspace.kz/42` is the router's `/events/42`). |
+| **Site shell** | What every host renders inside (`components/layouts/site/`): the shared header (mark, launcher, account menu or "Sign in"), the footer (About, Privacy, Terms), and the host's **rail** of sections, which is a sheet from the header's burger below `md`. A route gives it sections, a header search field, or nothing at all (`bare`) through `staticData.shell`. |
 | **Lib module** | A bounded capability in `src/lib/<module>/` — constants, functions, types, tests. The unit of business logic. |
 | **Route mirror** | The `components/routes/<route>/` folder holding a route screen and its subcomponents. UI only, no logic. |
 | **DataTable** | The reusable table box (`shared/data-table/`), configured by `useDataTable`. Server-side pagination and sorting. |

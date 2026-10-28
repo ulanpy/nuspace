@@ -24,7 +24,7 @@ const REDEMPTION_MESSAGES = {
   already_owner: (name: string) => `You own ${name}.`,
 } as const
 
-export function Page({
+export function PageViewScreen({
   slug,
   adminToken,
 }: {

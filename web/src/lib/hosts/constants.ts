@@ -23,6 +23,7 @@ export const NOT_FOUND_LEAD =
 export const SERVICES: readonly Service[] = [
   {
     key: "root",
+    name: "Search",
     prompt: "Searching for something?",
     hosts: {
       production: "nuspace.kz",
@@ -32,6 +33,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     key: "courses",
+    name: "Courses",
     prompt: "Looking for your courses?",
     hosts: {
       production: "courses.nuspace.kz",
@@ -41,6 +43,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     key: "events",
+    name: "Events",
     prompt: "Looking for events?",
     hosts: {
       production: "events.nuspace.kz",
@@ -50,6 +53,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     key: "opportunities",
+    name: "Opportunities",
     prompt: "Looking for opportunities?",
     hosts: {
       production: "opportunities.nuspace.kz",
@@ -59,6 +63,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     key: "pages",
+    name: "Pages",
     prompt: "Looking for a Page?",
     hosts: {
       production: "pages.nuspace.kz",
@@ -68,6 +73,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     key: "my",
+    name: "My Nuspace",
     prompt: "Looking for people or your account?",
     hosts: {
       production: "my.nuspace.kz",
@@ -115,7 +121,7 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
   {
     service: "root",
     mount: "",
-    routes: ["/", "/about", "/privacy-policy", "/terms-of-service"],
+    routes: ["/", "/about", "/privacy", "/terms"],
     unmigrated: [
       "/account",
       "/announcements",

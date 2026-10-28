@@ -1,6 +1,6 @@
 import { PRIVACY_POLICY } from "@/components/shared/legal/data"
 import { LegalPage } from "@/components/shared/legal/legal-page"
 
-export function Page() {
+export function PrivacyScreen() {
   return <LegalPage document={PRIVACY_POLICY} />
 }

@@ -40,7 +40,7 @@ interface PageProps {
  *
  * The gap below the header lives here too, so it is the same on every screen.
  *
- * A page never sets padding: `layouts/app` and `layouts/public` own that, which
+ * A page never sets padding: the site shell (`layouts/site`) owns that, which
  * is why a page cannot accidentally end up padded twice.
  */
 export function Page({

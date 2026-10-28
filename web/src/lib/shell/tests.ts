@@ -1,47 +1,36 @@
 import assert from "node:assert/strict"
-import test from "node:test"
+import { describe, it } from "node:test"
 
-import {
-  SIDEBAR_COLLAPSED_KEY,
-  parseSidebarCollapsed,
-  readSidebarCollapsed,
-  writeSidebarCollapsed,
-} from "./functions"
+import { launcherItems } from "./functions.ts"
 
-test("parses only the legacy true value as collapsed", () => {
-  assert.equal(parseSidebarCollapsed("true"), true)
-  assert.equal(parseSidebarCollapsed("false"), false)
-  assert.equal(parseSidebarCollapsed("1"), false)
-  assert.equal(parseSidebarCollapsed("TRUE"), false)
-  assert.equal(parseSidebarCollapsed(null), false)
-})
+describe("launcher", () => {
+  it("lists the six hosts by name, in launcher order", () => {
+    assert.deepEqual(
+      launcherItems("nuspace.kz").map((item) => [item.key, item.name]),
+      [
+        ["root", "Search"],
+        ["courses", "Courses"],
+        ["events", "Events"],
+        ["opportunities", "Opportunities"],
+        ["pages", "Pages"],
+        ["my", "My Nuspace"],
+      ]
+    )
+  })
 
-test("reads and writes the legacy preference key", () => {
-  const values = new Map<string, string>([[SIDEBAR_COLLAPSED_KEY, "true"]])
-  const storage = {
-    getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      values.set(key, value)
-    },
-  }
+  it("highlights the host the visitor is on, in any environment", () => {
+    const current = (hostname: string) =>
+      launcherItems(hostname)
+        .filter((item) => item.current)
+        .map((item) => item.key)
 
-  assert.equal(readSidebarCollapsed(storage), true)
-  writeSidebarCollapsed(storage, false)
-  assert.equal(values.get(SIDEBAR_COLLAPSED_KEY), "false")
-})
+    assert.deepEqual(current("events.nuspace.kz"), ["events"])
+    assert.deepEqual(current("EVENTS_STAGING.nuspace.kz"), ["events"])
+    assert.deepEqual(current("my.localhost"), ["my"])
+    assert.deepEqual(current("stage.nuspace.kz"), ["root"])
+  })
 
-test("storage failures fall back without breaking navigation", () => {
-  const unavailableStorage = {
-    getItem: () => {
-      throw new Error("unavailable")
-    },
-    setItem: () => {
-      throw new Error("unavailable")
-    },
-  }
-
-  assert.equal(readSidebarCollapsed(unavailableStorage), false)
-  assert.doesNotThrow(() => {
-    writeSidebarCollapsed(unavailableStorage, true)
+  it("highlights nothing on a hostname outside the table", () => {
+    assert.ok(launcherItems("127.0.0.1").every((item) => !item.current))
   })
 })

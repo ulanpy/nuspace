@@ -13,7 +13,7 @@ The frontend needed consistent patterns for file organization, naming, and code 
 **Source layout:**
 - `routes/` — TanStack Router file-based routes (thin, routing only)
 - `components/routes/<route>/` — Route screens and route-exclusive UI
-- `components/layouts/` — App shells (app, courses, public)
+- `components/layouts/` — Shells: `site` (the header, rail and footer every host renders inside; a route shapes it through `staticData.shell`), plus the courses and settings layouts
 - `components/shared/` — Cross-page reusable UI grouped by domain
 - `components/ui/` — shadcn/ui primitives (vendor code, consume only)
 - `lib/<module>/` — Bounded capabilities: constants, functions, types, tests

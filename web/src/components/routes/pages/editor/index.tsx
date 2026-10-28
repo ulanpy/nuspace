@@ -11,7 +11,7 @@ import { Editor } from "@/components/shared/page-editor/components/editor"
 import { UploadContext } from "@/components/shared/page-editor/context"
 import { qk } from "@/api/query-keys"
 
-export function Page({
+export function PageEditorScreen({
   slug,
   queryClient,
 }: {

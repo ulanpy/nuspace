@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { AppLayout } from "@/components/layouts/app"
 import { sessionQueryOptions } from "@/lib/user"
 
+/** The service screens. The shell is the root route's, shared by every host. */
 export const Route = createFileRoute("/_app")({
   beforeLoad: async ({ context }) => {
     const session =
@@ -11,5 +11,4 @@ export const Route = createFileRoute("/_app")({
     // authentication through their own UI and the backend policy.
     return { session }
   },
-  component: AppLayout,
 })

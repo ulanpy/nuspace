@@ -12,6 +12,8 @@ export type ServiceKey =
 /** One of the six first-party hosts, as a visitor knows it. */
 export interface Service {
   key: ServiceKey
+  /** What the launcher calls the host: "Events". The root host is "Search". */
+  name: string
   /** The 404 page's question for this host: "Looking for events?". */
   prompt: string
   hosts: Record<Environment, string>

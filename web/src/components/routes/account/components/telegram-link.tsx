@@ -106,7 +106,7 @@ function ChallengeDialog({
         <p className="text-xs text-muted-foreground">
           This page updates on its own once the bot confirms. By linking you
           agree to the{" "}
-          <Link to="/privacy-policy" className="underline">
+          <Link to="/privacy" className="underline">
             privacy policy
           </Link>
           .

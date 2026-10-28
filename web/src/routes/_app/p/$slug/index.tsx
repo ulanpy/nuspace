@@ -1,11 +1,13 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
 import { ApiError } from "@/api/client"
-import { Page } from "@/components/routes/pages/$slug"
+import { PageViewScreen } from "@/components/routes/pages/$slug"
 import { NotFound } from "@/components/shared/not-found"
 import { pageDetailQueryOptions } from "@/lib/pages"
 
 export const Route = createFileRoute("/_app/p/$slug/")({
+  // A Page is a full-width landing page with its own compact bar.
+  staticData: { shell: { bare: true } },
   validateSearch: (search: Record<string, unknown>): { admin?: string } => ({
     admin: typeof search.admin === "string" ? search.admin : undefined,
   }),
@@ -37,5 +39,5 @@ function PageDetailRoute() {
   const { slug } = Route.useParams()
   const { admin } = Route.useSearch()
 
-  return <Page slug={slug} adminToken={admin} />
+  return <PageViewScreen slug={slug} adminToken={admin} />
 }

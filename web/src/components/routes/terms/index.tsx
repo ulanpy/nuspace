@@ -1,6 +1,6 @@
 import { TERMS_OF_SERVICE } from "@/components/shared/legal/data"
 import { LegalPage } from "@/components/shared/legal/legal-page"
 
-export function Page() {
+export function TermsScreen() {
   return <LegalPage document={TERMS_OF_SERVICE} />
 }
