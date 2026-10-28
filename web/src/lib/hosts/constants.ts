@@ -146,11 +146,13 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     routes: ["/"],
   },
   {
-    // The account host. `/` (the people directory), `/profile`,
-    // `/profile/edit` and `/u/$handle` join this row with #434 and #436.
+    // The account host. `/` (the people directory) joins this row with #436.
     service: "my",
     mount: "/my",
-    routes: ["/account", "/pages"],
+    routes: ["/account", "/pages", "/profile", "/profile/edit", "/u/$handle"],
+    // The slug alphabet. Case and length are the server's to refuse; nginx
+    // only keeps `/u/` from answering for addresses no handle could be.
+    params: { handle: "[a-z0-9-]+" },
   },
   {
     service: "courses",

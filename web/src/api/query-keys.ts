@@ -15,6 +15,18 @@ export const qk = {
     detail: (slug: string) => ["users", "detail", slug] as const,
   },
 
+  /**
+   * Profile pages. `mine` is the viewer's own settings and design; `detail`
+   * is a profile read by handle, under `details()` so a rename or a new tier
+   * can drop every one of them without touching `mine`.
+   */
+  profiles: {
+    all: () => ["profiles"] as const,
+    mine: () => ["profiles", "mine"] as const,
+    details: () => ["profiles", "detail"] as const,
+    detail: (handle: string) => ["profiles", "detail", handle] as const,
+  },
+
   events: {
     all: () => ["events"] as const,
     list: (filters: Record<string, unknown>) =>

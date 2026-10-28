@@ -238,11 +238,11 @@ export interface paths {
          *
          *     `sort` and `visibility` are **silently ignored when `keyword` is set**. The
          *     keyword path short-circuits to Meilisearch, which ranks by relevance and
-         *     has `filterable_attributes=None`, so there is no facet to filter on either.
+         *     is not asked to filter on `visibility`, although the index now carries it
+         *     as a filterable attribute (`modules/pages/search_indexes.py`).
          *     No error, just wrong rows — which is how you get "the sort button does
-         *     nothing". My Pages has no search box today, so this is unreachable. Adding
-         *     one means `filterableAttributes` in `modules/pages/search_indexes.py` plus
-         *     a reindex, not just a UI control.
+         *     nothing". My Pages has no search box today, so this is unreachable.
+         *     Adding one means passing the filter to Meilisearch, not just a UI control.
          */
         get: operations["get_my_pages_pages_mine_get"];
         put?: never;
@@ -423,6 +423,72 @@ export interface paths {
          * @description Redeem an admin access link. Idempotent; no-op if already admin or owner.
          */
         post: operations["accept_page_admin_link_pages_admin_links_accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Profile
+         * @description The viewer's handle, profile visibility and design (null until first saved).
+         */
+        get: operations["get_my_profile_me_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update My Profile
+         * @description Set or change the handle, or the profile's visibility.
+         *
+         *     422 for a malformed or reserved handle, 409 for one someone else holds.
+         */
+        patch: operations["update_my_profile_me_profile_patch"];
+        trace?: never;
+    };
+    "/me/profile/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save My Profile Content
+         * @description Save the design the profile editor publishes.
+         */
+        put: operations["save_my_profile_content_me_profile_content_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profiles/{handle}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Profile
+         * @description A profile page: the identity header, read live from `users`, and the design.
+         */
+        get: operations["read_profile_profiles__handle__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3360,6 +3426,76 @@ export interface components {
             /** Section Ids */
             section_ids?: number[];
         };
+        /** ProfileContentUpdate */
+        ProfileContentUpdate: {
+            /**
+             * Content
+             * @description The Puck document the person wrote
+             */
+            content: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ProfileResponse
+         * @description A profile page as a reader sees it.
+         *
+         *     Everything but `content` is the identity header, read from `users` on every
+         *     request, so it is never stale and the person cannot delete it by editing.
+         */
+        ProfileResponse: {
+            /** Handle */
+            handle: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /** Picture */
+            picture: string | null;
+            /** Department */
+            department: string | null;
+            /**
+             * Sg Role
+             * @description The Student Government role; null outside SG
+             */
+            sg_role: ("boss" | "capo" | "soldier") | null;
+            /** Content */
+            content: {
+                [key: string]: unknown;
+            } | null;
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /**
+         * ProfileSettingsResponse
+         * @description The viewer's own profile: its address, its tier, and what they wrote.
+         *
+         *     `content` is null until the first save, which is how the editor knows to
+         *     open on the About and Links template rather than on a blank canvas.
+         */
+        ProfileSettingsResponse: {
+            /** Handle */
+            handle: string | null;
+            visibility: components["schemas"]["PageVisibility"];
+            /** Content */
+            content: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ProfileSettingsUpdate
+         * @description Either field may be left out. `handle: null` takes the profile page down.
+         */
+        ProfileSettingsUpdate: {
+            /**
+             * Handle
+             * @description The address at my.nuspace.kz/u/<handle>
+             * @example aigerim-b
+             */
+            handle?: string | null;
+            /** @description Who may read the profile */
+            visibility?: components["schemas"]["PageVisibility"] | null;
+        };
         /**
          * PubSubMessage
          * @description Complete Pub/Sub message structure
@@ -4547,6 +4683,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminLinkAcceptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_profile_me_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_my_profile_me_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_my_profile_content_me_profile_content_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileContentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_profile_profiles__handle__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResponse"];
                 };
             };
             /** @description Validation Error */
