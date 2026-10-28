@@ -193,17 +193,6 @@ async def test_a_stranger_still_gets_a_404_on_the_same_page() -> None:
 
 
 @pytest.mark.asyncio
-async def test_the_by_id_read_resolves_the_flag_too() -> None:
-    """The OG and Telegram preview URLs address pages by `?id=`, and took the
-    same shortcut. Both read paths have to agree."""
-    service, infra = _read_service(visibility=PageVisibility.private, viewer_is_page_admin=True)
-
-    response = await service.get_page_response_by_id(infra=infra, page_id=7, user=ADMIN_OF_PAGE)
-
-    assert response.id == 7
-
-
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "visibility_filter",
     [None, [], [PageVisibility.private], [PageVisibility.public, PageVisibility.internal]],

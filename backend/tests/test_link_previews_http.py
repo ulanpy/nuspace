@@ -3,8 +3,9 @@
 nginx sends the bot's request to `/api/og<path>` with the host's own `Host`
 header. The endpoint that answers builds the card from one builder
 (`common/og.py`): a specific card where one exists (an event at
-`events.nuspace.kz/<id>`, a Page by id), the generic one otherwise. It is never
-an error body, and the canonical URL is the host the bot asked.
+`events.nuspace.kz/<id>`, a Page at `pages.nuspace.kz/<slug>`), the generic one
+otherwise. It is never an error body, and the canonical URL is the host the bot
+asked.
 """
 
 import re
@@ -23,6 +24,7 @@ from backend.modules.pages.models import PageVisibility
 from backend.tests.harness import VIEWER_KINDS, Viewer
 
 EVENTS = {"host": "events.nuspace.kz"}
+PAGES = {"host": "pages.nuspace.kz"}
 
 
 def meta(html: str, prop: str) -> str | None:
@@ -186,28 +188,84 @@ async def test_the_canonical_host_cannot_be_forged(guest: Viewer, make_event) ->
 
 
 @pytest.mark.asyncio
-async def test_a_page_card_names_the_requesting_host(
-    guest: Viewer, owner: Viewer, make_page
+@pytest.mark.parametrize("path", ["/api/og/chess-club", "/api/og/chess-club/"])
+async def test_a_page_card_is_at_the_pages_own_address(
+    guest: Viewer, owner: Viewer, make_page, path: str
 ) -> None:
-    page = await make_page(owner=owner, slug="chess-club", name="Chess Club")
+    await make_page(owner=owner, slug="chess-club", name="Royal Chess Society")
 
-    response = await guest.client.get(
-        "/api/og/pages", params={"id": page.id}, headers={"host": "pages.nuspace.kz"}
-    )
+    response = await guest.client.get(path, params={"admin": "s3cret"}, headers=PAGES)
 
     assert response.status_code == 200
-    assert meta(response.text, "og:title") == "Chess Club"
-    assert meta(response.text, "og:url") == "https://pages.nuspace.kz/p/chess-club"
+    assert meta(response.text, "og:title") == "Royal Chess Society"
+    assert meta(response.text, "og:description") == "Learn about Royal Chess Society on Nuspace."
+    assert meta(response.text, "og:url") == "https://pages.nuspace.kz/chess-club"
+    assert "s3cret" not in response.text
 
 
 @pytest.mark.asyncio
-async def test_a_hidden_page_by_id_is_still_a_404(guest: Viewer, owner: Viewer, make_page) -> None:
-    page = await make_page(owner=owner, visibility=PageVisibility.private, name="Chess Club")
+async def test_a_page_with_a_numeric_slug_is_a_page_on_the_pages_host(
+    guest: Viewer, owner: Viewer, make_page
+) -> None:
+    """`/2026` is a slug on `pages.` and an event id on `events.`; each host gets its own."""
+    await make_page(owner=owner, slug="2026", name="Class of 2026")
 
-    response = await guest.client.get("/api/og/pages", params={"id": page.id})
+    response = await guest.client.get("/api/og/2026", headers=PAGES)
 
-    assert response.status_code == 404
-    assert "Chess Club" not in response.text
+    assert meta(response.text, "og:title") == "Class of 2026"
+
+
+@pytest.mark.asyncio
+async def test_a_hidden_page_gets_the_generic_card(
+    guest: Viewer, owner: Viewer, make_page
+) -> None:
+    await make_page(
+        owner=owner,
+        slug="chess-club",
+        name="Royal Chess Society",
+        visibility=PageVisibility.private,
+    )
+
+    hidden = await guest.client.get("/api/og/chess-club", headers=PAGES)
+    missing = await guest.client.get("/api/og/no-such-club", headers=PAGES)
+
+    assert hidden.status_code == missing.status_code == 200
+    assert "Royal Chess Society" not in hidden.text
+    assert meta(hidden.text, "og:title") == "Chess Club"
+    assert meta(missing.text, "og:title") == "No Such Club"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("path", "host"),
+    [
+        ("/api/og/chess-club/settings", "pages.nuspace.kz"),
+        ("/api/og/chess-club/edit", "pages.nuspace.kz"),
+        ("/api/og/chess-club", "nuspace.kz"),
+        ("/api/og/chess-club", "my.nuspace.kz"),
+    ],
+)
+async def test_a_page_card_is_only_at_the_page_itself(
+    guest: Viewer, owner: Viewer, make_page, path: str, host: str
+) -> None:
+    await make_page(owner=owner, slug="chess-club", name="Royal Chess Society")
+
+    response = await guest.client.get(path, headers={"host": host})
+
+    assert response.status_code == 200
+    assert "Royal Chess Society" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_a_page_is_no_longer_addressed_by_id(
+    guest: Viewer, owner: Viewer, make_page
+) -> None:
+    page = await make_page(owner=owner, slug="chess-club", name="Royal Chess Society")
+
+    response = await guest.client.get("/api/og/pages", params={"id": page.id}, headers=PAGES)
+
+    assert response.status_code == 200
+    assert "Royal Chess Society" not in response.text
 
 
 @pytest.mark.asyncio
