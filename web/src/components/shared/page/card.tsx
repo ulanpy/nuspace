@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router"
+import type { LinkProps } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
@@ -11,8 +13,14 @@ export interface PageCardProps {
   banner?: string | null
   /** The round picture that overlaps it. */
   avatar?: string | null
-  /** Where the card goes. Omit for a card that is not a link. */
+  /** Where the card goes, as a plain address. */
   href?: string
+  /**
+   * Where the card goes, as a route. Prefer it for a Page: the router turns it
+   * into the host that serves it, and follows it without a reload when that is
+   * this one. Wins over `href`; omit both for a card that is not a link.
+   */
+  link?: Pick<LinkProps, "to" | "params">
   /**
    * Buttons on the card, under the body. The directory cards have none; the
    * ones on a page you manage do, and the same card carries both.
@@ -38,6 +46,7 @@ export function PageCard({
   banner,
   avatar,
   href,
+  link,
   actions,
   className,
 }: PageCardProps) {
@@ -84,7 +93,14 @@ export function PageCard({
     <Card
       className={cn("h-full p-0 transition-shadow hover:shadow-md", className)}
     >
-      {href ? (
+      {link ? (
+        <Link
+          {...link}
+          className="flex h-full flex-col focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          {body}
+        </Link>
+      ) : href ? (
         <a
           href={href}
           className="flex h-full flex-col focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"

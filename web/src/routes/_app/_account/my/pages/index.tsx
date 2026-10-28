@@ -2,17 +2,17 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/account"
+import { SignInGate } from "@/components/layouts/account/sign-in-gate"
+import { MyPagesScreen } from "@/components/routes/my/pages"
 import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZES,
-  PAGE_SORTS,
   PAGE_VISIBILITY_VALUES,
 } from "@/lib/pages/constants"
 
-const accountSearchSchema = z.object({
+const myPagesSearchSchema = z.object({
   /**
-   * Page of the My Pages table, 1-based.
+   * Page of the list, 1-based.
    *
    * `.int().min(1)` before the catch is load-bearing: `?page=` coerces to `0`
    * (`Number("")`), which passes a bare `z.coerce.number()` and then asks the
@@ -25,39 +25,42 @@ const accountSearchSchema = z.object({
     .refine((value) => (PAGE_SIZES as readonly number[]).includes(value))
     .catch(DEFAULT_PAGE_SIZE)
     .default(DEFAULT_PAGE_SIZE),
-  /**
-   * `role` is one value, not a list: the backend's filter takes a single
-   * `PageRole`. `visibility` is a list, and the `z.array(z.enum(...))` shape is
-   * the one already used by the opportunities and courses routes — do not
-   * invent a second URL encoding for it.
-   */
+  /** One value, not a list: the backend's filter takes a single `PageRole`. */
   role: z.enum(["owner", "admin"]).optional(),
   visibility: z.array(z.enum(PAGE_VISIBILITY_VALUES)).optional(),
-  /** Which column, and which way. `undefined` leaves the backend's own order. */
-  sort: z.enum(PAGE_SORTS).optional(),
-  order: z.enum(["asc", "desc"]).optional(),
 })
 
-export type AccountSearch = z.infer<typeof accountSearchSchema>
+export type MyPagesSearch = z.infer<typeof myPagesSearchSchema>
 
-export const Route = createFileRoute("/_app/account/")({
-  validateSearch: accountSearchSchema,
-  component: AccountRoute,
+export const Route = createFileRoute("/_app/_account/my/pages/")({
+  validateSearch: myPagesSearchSchema,
+  component: MyPagesRoute,
 })
 
-function AccountRoute() {
+function MyPagesRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
 
   const onSearchChange = useCallback(
-    (updater: (previous: AccountSearch) => AccountSearch) => {
+    (updater: (previous: MyPagesSearch) => MyPagesSearch) => {
       // Pushed, not replaced: a filter or a page is a history entry, so Back
-      // walks the reader out of the table the way it walked them in. The
-      // `replace` parameter this used to take was never passed by any caller.
+      // walks the reader out of the list the way it walked them in.
       void navigate({ search: updater })
     },
     [navigate]
   )
 
-  return <Page search={search} onSearchChange={onSearchChange} />
+  return (
+    <SignInGate>
+      <MyPagesScreen
+        search={search}
+        onSearchChange={onSearchChange}
+        onPageCreated={(slug) => {
+          // Straight to the Page they just made. Leaving them on a list that
+          // now has one more card they have to find is worse.
+          void navigate({ to: "/p/$slug", params: { slug } })
+        }}
+      />
+    </SignInGate>
+  )
 }

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { isPageAdminSort, isPageSort } from "./constants"
-import { adminPageActions, pageOwnership, sortingToSearch } from "./functions"
+import {
+  adminPageActions,
+  pageOwnership,
+  pageStats,
+  sortingToSearch,
+} from "./functions"
 import type { Page } from "./types"
 
 /** Nobody's permissions. The ownership answer must not depend on these. */
@@ -182,5 +187,27 @@ describe("sortingToSearch", () => {
       sortingToSearch([{ id: "visibility", desc: true }], isPageAdminSort),
       { sort: undefined, order: undefined }
     )
+  })
+})
+
+describe("pageStats", () => {
+  it("splits the viewer's Pages into owned and administered", () => {
+    assert.deepEqual(pageStats({ owned: 3, total: 8 }), {
+      owned: 3,
+      administered: 5,
+      remaining: 97,
+    })
+  })
+
+  it("never reports a negative number of pages left", () => {
+    assert.equal(pageStats({ owned: 120, total: 120 }).remaining, 0)
+  })
+
+  it("is all zeros before any Page exists", () => {
+    assert.deepEqual(pageStats({ owned: 0, total: 0 }), {
+      owned: 0,
+      administered: 0,
+      remaining: 100,
+    })
   })
 })

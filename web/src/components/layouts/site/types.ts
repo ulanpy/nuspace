@@ -2,20 +2,39 @@ import type { ComponentType } from "react"
 import type { LinkProps } from "@tanstack/react-router"
 import type { LucideIcon } from "lucide-react"
 
-/** One row of a host's rail. */
-export interface RailSection {
-  /**
-   * Typed against the route tree, so a section whose route moves fails the
-   * build here rather than linking to a 404.
-   */
-  to: LinkProps["to"]
+interface RailSectionBase {
   label: string
   icon: LucideIcon
   /** Lit only on `to` itself, not below it: a host's front door. */
   exact?: boolean
   /** Sits hard right, for a row that leaves the host. */
   trailing?: LucideIcon
+  /**
+   * Sits hard right too, for a row that carries a number. A component so it
+   * can fetch its own count; it renders nothing when it has none.
+   */
+  badge?: ComponentType
+  /** Hidden from a signed-out visitor: the row is about the signed-in person. */
+  requiresSession?: boolean
 }
+
+/**
+ * One row of a host's rail. It goes to a route (`to`), or, until the route
+ * exists, to an address on the host (`href`); a ticket that adds the route
+ * swaps the `href` for a `to` and the build then guards it.
+ */
+export type RailSection = RailSectionBase &
+  (
+    | {
+        /**
+         * Typed against the route tree, so a section whose route moves fails
+         * the build here rather than linking to a 404.
+         */
+        to: LinkProps["to"]
+        href?: never
+      }
+    | { href: string; to?: never }
+  )
 
 /**
  * What a route tells the site shell. Set it as `staticData.shell` on a layout

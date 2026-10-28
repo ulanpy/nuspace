@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { LogOutIcon, UserIcon } from "lucide-react"
 
@@ -12,24 +12,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLogout } from "@/hooks/use-logout"
-import { currentBrowserPath, loginHref, sessionQueryOptions } from "@/lib/user"
+import { sessionQueryOptions } from "@/lib/user"
 import type { CurrentUser } from "@/lib/user"
+import { useSignInHref } from "./use-sign-in-href"
 
-/**
- * "Sign in", returning to the host and path the visitor is on. The link goes
- * to this host's `/api/login`, so the backend sends them back to this host,
- * and `return_to` is the browser path here, not the router's.
- */
 function SignIn() {
-  // Re-render on navigation, so the link always carries the current path.
-  useRouterState({ select: (state) => state.location.href })
+  const href = useSignInHref()
 
   return (
     <a
-      href={loginHref({
-        returnTo: currentBrowserPath(window.location),
-        origin: window.location.origin,
-      })}
+      href={href}
       className="rounded-md px-2 py-1 text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       Sign in
@@ -65,7 +57,7 @@ function AccountMenu({ user }: { user: CurrentUser }) {
             <span className="block truncate font-normal">{user.email}</span>
           </DropdownMenuLabel>
           <DropdownMenuItem
-            render={<Link to="/account" />}
+            render={<Link to="/my/account" />}
             className="justify-start gap-2"
           >
             <UserIcon aria-hidden />

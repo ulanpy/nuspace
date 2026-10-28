@@ -12,6 +12,55 @@ import {
 } from "@/components/ui/sheet"
 import type { RailSection } from "./types"
 
+const ROW_CLASS =
+  "flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-[background-color,color] duration-(--duration-fast) hover:bg-sidebar-accent/60 hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-sidebar-accent data-[status=active]:text-sidebar-accent-foreground"
+
+function RailRow({
+  section,
+  onNavigate,
+}: {
+  section: RailSection
+  onNavigate?: () => void
+}) {
+  const { label, icon: Icon, trailing: Trailing, badge: Badge } = section
+  const content = (
+    <>
+      <Icon className="size-5 shrink-0" aria-hidden />
+      <span className="truncate">{label}</span>
+      {Badge ? (
+        <span className="ml-auto">
+          <Badge />
+        </span>
+      ) : null}
+      {Trailing ? (
+        <Trailing
+          className="ml-auto size-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+      ) : null}
+    </>
+  )
+
+  if (section.href !== undefined) {
+    return (
+      <a href={section.href} onClick={onNavigate} className={ROW_CLASS}>
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <Link
+      to={section.to}
+      activeOptions={{ exact: section.exact ?? false }}
+      onClick={onNavigate}
+      className={ROW_CLASS}
+    >
+      {content}
+    </Link>
+  )
+}
+
 function RailNav({
   sections,
   onNavigate,
@@ -21,23 +70,12 @@ function RailNav({
 }) {
   return (
     <nav className="flex flex-col gap-1" aria-label="Sections">
-      {sections.map(({ to, label, icon: Icon, exact, trailing: Trailing }) => (
-        <Link
-          key={label}
-          to={to}
-          activeOptions={{ exact: exact ?? false }}
-          onClick={onNavigate}
-          className="flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-[background-color,color] duration-(--duration-fast) hover:bg-sidebar-accent/60 hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:bg-sidebar-accent data-[status=active]:text-sidebar-accent-foreground"
-        >
-          <Icon className="size-5 shrink-0" aria-hidden />
-          <span className="truncate">{label}</span>
-          {Trailing ? (
-            <Trailing
-              className="ml-auto size-4 shrink-0 text-muted-foreground"
-              aria-hidden
-            />
-          ) : null}
-        </Link>
+      {sections.map((section) => (
+        <RailRow
+          key={section.label}
+          section={section}
+          onNavigate={onNavigate}
+        />
       ))}
     </nav>
   )

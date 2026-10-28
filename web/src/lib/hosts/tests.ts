@@ -221,6 +221,21 @@ describe("host rewrite", () => {
     )
   })
 
+  it("serves the account page on the account host, and links to it from anywhere", () => {
+    assert.equal(
+      input("https://my.nuspace.kz/account"),
+      "https://my.nuspace.kz/my/account"
+    )
+    assert.equal(
+      output("https://events.nuspace.kz/my/account"),
+      "https://my.nuspace.kz/account"
+    )
+    assert.equal(
+      output("https://my_staging.nuspace.kz/my/pages?page=2"),
+      "https://my_staging.nuspace.kz/pages?page=2"
+    )
+  })
+
   it("leaves a hostname outside the table alone", () => {
     assert.equal(
       rewrite.input({ url: new URL("http://127.0.0.1/42") }),
