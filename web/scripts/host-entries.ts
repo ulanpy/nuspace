@@ -28,7 +28,7 @@ interface ChunkLike {
  * `$nuspace_service` (web/nginx/hosts.conf). There is no top-level
  * `index.html`, so no path can be served an HTML that is not its host's.
  */
-export function hostEntries(web: string): Plugin {
+export function hostEntries(webRoot: string): Plugin {
   return {
     name: "nuspace:host-entries",
     apply: "build",
@@ -57,7 +57,7 @@ export function hostEntries(web: string): Plugin {
       const entry = chunks.filter((chunk) => chunk.isEntry)
       const shared = closure(entry)
       const tree = parseRouteTree(
-        readFileSync(path.join(web, "src/routeTree.gen.ts"), "utf8")
+        readFileSync(path.join(webRoot, "src/routeTree.gen.ts"), "utf8")
       )
 
       for (const row of ROUTE_TABLE) {
@@ -67,7 +67,7 @@ export function hostEntries(web: string): Plugin {
           row.routes.flatMap((route) =>
             tree
               .files(toRouterPath(row.mount, route))
-              .map((file) => `${path.join(web, "src", file)}.tsx?tsr-split`)
+              .map((file) => `${path.join(webRoot, "src", file)}.tsx?tsr-split`)
           )
         )
         const screens = chunks.filter((chunk) =>

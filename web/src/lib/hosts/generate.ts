@@ -4,7 +4,7 @@
  * over strings, so the build plugin and `scripts/hosts.mjs` stay thin and the
  * tests need no filesystem. Nothing here ships in the app bundle.
  */
-import { ENVIRONMENTS } from "./constants"
+import { ENVIRONMENTS, NOT_FOUND_LEAD } from "./constants"
 import {
   destinations,
   isUnderMount,
@@ -359,7 +359,7 @@ export function renderNotFoundPage(
     <main>
       <p class="code">404</p>
       <h1>Page not found</h1>
-      <p>Nothing lives at this address. Nuspace is six sites now, each at its own address:</p>
+      <p>Nothing lives at this address. ${NOT_FOUND_LEAD}</p>
       <ul>
 ${items}
       </ul>

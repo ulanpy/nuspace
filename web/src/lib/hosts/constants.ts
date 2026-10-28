@@ -6,6 +6,10 @@ export const ENVIRONMENTS = [
   "development",
 ] as const satisfies readonly Environment[]
 
+/** What both 404s say above the list of hosts. */
+export const NOT_FOUND_LEAD =
+  "Nuspace is six sites now, each at its own address:"
+
 /**
  * The six hosts, in launcher order. The 404 page names all six whether or not
  * a host has a row in `ROUTE_TABLE` yet, so the list a lost visitor reads is

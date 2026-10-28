@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_app/p/$slug/")({
   notFoundComponent: () => (
     <NotFound
       title="Page not found"
-      description="We couldn’t find a page at that address. It may be private, or the handle may be wrong. Nuspace is six sites now, each at its own address:"
+      description="We couldn’t find a page at that address. It may be private, or the handle may be wrong."
     />
   ),
   component: PageDetailRoute,

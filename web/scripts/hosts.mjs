@@ -32,7 +32,7 @@ import {
 } from "../src/lib/hosts/generate.ts"
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const check = process.argv.includes("--check")
+const checkOnly = process.argv.includes("--check")
 
 const outputs = new Map([
   ["nginx/hosts.conf", renderNginxInclude(ROUTE_TABLE, SERVICES)],
@@ -54,7 +54,7 @@ for (const [path, expected] of outputs) {
   const target = resolve(web, path)
   const current = await readFile(target, "utf8").catch(() => null)
   if (current === expected) continue
-  if (check) {
+  if (checkOnly) {
     problems.push(path)
     console.error(`route table: ${path} is stale; run \`pnpm hosts:generate\``)
   } else {
@@ -65,7 +65,7 @@ for (const [path, expected] of outputs) {
   }
 }
 
-if (check) {
+if (checkOnly) {
   if (problems.length > 0) process.exit(1)
   console.log(
     `route table: ${tree.paths.length} routes, each owned by one host`

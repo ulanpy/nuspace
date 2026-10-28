@@ -1,4 +1,4 @@
-import { destinations } from "@/lib/hosts"
+import { NOT_FOUND_LEAD, destinations } from "@/lib/hosts"
 
 interface NotFoundProps {
   title?: string
@@ -20,14 +20,16 @@ interface NotFoundProps {
  */
 export function NotFound({
   title = "Page not found",
-  description = "That address doesn’t match anything on Nuspace. Nuspace is six sites now, each at its own address:",
+  description = "That address doesn’t match anything on Nuspace.",
 }: NotFoundProps) {
   return (
     <div className="grid min-h-screen place-items-center p-6">
       <div className="w-full max-w-md space-y-4">
         <p className="text-sm font-medium text-muted-foreground">404</p>
         <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-        <p className="text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground">
+          {description} {NOT_FOUND_LEAD}
+        </p>
         <ul className="divide-y divide-border border-y border-border">
           {destinations(window.location.hostname).map((destination) => (
             <li key={destination.key} className="py-3">
