@@ -8,31 +8,43 @@ from typing import Dict, List, Optional, Tuple
 
 from pypdf import PdfReader
 
-SEMESTER_HEADER_RE = re.compile(r"^(Fall|Spring|Summer|Winter)\s+\d{4}$")
-COURSE_CODE_RE = re.compile(
-    r"^([A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)(?:/[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)*\b"
+SEMESTER_HEADER_RE = re.compile(
+    r"^(Fall|Spring|Summer|Winter)\s+(\d{4})(?:\s+Grd\s+ECTS\s+QPts)?$",
+    re.IGNORECASE,
+)
+METADATA_KEY_RE = re.compile(r"^([A-Za-z][A-Za-z0-9 #/]*?):\s*(.*)$")
+STUDENT_ID_RE = re.compile(r"^ID#\s*(\S+)$", re.IGNORECASE)
+PAGE_STAMP_RE = re.compile(r"^\d{2}-\d{2}-\d{4}\b")
+
+# Dept + number, optional section letter (MATH 161A). A following cross-list
+# (/WCS 260, including codes broken across PDF lines) wins over a one-letter
+# suffix such as NUR 213/C.
+_DEPT_NUM = r"[A-Z]{2,4}\s*\d{3}[A-Z]?"
+_SECTION_SUFFIX = r"(?:[-/][A-Z])"
+_CROSS_LIST = rf"(?:/{_DEPT_NUM}{_SECTION_SUFFIX}?)"
+_REGULAR_CODE = rf"{_DEPT_NUM}(?:{_CROSS_LIST}+|{_SECTION_SUFFIX}?)?"
+_TRANSFER_CODE = r"T\s*-\s*[A-Z]{2,5}\s*\d{3,4}[A-Z]?"
+_COURSE_CODE = rf"(?:{_TRANSFER_CODE}|{_REGULAR_CODE})"
+_GRADE = r"(?:PASS|FAIL|TC|[A-Z]{1,3}[+-]?(?:\*{1,2})?)"
+_CREDITS = r"\d+(?:\.\d+)?"
+_GRADE_POINTS = r"(?:\d+(?:\.\d+)?|[Nn]/?[Aa])"
+
+COURSE_CODE_RE = re.compile(rf"^({_REGULAR_CODE})\b")
+COURSE_START_RE = re.compile(rf"(?:^|\s)(?P<code>{_COURSE_CODE})(?=\s)")
+COURSE_SEGMENT_RE = re.compile(
+    rf"^(?P<code>{_COURSE_CODE})\s+(?P<title>.*?)\s+(?P<grade>{_GRADE})\s+"
+    rf"(?P<credits>{_CREDITS})\s+(?P<points>{_GRADE_POINTS})$"
 )
 COURSE_RE = re.compile(
-    r"^([A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?(?:/[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)*?)\s+"
-    r"(.*?)\s+"
-    r"((?:PASS|FAIL)|[A-Z]{1,3}[+-]?\*{0,2})\s+"
-    r"(\d+(?:\.\d+)?)\s+"
-    r"(\d+(?:\.\d+)?|[Nn]/?[Aa])$"
+    rf"^({_REGULAR_CODE})\s+(.*?)\s+({_GRADE})\s+({_CREDITS})\s+({_GRADE_POINTS})$"
 )
 COURSE_ENTRY_RE = re.compile(
-    r"([A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?(?:/[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)*?)\s+"
-    r"(.*?)\s+"
-    r"((?:PASS|FAIL)|[A-Z]{1,3}[+-]?\*{0,2})\s+"
-    r"(\d+(?:\.\d+)?)\s+"
-    r"(\d+(?:\.\d+)?|[Nn]/?[Aa])"
-    r"(?=\s+[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?(?:/[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)*\s+|\s*$)"
+    rf"({_REGULAR_CODE})\s+(.*?)\s+({_GRADE})\s+({_CREDITS})\s+({_GRADE_POINTS})"
+    rf"(?=\s+(?:{_COURSE_CODE})\s+|\s*$)"
 )
 TRANSFER_COURSE_RE = re.compile(
-    r"^T\s*-\s*([A-Z]{2,5}\s*\d{3,4}[A-Z]?)\s+"
-    r"(.*?)\s+"
-    r"((?:PASS|FAIL|TC)|[A-Z]{1,3}[+-]?\*{0,2})\s+"
-    r"(\d+(?:\.\d+)?)\s+"
-    r"(\d+(?:\.\d+)?|[Nn]/?[Aa])$"
+    rf"^T\s*-\s*([A-Z]{{2,5}}\s*\d{{3,4}}[A-Z]?)\s+(.*?)\s+({_GRADE})\s+"
+    rf"({_CREDITS})\s+({_GRADE_POINTS})$"
 )
 
 
@@ -71,29 +83,57 @@ def extract_lines(pdf_path: str | Path) -> List[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
+def _semester_name(match: re.Match[str]) -> str:
+    return f"{match.group(1).title()} {match.group(2)}"
+
+
 def parse_metadata(lines: List[str]) -> Tuple[Dict[str, str], int]:
-    """Grab key/value metadata before the first semester heading."""
+    """Grab key/value metadata before the first semester heading.
+
+    Wrapped values (a major or program name split by the PDF extractor) are
+    appended to the previous field. Page stamps and ``ID#`` rows are handled
+    even though they are not ``Key: Value`` lines.
+    """
     first_semester_index = next(
         (i for i, line in enumerate(lines) if SEMESTER_HEADER_RE.match(line)), len(lines)
     )
-    metadata_lines = lines[:first_semester_index]
     metadata: Dict[str, str] = {}
-    for line in metadata_lines:
-        if ":" in line:
-            key, value = line.split(":", 1)
-            metadata[key.strip()] = value.strip()
+    last_key: Optional[str] = None
+    for line in lines[:first_semester_index]:
+        if PAGE_STAMP_RE.match(line) or re.fullmatch(r"\d+/\d+", line):
+            continue
+        student_id = STUDENT_ID_RE.match(line)
+        if student_id:
+            metadata["ID#"] = student_id.group(1)
+            last_key = "ID#"
+            continue
+        key_match = METADATA_KEY_RE.match(line)
+        if key_match:
+            key = key_match.group(1).strip()
+            metadata[key] = key_match.group(2).strip()
+            last_key = key
+            continue
+        if last_key and line:
+            metadata[last_key] = f"{metadata[last_key]} {line}".strip()
     return metadata, first_semester_index
 
 
 def find_semester_spans(lines: List[str]) -> List[Tuple[str, int, int]]:
     """Return (semester name, start index after header, end index) spans."""
     semester_indices = [
-        (i, SEMESTER_HEADER_RE.match(line).group(0))
+        (i, _semester_name(match))
         for i, line in enumerate(lines)
-        if SEMESTER_HEADER_RE.match(line)
+        if (match := SEMESTER_HEADER_RE.match(line))
     ]
     overall_index = next(
-        (i for i, line in enumerate(lines) if line.startswith("Overall")), len(lines)
+        (
+            i
+            for i, line in enumerate(lines)
+            if line.startswith("Overall")
+            or line.startswith("Cumulative GPA")
+            or "END OF TRANSCRIPT" in line
+        ),
+        len(lines),
     )
     spans: List[Tuple[str, int, int]] = []
     for idx, (start, name) in enumerate(semester_indices):
@@ -109,7 +149,22 @@ def is_header_line(line: str) -> bool:
         "ects",
         "grade",
         "points",
+        "grd ects qpts",
     }
+
+
+def is_ignorable_course_line(line: str) -> bool:
+    """Drop column headers, transfer banners, footnotes, and closing remarks."""
+    if is_header_line(line):
+        return True
+    lowered = line.strip().lower()
+    return (
+        lowered.startswith("transferred courses from")
+        or lowered.startswith("cumulative gpa")
+        or lowered.startswith("on academic leave")
+        or lowered.startswith("*")
+        or "end of transcript" in lowered
+    )
 
 
 def split_course_segments(lines: List[str]) -> List[List[str]]:
@@ -137,14 +192,20 @@ def parse_course_segment(segment: List[str]) -> Course:
     return _build_course(*match.groups())
 
 
+def _normalize_course_code(code: str) -> str:
+    """Collapse PDF whitespace and drop the ``T -`` transfer prefix."""
+    cleaned = re.sub(r"\s+", " ", code).strip()
+    return re.sub(r"^T\s*-\s*", "", cleaned, flags=re.IGNORECASE)
+
+
 def _build_course(code: str, title: str, grade: str, credits: str, grade_points_raw: str) -> Course:
     try:
         grade_points = float(grade_points_raw)
     except Exception:
         grade_points = 0.0
     return Course(
-        code=code.strip(),
-        title=title.strip(),
+        code=_normalize_course_code(code),
+        title=re.sub(r"\s+", " ", title).strip(),
         grade=grade.strip(),
         credits=float(credits),
         grade_points=grade_points,
@@ -180,6 +241,10 @@ def _parse_regular_courses(course_lines: List[str]) -> List[Course]:
     if not blob:
         return []
 
+    courses = _parse_course_blob(blob)
+    if courses is not None:
+        return courses
+
     matches = list(COURSE_ENTRY_RE.finditer(blob))
     if matches:
         return [_build_course(*match.groups()) for match in matches]
@@ -188,10 +253,40 @@ def _parse_regular_courses(course_lines: List[str]) -> List[Course]:
     return [parse_course_segment(segment) for segment in segments]
 
 
+def _parse_course_blob(blob: str) -> Optional[List[Course]]:
+    """Split a flattened semester on course-code starts.
+
+    Returns None when a slice does not end in grade / credits / points, so the
+    caller can fall back to the older line-oriented parser.
+    """
+    starts = [match.start("code") for match in COURSE_START_RE.finditer(blob)]
+    if not starts:
+        return None
+
+    courses: List[Course] = []
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(blob)
+        segment = blob[start:end].strip()
+        match = COURSE_SEGMENT_RE.match(segment)
+        if not match:
+            return None
+        courses.append(_build_course(*match.groups()))
+    return courses
+
+
 def parse_gpa_block(lines: List[str]) -> Tuple[Optional[float], Optional[float], Optional[float]]:
     if not lines:
         return None, None, None
     blob = " ".join(lines)
+    # Current registrar layout:
+    # Semester AttCr: 30 Cr: 30 GPA: 3.40 | Cumulative Cr: 30 GPA: 3.40
+    if "Semester AttCr" in blob:
+        credits_enrolled = _extract_number(blob, r"Semester AttCr:\s*([0-9.]+)")
+        credits_earned = _extract_number(blob, r"Semester AttCr:\s*[0-9.]+\s*Cr:\s*([0-9.]+)")
+        sem_gpa = _extract_number(
+            blob, r"Semester AttCr:\s*[0-9.]+\s*Cr:\s*[0-9.]+\s*GPA:\s*([0-9.]+)"
+        )
+        return sem_gpa, credits_enrolled, credits_earned
     sem_gpa = _extract_number(blob, r"Semester GPA:\s*([0-9.]+)")
     credits_enrolled = _extract_number(blob, r"Credits Enrolled:\s*([0-9.]+)")
     credits_earned = _extract_number(blob, r"Credits Earned:\s*([0-9.]+)")
@@ -203,16 +298,15 @@ def _extract_number(blob: str, pattern: str) -> Optional[float]:
     return float(match.group(1)) if match else None
 
 
+def _is_semester_summary_line(line: str) -> bool:
+    return line.startswith("Semester GPA") or line.startswith("Semester AttCr")
+
+
 def parse_semester_block(name: str, lines: List[str]) -> Semester:
     gpa_index = next(
-        (i for i, line in enumerate(lines) if line.startswith("Semester GPA")), len(lines)
+        (i for i, line in enumerate(lines) if _is_semester_summary_line(line)), len(lines)
     )
-    course_lines = [
-        line
-        for line in lines[:gpa_index]
-        if not is_header_line(line)
-        and not line.strip().lower().startswith("transferred courses from")
-    ]
+    course_lines = [line for line in lines[:gpa_index] if not is_ignorable_course_line(line)]
     courses = parse_courses(course_lines)
     gpa_block = lines[gpa_index:] if gpa_index < len(lines) else []
     sem_gpa, credits_enrolled, credits_earned = parse_gpa_block(gpa_block)
@@ -227,17 +321,22 @@ def parse_semester_block(name: str, lines: List[str]) -> Semester:
 
 def parse_overall(lines: List[str]) -> Tuple[Optional[float], Optional[float], Optional[float]]:
     overall_index = next((i for i, line in enumerate(lines) if line.startswith("Overall")), None)
-    if overall_index is None or overall_index + 1 >= len(lines):
-        return None, None, None
-    blob = " ".join(lines[overall_index : overall_index + 2])
-    overall_gpa = _extract_number(blob, r"GPA:\s*([0-9.]+)")
-    overall_enrolled = _extract_number(blob, r"Credits Enrolled:\s*([0-9.]+)")
-    overall_earned = _extract_number(blob, r"Credits Earned:\s*([0-9.]+)")
-    return overall_gpa, overall_enrolled, overall_earned
+    if overall_index is not None and overall_index + 1 < len(lines):
+        blob = " ".join(lines[overall_index : overall_index + 2])
+        overall_gpa = _extract_number(blob, r"GPA:\s*([0-9.]+)")
+        overall_enrolled = _extract_number(blob, r"Credits Enrolled:\s*([0-9.]+)")
+        overall_earned = _extract_number(blob, r"Credits Earned:\s*([0-9.]+)")
+        if any(value is not None for value in (overall_gpa, overall_enrolled, overall_earned)):
+            return overall_gpa, overall_enrolled, overall_earned
+
+    blob = " ".join(lines)
+    overall_gpa = _extract_number(blob, r"Cumulative GPA:\s*([0-9.]+)")
+    earned_matches = re.findall(r"Cumulative Cr:\s*([0-9.]+)", blob)
+    overall_earned = float(earned_matches[-1]) if earned_matches else None
+    return overall_gpa, None, overall_earned
 
 
-def parse_transcript(pdf_path: str | Path) -> Transcript:
-    lines = extract_lines(pdf_path)
+def parse_transcript_lines(lines: List[str]) -> Transcript:
     metadata, first_semester_index = parse_metadata(lines)
     spans = find_semester_spans(lines[first_semester_index:])
     semesters: List[Semester] = []
@@ -254,6 +353,10 @@ def parse_transcript(pdf_path: str | Path) -> Transcript:
         overall_credits_enrolled=overall_enrolled,
         overall_credits_earned=overall_earned,
     )
+
+
+def parse_transcript(pdf_path: str | Path) -> Transcript:
+    return parse_transcript_lines(extract_lines(pdf_path))
 
 
 def parse_transcript_bytes(pdf_bytes: bytes) -> Transcript:
