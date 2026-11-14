@@ -3,7 +3,6 @@ import {
   CalendarIcon,
   FileTextIcon,
   GraduationCapIcon,
-  MegaphoneIcon,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -19,7 +18,6 @@ import {
 const KIND_ICON: Record<SearchKind, LucideIcon> = {
   page: FileTextIcon,
   event: CalendarIcon,
-  opportunity: MegaphoneIcon,
   course: GraduationCapIcon,
 }
 

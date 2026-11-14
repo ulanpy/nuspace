@@ -22,7 +22,6 @@ import type { LucideIcon } from "lucide-react"
 import logoUrl from "@/assets/nuspace_logo.svg"
 import {
   BookOpenIcon,
-  BriefcaseIcon,
   CalendarIcon,
   GlobeIcon,
   InfoIcon,
@@ -174,12 +173,6 @@ const APP_NAV: RailItem[] = [
   { id: "mynuspace", label: "My Nuspace", icon: GlobeIcon, href: "?c=people" },
   { id: "events", label: "Events", icon: CalendarIcon, href: "?c=events" },
   { id: "courses", label: "Courses", icon: BookOpenIcon, href: "?c=courses" },
-  {
-    id: "opportunities",
-    label: "Opportunities Digest",
-    icon: BriefcaseIcon,
-    href: "?c=opportunities",
-  },
   { id: "contacts", label: "Contacts", icon: InfoIcon, href: "#" },
 ]
 

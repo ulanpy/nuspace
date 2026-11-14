@@ -12,7 +12,6 @@ from sqlalchemy.orm import selectinload
 
 from backend.modules.courses.models import Course, GradeReport
 from backend.modules.events.models import Event, EventStatus
-from backend.modules.opportunities.models import Opportunity
 from backend.modules.pages.models import Page, PageAdmin, PageVisibility
 
 
@@ -50,10 +49,6 @@ class SearchRepository:
 
     async def events(self, ids: Sequence[int]) -> list[Event]:
         stmt = select(Event).where(Event.id.in_(ids))
-        return list((await self.db_session.execute(stmt)).scalars().all())
-
-    async def opportunities(self, ids: Sequence[int]) -> list[Opportunity]:
-        stmt = select(Opportunity).where(Opportunity.id.in_(ids))
         return list((await self.db_session.execute(stmt)).scalars().all())
 
     async def courses(self, ids: Sequence[int]) -> list[Course]:

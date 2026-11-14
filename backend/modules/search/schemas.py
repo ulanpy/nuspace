@@ -16,7 +16,6 @@ class SearchKind(str, Enum):
 
     page = "page"
     event = "event"
-    opportunity = "opportunity"
     course = "course"
 
 

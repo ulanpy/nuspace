@@ -1,15 +1,14 @@
-/** Where a hostname is served from. Each one names its own six hosts. */
+/** Where a hostname is served from. Each one names its own five hosts. */
 export type Environment = "production" | "staging" | "development"
 
 export type ServiceKey =
   | "root"
   | "courses"
   | "events"
-  | "opportunities"
   | "pages"
   | "my"
 
-/** One of the six first-party hosts, as a visitor knows it. */
+/** One of the five first-party hosts, as a visitor knows it. */
 export interface Service {
   key: ServiceKey
   /** What the launcher calls the host: "Events". The root host is "Search". */

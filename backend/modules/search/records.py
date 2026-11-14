@@ -11,12 +11,11 @@ Each record carries its `gate`, the read predicate for its kind:
 - Pages: `visible_to`, the one Visibility predicate (ADR 0011).
 - Events: approved or cancelled for everyone; any status for its creator and
   site admins, as `EventPolicy.check_read_one` reads one.
-- Opportunities, courses, grade reports and the catalogue: ungated.
+- Courses, grade reports and the catalogue: ungated.
 """
 
 import re
 from dataclasses import dataclass
-from datetime import date
 from typing import Any, Protocol
 
 from backend.common import canonical
@@ -24,7 +23,6 @@ from backend.common.canonical import Location
 from backend.modules.auth.dependencies import is_guest
 from backend.modules.courses.models import Course, GradeReport
 from backend.modules.events.models import Event, EventStatus
-from backend.modules.opportunities.models import Opportunity
 from backend.modules.pages.models import Page, PageVisibility
 from backend.modules.search.schemas import SearchKind, SourceDate
 from backend.modules.search.sources import (
@@ -33,7 +31,6 @@ from backend.modules.search.sources import (
     EVENTS,
     GRADE_REPORTS,
     OPEN_EVENT_STATUSES,
-    OPPORTUNITIES,
     PAGES,
     SourceIndex,
     source_key,
@@ -157,22 +154,6 @@ def event_record(event: Event) -> Record:
             _label(event.type),
             event.place,
             None if event.status == EventStatus.approved else _label(event.status),
-        ),
-    )
-
-
-def opportunity_record(opportunity: Opportunity) -> Record:
-    deadline: date | None = opportunity.deadline
-    return Record(
-        source=OPPORTUNITIES,
-        primary_key=opportunity.id,
-        title=_clean(opportunity.name),
-        location=canonical.OPPORTUNITIES,
-        gate=Ungated(),
-        date=SourceDate(role="deadline", value=deadline) if deadline else None,
-        text=opportunity.description,
-        facts=_facts(
-            _label(opportunity.type), opportunity.host, opportunity.location, opportunity.funding
         ),
     )
 

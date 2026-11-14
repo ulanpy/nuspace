@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import {
   BookOpenIcon,
-  BriefcaseIcon,
   CalendarDaysIcon,
   FileTextIcon,
   LayoutGridIcon,
@@ -40,7 +39,6 @@ const FRONT_DOORS: Record<
   root: { to: "/", icon: SearchIcon },
   courses: { to: "/courses", icon: BookOpenIcon },
   events: { to: "/events", icon: CalendarDaysIcon },
-  opportunities: { to: "/opportunities", icon: BriefcaseIcon },
   pages: { to: "/pages", icon: FileTextIcon },
   my: { to: "/my/account", icon: UserIcon },
 }
@@ -49,7 +47,7 @@ const FRONT_DOORS: Record<
 const ITEMS = launcherItems(window.location.hostname)
 
 /**
- * The launcher: a grid of the six hosts, the one place every host is listed
+ * The launcher: a grid of the five hosts, the one place every host is listed
  * at once. Name only; the bar already says which host you are on, and the
  * tile for it is lit.
  */

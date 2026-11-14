@@ -24,7 +24,6 @@ from backend.modules.events.models import (
     RegistrationPolicy,
 )
 from backend.modules.events.search_indexes import EVENTS_INDEX
-from backend.modules.opportunities.models import Opportunity, OpportunityType
 from backend.modules.pages.models import PageVisibility
 from backend.modules.pages.search_indexes import PAGES_INDEX
 from backend.tests.harness import VIEWER_KINDS, Viewer
@@ -213,11 +212,6 @@ async def test_each_source_links_to_its_canonical_address(
     make_event,
     search_settled: Settled,
 ) -> None:
-    opportunity = await site_admin.client.post(
-        "/api/opportunities",
-        json={"name": "Zebra Fellowship", "type": "grant", "host": "NU Research"},
-    )
-    assert opportunity.status_code == 201
     event = await make_event(creator=member, name="Zebra Night", place="Block C")
     await _index_rows(
         app,
@@ -250,12 +244,6 @@ async def test_each_source_links_to_its_canonical_address(
         title: (result["kind"], result["url"], result["host"], result["path"])
         for title, result in by_title.items()
     } == {
-        "Zebra Fellowship": (
-            "opportunity",
-            "https://opportunities.nuspace.kz/",
-            "opportunities.nuspace.kz",
-            "",
-        ),
         "Zebra Night": (
             "event",
             f"https://events.nuspace.kz/{event.id}",
@@ -278,7 +266,6 @@ async def test_each_source_links_to_its_canonical_address(
     }
     assert by_title["Zebra Night"]["facts"] == ["Social", "Block C"]
     assert by_title["Zebra Night"]["date"]["role"] == "starts"
-    assert by_title["Zebra Fellowship"]["facts"] == ["Grant", "NU Research"]
     assert by_title["ZEBR 102 · Zebras"]["facts"] == ["FA2025", "Average GPA 3.20"]
     assert by_title["ZEBR 103 · Zebra Behaviour"]["facts"] == [
         "Fall 2026",
@@ -348,13 +335,15 @@ async def test_the_kind_filter_narrows_results_but_every_chip_keeps_its_count(
 ) -> None:
     await make_event(creator=member, name="Chess Night")
     await make_event(creator=member, name="Chess Morning")
-    await _index_rows(app, db, Opportunity(name="Chess Grant", type=OpportunityType.GRANT))
+    await _index_rows(
+        app, db, GradeReport(course_code="CHES 1", course_title="Chess", term="FA2025")
+    )
     await search_settled()
 
     everything = await _search(guest, "chess")
     events = await _search(guest, "chess", kind="event")
 
-    expected_counts = {"page": 0, "event": 2, "opportunity": 1, "course": 0}
+    expected_counts = {"page": 0, "event": 2, "course": 1}
     assert everything["counts"] == expected_counts
     assert everything["estimated_total"] == 3
     assert len(everything["results"]) == 3
@@ -386,7 +375,10 @@ async def test_the_pager_walks_every_result_once_then_stops(
     await _index_rows(
         app,
         db,
-        *(Opportunity(name=f"Fellowship {n}", type=OpportunityType.GRANT) for n in range(12)),
+        *(
+            GradeReport(course_code=f"FELL {n}", course_title=f"Fellowship {n}", term="FA2025")
+            for n in range(12)
+        ),
     )
     await search_settled()
 
@@ -406,14 +398,16 @@ async def test_the_pager_is_empty_past_max_total_hits(
     db: async_sessionmaker[AsyncSession],
     search_settled: Settled,
 ) -> None:
-    await _index_rows(app, db, Opportunity(name="Fellowship", type=OpportunityType.GRANT))
+    await _index_rows(
+        app, db, GradeReport(course_code="FELL 1", course_title="Fellowship", term="FA2025")
+    )
     await search_settled()
 
     body = await _search(guest, "fellowship", offset=1000)
 
     assert body["results"] == []
     assert body["next_offset"] is None
-    assert body["counts"]["opportunity"] == 1
+    assert body["counts"]["course"] == 1
 
 
 @pytest.mark.asyncio

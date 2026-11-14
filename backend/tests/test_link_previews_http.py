@@ -139,7 +139,6 @@ async def test_a_number_is_an_event_only_on_the_events_host(guest: Viewer, make_
         ("/api/og/chess-club", "pages.nuspace.kz", "Chess Club"),
         ("/api/og/p/chess-club/settings", "nuspace.kz", "Settings"),
         ("/api/og/u/aiza", "my.nuspace.kz", "Aiza"),
-        ("/api/og/42/", "opportunities.nuspace.kz", "Nuspace"),
     ],
 )
 async def test_any_other_owned_path_gets_a_generic_card(

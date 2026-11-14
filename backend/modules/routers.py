@@ -16,7 +16,6 @@ from backend.modules.events import api as events_api
 from backend.modules.google_bucket import api as google_bucket_api
 from backend.modules.media import api as media_api
 from backend.modules.og import api as og_api
-from backend.modules.opportunities import api as opportunities_api
 from backend.modules.pages import api as pages_api
 from backend.modules.profiles import api as profiles_api
 from backend.modules.search import api as search_api
@@ -38,7 +37,6 @@ routers: List[APIRouter] = [
     templates_api.router,
     degree_audit_api.router,
     announcements_api.router,
-    opportunities_api.router,
     elections_api.router,
     sgotinish_api.router,
     # Every `/og/<path>`: the host decides which card a path gets.

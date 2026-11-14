@@ -1,6 +1,5 @@
 import {
   BookOpenIcon,
-  BriefcaseIcon,
   CalendarDaysIcon,
   FileTextIcon,
   SearchIcon,
@@ -34,13 +33,6 @@ export const SERVICE_HOSTS = [
     host: "events.nuspace.kz",
     entry: "events",
     icon: CalendarDaysIcon,
-  },
-  {
-    id: "opportunities",
-    name: "Opportunities",
-    host: "opportunities.nuspace.kz",
-    entry: "opportunities",
-    icon: BriefcaseIcon,
   },
   {
     id: "pages",

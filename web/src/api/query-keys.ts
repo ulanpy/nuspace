@@ -87,13 +87,6 @@ export const qk = {
     telegram: () => ["announcements", "telegram"] as const,
   },
 
-  opportunities: {
-    all: () => ["opportunities"] as const,
-    list: (filters: Record<string, unknown>) =>
-      ["opportunities", "list", filters] as const,
-    detail: (id: number) => ["opportunities", "detail", id] as const,
-  },
-
   courses: {
     all: () => ["courses"] as const,
     catalog: (filters: Record<string, unknown>) =>

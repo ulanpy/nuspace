@@ -87,7 +87,7 @@ function AccessWall() {
         <EmptyTitle>Sign in to browse Pages</EmptyTitle>
         <EmptyDescription>
           The directory is for Nuspace members. One Nuspace sign-in covers every
-          Nuspace site: search, courses, events, opportunities, Pages and your
+          Nuspace site: search, courses, events, Pages and your
           account. Sign in once, with your NU account, and you are signed in
           everywhere.
         </EmptyDescription>

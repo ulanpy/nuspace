@@ -2,7 +2,6 @@ import {
   CalendarIcon,
   FileTextIcon,
   GraduationCapIcon,
-  MegaphoneIcon,
   SendIcon,
   UserIcon,
 } from "lucide-react"
@@ -10,7 +9,6 @@ import {
 export type SourceKind =
   | "page"
   | "event"
-  | "opportunity"
   | "course"
   | "message"
   | "profile"
@@ -18,7 +16,6 @@ export type SourceKind =
 export const KIND_ICON: Record<SourceKind, typeof FileTextIcon> = {
   page: FileTextIcon,
   event: CalendarIcon,
-  opportunity: MegaphoneIcon,
   course: GraduationCapIcon,
   message: SendIcon,
   profile: UserIcon,
@@ -58,7 +55,6 @@ export const FACETS = [
   { kind: "profile", label: "Profiles", count: 61 },
   { kind: "course", label: "Courses", count: 18 },
   { kind: "event", label: "Events", count: 14 },
-  { kind: "opportunity", label: "Opportunities", count: 7 },
 ] as const
 
 export const OVERVIEW =
@@ -145,21 +141,6 @@ export const SOURCES: readonly SearchSource[] = [
       "through the portal. Club AI, Robotics and four others have seats left.",
   },
   {
-    id: "opportunity:88",
-    kind: "opportunity",
-    kindLabel: "Opportunity",
-    title: "AI Research Internship — summer 2027",
-    host: "nuspace.kz",
-    path: "opportunities?type=internship&q=ai+research",
-    url: "?c=opportunities&q=ai+research&type=internship&focus=88",
-    dateLabel: "Deadline 14 Nov 2026",
-    snippetKind: "description",
-    facts: "Internship · Nazbayev University research centres · Astana",
-    snippet:
-      "A twelve-week paid internship on applied machine learning, open to third " +
-      "and fourth year students. Several of last year's interns came from club AI.",
-  },
-  {
     id: "course:CS 302",
     kind: "course",
     kindLabel: "Course",
@@ -228,9 +209,5 @@ export const LINK_COMPARISON = [
     to: "pages.nuspace.kz/p/club-ai?q=club+ai&focus=club-ai",
     lands:
       "The Page, with the term kept in the bar and the result marked as focused.",
-  },
-  {
-    to: "nuspace.kz/opportunities?q=ai+research&type=internship&focus=88",
-    lands: "The opportunity list, filtered and paged to where the Source was.",
   },
 ]

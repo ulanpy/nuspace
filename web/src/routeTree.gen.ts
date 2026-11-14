@@ -20,7 +20,6 @@ import { Route as AppContactsIndexRouteImport } from './routes/_app/contacts/ind
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppMynuspaceIndexRouteImport } from './routes/_app/mynuspace/index'
-import { Route as AppOpportunitiesIndexRouteImport } from './routes/_app/opportunities/index'
 import { Route as AppPagesIndexRouteImport } from './routes/_app/pages/index'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
 import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/index'
@@ -90,11 +89,6 @@ const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
 const AppMynuspaceIndexRoute = AppMynuspaceIndexRouteImport.update({
   id: '/mynuspace/',
   path: '/mynuspace/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppOpportunitiesIndexRoute = AppOpportunitiesIndexRouteImport.update({
-  id: '/opportunities/',
-  path: '/opportunities/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppPagesIndexRoute = AppPagesIndexRouteImport.update({
@@ -203,7 +197,6 @@ export interface FileRoutesByFullPath {
   '/courses/': typeof AppCoursesIndexRoute
   '/events/': typeof AppEventsIndexRoute
   '/mynuspace/': typeof AppMynuspaceIndexRoute
-  '/opportunities/': typeof AppOpportunitiesIndexRoute
   '/pages/': typeof AppPagesIndexRoute
   '/sgotinish/': typeof AppSgotinishIndexRoute
   '/about/': typeof PublicAboutIndexRoute
@@ -230,7 +223,6 @@ export interface FileRoutesByTo {
   '/courses': typeof AppCoursesIndexRoute
   '/events': typeof AppEventsIndexRoute
   '/mynuspace': typeof AppMynuspaceIndexRoute
-  '/opportunities': typeof AppOpportunitiesIndexRoute
   '/pages': typeof AppPagesIndexRoute
   '/sgotinish': typeof AppSgotinishIndexRoute
   '/about': typeof PublicAboutIndexRoute
@@ -263,7 +255,6 @@ export interface FileRoutesById {
   '/_app/courses/': typeof AppCoursesIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/mynuspace/': typeof AppMynuspaceIndexRoute
-  '/_app/opportunities/': typeof AppOpportunitiesIndexRoute
   '/_app/pages/': typeof AppPagesIndexRoute
   '/_app/sgotinish/': typeof AppSgotinishIndexRoute
   '/_public/about/': typeof PublicAboutIndexRoute
@@ -294,7 +285,6 @@ export interface FileRouteTypes {
     | '/courses/'
     | '/events/'
     | '/mynuspace/'
-    | '/opportunities/'
     | '/pages/'
     | '/sgotinish/'
     | '/about/'
@@ -321,7 +311,6 @@ export interface FileRouteTypes {
     | '/courses'
     | '/events'
     | '/mynuspace'
-    | '/opportunities'
     | '/pages'
     | '/sgotinish'
     | '/about'
@@ -353,7 +342,6 @@ export interface FileRouteTypes {
     | '/_app/courses/'
     | '/_app/events/'
     | '/_app/mynuspace/'
-    | '/_app/opportunities/'
     | '/_app/pages/'
     | '/_app/sgotinish/'
     | '/_public/about/'
@@ -456,13 +444,6 @@ declare module '@tanstack/react-router' {
       path: '/mynuspace'
       fullPath: '/mynuspace/'
       preLoaderRoute: typeof AppMynuspaceIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/opportunities/': {
-      id: '/_app/opportunities/'
-      path: '/opportunities'
-      fullPath: '/opportunities/'
-      preLoaderRoute: typeof AppOpportunitiesIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/pages/': {
@@ -655,7 +636,6 @@ interface AppRouteRouteChildren {
   AppAnnouncementsIndexRoute: typeof AppAnnouncementsIndexRoute
   AppContactsIndexRoute: typeof AppContactsIndexRoute
   AppMynuspaceIndexRoute: typeof AppMynuspaceIndexRoute
-  AppOpportunitiesIndexRoute: typeof AppOpportunitiesIndexRoute
   AppPagesIndexRoute: typeof AppPagesIndexRoute
   AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
   AppPagesSlugIndexRoute: typeof AppPagesSlugIndexRoute
@@ -670,7 +650,6 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAnnouncementsIndexRoute: AppAnnouncementsIndexRoute,
   AppContactsIndexRoute: AppContactsIndexRoute,
   AppMynuspaceIndexRoute: AppMynuspaceIndexRoute,
-  AppOpportunitiesIndexRoute: AppOpportunitiesIndexRoute,
   AppPagesIndexRoute: AppPagesIndexRoute,
   AppSgotinishIndexRoute: AppSgotinishIndexRoute,
   AppPagesSlugIndexRoute: AppPagesSlugIndexRoute,

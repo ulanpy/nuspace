@@ -1,6 +1,6 @@
 """Per-environment service origins: the hosts the app is served on.
 
-Mirrors the host-to-route table: six hosts (the root search host and five services).
+Mirrors the host-to-route table: five hosts (the root search host and four services).
 Every absolute link the backend mints is built from these origins, which come from
 the environment, never from a request header. The same table bounds which `Host` a
 login may return to (`app_hosts`) and the domain the session cookies cover.
@@ -9,7 +9,7 @@ login may return to (`app_hosts`) and the domain the session cookies cover.
 from typing import Literal, get_args
 from urllib.parse import urlsplit
 
-Service = Literal["root", "courses", "events", "opportunities", "pages", "my"]
+Service = Literal["root", "courses", "events", "pages", "my"]
 Environment = Literal["production", "staging", "dev"]
 
 SERVICES: tuple[str, ...] = get_args(Service)
@@ -48,7 +48,7 @@ def service_origin(service: Service, environment: Environment, dev_port: int | N
 
 
 def app_hosts(environment: Environment, *origins: str) -> frozenset[str]:
-    """Hostnames (no scheme, no port) of the six service hosts, plus those of `origins`."""
+    """Hostnames (no scheme, no port) of the five service hosts, plus those of `origins`."""
     urls = [*(service_origin(service, environment) for service in SERVICES), *origins]
     return frozenset(host for url in urls if (host := urlsplit(url).hostname))
 

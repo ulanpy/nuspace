@@ -8,10 +8,10 @@ export const ENVIRONMENTS = [
 
 /** What both 404s say above the list of hosts. */
 export const NOT_FOUND_LEAD =
-  "Nuspace is six sites now, each at its own address:"
+  "Nuspace is five sites now, each at its own address:"
 
 /**
- * The six hosts, in launcher order. The 404 page names all six whether or not
+ * The five hosts, in launcher order. The 404 page names all five whether or not
  * a host has a row in `ROUTE_TABLE` yet, so the list a lost visitor reads is
  * the 2.0 list from the first deploy.
  *
@@ -49,16 +49,6 @@ export const SERVICES: readonly Service[] = [
       production: "events.nuspace.kz",
       staging: "events_staging.nuspace.kz",
       development: "events.localhost",
-    },
-  },
-  {
-    key: "opportunities",
-    name: "Opportunities",
-    prompt: "Looking for opportunities?",
-    hosts: {
-      production: "opportunities.nuspace.kz",
-      staging: "opportunities_staging.nuspace.kz",
-      development: "opportunities.localhost",
     },
   },
   {
@@ -134,11 +124,6 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     mount: "/events",
     routes: ["/", "/$eventId"],
     params: { eventId: "[0-9]+" },
-  },
-  {
-    service: "opportunities",
-    mount: "/opportunities",
-    routes: ["/"],
   },
   {
     // The account host. `/` (the people directory) joins this row with #436.

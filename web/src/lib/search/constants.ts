@@ -8,14 +8,12 @@ export const SEARCH_KINDS = [
   "page",
   "course",
   "event",
-  "opportunity",
 ] as const satisfies readonly SearchKind[]
 
 export const KIND_LABELS: Record<SearchKind, string> = {
   page: "Pages",
   course: "Courses",
   event: "Events",
-  opportunity: "Opportunities",
 }
 
 /** Results per request; the backend's default too. */

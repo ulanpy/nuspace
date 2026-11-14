@@ -22,7 +22,7 @@ def _config(environment: str, dev_app_url: str = "http://localhost"):
 
 
 def test_six_services():
-    assert set(SERVICES) == {"root", "courses", "events", "opportunities", "pages", "my"}
+    assert set(SERVICES) == {"root", "courses", "events", "pages", "my"}
 
 
 @pytest.mark.parametrize("service", [s for s in SERVICES if s != "root"])

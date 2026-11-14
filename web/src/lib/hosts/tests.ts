@@ -172,7 +172,7 @@ describe("nginx include", () => {
 })
 
 describe("404 page", () => {
-  it("names the six hosts of its environment and loads no script", () => {
+  it("names the five hosts of its environment and loads no script", () => {
     const page = renderNotFoundPage(SERVICES, "staging")
     for (const service of SERVICES) {
       assert.ok(page.includes(`https://${service.hosts.staging}/`))

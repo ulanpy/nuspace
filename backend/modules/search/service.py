@@ -34,7 +34,6 @@ from backend.modules.search.records import (
     course_record,
     event_record,
     grade_report_record,
-    opportunity_record,
     page_record,
 )
 from backend.modules.search.repository import SearchRepository
@@ -55,7 +54,6 @@ from backend.modules.search.sources import (
     EVENTS,
     GRADE_REPORTS,
     OPEN_EVENT_STATUSES,
-    OPPORTUNITIES,
     PAGES,
     SOURCES,
     SOURCES_BY_NAME,
@@ -197,8 +195,6 @@ class SearchService:
             ]
         if ids := wanted.get(EVENTS):
             found += [event_record(event) for event in await repo.events(ids)]
-        if ids := wanted.get(OPPORTUNITIES):
-            found += [opportunity_record(row) for row in await repo.opportunities(ids)]
         if ids := wanted.get(COURSES):
             found += [course_record(row) for row in await repo.courses(ids)]
         if ids := wanted.get(GRADE_REPORTS):

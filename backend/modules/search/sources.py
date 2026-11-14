@@ -1,6 +1,6 @@
 """The indexes search reads, one per structured source, and the coarse filters pushed into them.
 
-A source is one index: Pages, events, opportunities, enrolled-course records,
+A source is one index: Pages, events, enrolled-course records,
 grade reports and the registrar catalogue. Telegram channels (#442) and profile
 pages (#440) join as more entries here.
 
@@ -36,9 +36,6 @@ class SourceIndex:
 
 PAGES = SourceIndex("page", SearchKind.page, "pages")
 EVENTS = SourceIndex("event", SearchKind.event, "events", crop_attribute="description")
-OPPORTUNITIES = SourceIndex(
-    "opportunity", SearchKind.opportunity, "opportunities", crop_attribute="description"
-)
 COURSES = SourceIndex("course", SearchKind.course, "courses")
 GRADE_REPORTS = SourceIndex("grade_report", SearchKind.course, "grade_reports")
 CATALOGUE = SourceIndex("catalogue", SearchKind.course, "course_schedule_catalog")
@@ -53,7 +50,6 @@ def source_key(source: SourceIndex, primary_key: int | str) -> str:
 SOURCES: tuple[SourceIndex, ...] = (
     PAGES,
     EVENTS,
-    OPPORTUNITIES,
     COURSES,
     GRADE_REPORTS,
     CATALOGUE,

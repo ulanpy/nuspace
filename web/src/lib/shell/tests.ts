@@ -4,14 +4,13 @@ import { describe, it } from "node:test"
 import { launcherItems, visibleSections } from "./functions.ts"
 
 describe("launcher", () => {
-  it("lists the six hosts by name, in launcher order", () => {
+  it("lists the five hosts by name, in launcher order", () => {
     assert.deepEqual(
       launcherItems("nuspace.kz").map((item) => [item.key, item.name]),
       [
         ["root", "Search"],
         ["courses", "Courses"],
         ["events", "Events"],
-        ["opportunities", "Opportunities"],
         ["pages", "Pages"],
         ["my", "My Nuspace"],
       ]

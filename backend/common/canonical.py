@@ -7,7 +7,7 @@ with `config.service_origin(location.service)` for the absolute URL: the origin
 comes from the environment, never from a request header.
 
 Links are bare: no `?q=`, no filters, no focus. A Source that has no address of
-its own (an opportunity, a course, a grade report) points at the screen that
+its own (a course, a grade report) points at the screen that
 lists it.
 """
 
@@ -37,7 +37,6 @@ def event(event_id: int) -> Location:
     return Location("events", f"/{event_id}")
 
 
-OPPORTUNITIES = Location("opportunities", "/")
 COURSES = Location("courses", "/")
 GRADE_REPORTS = Location("courses", "/stats")
 CATALOGUE = Location("courses", "/planner")

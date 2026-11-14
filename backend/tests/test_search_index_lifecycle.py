@@ -37,7 +37,6 @@ from backend.modules.events.models import (
     EventType,
     RegistrationPolicy,
 )
-from backend.modules.opportunities.models import Opportunity, OpportunityType
 from backend.modules.pages.models import PageVisibility
 from backend.tests.harness import BACKEND_DIR, Viewer
 
@@ -53,37 +52,6 @@ async def _documents(app: FastAPI, uid: str) -> dict[int | str, dict]:
 
 
 # --- Write-time maintenance, over HTTP ---------------------------------------
-
-
-@pytest.mark.asyncio
-async def test_an_opportunity_is_searchable_from_create_to_delete(
-    guest: Viewer, site_admin: Viewer, search_settled: Settled
-) -> None:
-    created = await site_admin.client.post(
-        "/api/opportunities",
-        json={"name": "Quantum Fellowship", "type": "grant", "description": "for physicists"},
-    )
-    assert created.status_code == 201
-    opportunity_id = created.json()["id"]
-
-    async def search(keyword: str) -> list[int]:
-        await search_settled()
-        response = await guest.client.get("/api/opportunities", params={"q": keyword})
-        assert response.status_code == 200
-        return [item["id"] for item in response.json()["items"]]
-
-    assert await search("Quantum") == [opportunity_id]
-
-    edited = await site_admin.client.patch(
-        f"/api/opportunities/{opportunity_id}", json={"name": "Zebra Fellowship"}
-    )
-    assert edited.status_code == 200
-    assert await search("Quantum") == []
-    assert await search("Zebra") == [opportunity_id]
-
-    deleted = await site_admin.client.delete(f"/api/opportunities/{opportunity_id}")
-    assert deleted.status_code == 204
-    assert await search("Zebra") == []
 
 
 @pytest.mark.asyncio
@@ -268,12 +236,14 @@ async def test_the_rebuild_repopulates_from_postgres_in_batches(
 ) -> None:
     async with db.begin() as session:
         session.add_all(
-            Opportunity(name=f"Rebuilt Fellowship {n}", type=OpportunityType.GRANT)
+            GradeReport(
+                course_code=f"REBU {n}", course_title=f"Rebuilt Fellowship {n}", term="FA2025"
+            )
             for n in range(5)
         )
     # A document whose row is gone: the rebuild must not keep it.
     await meilisearch.upsert(
-        app.state.meilisearch_client, "opportunities", {"id": 999, "name": "Rebuilt Ghost"}
+        app.state.meilisearch_client, "grade_reports", {"id": 999, "course_title": "Rebuilt Ghost"}
     )
     await search_settled()
 
@@ -282,10 +252,10 @@ async def test_the_rebuild_repopulates_from_postgres_in_batches(
         client, app.state.db_manager, ALL_MEILISEARCH_INDEXES, batch_size=2
     )
 
-    assert counts["opportunities"] == 5
-    assert [n for uid, n in client.batches if uid.startswith("opportunities")] == [2, 2, 1]
-    response = await guest.client.get("/api/opportunities", params={"q": "Rebuilt", "size": 20})
-    names = sorted(item["name"] for item in response.json()["items"])
+    assert counts["grade_reports"] == 5
+    assert [n for uid, n in client.batches if uid.startswith("grade_reports")] == [2, 2, 1]
+    response = await guest.client.get("/api/grades", params={"keyword": "Rebuilt", "size": 20})
+    names = sorted(item["course_title"] for item in response.json()["items"])
     assert names == [f"Rebuilt Fellowship {n}" for n in range(5)]
     # No staging index is left behind.
     uids = {
@@ -300,7 +270,9 @@ async def test_the_rebuild_command_fills_the_indexes(
     guest: Viewer, db: async_sessionmaker[AsyncSession], search_settled: Settled
 ) -> None:
     async with db.begin() as session:
-        session.add(Opportunity(name="Commanded Fellowship", type=OpportunityType.GRANT))
+        session.add(
+            GradeReport(course_code="COMM 1", course_title="Commanded Fellowship", term="FA2025")
+        )
 
     process = await asyncio.create_subprocess_exec(
         sys.executable,
@@ -314,9 +286,9 @@ async def test_the_rebuild_command_fills_the_indexes(
     output, _ = await process.communicate()
 
     assert process.returncode == 0, output.decode()
-    assert "opportunities: 1 documents" in output.decode()
-    response = await guest.client.get("/api/opportunities", params={"q": "Commanded"})
-    assert [item["name"] for item in response.json()["items"]] == ["Commanded Fellowship"]
+    assert "grade_reports: 1 documents" in output.decode()
+    response = await guest.client.get("/api/grades", params={"keyword": "Commanded"})
+    assert [item["course_title"] for item in response.json()["items"]] == ["Commanded Fellowship"]
 
 
 @pytest.mark.asyncio
@@ -334,11 +306,6 @@ async def test_the_rebuild_and_the_write_time_upsert_write_the_same_documents(
             json={"name": "Same Fields", "slug": "same-fields", "visibility": "internal"},
         )
     ).status_code == 200
-    assert (
-        await site_admin.client.post(
-            "/api/opportunities", json={"name": "Same Fields", "type": "forum"}
-        )
-    ).status_code == 201
     async with db.begin() as session:
         session.add(
             Event(
