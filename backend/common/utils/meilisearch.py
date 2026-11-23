@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from enum import Enum
 from typing import Any, Sequence, Type
 
@@ -157,6 +157,7 @@ async def sync_with_db(
     primary_key: str = "id",
     make_document: Callable[[Mapping[str, Any]], dict[str, Any]] = to_document,
     batch_size: int = DEFAULT_BATCH_SIZE,
+    after_batch: Callable[[Sequence[dict[str, Any]]], Awaitable[None]] | None = None,
 ) -> int:
     """
     Copy every row of ``model`` into the index, ``batch_size`` rows at a time.
@@ -187,5 +188,7 @@ async def sync_with_db(
             f"/indexes/{storage_name}/documents", json=documents
         )
         await wait_for_task(meilisearch_client, response)
+        if after_batch:
+            await after_batch(documents)
         written += len(rows)
         last_key = rows[-1][primary_key]

@@ -19,6 +19,7 @@ from backend.modules.courses.registrar.startup import (
     setup_schedule_catalog,
 )
 from backend.modules.routers import routers
+from backend.modules.search import embeddings
 
 
 @asynccontextmanager
@@ -35,6 +36,10 @@ async def lifespan(app: FastAPI):
         await setup_db(app)
         await setup_redis(app)
         await setup_meilisearch(app, index_configs=ALL_MEILISEARCH_INDEXES)
+        app.state.embeddings = embeddings.EmbeddingIndex(
+            embeddings.GeminiEmbedder(), app.state.db_manager.get_session_maker()
+        )
+        embeddings.configure(app.state.embeddings)
         await setup_schedule_catalog(app)
 
         await setup_bot(app)
@@ -47,6 +52,7 @@ async def lifespan(app: FastAPI):
         await cleanup_rbq(app)
         await cleanup_bot(app)
         await cleanup_schedule_catalog(app)
+        embeddings.configure(None)
         await cleanup_meilisearch(app)
         await cleanup_redis(app)
         await cleanup_db(app)

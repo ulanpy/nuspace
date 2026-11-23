@@ -74,6 +74,11 @@ SOURCES: tuple[SourceIndex, ...] = (
 
 SOURCES_BY_NAME = {source.name: source for source in SOURCES}
 
+# The Sources embedded for dense retrieval (#441), by index uid. Messages and
+# profiles are not.
+EMBEDDED_SOURCES: tuple[SourceIndex, ...] = (PAGES, EVENTS, COURSES, GRADE_REPORTS, CATALOGUE)
+EMBEDDED_SOURCES_BY_UID = {source.uid: source for source in EMBEDDED_SOURCES}
+
 
 def parse_source_key(key: str) -> tuple[SourceIndex, int | str]:
     """The inverse of `source_key`. Pages, events and courses have integer keys;

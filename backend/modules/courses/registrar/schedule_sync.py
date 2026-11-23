@@ -9,6 +9,7 @@ from backend.modules.courses.registrar.schedule_gcs import (
 from backend.modules.courses.registrar.schedule_sync_worker import (
     merge_priorities_into_schedule,
 )
+from backend.modules.search import embeddings
 from google.cloud import storage
 from httpx import AsyncClient
 
@@ -105,5 +106,12 @@ async def sync_schedule_catalog(
         return 0
 
     await _recreate_schedule_index(meilisearch_client, documents)
+    await embeddings.embed_documents(
+        SCHEDULE_INDEX_UID,
+        documents,
+        ("course_code", "title", "school", "level"),
+        primary_key=SCHEDULE_PRIMARY_KEY,
+        prune=True,
+    )
     logger.info("Synced %s registrar schedule entries from GCS", len(documents))
     return len(documents)

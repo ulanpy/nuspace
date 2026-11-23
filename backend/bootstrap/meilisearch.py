@@ -11,6 +11,7 @@ from sqlalchemy.orm import DeclarativeBase
 from backend.common.utils import meilisearch
 from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
+from backend.modules.search import embeddings
 
 
 @dataclass
@@ -80,19 +81,30 @@ class MeilisearchIndexConfig:
 
     async def upsert(self, client: httpx.AsyncClient, source: Any) -> None:
         """Index one ORM instance after its transaction has committed."""
+        document = self.to_document(source)
         await meilisearch.upsert(
-            client,
-            self.uid,
-            self.to_document(source),
-            primary_key=self.get_primary_key_name(),
+            client, self.uid, document, primary_key=self.get_primary_key_name()
         )
+        await self.embed_documents([document])
 
     async def upsert_many(self, client: httpx.AsyncClient, sources: Sequence[Any]) -> None:
         """Index several ORM instances in one request, after their transaction has committed."""
-        await meilisearch.upsert_many(client, self.uid, [self.to_document(s) for s in sources])
+        documents = [self.to_document(s) for s in sources]
+        await meilisearch.upsert_many(client, self.uid, documents)
+        await self.embed_documents(documents)
 
     async def delete(self, client: httpx.AsyncClient, primary_key: int | str) -> None:
         await meilisearch.delete(client, self.uid, str(primary_key))
+        await embeddings.delete_document(self.uid, primary_key)
+
+    async def embed_documents(self, documents: Sequence[Mapping[str, Any]]) -> None:
+        """Embed documents just written, where this index is an embedded source (#441)."""
+        await embeddings.embed_documents(
+            self.uid,
+            documents,
+            self.get_searchable_names(),
+            primary_key=self.get_primary_key_name(),
+        )
 
 
 def create_meilisearch_client() -> httpx.AsyncClient:
@@ -187,6 +199,7 @@ async def rebuild_index(
             primary_key=index_config.get_primary_key_name(),
             make_document=index_config.to_document,
             batch_size=batch_size,
+            after_batch=index_config.embed_documents,
         )
         response = await client.post("/swap-indexes", json=[{"indexes": [live_uid, staging_uid]}])
         await meilisearch.wait_for_task(client, response)
