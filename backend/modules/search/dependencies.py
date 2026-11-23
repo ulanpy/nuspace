@@ -15,6 +15,7 @@ async def get_search_service(
         uow=uow,
         retriever=LexicalRetriever(request.app.state.meilisearch_client),
         service_origin=request.app.state.config.service_origin,
+        embeddings=getattr(request.app.state, "embeddings", None),
     )
 
 

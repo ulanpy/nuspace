@@ -1,7 +1,8 @@
 services:
   postgres:
     container_name: postgres
-    image: postgres:17.7
+    # pgvector for search embeddings (#441).
+    image: pgvector/pgvector:pg17
     networks:
       - nuros
     restart: always

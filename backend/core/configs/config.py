@@ -64,6 +64,8 @@ class Config(BaseSettings):
     GEMINI_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-3-flash-preview"
     GEMINI_LOCATION: str = "global"
+    # Dense search embeddings (768 dimensions), over the same client.
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
     GEMINI_USE_ENTERPRISE: bool | None = None
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
