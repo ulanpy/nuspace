@@ -83,12 +83,6 @@ export const qk = {
     detail: (slug: string) => ["admin-link", slug] as const,
   },
 
-  announcements: {
-    all: () => ["announcements"] as const,
-    bundle: () => ["announcements", "bundle"] as const,
-    telegram: () => ["announcements", "telegram"] as const,
-  },
-
   courses: {
     all: () => ["courses"] as const,
     catalog: (filters: Record<string, unknown>) =>
@@ -114,11 +108,6 @@ export const qk = {
       ["courses", "planner", scheduleId ?? "default"] as const,
     /** The list of plans, without their courses. */
     plannerPlans: () => ["courses", "planner-plans"] as const,
-  },
-
-  sgotinish: {
-    all: () => ["sgotinish"] as const,
-    stats: () => ["sgotinish", "stats"] as const,
   },
 
   search: {

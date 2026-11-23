@@ -10,8 +10,7 @@ import { Card } from "@/components/ui/card"
  *
  * No visibility badge. This grid only ever holds pages the viewer is allowed
  * to see, which is a mix of `public` and `internal`, so every card wore the
- * same two labels and said nothing — and on `/mynuspace` it said it loudly
- * about pages the viewer does not need to think about. `page.visibility` is
+ * same two labels and said nothing. `page.visibility` is
  * still on the model for the places that manage a page, not for browse.
  */
 export function PageCard({ page }: { page: Page }) {

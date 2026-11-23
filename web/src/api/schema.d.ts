@@ -1628,49 +1628,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/announcements/telegram": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Announcements From Telegram
-         * @description Get latest announcements from the public Telegram channel.
-         */
-        get: operations["get_announcements_from_telegram_announcements_telegram_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/announcements/bundle": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Announcements Bundle Route
-         * @description Single endpoint for the announcements landing page to reduce initial request fan-out.
-         *
-         *     The single list contains approved upcoming events. Recruitment events are ordered by their
-         *     deadline; all other events are ordered by their start time.
-         */
-        get: operations["get_announcements_bundle_route_announcements_bundle_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/elections/counter/stream": {
         parameters: {
             query?: never;
@@ -1769,13 +1726,6 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-        };
-        /**
-         * AnnouncementsBundleResponse
-         * @description Aggregated response for the announcements landing page to reduce request count.
-         */
-        AnnouncementsBundleResponse: {
-            events: components["schemas"]["ListEventResponse"];
         };
         /** AuditProgramResult */
         AuditProgramResult: {
@@ -7191,75 +7141,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditResponse"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_announcements_from_telegram_announcements_telegram_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_announcements_bundle_route_announcements_bundle_get: {
-        parameters: {
-            query?: {
-                events_page?: number;
-                events_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnnouncementsBundleResponse"];
                 };
             };
             /** @description Validation Error */

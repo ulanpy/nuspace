@@ -236,8 +236,7 @@ pnpm build
 - `pnpm format` rewrites *every* file that has drifted, not just the one you
   touched. Stage deliberately rather than `git add -A`.
 - `pnpm lint` currently exits 1 on a **pre-existing** baseline of errors in
-  files you are not touching, among them `routes/announcements/index.tsx`
-  (`Date.now()` called during render), `routes/events/` (non-canonical
+  files you are not touching, among them `routes/events/` (non-canonical
   Tailwind classes) and the workbench's own scratch files. Check whether your change added to the count rather than
   assuming you caused it. `uv run ruff check .` has a similar baseline of 11.
 

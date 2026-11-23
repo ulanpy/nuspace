@@ -3,7 +3,6 @@ from typing import List
 from fastapi import APIRouter
 
 from backend.modules.agent import api as agent_api
-from backend.modules.announcements import api as announcements_api
 from backend.modules.auth import api as auth_api
 from backend.modules.bot.bot import web_router
 from backend.modules.courses.courses import api as courses_api
@@ -36,7 +35,6 @@ routers: List[APIRouter] = [
     statistics_api.router,
     templates_api.router,
     degree_audit_api.router,
-    announcements_api.router,
     elections_api.router,
     sgotinish_api.router,
     # Every `/og/<path>`: the host decides which card a path gets.
