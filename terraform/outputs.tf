@@ -94,8 +94,3 @@ output "schedule_sync_gcs_object" {
   value       = format("gs://%s/registrar/course_schedule_catalog.json", var.media_bucket_name)
   description = "GCS object written by the schedule sync job and read by FastAPI"
 }
-
-output "event_reminder_job_name" {
-  value       = google_cloud_run_v2_job.event_reminder.name
-  description = "Cloud Run Job that sends the 24h event reminders on Telegram"
-}
