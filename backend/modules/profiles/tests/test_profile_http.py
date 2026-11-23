@@ -21,7 +21,13 @@ async def test_a_new_profile_is_private_with_no_handle(member: Viewer) -> None:
     response = await member.client.get("/api/me/profile")
 
     assert response.status_code == 200
-    assert response.json() == {"handle": None, "visibility": "private", "content": None}
+    assert response.json() == {
+        "handle": None,
+        "visibility": "private",
+        "content": None,
+        "picture": None,
+        "banner": None,
+    }
 
 
 @pytest.mark.asyncio
@@ -38,7 +44,13 @@ async def test_a_member_sets_a_handle_and_a_visibility(member: Viewer) -> None:
     )
 
     assert response.status_code == 200
-    assert response.json() == {"handle": "aigerim-b", "visibility": "internal", "content": None}
+    assert response.json() == {
+        "handle": "aigerim-b",
+        "visibility": "internal",
+        "content": None,
+        "picture": None,
+        "banner": None,
+    }
     assert (await member.client.get("/api/me/profile")).json()["handle"] == "aigerim-b"
 
 
@@ -222,6 +234,7 @@ async def test_the_identity_header_is_read_from_users_at_request_time(
         "name": "Aigerim",
         "surname": "Bekova",
         "picture": "https://example.com/a.png",
+        "banner": None,
         "department": "School of Engineering and Digital Sciences",
         "sg_role": "capo",
         "content": design,

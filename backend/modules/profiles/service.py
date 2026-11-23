@@ -2,7 +2,9 @@ from fastapi import HTTPException, status
 
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.models import User, UserRole
+from backend.modules.media.interfaces import ObjectStorage
 from backend.modules.profiles import schemas
+from backend.modules.profiles.media import ProfileMediaSlot, is_own_upload
 from backend.modules.profiles.repository import ProfileRepository
 from backend.modules.shared.visibility import RecordVisibility, visible_to
 
@@ -13,17 +15,31 @@ PROFILE_NOT_FOUND_DETAIL = "Profile not found"
 SG_ROLES = frozenset({UserRole.boss, UserRole.capo, UserRole.soldier})
 
 
-def _settings(user: User) -> schemas.ProfileSettingsResponse:
-    return schemas.ProfileSettingsResponse(
-        handle=user.handle,
-        visibility=user.profile_visibility,
-        content=user.profile_content,
-    )
-
-
 class ProfileService:
-    def __init__(self, uow: UnitOfWork):
+    def __init__(self, uow: UnitOfWork, storage: ObjectStorage):
         self.uow = uow
+        self.storage = storage
+
+    async def _settings(self, user: User) -> schemas.ProfileSettingsResponse:
+        picture, banner = await self._urls(user)
+        return schemas.ProfileSettingsResponse(
+            handle=user.handle,
+            visibility=user.profile_visibility,
+            content=user.profile_content,
+            picture=picture,
+            banner=banner,
+        )
+
+    async def _urls(self, user: User) -> tuple[str | None, str | None]:
+        """Download URLs for the custom picture and banner, in that order.
+
+        The picture falls back to the sign-in avatar; the banner has no fallback.
+        """
+        names = [name for name in (user.profile_picture, user.profile_banner) if name]
+        urls = iter(await self.storage.generate_download_urls(names))
+        picture = next(urls) if user.profile_picture else user.picture or None
+        banner = next(urls) if user.profile_banner else None
+        return picture, banner
 
     async def _own(self, repo: ProfileRepository, sub: str) -> User:
         user = await repo.get_by_sub(sub)
@@ -36,7 +52,7 @@ class ProfileService:
     async def get_settings(self, sub: str) -> schemas.ProfileSettingsResponse:
         async with self.uow:
             user = await self._own(self.uow.get_repo(ProfileRepository), sub)
-            return _settings(user)
+            return await self._settings(user)
 
     async def update_settings(
         self, sub: str, update: schemas.ProfileSettingsUpdate
@@ -59,7 +75,7 @@ class ProfileService:
             # Inside the transaction, so a race on the unique index surfaces as
             # an IntegrityError the route turns into the same 409.
             await repo.flush()
-            return _settings(user)
+            return await self._settings(user)
 
     async def save_content(self, sub: str, content: dict) -> schemas.ProfileSettingsResponse:
         async with self.uow:
@@ -67,7 +83,32 @@ class ProfileService:
             user = await self._own(repo, sub)
             user.profile_content = content
             await repo.flush()
-            return _settings(user)
+            return await self._settings(user)
+
+    async def confirm_media(
+        self, sub: str, slot: ProfileMediaSlot, filename: str
+    ) -> schemas.ProfileSettingsResponse:
+        """Point the picture or banner at an object the viewer just uploaded.
+
+        Only a name `/bucket/upload-url` could have issued to this person is
+        accepted. The replaced object is deleted once the new one is stored.
+        """
+        if not is_own_upload(slot, sub, filename):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="That upload was not issued to you",
+            )
+        column = "profile_picture" if slot == "picture" else "profile_banner"
+        async with self.uow:
+            repo = self.uow.get_repo(ProfileRepository)
+            user = await self._own(repo, sub)
+            replaced = getattr(user, column)
+            setattr(user, column, filename)
+            await repo.flush()
+            response = await self._settings(user)
+        if replaced and replaced != filename:
+            await self.storage.delete_object(replaced)
+        return response
 
     async def read(self, handle: str, viewer: tuple[dict, dict]) -> schemas.ProfileResponse:
         """A profile page by handle, or 404 for anyone `visible_to` turns away.
@@ -83,11 +124,13 @@ class ProfileService:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail=PROFILE_NOT_FOUND_DETAIL
                 )
+            picture, banner = await self._urls(user)
             return schemas.ProfileResponse(
                 handle=handle,
                 name=user.name,
                 surname=user.surname,
-                picture=user.picture or None,
+                picture=picture,
+                banner=banner,
                 department=user.department.name if user.department else None,
                 sg_role=user.role.value if user.role in SG_ROLES else None,
                 content=user.profile_content,

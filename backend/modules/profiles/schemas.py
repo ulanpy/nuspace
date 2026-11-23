@@ -16,6 +16,8 @@ class ProfileSettingsResponse(BaseModel):
     handle: str | None
     visibility: PageVisibility
     content: dict | None
+    picture: str | None = Field(description="The custom picture's URL; null until one is uploaded")
+    banner: str | None = Field(description="The banner's URL; null until one is uploaded")
 
 
 class ProfileSettingsUpdate(BaseModel):
@@ -38,6 +40,13 @@ class ProfileContentUpdate(BaseModel):
     content: dict = Field(..., description="The Puck document the person wrote")
 
 
+class ProfileMediaConfirm(BaseModel):
+    filename: str = Field(
+        ...,
+        description="The object name the upload-url step issued, once its PUT has finished",
+    )
+
+
 class ProfileResponse(BaseModel):
     """A profile page as a reader sees it.
 
@@ -48,7 +57,8 @@ class ProfileResponse(BaseModel):
     handle: str
     name: str
     surname: str
-    picture: str | None
+    picture: str | None = Field(description="The custom picture if set, else the sign-in avatar")
+    banner: str | None = Field(description="The banner's URL; null when none is set")
     department: str | None
     sg_role: Literal["boss", "capo", "soldier"] | None = Field(
         description="The Student Government role; null outside SG"

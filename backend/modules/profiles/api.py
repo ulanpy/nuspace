@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.modules.profiles import schemas
 from backend.modules.profiles.dependencies import get_profile_service
+from backend.modules.profiles.media import ProfileMediaSlot
 from backend.modules.profiles.service import ProfileService, raise_handle_taken
 
 router = APIRouter(tags=["Profile Routes"])
@@ -48,6 +49,17 @@ async def save_my_profile_content(
 ) -> schemas.ProfileSettingsResponse:
     """Save the design the profile editor publishes."""
     return await service.save_content(user[0]["sub"], body.content)
+
+
+@router.put("/me/profile/{slot}", response_model=schemas.ProfileSettingsResponse)
+async def confirm_my_profile_media(
+    slot: ProfileMediaSlot, body: schemas.ProfileMediaConfirm, user: SignedIn, service: Service
+) -> schemas.ProfileSettingsResponse:
+    """Step three of the presigned flow for the picture or banner.
+
+    Writes the object to `users`. 422 for a name the caller was not issued.
+    """
+    return await service.confirm_media(user[0]["sub"], slot, body.filename)
 
 
 @router.get("/profiles/{handle}", response_model=schemas.ProfileResponse)

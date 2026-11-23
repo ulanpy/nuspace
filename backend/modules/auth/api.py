@@ -32,6 +32,8 @@ from backend.modules.auth.schemas import (
 )
 from backend.modules.auth.service import AuthService
 from backend.modules.bot.utils.telegram_link_tokens import issue_telegram_link_token
+from backend.modules.media.dependencies import get_media_service
+from backend.modules.media.service import MediaService
 
 router = APIRouter(tags=["Auth Routes"])
 # Auth-flow routes must not call get_creds_* (refresh-token rotation / pre-login).
@@ -155,10 +157,13 @@ async def refresh_token(
 async def get_current_user(
     principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     auth_service: AuthService = Depends(deps.get_auth_service),
+    media_service: MediaService = Depends(get_media_service),
     extended: bool = False,
 ):
     kc_principal, app_principal = principals
-    return await auth_service.get_current_user(kc_principal, app_principal)
+    return await auth_service.get_current_user(
+        kc_principal, app_principal, storage=media_service.storage
+    )
 
 
 @router.get("/logout")
