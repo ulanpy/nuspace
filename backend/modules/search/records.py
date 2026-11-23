@@ -16,10 +16,11 @@ Each record carries its `gate`, the read predicate for its kind:
 
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Protocol
 
 from backend.common import canonical
-from backend.common.canonical import Location
+from backend.common.canonical import ExternalLocation, Location
 from backend.modules.auth.dependencies import is_guest
 from backend.modules.courses.models import Course, GradeReport
 from backend.modules.events.models import Event, EventStatus
@@ -36,6 +37,8 @@ from backend.modules.search.sources import (
     source_key,
 )
 from backend.modules.shared.visibility import RecordVisibility, is_site_admin, visible_to
+
+MESSAGE_TITLE_CHARS = 80
 
 # The credentials pair `get_creds_or_guest` returns.
 Principal = tuple[dict, dict]
@@ -75,7 +78,7 @@ class Record:
     source: SourceIndex
     primary_key: int | str
     title: str
-    location: Location
+    location: Location | ExternalLocation
     gate: Gate
     date: SourceDate | None = None
     # A snippet's text when Meilisearch cropped none.
@@ -183,6 +186,26 @@ def grade_report_record(report: GradeReport) -> Record:
             f"Average GPA {float(report.avg_gpa):.2f}" if report.avg_gpa is not None else None,
             f"{report.grades_count} grades" if report.grades_count else None,
         ),
+    )
+
+
+def message_record(source: SourceIndex, document: dict[str, Any]) -> Record:
+    """A Telegram message, titled by its first words and opened on `t.me`."""
+    text = _clean(document.get("text"))
+    posted = datetime.fromisoformat(document["date"])
+    if len(text) > MESSAGE_TITLE_CHARS:
+        text = text[:MESSAGE_TITLE_CHARS].rstrip() + "…"
+    return Record(
+        source=source,
+        primary_key=document["id"],
+        title=text,
+        location=canonical.telegram_message(document["channel"], document["id"]),
+        gate=Ungated(),
+        date=SourceDate(
+            role="posted", value=posted if posted.tzinfo else posted.replace(tzinfo=timezone.utc)
+        ),
+        text=document.get("text"),
+        facts=_facts(f"@{document['channel']}", document.get("author")),
     )
 
 

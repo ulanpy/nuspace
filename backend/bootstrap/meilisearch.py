@@ -148,7 +148,7 @@ async def ensure_indexes(
         await ensure_index(client, index_config)
 
 
-async def _delete_index(client: httpx.AsyncClient, uid: str) -> None:
+async def delete_index(client: httpx.AsyncClient, uid: str) -> None:
     response = await client.delete(f"/indexes/{uid}")
     try:
         await meilisearch.wait_for_task(client, response)
@@ -175,7 +175,7 @@ async def rebuild_index(
     live_uid = index_config.uid
     staging_uid = f"{live_uid}__rebuild"
     await ensure_index(client, index_config)  # the swap needs both sides to exist
-    await _delete_index(client, staging_uid)  # a previous run may have died mid-way
+    await delete_index(client, staging_uid)  # a previous run may have died mid-way
     await ensure_index(client, index_config, uid=staging_uid)
     try:
         count = await meilisearch.sync_with_db(
@@ -191,7 +191,7 @@ async def rebuild_index(
         response = await client.post("/swap-indexes", json=[{"indexes": [live_uid, staging_uid]}])
         await meilisearch.wait_for_task(client, response)
     finally:
-        await _delete_index(client, staging_uid)
+        await delete_index(client, staging_uid)
     return count
 
 

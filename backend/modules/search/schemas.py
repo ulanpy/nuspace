@@ -11,12 +11,14 @@ class SearchKind(str, Enum):
     """What a Source is, as the kind chips name it.
 
     One kind may span several indexes: `course` is enrolled-course records, grade
-    reports and the registrar catalogue alike.
+    reports and the registrar catalogue alike. `message` is Channel messages, one
+    index per Telegram channel.
     """
 
     page = "page"
     event = "event"
     course = "course"
+    message = "message"
 
 
 class MatchSpan(BaseModel):
@@ -34,7 +36,7 @@ class Snippet(BaseModel):
 class SourceDate(BaseModel):
     """The date a result shows, and what it is the date of."""
 
-    role: Literal["updated", "starts", "deadline"]
+    role: Literal["updated", "starts", "deadline", "posted"]
     value: datetime | date
 
 
