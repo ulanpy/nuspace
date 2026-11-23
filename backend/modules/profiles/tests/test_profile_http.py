@@ -84,7 +84,7 @@ async def test_saving_your_own_handle_again_is_not_a_conflict(member: Viewer) ->
         "people",
         # The slug list's.
         "admin",
-        "sgotinish",
+        "settings",
         # The slug rules.
         "Aigerim",
         "aigerim_b",

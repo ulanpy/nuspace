@@ -852,6 +852,7 @@ export interface paths {
          * Gcs Webhook
          * @description Pub/Sub push for GCS OBJECT_FINALIZE:
          *     - registrar schedule catalog JSON → reindex Meilisearch
+         *     - Telegram channel export (`telegram/<channel>/result.json`) → reindex that channel
          *     - media uploads (routing-prefix + custom metadata) → media upsert
          */
         post: operations["gcs_webhook_bucket_gcs_hook_post"];
