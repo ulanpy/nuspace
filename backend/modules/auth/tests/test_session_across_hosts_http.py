@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 import httpx
 import pytest
+from redis.asyncio import Redis
 from backend.core.configs.config import config
 from backend.tests.harness import Viewer
 from fastapi import FastAPI
@@ -18,10 +19,13 @@ from fastapi import FastAPI
 AUTH_COOKIES = (config.COOKIE_ACCESS_NAME, config.COOKIE_REFRESH_NAME, config.COOKIE_APP_NAME)
 
 
-class FakeRedis:
-    """The four commands the login round-trip uses, in memory."""
+class FakeRedis(Redis):
+    """The four commands the login round-trip uses, in memory.
 
-    def __init__(self) -> None:
+    A `Redis` subclass so `Infra` accepts it; `Redis.__init__` is skipped, no connection.
+    """
+
+    def __init__(self) -> None:  # noqa: super-init-not-called
         self.store: dict[str, str] = {}
 
     async def setex(self, key: str, _ttl: int, value: str) -> None:

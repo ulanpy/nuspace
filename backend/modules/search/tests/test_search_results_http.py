@@ -343,7 +343,7 @@ async def test_the_kind_filter_narrows_results_but_every_chip_keeps_its_count(
     everything = await _search(guest, "chess")
     events = await _search(guest, "chess", kind="event")
 
-    expected_counts = {"page": 0, "event": 2, "course": 1}
+    expected_counts = {"page": 0, "event": 2, "course": 1, "message": 0, "profile": 0}
     assert everything["counts"] == expected_counts
     assert everything["estimated_total"] == 3
     assert len(everything["results"]) == 3

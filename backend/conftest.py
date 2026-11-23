@@ -19,6 +19,8 @@ MEILI_PORT = os.environ.get("NUSPACE_TEST_MEILI_PORT", "57700")
 
 TEST_ENV = {
     "IS_DEBUG": "false",
+    # No Gemini in tests: a missing key fails fast, where ADC waits on a metadata server.
+    "GEMINI_USE_ENTERPRISE": "false",
     "MOCK_KEYCLOAK": "true",
     "NUSPACE": "https://nuspace.kz",
     # Stores: infra/test.docker-compose.yml

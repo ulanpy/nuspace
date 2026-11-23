@@ -202,7 +202,7 @@ async def test_startup_creates_missing_indexes_with_their_facets(app: FastAPI, d
     await bootstrap.cleanup_meilisearch(restarted)
 
     settings = (await client.get("/indexes/pages/settings")).json()
-    assert settings["searchableAttributes"] == ["name"]
+    assert settings["searchableAttributes"] == ["name", "content_text"]
     assert settings["filterableAttributes"] == ["visibility", "id"]
     assert (await _documents(app, "pages")) == {}
 
@@ -325,11 +325,11 @@ async def test_the_rebuild_and_the_write_time_upsert_write_the_same_documents(
             Course(catalog_id="c1", course_code="SAME 1", level="UG", school="SSH", term="FA")
         )
         session.add(GradeReport(course_code="SAME 1", course_title="Same", term="FA2025"))
-    # The event and the course were inserted directly, so index them as the
+    # The event, the course and the harness users were inserted directly, so index them as the
     # service does, from the stored rows.
     async with db() as session:
         for index in ALL_MEILISEARCH_INDEXES:
-            if index.uid in {"events", "courses", "grade_reports"}:
+            if index.uid in {"events", "courses", "grade_reports", "users"}:
                 rows = (await session.execute(select(index.model))).scalars().all()
                 await index.upsert_many(app.state.meilisearch_client, rows)
     await search_settled()
