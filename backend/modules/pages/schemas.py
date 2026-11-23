@@ -8,6 +8,8 @@ from backend.modules.media.schemas import MediaResponse
 from backend.modules.pages.models.page import PageVisibility
 from backend.modules.shared.slug import validate_slug
 
+CONTENT_TEXT_MAX_LENGTH = 100_000
+
 
 class PageCreateRequest(BaseModel):
     name: str = Field(
@@ -34,6 +36,11 @@ class PageCreateRequest(BaseModel):
         default_factory=dict,
         description="Free-form page content",
         example={},
+    )
+    content_text: str = Field(
+        default="",
+        max_length=CONTENT_TEXT_MAX_LENGTH,
+        description="The text inside the page's blocks, for search",
     )
     visibility: PageVisibility = Field(
         default=PageVisibility.public,
@@ -124,6 +131,11 @@ class PageUpdateRequest(BaseModel):
     page_content: dict | None = Field(
         default=None,
         description="Free-form page content",
+    )
+    content_text: str | None = Field(
+        default=None,
+        max_length=CONTENT_TEXT_MAX_LENGTH,
+        description="The text inside the page's blocks, for search",
     )
     visibility: PageVisibility | None = Field(
         default=None,

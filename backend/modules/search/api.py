@@ -2,8 +2,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.modules.auth.dependencies import get_creds_or_guest
-from backend.modules.search.dependencies import get_search_service
+from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
+from backend.modules.search.dependencies import get_overview_service, get_search_service
+from backend.modules.search.overview import OverviewResponse, OverviewService
 from backend.modules.search.retrieval import SearchUnavailable
 from backend.modules.search.schemas import SearchKind, SearchResponse
 from backend.modules.search.service import SearchService
@@ -32,3 +33,21 @@ async def search_results(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Search is unavailable"
         ) from exc
+
+
+@router.get("/overview", response_model=OverviewResponse)
+async def search_overview(
+    viewer: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: Annotated[OverviewService, Depends(get_overview_service)],
+    q: Annotated[str, Query(max_length=256, description="What to search for.")],
+) -> OverviewResponse:
+    """A short cited answer over the top Sources this viewer may open (signed in only).
+
+    The query is searched again server-side for this viewer; Sources are never
+    accepted from the client. `answer` is null when there is no Overview (fewer
+    than three Sources, the model abstained, or it failed or timed out).
+    """
+    try:
+        return await service.overview(viewer, query=q)
+    except SearchUnavailable:
+        return OverviewResponse(answer=None)

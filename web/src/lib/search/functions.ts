@@ -1,4 +1,4 @@
-import { infiniteQueryOptions } from "@tanstack/react-query"
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
 import { format, isValid, parseISO } from "date-fns"
 
 import { api, unwrap } from "@/api/client"
@@ -8,6 +8,7 @@ import type {
   SearchKind,
   SearchParams,
   SearchResponse,
+  SearchOverview,
   SearchResult,
   Snippet,
   SnippetSegment,
@@ -45,6 +46,42 @@ export function searchResultsQueryOptions({
     getNextPageParam: (last: SearchResponse) => last.next_offset ?? undefined,
     staleTime: 60_000,
   })
+}
+
+/**
+ * The AI Overview for a signed-in viewer. A failure is not an error state: the
+ * block just does not appear, so the query swallows it into `null`. Never ask
+ * for a guest (the endpoint is 401 for one).
+ */
+export function overviewQueryOptions(q: string) {
+  return queryOptions({
+    queryKey: qk.search.overview(q),
+    queryFn: async (): Promise<SearchOverview | null> => {
+      try {
+        const overview = await unwrap(
+          api.GET("/search/overview", { params: { query: { q } } })
+        )
+        return overview.answer ? overview : null
+      } catch {
+        return null
+      }
+    },
+    staleTime: 60_000,
+    retry: false,
+  })
+}
+
+/** An answer as runs of text and `[n]` citations. */
+export function overviewParts(
+  answer: string
+): ({ text: string } | { cite: number })[] {
+  return answer
+    .split(/(\[\d+\])/)
+    .filter(Boolean)
+    .map((part) => {
+      const cite = /^\[(\d+)\]$/.exec(part)
+      return cite ? { cite: Number(cite[1]) } : { text: part }
+    })
 }
 
 /**

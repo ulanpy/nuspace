@@ -6,7 +6,7 @@ from backend.modules.pages.models import Page
 # coarse `visibility` filter (`modules/search/sources.py`).
 PAGES_INDEX = MeilisearchIndexConfig(
     model=Page,
-    searchable_columns=[Page.name],
+    searchable_columns=[Page.name, Page.content_text],
     filterable_attributes=[Page.visibility, Page.id],
     primary_key=Page.id,
 )
