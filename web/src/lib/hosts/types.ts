@@ -15,6 +15,12 @@ export interface Service {
   name: string
   /** The 404 page's question for this host: "Looking for events?". */
   prompt: string
+  /**
+   * Searches that mean "take me to this host", typed as the whole query:
+   * "pages", "clubs". Lowercase, single-spaced. The host's name and its own
+   * hostnames match too, without being listed here.
+   */
+  keywords: readonly string[]
   hosts: Record<Environment, string>
 }
 

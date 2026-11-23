@@ -39,6 +39,7 @@ export function hostHref(host: string, environment: Environment): string {
 
 export interface Destination {
   key: ServiceKey
+  name: string
   prompt: string
   host: string
   href: string
@@ -58,11 +59,49 @@ export function destinations(
     const host = service.hosts[environment]
     return {
       key: service.key,
+      name: service.name,
       prompt: service.prompt,
       host,
       href: hostHref(host, environment),
     }
   })
+}
+
+/** A search as `destinationFor` compares it: lowercase, no scheme, single-spaced. */
+function normalizeQuery(query: string): string {
+  return query
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "")
+    .replace(/\s+/g, " ")
+}
+
+/**
+ * The host a search means to go to, when the whole query names one: its name
+ * ("Pages"), one of its `keywords` ("clubs"), or one of its hostnames
+ * ("pages.nuspace.kz"). The address is in the visitor's own environment, as
+ * `destinations` gives it. A longer query ("chess club pages") is a search,
+ * not a destination. The root host is the search itself and never matches.
+ */
+export function destinationFor(
+  query: string,
+  hostname: string,
+  services: readonly Service[] = SERVICES
+): Destination | undefined {
+  const wanted = normalizeQuery(query)
+  if (!wanted) return undefined
+  const service = services.find(
+    (candidate) =>
+      candidate.key !== "root" &&
+      (candidate.name.toLowerCase() === wanted ||
+        candidate.keywords.includes(wanted) ||
+        Object.values(candidate.hosts).includes(wanted))
+  )
+  if (!service) return undefined
+  return destinations(hostname, services).find(
+    (destination) => destination.key === service.key
+  )
 }
 
 /** Whether a router path is `mount` itself or below it. */

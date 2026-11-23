@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
 
 import { Button } from "@/components/ui/button"
+import { destinationFor } from "@/lib/hosts"
 import { SUGGESTED_TERMS, searchResultsQueryOptions } from "@/lib/search"
 
 import { SearchField } from "./search-field"
@@ -20,8 +21,9 @@ function Wordmark() {
  * The root host's front door, Google's shape: the wordmark, one field, "I'm
  * Feeling Lucky", and a few terms to try.
  *
- * "I'm Feeling Lucky" searches the field's term (or the first suggested term
- * when the field is blank) and opens the top result's canonical address. With
+ * "I'm Feeling Lucky" opens the host the field's term names ("pages"), or else
+ * searches the term (or the first suggested term when the field is blank) and
+ * opens the top result's canonical address. With
  * no result it lands on the results page, which says so.
  */
 export function FrontDoor() {
@@ -32,6 +34,11 @@ export function FrontDoor() {
 
   async function feelLucky() {
     const q = value.trim() || SUGGESTED_TERMS[0]
+    const destination = destinationFor(q, window.location.hostname)
+    if (destination) {
+      window.location.assign(destination.href)
+      return
+    }
     setLucky(true)
     try {
       const data = await queryClient.fetchInfiniteQuery(

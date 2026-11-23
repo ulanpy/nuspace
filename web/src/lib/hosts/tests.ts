@@ -3,7 +3,12 @@ import { readFileSync } from "node:fs"
 import { describe, it } from "node:test"
 
 import { ROUTE_TABLE, SERVICES } from "./constants.ts"
-import { createHostRewrite, destinations, hostOf } from "./functions.ts"
+import {
+  createHostRewrite,
+  destinationFor,
+  destinations,
+  hostOf,
+} from "./functions.ts"
 import {
   checkOwnership,
   parseRouteTree,
@@ -346,6 +351,43 @@ describe("destinations", () => {
       SERVICES.map((s) => `http://${s.hosts.development}/`)
     )
     assert.equal(destinations("example.com")[0].href, "https://nuspace.kz/")
+  })
+})
+
+describe("destinationFor", () => {
+  const hrefFor = (query: string, hostname = "nuspace.kz") =>
+    destinationFor(query, hostname)?.href
+
+  it("takes a host's name, keyword or hostname to that host", () => {
+    assert.equal(hrefFor("pages"), "https://pages.nuspace.kz/")
+    assert.equal(hrefFor("  Clubs "), "https://pages.nuspace.kz/")
+    assert.equal(hrefFor("My   Nuspace"), "https://my.nuspace.kz/")
+    assert.equal(hrefFor("calendar"), "https://events.nuspace.kz/")
+    assert.equal(
+      hrefFor(" https://courses.nuspace.kz/ "),
+      "https://courses.nuspace.kz/"
+    )
+  })
+
+  it("answers in the visitor's environment", () => {
+    assert.equal(hrefFor("events", "localhost"), "http://events.localhost/")
+    assert.equal(
+      hrefFor("pages", "stage.nuspace.kz"),
+      "https://pages_staging.nuspace.kz/"
+    )
+  })
+
+  it("leaves longer queries, the root host and blanks to search", () => {
+    assert.equal(hrefFor("chess club pages"), undefined)
+    assert.equal(hrefFor("csci events"), undefined)
+    assert.equal(hrefFor("search"), undefined)
+    assert.equal(hrefFor("nuspace.kz"), undefined)
+    assert.equal(hrefFor("   "), undefined)
+  })
+
+  it("gives every keyword to one host only", () => {
+    const words = SERVICES.flatMap((s) => [s.name.toLowerCase(), ...s.keywords])
+    assert.equal(new Set(words).size, words.length)
   })
 })
 

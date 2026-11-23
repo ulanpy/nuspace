@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { ChevronDownIcon } from "lucide-react"
+import { ArrowUpRightIcon, ChevronDownIcon } from "lucide-react"
 
 import {
   EmptyState,
@@ -10,7 +10,7 @@ import {
 } from "@/components/shared/query/boundary"
 import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { destinations } from "@/lib/hosts"
+import { destinationFor, destinations, type Destination } from "@/lib/hosts"
 import {
   KIND_LABELS,
   SEARCH_KINDS,
@@ -115,6 +115,33 @@ function SearchUnavailable({
   )
 }
 
+/**
+ * The host a one-word search like "pages" or "calendar" names, above the
+ * results: Google's site link. The results still follow, since "courses" is
+ * also a word in course titles.
+ */
+function DestinationCard({ destination }: { destination: Destination }) {
+  return (
+    <a
+      href={destination.href}
+      className="group flex items-center justify-between gap-3 rounded-lg border px-4 py-3 hover:bg-muted"
+    >
+      <span className="min-w-0">
+        <span className="block text-xl/snug text-primary group-hover:underline">
+          {destination.name}
+        </span>
+        <span className="block truncate text-sm text-muted-foreground">
+          {destination.host}
+        </span>
+      </span>
+      <ArrowUpRightIcon
+        aria-hidden
+        className="size-4 shrink-0 text-muted-foreground"
+      />
+    </a>
+  )
+}
+
 function NothingFound({ q, kind }: { q: string; kind?: SearchKind }) {
   const suggestion = emptySuggestion(q, kind)
   return (
@@ -149,6 +176,10 @@ export function Results({ q, kind }: { q: string; kind?: SearchKind }) {
     () => dedupeResults(query.data?.pages.map((page) => page.results) ?? []),
     [query.data]
   )
+  // Only on All: a kind chip asks for that kind and nothing else.
+  const destination = kind
+    ? undefined
+    : destinationFor(q, window.location.hostname)
 
   let body
   if (query.isPending) {
@@ -163,7 +194,8 @@ export function Results({ q, kind }: { q: string; kind?: SearchKind }) {
       />
     )
   } else if (results.length === 0) {
-    body = <NothingFound q={q} kind={kind} />
+    // The destination card is the answer; "nothing found" under it would contradict it.
+    body = destination ? null : <NothingFound q={q} kind={kind} />
   } else {
     body = (
       <>
@@ -209,6 +241,7 @@ export function Results({ q, kind }: { q: string; kind?: SearchKind }) {
             ? countLine(first.estimated_total)
             : " "}
       </p>
+      {destination ? <DestinationCard destination={destination} /> : null}
       {body}
     </div>
   )

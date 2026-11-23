@@ -25,6 +25,7 @@ export const SERVICES: readonly Service[] = [
     key: "root",
     name: "Search",
     prompt: "Searching for something?",
+    keywords: [],
     hosts: {
       production: "nuspace.kz",
       staging: "stage.nuspace.kz",
@@ -35,6 +36,7 @@ export const SERVICES: readonly Service[] = [
     key: "courses",
     name: "Courses",
     prompt: "Looking for your courses?",
+    keywords: ["course", "schedule", "planner", "degree audit", "audit"],
     hosts: {
       production: "courses.nuspace.kz",
       staging: "courses_staging.nuspace.kz",
@@ -45,6 +47,7 @@ export const SERVICES: readonly Service[] = [
     key: "events",
     name: "Events",
     prompt: "Looking for events?",
+    keywords: ["event", "calendar"],
     hosts: {
       production: "events.nuspace.kz",
       staging: "events_staging.nuspace.kz",
@@ -55,6 +58,14 @@ export const SERVICES: readonly Service[] = [
     key: "pages",
     name: "Pages",
     prompt: "Looking for a Page?",
+    keywords: [
+      "page",
+      "club",
+      "clubs",
+      "community",
+      "communities",
+      "organizations",
+    ],
     hosts: {
       production: "pages.nuspace.kz",
       staging: "pages_staging.nuspace.kz",
@@ -65,6 +76,7 @@ export const SERVICES: readonly Service[] = [
     key: "my",
     name: "My Nuspace",
     prompt: "Looking for people or your account?",
+    keywords: ["my", "profile", "account", "settings", "people", "directory"],
     hosts: {
       production: "my.nuspace.kz",
       staging: "my_staging.nuspace.kz",
