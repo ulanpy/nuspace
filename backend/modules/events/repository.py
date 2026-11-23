@@ -16,6 +16,7 @@ from backend.modules.events.models import (
     EventAccessPurpose,
     EventAttendee,
     EventAttendeeViewer,
+    EventStatus,
     EventType,
 )
 from backend.modules.events.search_indexes import EVENTS_INDEX
@@ -376,6 +377,33 @@ class EventRepository:
             .order_by(EventAttendee.created_at)
         )
         return list((await self.db_session.execute(stmt)).scalars().all())
+
+    async def claim_due_reminders(
+        self, now: datetime, until: datetime
+    ) -> List[Tuple[Event, int | None, bool]]:
+        """Claim the attendees of approved events starting in (now, until] not yet reminded.
+
+        Each claimed row is locked (rows another run holds are skipped) and stamped
+        `reminded_at = now` in this transaction. Returns (event, telegram_id,
+        event_notifications) per claimed attendee.
+        """
+        stmt = (
+            select(EventAttendee, Event, User.telegram_id, User.event_notifications)
+            .join(Event, Event.id == EventAttendee.event_id)
+            .join(User, User.sub == EventAttendee.user_sub)
+            .where(
+                EventAttendee.reminded_at.is_(None),
+                Event.status == EventStatus.approved,
+                Event.start_datetime > now,
+                Event.start_datetime <= until,
+            )
+            .with_for_update(of=EventAttendee, skip_locked=True)
+        )
+        rows = list((await self.db_session.execute(stmt)).all())
+        for attendee, *_ in rows:
+            attendee.reminded_at = now
+        await self.db_session.flush()
+        return [(event, telegram_id, enabled) for _, event, telegram_id, enabled in rows]
 
     async def add_attendee(self, event_id: int, user_sub: str) -> EventAttendee:
         existing = await self.get_attendee(event_id, user_sub)

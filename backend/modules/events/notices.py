@@ -1,8 +1,10 @@
 """Telegram notices to the people attending an event.
 
 `describe_change` decides whether an edit is worth a notice and words it.
-`EventNotifier.notify` is the reusable send: any text, any recipients, one
-button to the event on the events host. The 24h reminder (#447) calls it too.
+`describe_reminder` words the 24h reminder (#447).
+`deliver` is the reusable send: any text, any recipients, one button to the
+event on the events host. `EventNotifier.notify` queues it after a request;
+the reminder job awaits it directly.
 """
 
 import html
@@ -55,6 +57,37 @@ def describe_change(before: EventSnapshot, event: Event) -> str | None:
     return "\n".join([f"<b>Event updated</b>\n{name}", *lines])
 
 
+def describe_reminder(event: Event) -> str:
+    """HTML body of the reminder sent 24 hours before an approved event starts."""
+    return "\n".join(
+        [
+            f"<b>Event tomorrow</b>\n{html.escape(event.name)} starts within 24 hours.",
+            f"Time: {_when(event.start_datetime)}",
+            f"Place: {html.escape(event.place)}",
+        ]
+    )
+
+
+async def deliver(
+    messenger: AttendeeMessenger,
+    events_origin: str,
+    event_id: int,
+    telegram_ids: Sequence[int],
+    text: str,
+) -> int:
+    """Send `text` to each chat with the events-host button; returns how many went out."""
+    url = f"{events_origin.rstrip('/')}/{event_id}"
+    sent = 0
+    for telegram_id in telegram_ids:
+        try:
+            if await messenger.send(telegram_id, text, button_label=BUTTON_LABEL, button_url=url):
+                sent += 1
+        except Exception:
+            logger.exception("Event %s notice to chat %s failed", event_id, telegram_id)
+    logger.info("Event %s notice: %s of %s delivered", event_id, sent, len(telegram_ids))
+    return sent
+
+
 class EventNotifier:
     """DMs a text to people with a button to an event, after the request has answered.
 
@@ -78,14 +111,4 @@ class EventNotifier:
         self.schedule(self._send_all, event_id, list(telegram_ids), text)
 
     async def _send_all(self, event_id: int, telegram_ids: list[int], text: str) -> None:
-        url = f"{self.events_origin}/{event_id}"
-        sent = 0
-        for telegram_id in telegram_ids:
-            try:
-                if await self.messenger.send(
-                    telegram_id, text, button_label=BUTTON_LABEL, button_url=url
-                ):
-                    sent += 1
-            except Exception:
-                logger.exception("Event %s notice to chat %s failed", event_id, telegram_id)
-        logger.info("Event %s notice: %s of %s delivered", event_id, sent, len(telegram_ids))
+        await deliver(self.messenger, self.events_origin, event_id, telegram_ids, text)
