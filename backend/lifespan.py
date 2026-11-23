@@ -18,6 +18,7 @@ from backend.modules.courses.registrar.startup import (
     cleanup_schedule_catalog,
     setup_schedule_catalog,
 )
+from backend.modules.events.reminders import start_reminders, stop_reminders
 from backend.modules.routers import routers
 
 
@@ -38,12 +39,14 @@ async def lifespan(app: FastAPI):
         await setup_schedule_catalog(app)
 
         await setup_bot(app)
+        await start_reminders(app)
 
         for router in routers:
             app.include_router(router)
         yield
 
     finally:
+        await stop_reminders(app)
         await cleanup_rbq(app)
         await cleanup_bot(app)
         await cleanup_schedule_catalog(app)

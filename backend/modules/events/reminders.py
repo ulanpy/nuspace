@@ -5,10 +5,13 @@
 again, so a pass that crashes after the commit loses that reminder rather than
 repeating it, and two passes that overlap skip each other's rows.
 
-The pass runs as a Cloud Run Job every 15 minutes (`reminder_job`).
-`run_reminders_once` is the same pass over an app's own state, for tests.
+`start_reminders` runs a pass every `REMINDER_INTERVAL_SECONDS` inside the API
+process, the only one that holds the bot. It runs only when the bot does.
 """
 
+import asyncio
+import logging
+from contextlib import suppress
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI
@@ -21,7 +24,10 @@ from backend.modules.events.models import Event
 from backend.modules.events.notices import deliver, describe_reminder
 from backend.modules.events.repository import EventRepository
 
+logger = logging.getLogger(__name__)
+
 REMINDER_WINDOW = timedelta(hours=24)
+REMINDER_INTERVAL_SECONDS = 15 * 60
 
 
 async def send_due_reminders(
@@ -62,3 +68,27 @@ async def run_reminders_once(app: FastAPI, now: datetime | None = None) -> int:
         app.state.config.service_origin("events"),
         now or utc_now(),
     )
+
+
+async def _reminder_loop(app: FastAPI) -> None:
+    while True:
+        try:
+            await run_reminders_once(app)
+        except Exception:
+            logger.exception("Event reminder pass failed")
+        await asyncio.sleep(REMINDER_INTERVAL_SECONDS)
+
+
+async def start_reminders(app: FastAPI) -> None:
+    app.state.reminder_task = (
+        asyncio.create_task(_reminder_loop(app)) if getattr(app.state, "bot", None) else None
+    )
+
+
+async def stop_reminders(app: FastAPI) -> None:
+    task = getattr(app.state, "reminder_task", None)
+    if task is None:
+        return
+    task.cancel()
+    with suppress(asyncio.CancelledError):
+        await task

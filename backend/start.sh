@@ -8,11 +8,6 @@ if [ "$SCHEDULE_SYNC_JOB" = "1" ]; then
     exec "$VENV_BIN/python" -m backend.modules.courses.registrar.schedule_sync_job
 fi
 
-# Cloud Run Job: send the 24h event reminders due now (no API server).
-if [ "$EVENT_REMINDER_JOB" = "1" ]; then
-    exec "$VENV_BIN/python" -m backend.modules.events.reminder_job
-fi
-
 # Normalize IS_DEBUG so False/FALSE/0 from .env also count as prod.
 IS_DEBUG_NORM=$(printf '%s' "${IS_DEBUG:-true}" | tr '[:upper:]' '[:lower:]')
 
