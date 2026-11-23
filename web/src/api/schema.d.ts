@@ -2967,6 +2967,12 @@ export interface components {
                 [key: string]: unknown;
             };
             /**
+             * Content Text
+             * @description The text inside the page's blocks, for search
+             * @default
+             */
+            content_text?: string;
+            /**
              * @description Who may see this page
              * @default public
              * @example public
@@ -3138,6 +3144,11 @@ export interface components {
             page_content?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Content Text
+             * @description The text inside the page's blocks, for search
+             */
+            content_text?: string | null;
             /** @description Who may see this page */
             visibility?: components["schemas"]["PageVisibility"] | null;
             /**
