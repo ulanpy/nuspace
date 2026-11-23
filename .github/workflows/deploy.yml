@@ -225,6 +225,26 @@ jobs:
             --project="$DEPLOY_GCP_PROJECT"
           echo "Updated schedule-sync-job to kamikadze24/fastapi:${{ steps.meta.outputs.version }}"
 
+      - name: Update event-reminder Cloud Run Job image
+        if: steps.changes.outputs.backend == 'true'
+        run: |
+          # Same image as FastAPI; the job runs the 24h reminder pass (see backend/modules/events/reminder_job.py).
+          # Job must already exist (terraform apply). Image tag is ignored by Terraform lifecycle.
+          if ! gcloud run jobs describe event-reminder-job \
+            --region=europe-central2 \
+            --project="$DEPLOY_GCP_PROJECT" >/dev/null 2>&1; then
+            echo "event-reminder-job not found in $DEPLOY_GCP_PROJECT (apply terraform first); skipping image update"
+            exit 0
+          fi
+          gcloud run jobs update event-reminder-job \
+            --image="kamikadze24/fastapi:${{ steps.meta.outputs.version }}" \
+            --command=/nuros/backend/.venv/bin/python \
+            --args=-m,backend.modules.events.reminder_job \
+            --update-env-vars="PYTHONPATH=/nuros,PYTHONUNBUFFERED=1,NUSPACE_ENV_FILE=/secrets/nuspace.env" \
+            --region=europe-central2 \
+            --project="$DEPLOY_GCP_PROJECT"
+          echo "Updated event-reminder-job to kamikadze24/fastapi:${{ steps.meta.outputs.version }}"
+
       - name: Get VM information and Docker credentials from Secret Manager
         id: secrets
         run: |

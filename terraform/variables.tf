@@ -216,3 +216,39 @@ variable "schedule_sync_cron" {
   type        = string
   default     = "0 5 * * *"
 }
+
+variable "event_reminder_job_name" {
+  description = "Cloud Run Job name for the 24h event reminders"
+  type        = string
+  default     = "event-reminder-job"
+}
+
+variable "event_reminder_job_image" {
+  description = "Container image for the event reminder Cloud Run Job (same as fastapi)"
+  type        = string
+  default     = "kamikadze24/fastapi:latest"
+}
+
+variable "event_reminder_job_account_id" {
+  description = "Service account ID for the event reminder Cloud Run Job"
+  type        = string
+  default     = "nuspace-event-reminder-job"
+}
+
+variable "event_reminder_scheduler_account_id" {
+  description = "Service account ID for Cloud Scheduler invoking the event reminder job"
+  type        = string
+  default     = "nuspace-event-reminder-sched"
+}
+
+variable "event_reminder_cron" {
+  description = "Cron schedule (UTC) for the event reminder job"
+  type        = string
+  default     = "*/15 * * * *"
+}
+
+variable "event_reminder_env_secret" {
+  description = "Secret Manager secret holding the dotenv file the reminder job reads (same as the VM's)"
+  type        = string
+  default     = "nuspace-env"
+}
