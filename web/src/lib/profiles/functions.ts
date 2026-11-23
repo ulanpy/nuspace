@@ -52,6 +52,20 @@ export function myProfileQueryOptions() {
   })
 }
 
+/**
+ * One page of the people directory, for `useInfiniteList`. The server leaves
+ * out every profile the viewer may not open, so the count it returns is the
+ * list's.
+ */
+export function fetchProfiles(
+  { keyword }: { keyword?: string },
+  { page, size }: { page: number; size: number }
+) {
+  return unwrap(
+    api.GET("/profiles", { params: { query: { page, size, keyword } } })
+  )
+}
+
 export function profileQueryOptions(handle: string) {
   return queryOptions({
     queryKey: qk.profiles.detail(handle),

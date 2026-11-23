@@ -496,6 +496,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Profiles
+         * @description The people directory at `my.nuspace.kz/`.
+         *
+         *     Anonymous viewers get `public` profiles, members also `internal`. `total`
+         *     counts only what the viewer may open.
+         */
+        get: operations["list_profiles_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/profiles/{handle}": {
         parameters: {
             query?: never;
@@ -3286,6 +3309,43 @@ export interface components {
             };
         };
         /**
+         * ProfileList
+         * @description The people directory: one page of the profiles the viewer may open.
+         */
+        ProfileList: {
+            /** Items */
+            items?: components["schemas"]["ProfileListItem"][];
+            /**
+             * Total Pages
+             * @default 1
+             */
+            total_pages: number;
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Has Next */
+            has_next: boolean;
+        };
+        /**
+         * ProfileListItem
+         * @description One card of the people directory: what the Pages card shows, and the address.
+         */
+        ProfileListItem: {
+            /** Handle */
+            handle: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /** Picture */
+            picture: string | null;
+            /** Department */
+            department: string | null;
+        };
+        /**
          * ProfileResponse
          * @description A profile page as a reader sees it.
          *
@@ -4802,6 +4862,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_profiles_profiles_get: {
+        parameters: {
+            query?: {
+                /** @description Name, handle or department */
+                keyword?: string | null;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileList"];
                 };
             };
             /** @description Validation Error */
