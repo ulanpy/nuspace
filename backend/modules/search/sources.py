@@ -31,11 +31,11 @@ class SourceIndex:
     kind: SearchKind
     uid: str
     # The indexed text a snippet is cropped from. None: the snippet comes from
-    # the record (Pages until their body text is indexed, #439).
+    # the record.
     crop_attribute: str | None = None
 
 
-PAGES = SourceIndex("page", SearchKind.page, "pages")
+PAGES = SourceIndex("page", SearchKind.page, "pages", crop_attribute="content_text")
 EVENTS = SourceIndex("event", SearchKind.event, "events", crop_attribute="description")
 COURSES = SourceIndex("course", SearchKind.course, "courses")
 GRADE_REPORTS = SourceIndex("grade_report", SearchKind.course, "grade_reports")
