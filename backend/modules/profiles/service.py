@@ -4,7 +4,7 @@ from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.models import User, UserRole
 from backend.modules.profiles import schemas
 from backend.modules.profiles.repository import ProfileRepository
-from backend.modules.shared.visibility import RecordVisibility, visible_to
+from backend.modules.shared.visibility import RecordVisibility, tiers_open_to, visible_to
 
 HANDLE_TAKEN_DETAIL = "That handle is already taken. Choose a different one."
 PROFILE_NOT_FOUND_DETAIL = "Profile not found"
@@ -68,6 +68,36 @@ class ProfileService:
             user.profile_content = content
             await repo.flush()
             return _settings(user)
+
+    async def list_directory(
+        self, viewer: tuple[dict, dict], *, keyword: str | None, page: int, size: int
+    ) -> schemas.ProfileList:
+        """The people directory: the profile pages this viewer may open, and only those.
+
+        Rows and `total` ask the one predicate through `tiers_open_to`, so the
+        count never includes a profile a read by handle would 404.
+        """
+        async with self.uow:
+            users, total = await self.uow.get_repo(ProfileRepository).list_listed(
+                tiers=tiers_open_to(viewer), keyword=keyword, page=page, size=size
+            )
+            return schemas.ProfileList(
+                items=[
+                    schemas.ProfileListItem(
+                        handle=user.handle,
+                        name=user.name,
+                        surname=user.surname,
+                        picture=user.picture or None,
+                        department=user.department.name if user.department else None,
+                    )
+                    for user in users
+                ],
+                total_pages=max(1, -(-total // size)),
+                total=total,
+                page=page,
+                size=size,
+                has_next=page * size < total,
+            )
 
     async def read(self, handle: str, viewer: tuple[dict, dict]) -> schemas.ProfileResponse:
         """A profile page by handle, or 404 for anyone `visible_to` turns away.

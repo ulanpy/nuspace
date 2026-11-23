@@ -30,6 +30,7 @@ import { Route as AppCoursesPlannerIndexRouteImport } from './routes/_app/course
 import { Route as AppCoursesStatsIndexRouteImport } from './routes/_app/courses/stats/index'
 import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$eventId/index'
 import { Route as AppPagesSlugIndexRouteImport } from './routes/_app/pages/$slug/index'
+import { Route as AppAccountMyIndexRouteImport } from './routes/_app/_account/my/index'
 import { Route as AppAccountMyAccountIndexRouteImport } from './routes/_app/_account/my/account/index'
 import { Route as AppAccountMyPagesIndexRouteImport } from './routes/_app/_account/my/pages/index'
 import { Route as AppAccountMyProfileIndexRouteImport } from './routes/_app/_account/my/profile/index'
@@ -141,6 +142,11 @@ const AppPagesSlugIndexRoute = AppPagesSlugIndexRouteImport.update({
   path: '/pages/$slug/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppAccountMyIndexRoute = AppAccountMyIndexRouteImport.update({
+  id: '/my/',
+  path: '/my/',
+  getParentRoute: () => AppAccountRouteRoute,
+} as any)
 const AppAccountMyAccountIndexRoute =
   AppAccountMyAccountIndexRouteImport.update({
     id: '/my/account/',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/pages/$slug/': typeof AppPagesSlugIndexRoute
+  '/my/': typeof AppAccountMyIndexRoute
   '/my/account/': typeof AppAccountMyAccountIndexRoute
   '/my/pages/': typeof AppAccountMyPagesIndexRoute
   '/my/profile/': typeof AppAccountMyProfileIndexRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/courses/stats': typeof AppCoursesStatsIndexRoute
   '/events/$eventId': typeof AppEventsEventIdIndexRoute
   '/pages/$slug': typeof AppPagesSlugIndexRoute
+  '/my': typeof AppAccountMyIndexRoute
   '/my/account': typeof AppAccountMyAccountIndexRoute
   '/my/pages': typeof AppAccountMyPagesIndexRoute
   '/my/profile': typeof AppAccountMyProfileIndexRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/_app/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/_app/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/_app/pages/$slug/': typeof AppPagesSlugIndexRoute
+  '/_app/_account/my/': typeof AppAccountMyIndexRoute
   '/_app/_account/my/account/': typeof AppAccountMyAccountIndexRoute
   '/_app/_account/my/pages/': typeof AppAccountMyPagesIndexRoute
   '/_app/_account/my/profile/': typeof AppAccountMyProfileIndexRoute
@@ -295,6 +304,7 @@ export interface FileRouteTypes {
     | '/courses/stats/'
     | '/events/$eventId/'
     | '/pages/$slug/'
+    | '/my/'
     | '/my/account/'
     | '/my/pages/'
     | '/my/profile/'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/courses/stats'
     | '/events/$eventId'
     | '/pages/$slug'
+    | '/my'
     | '/my/account'
     | '/my/pages'
     | '/my/profile'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/_app/courses/stats/'
     | '/_app/events/$eventId/'
     | '/_app/pages/$slug/'
+    | '/_app/_account/my/'
     | '/_app/_account/my/account/'
     | '/_app/_account/my/pages/'
     | '/_app/_account/my/profile/'
@@ -516,6 +528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPagesSlugIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/_account/my/': {
+      id: '/_app/_account/my/'
+      path: '/my'
+      fullPath: '/my/'
+      preLoaderRoute: typeof AppAccountMyIndexRouteImport
+      parentRoute: typeof AppAccountRouteRoute
+    }
     '/_app/_account/my/account/': {
       id: '/_app/_account/my/account/'
       path: '/my/account'
@@ -576,6 +595,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAccountRouteRouteChildren {
+  AppAccountMyIndexRoute: typeof AppAccountMyIndexRoute
   AppAccountMyAccountIndexRoute: typeof AppAccountMyAccountIndexRoute
   AppAccountMyPagesIndexRoute: typeof AppAccountMyPagesIndexRoute
   AppAccountMyProfileIndexRoute: typeof AppAccountMyProfileIndexRoute
@@ -584,6 +604,7 @@ interface AppAccountRouteRouteChildren {
 }
 
 const AppAccountRouteRouteChildren: AppAccountRouteRouteChildren = {
+  AppAccountMyIndexRoute: AppAccountMyIndexRoute,
   AppAccountMyAccountIndexRoute: AppAccountMyAccountIndexRoute,
   AppAccountMyPagesIndexRoute: AppAccountMyPagesIndexRoute,
   AppAccountMyProfileIndexRoute: AppAccountMyProfileIndexRoute,

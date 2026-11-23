@@ -16,9 +16,6 @@ import { MyPagesCount } from "./my-pages-count"
  * here that is not about you: it is a directory of everyone, public, and the
  * one thing on this host a signed-out visitor can open. Every other row is
  * `requiresSession`, so a signed-out visitor's rail is People alone.
- *
- * People has no route yet (#436), so it goes to the address it will have on
- * this host. That ticket swaps its `href` for a `to`.
  */
 export const ACCOUNT_SECTIONS: readonly RailSection[] = [
   {
@@ -41,7 +38,8 @@ export const ACCOUNT_SECTIONS: readonly RailSection[] = [
     requiresSession: true,
   },
   {
-    href: "/",
+    to: "/my",
+    exact: true,
     label: "People",
     icon: UsersIcon,
     trailing: ExternalLinkIcon,

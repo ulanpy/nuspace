@@ -126,10 +126,17 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     params: { eventId: "[0-9]+" },
   },
   {
-    // The account host. `/` (the people directory) joins this row with #436.
+    // The account host. `/` is the people directory.
     service: "my",
     mount: "/my",
-    routes: ["/account", "/pages", "/profile", "/profile/edit", "/u/$handle"],
+    routes: [
+      "/",
+      "/account",
+      "/pages",
+      "/profile",
+      "/profile/edit",
+      "/u/$handle",
+    ],
     // The slug alphabet. Case and length are the server's to refuse; nginx
     // only keeps `/u/` from answering for addresses no handle could be.
     params: { handle: "[a-z0-9-]+" },

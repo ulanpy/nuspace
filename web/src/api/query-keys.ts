@@ -24,6 +24,8 @@ export const qk = {
   profiles: {
     all: () => ["profiles"] as const,
     mine: () => ["profiles", "mine"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["profiles", "list", filters] as const,
     details: () => ["profiles", "detail"] as const,
     detail: (handle: string) => ["profiles", "detail", handle] as const,
   },

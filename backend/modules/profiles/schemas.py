@@ -55,3 +55,24 @@ class ProfileResponse(BaseModel):
     )
     content: dict | None
     can_edit: bool
+
+
+class ProfileListItem(BaseModel):
+    """One card of the people directory: what the Pages card shows, and the address."""
+
+    handle: str
+    name: str
+    surname: str
+    picture: str | None
+    department: str | None
+
+
+class ProfileList(BaseModel):
+    """The people directory: one page of the profiles the viewer may open."""
+
+    items: list[ProfileListItem] = Field(default_factory=list)
+    total_pages: int = Field(default=1, ge=1)
+    total: int
+    page: int
+    size: int
+    has_next: bool

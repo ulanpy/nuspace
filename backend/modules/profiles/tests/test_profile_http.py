@@ -267,3 +267,85 @@ async def test_deleting_the_account_deletes_the_profile(
     # Nothing still holds the handle.
     claimed = await member.client.patch("/api/me/profile", json={"handle": "aigerim-b"})
     assert claimed.status_code == 200
+
+
+# --- The people directory at my.nuspace.kz/ ----------------------------------------
+
+# Three people, one per tier: `owner` public, `page_admin` internal, `member`
+# private. Who sees which row is the profile-by-handle matrix above, restated
+# for a list.
+LISTED = {
+    "guest": {"pub-person"},
+    "banned_member": {"pub-person"},
+    "member": {"pub-person", "nu-person"},
+    "owner": {"pub-person", "nu-person"},
+    "page_admin": {"pub-person", "nu-person"},
+    "site_admin": {"pub-person", "nu-person", "priv-person"},
+}
+
+
+async def _three_people(viewers: dict[str, Viewer]) -> None:
+    for kind, handle, tier in (
+        ("owner", "pub-person", "public"),
+        ("page_admin", "nu-person", "internal"),
+        ("member", "priv-person", "private"),
+    ):
+        await viewers[kind].client.patch(
+            "/api/me/profile", json={"handle": handle, "visibility": tier}
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", VIEWER_KINDS)
+async def test_the_directory_lists_what_the_viewer_may_open(
+    viewers: dict[str, Viewer], kind: str
+) -> None:
+    await _three_people(viewers)
+
+    body = (await viewers[kind].client.get("/api/profiles")).json()
+
+    assert {item["handle"] for item in body["items"]} == LISTED[kind]
+    # The count is the list, not the table: never a row the viewer cannot open.
+    assert body["total"] == len(LISTED[kind])
+    for item in body["items"]:
+        opened = await viewers[kind].client.get(f"/api/profiles/{item['handle']}")
+        assert opened.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_a_profile_without_a_handle_is_not_listed(viewers: dict[str, Viewer]) -> None:
+    await viewers["owner"].client.patch("/api/me/profile", json={"visibility": "public"})
+
+    body = (await viewers["guest"].client.get("/api/profiles")).json()
+
+    assert body["items"] == []
+    assert body["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_the_directory_searches_name_handle_and_department(
+    db, viewers: dict[str, Viewer]
+) -> None:
+    await _three_people(viewers)
+    async with db.begin() as session:
+        department = Department(name="Department of Astrophysics")
+        session.add(department)
+        await session.flush()
+        await session.execute(
+            update(User)
+            .where(User.sub == viewers["owner"].sub)
+            .values(name="Zhanibek", surname="Orazov", department_id=department.id)
+        )
+    guest = viewers["guest"].client
+
+    async def found(keyword: str) -> list[str]:
+        body = (await guest.get("/api/profiles", params={"keyword": keyword})).json()
+        return [item["handle"] for item in body["items"]]
+
+    assert await found("zhanibek") == ["pub-person"]
+    assert await found("pub-per") == ["pub-person"]
+    assert await found("astrophysics") == ["pub-person"]
+    assert await found("zhanibek orazov") == ["pub-person"]
+    assert await found("nobody-by-this") == []
+    # A search never widens what a viewer may open.
+    assert await found("nu-person") == []

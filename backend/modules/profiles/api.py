@@ -8,7 +8,7 @@ is never confirmed.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.exc import IntegrityError
 
 from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
@@ -48,6 +48,22 @@ async def save_my_profile_content(
 ) -> schemas.ProfileSettingsResponse:
     """Save the design the profile editor publishes."""
     return await service.save_content(user[0]["sub"], body.content)
+
+
+@router.get("/profiles", response_model=schemas.ProfileList)
+async def list_profiles(
+    viewer: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    service: Service,
+    keyword: str | None = Query(default=None, description="Name, handle or department"),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+) -> schemas.ProfileList:
+    """The people directory at `my.nuspace.kz/`.
+
+    Anonymous viewers get `public` profiles, members also `internal`. `total`
+    counts only what the viewer may open.
+    """
+    return await service.list_directory(viewer, keyword=keyword, page=page, size=size)
 
 
 @router.get("/profiles/{handle}", response_model=schemas.ProfileResponse)
