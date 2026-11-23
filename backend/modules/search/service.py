@@ -4,8 +4,8 @@
    filters for this viewer pushed down (`sources.coarse_filter`). Every index
    is asked for its top `offset + limit`, so the pager is stateless: page two
    refetches pages one and two, re-merges and slices.
-2. **Merge.** `fusion.fuse` over the ranked lists. Dense retrieval (#441) adds
-   its list there.
+2. **Merge.** `fusion.fuse` over the lexical list and the dense one (#441, pgvector,
+   `embeddings`), both over the structured sources.
 3. **Predicate.** Each Source's record is read from its store and its gate
    decides (`records`). This is the enforcement; the coarse filters only
    limit underfill.
@@ -18,6 +18,7 @@ before the predicate, so they are shown as "About N".
 call to re-run the same search for the same viewer server-side.
 """
 
+import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from urllib.parse import urlsplit
@@ -27,6 +28,7 @@ from backend.common.service_origin import Service
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.dependencies import is_guest
 from backend.modules.search import snippets
+from backend.modules.search.embeddings import EmbeddingIndex
 from backend.modules.search.fusion import fuse
 from backend.modules.search.records import (
     Principal,
@@ -68,6 +70,8 @@ from backend.modules.search.sources import (
 )
 from backend.modules.shared.visibility import is_site_admin, tiers_open_to
 
+logger = logging.getLogger(__name__)
+
 # Records are read in batches of at least this many candidates, best first,
 # until a page's worth has passed the predicate.
 MIN_BATCH = 20
@@ -79,9 +83,11 @@ class SearchService:
         uow: UnitOfWork,
         retriever: LexicalRetriever,
         service_origin: Callable[[Service], str],
+        embeddings: EmbeddingIndex | None = None,
     ) -> None:
         self.uow = uow
         self.retriever = retriever
+        self.embeddings = embeddings
         self.service_origin = service_origin
 
     async def search(
@@ -121,7 +127,15 @@ class SearchService:
                 )
                 totals = lexical.estimated_totals
                 hits = {hit.key: hit for hit in lexical.hits}
-                ranked = fuse([[hit.key for hit in lexical.hits]])[:MAX_TOTAL_HITS]
+                lexical_keys = [hit.key for hit in lexical.hits]
+                dense_keys = await self._dense(query, selected, window)
+                ranked = fuse([lexical_keys, dense_keys])[:MAX_TOTAL_HITS]
+                # Sources only dense retrieval found are in no lexical estimate.
+                found = set(lexical_keys)
+                for key in dense_keys:
+                    if key not in found:
+                        name = parse_source_key(key)[0].name
+                        totals[name] = totals.get(name, 0) + 1
                 admitted = await self._admit(repo, viewer, ranked, hits, wanted=wanted)
 
         kinds = {source.name: source.kind for source in sources}
@@ -140,6 +154,22 @@ class SearchService:
             counts=counts,
             next_offset=wanted if has_next else None,
         )
+
+    async def _dense(self, query: str, selected: Sequence[SourceIndex], limit: int) -> list[str]:
+        """The dense list: embedded Sources of the selected kinds nearest the query.
+
+        Dense retrieval is an addition: if the embedder is down, the search
+        answers from the lexical list alone.
+        """
+        if self.embeddings is None:
+            return []
+        try:
+            keys = await self.embeddings.nearest(query, limit)
+        except Exception:
+            logger.exception("Dense retrieval failed; searching lexically only")
+            return []
+        names = {source.name for source in selected}
+        return [key for key in keys if key.partition(":")[0] in names]
 
     async def _reach(self, repo: SearchRepository, viewer: Principal) -> Reach:
         if is_site_admin(viewer):
@@ -223,12 +253,16 @@ class SearchService:
                     for primary_key in primary_keys
                     if (hit := hits.get(source_key(source, primary_key)))
                 ]
-        for primary_key in wanted.get(CATALOGUE, []):
-            # The catalogue lives only in Meilisearch: its hit is its record.
-            # A catalogue key found only by dense retrieval (#441) needs its
-            # document fetched from the index by id here.
-            if hit := hits.get(source_key(CATALOGUE, primary_key)):
-                found.append(catalogue_record(hit.document))
+        # The catalogue lives only in Meilisearch: its hit is its record. A key
+        # found only by dense retrieval has its document fetched by id.
+        documents = {
+            primary_key: hit.document
+            for primary_key in wanted.get(CATALOGUE, [])
+            if (hit := hits.get(source_key(CATALOGUE, primary_key)))
+        }
+        unfetched = [pk for pk in wanted.get(CATALOGUE, []) if pk not in documents]
+        documents |= await self.retriever.documents(CATALOGUE, unfetched)
+        found += [catalogue_record(document) for document in documents.values()]
         return {record.key: record for record in found}
 
     def _result(self, record: Record, hit: Hit | None) -> SearchResult:

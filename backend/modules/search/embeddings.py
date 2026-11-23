@@ -28,6 +28,9 @@ from backend.modules.search.sources import EMBEDDED_SOURCES_BY_UID
 logger = logging.getLogger(__name__)
 
 DIMENSIONS = 768
+# Cosine similarity a Source must reach to be a dense hit; without a floor every
+# query would return its nearest neighbours however far. Tune on real queries.
+MIN_SIMILARITY = 0.6
 # Gemini embeds one text per request on Vertex, so a batch is fanned out.
 MAX_CONCURRENT_EMBEDDINGS = 8
 # Characters of a document that are embedded; the model reads 2048 tokens.
@@ -141,9 +144,10 @@ class EmbeddingIndex:
             rows = await session.execute(
                 text(
                     "SELECT source || ':' || key FROM search_embeddings"
+                    f" WHERE embedding <#> {_NORMALISED} < :ceiling"
                     f" ORDER BY embedding <#> {_NORMALISED} LIMIT :limit"
                 ),
-                {"vector": _vector(vector), "limit": limit},
+                {"vector": _vector(vector), "limit": limit, "ceiling": -MIN_SIMILARITY},
             )
             return list(rows.scalars().all())
 

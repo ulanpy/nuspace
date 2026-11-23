@@ -3,9 +3,10 @@
 Each index answers with its own ranked hits and an estimated total. The hits are
 merged into one ranked list by Meilisearch's ranking score, which is comparable
 across indexes (it is what federated search merges on). That list is the
-lexical list `fusion.fuse` takes; dense retrieval (#441) adds a second.
+lexical list `fusion.fuse` takes; dense retrieval (#441, `embeddings`) adds a second.
 """
 
+import asyncio
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -137,6 +138,25 @@ class LexicalRetriever:
             for uid in sorted(await self._index_uids())
             if uid.startswith(CHANNEL_PREFIX) and not uid.endswith("__rebuild")
         ]
+
+    async def documents(
+        self, source: SourceIndex, ids: Sequence[int | str]
+    ) -> dict[int | str, dict[str, Any]]:
+        """The documents of `source` with these ids. One that is gone is left out."""
+
+        async def fetch(primary_key: int | str) -> tuple[int | str, dict[str, Any] | None]:
+            try:
+                response = await self.client.get(f"/indexes/{source.uid}/documents/{primary_key}")
+            except httpx.HTTPError as exc:
+                raise SearchUnavailable(str(exc)) from exc
+            if response.status_code == 404:
+                return primary_key, None
+            if response.status_code >= 400:
+                raise SearchUnavailable(f"{response.status_code}: {response.text}")
+            return primary_key, response.json()
+
+        fetched = await asyncio.gather(*(fetch(pk) for pk in ids))
+        return {pk: document for pk, document in fetched if document is not None}
 
     async def _multi_search(
         self, query: str, index_queries: Sequence[IndexQuery]
