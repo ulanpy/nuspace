@@ -53,7 +53,7 @@ class GeminiEmbedder:
         from google.genai import types
 
         from backend.core.configs.config import config
-        from backend.modules.bot.services.gemini_event_extractor import build_gemini_client
+        from backend.common.gemini import build_gemini_client
 
         if self._client is None:
             self._client = build_gemini_client()
