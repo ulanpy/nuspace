@@ -122,13 +122,15 @@ class ProfileService:
             users, total = await self.uow.get_repo(ProfileRepository).list_listed(
                 tiers=tiers_open_to(viewer), keyword=keyword, page=page, size=size
             )
+            custom = [user.profile_picture for user in users if user.profile_picture]
+            urls = dict(zip(custom, await self.storage.generate_download_urls(custom)))
             return schemas.ProfileList(
                 items=[
                     schemas.ProfileListItem(
                         handle=user.handle,
                         name=user.name,
                         surname=user.surname,
-                        picture=user.picture or None,
+                        picture=urls.get(user.profile_picture) or user.picture or None,
                         department=user.department.name if user.department else None,
                     )
                     for user in users
