@@ -19,7 +19,7 @@ export function stripHtml(value: string): string {
 
 // Keys whose strings are identifiers or styling, not words a reader sees.
 const SKIPPED_KEYS = new Set([
-  "id", "type", "className", "style", "href", "src", "url", "icon",
+  "id", "type", "className", "style", "href", "src", "url", "icon", "iconPosition",
   "color", "background", "variant", "align", "justify", "direction", "size", "layout", "gap",
 ])
 
