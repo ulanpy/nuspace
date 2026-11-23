@@ -153,6 +153,8 @@ export function PageForm({
               // events. The generated type marks it required, so the client
               // sends it rather than omitting it.
               owner: "me",
+              // A new Page has no blocks yet; the editor fills this on publish.
+              content_text: "",
             },
             update: {
               ...ifEditable("name", values.name),

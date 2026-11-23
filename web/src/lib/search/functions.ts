@@ -139,6 +139,7 @@ const DATE_PREFIX: Record<SourceDate["role"], string> = {
   updated: "Updated ",
   starts: "",
   deadline: "Deadline ",
+  posted: "",
 }
 
 /** "Updated 11 Oct 2026", "Deadline 14 Nov 2026", or an event's "22 Oct 2026". */

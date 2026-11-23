@@ -561,30 +561,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/search/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search Overview
-         * @description A short cited answer over the top Sources this viewer may open (signed in only).
-         *
-         *     The query is searched again server-side for this viewer; Sources are never
-         *     accepted from the client. `answer` is null when there is no Overview (fewer
-         *     than three Sources, the model abstained, or it failed or timed out).
-         */
-        get: operations["search_overview_search_overview_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/search/results": {
         parameters: {
             query?: never;
@@ -601,6 +577,30 @@ export interface paths {
          *     Meilisearch's `maxTotalHits` (1,000) the results are empty.
          */
         get: operations["search_results_search_results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Overview
+         * @description A short cited answer over the top Sources this viewer may open (signed in only).
+         *
+         *     The query is searched again server-side for this viewer; Sources are never
+         *     accepted from the client. `answer` is null when there is no Overview (fewer
+         *     than three Sources, the model abstained, or it failed or timed out).
+         */
+        get: operations["search_overview_search_overview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2952,6 +2952,30 @@ export interface components {
             /** By Category */
             by_category?: components["schemas"]["CategoryStat"][];
         };
+        /** OverviewResponse */
+        OverviewResponse: {
+            /**
+             * Answer
+             * @description Null when there is no Overview: too few Sources, abstention or failure.
+             */
+            answer: string | null;
+            /** Sources */
+            sources?: components["schemas"]["OverviewSource"][];
+        };
+        /** OverviewSource */
+        OverviewSource: {
+            /**
+             * N
+             * @description The citation number, 1-based, as `[n]` in the answer.
+             */
+            n: number;
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+        };
         /**
          * PageAdminSort
          * @description The columns `/pages/{slug}/admins` may be ordered by.
@@ -2961,24 +2985,6 @@ export interface components {
          *     admins list at all, so "owner vs admin" is a column there, not a filter.
          * @enum {string}
          */
-        /** OverviewResponse */
-        OverviewResponse: {
-            /** @description Null when there is no Overview: too few Sources, abstention or failure. */
-            answer: string | null;
-            /** Sources */
-            sources?: components["schemas"]["OverviewSource"][];
-        };
-        /** OverviewSource */
-        OverviewSource: {
-            /** @description The citation number, 1-based, as `[n]` in the answer. */
-            n: number;
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Url */
-            url: string;
-        };
         PageAdminSort: "name" | "created_at";
         /** PageCreateRequest */
         PageCreateRequest: {
@@ -3013,7 +3019,7 @@ export interface components {
              * @description The text inside the page's blocks, for search
              * @default
              */
-            content_text?: string;
+            content_text: string;
             /**
              * @description Who may see this page
              * @default public
@@ -3373,14 +3379,6 @@ export interface components {
             /** Section Ids */
             section_ids?: number[];
         };
-        /** ProfileMediaConfirm */
-        ProfileMediaConfirm: {
-            /**
-             * Filename
-             * @description The object name the upload-url step issued, once its PUT has finished
-             */
-            filename: string;
-        };
         /** ProfileContentUpdate */
         ProfileContentUpdate: {
             /**
@@ -3427,6 +3425,14 @@ export interface components {
             picture: string | null;
             /** Department */
             department: string | null;
+        };
+        /** ProfileMediaConfirm */
+        ProfileMediaConfirm: {
+            /**
+             * Filename
+             * @description The object name the upload-url step issued, once its PUT has finished
+             */
+            filename: string;
         };
         /**
          * ProfileResponse
@@ -3693,7 +3699,8 @@ export interface components {
          * @description What a Source is, as the kind chips name it.
          *
          *     One kind may span several indexes: `course` is enrolled-course records, grade
-         *     reports and the registrar catalogue alike.
+         *     reports and the registrar catalogue alike. `message` is Channel messages, one
+         *     index per Telegram channel.
          * @enum {string}
          */
         SearchKind: "page" | "event" | "course" | "message" | "profile";
@@ -3830,7 +3837,7 @@ export interface components {
              * Role
              * @enum {string}
              */
-            role: "updated" | "starts" | "deadline";
+            role: "updated" | "starts" | "deadline" | "posted";
             /** Value */
             value: string;
         };
@@ -5088,42 +5095,6 @@ export interface operations {
             };
         };
     };
-    search_overview_search_overview_get: {
-        parameters: {
-            query: {
-                /** @description What to search for. */
-                q: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     search_results_search_results_get: {
         parameters: {
             query: {
@@ -5151,6 +5122,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_overview_search_overview_get: {
+        parameters: {
+            query: {
+                /** @description What to search for. */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponse"];
                 };
             };
             /** @description Validation Error */
