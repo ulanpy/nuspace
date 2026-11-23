@@ -126,5 +126,7 @@ export const qk = {
     /** `q` and `kind` are the whole request; the offset is the page param. */
     results: (filters: Record<string, unknown>) =>
       ["search", "results", filters] as const,
+    /** The Overview is per query, and only for a signed-in viewer. */
+    overview: (q: string) => ["search", "overview", q] as const,
   },
 } as const

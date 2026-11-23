@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 
 from backend.common.datetime_utils import CAMPUS_TZ
+from backend.common.gemini import build_gemini_client
 from backend.core.configs.config import Config, config
 from backend.modules.bot.schemas.event_post import ExtractedEventDraft
 from backend.modules.bot.services.event_extraction_prompt import (
@@ -40,23 +41,6 @@ def build_gemini_event_response_schema() -> dict:
 
 
 _RESPONSE_SCHEMA = build_gemini_event_response_schema()
-
-
-def build_gemini_client(app_config: Config | None = None) -> genai.Client:
-    """Developer API (API key) locally; GCP enterprise (ADC) on prod VM."""
-    cfg = app_config or config
-    if cfg.gemini_use_enterprise:
-        return genai.Client(
-            enterprise=True,
-            project=cfg.GCP_PROJECT_ID,
-            location=cfg.GEMINI_LOCATION,
-        )
-    if not cfg.GEMINI_API_KEY:
-        raise ValueError(
-            "GEMINI_API_KEY is not configured. "
-            "Set GEMINI_API_KEY for local dev or GEMINI_USE_ENTERPRISE=true on GCP."
-        )
-    return genai.Client(api_key=cfg.GEMINI_API_KEY)
 
 
 class GeminiEventExtractor:

@@ -23,6 +23,7 @@ import {
   type SearchResponse,
 } from "@/lib/search"
 
+import { Overview } from "./overview"
 import { SourceCard } from "./source-card"
 
 const ALL = "all"
@@ -166,7 +167,7 @@ export function Results({ q, kind }: { q: string; kind?: SearchKind }) {
   } else {
     body = (
       <>
-        {/* #445: the AI Overview goes here, above the results, for a signed-in viewer. */}
+        <Overview q={q} results={results} />
         <ol>
           {/* `source-N` is the anchor an Overview citation [N] jumps to (#445). */}
           {results.map((source, index) => (

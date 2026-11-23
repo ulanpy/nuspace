@@ -2,6 +2,7 @@ from fastapi import Depends, Request
 
 from backend.common.dependencies import get_uow
 from backend.core.database.uow import UnitOfWork
+from backend.modules.search.overview import GeminiOverviewModel, OverviewModel, OverviewService
 from backend.modules.search.retrieval import LexicalRetriever
 from backend.modules.search.service import SearchService
 
@@ -15,3 +16,14 @@ async def get_search_service(
         retriever=LexicalRetriever(request.app.state.meilisearch_client),
         service_origin=request.app.state.config.service_origin,
     )
+
+
+def get_overview_model() -> OverviewModel:
+    return GeminiOverviewModel()
+
+
+async def get_overview_service(
+    search: SearchService = Depends(get_search_service),
+    model: OverviewModel = Depends(get_overview_model),
+) -> OverviewService:
+    return OverviewService(search, model)
