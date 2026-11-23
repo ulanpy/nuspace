@@ -15,7 +15,12 @@ import httpx
 
 from backend.modules.search import snippets
 from backend.modules.search.schemas import Snippet
-from backend.modules.search.sources import SourceIndex, source_key
+from backend.modules.search.sources import (
+    CHANNEL_PREFIX,
+    SourceIndex,
+    channel_source,
+    source_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +129,14 @@ class LexicalRetriever:
         # Stable: equal scores keep index order, then each index's own rank.
         merged.sort(key=lambda hit: -hit.score)
         return LexicalResult(hits=merged, estimated_totals=totals)
+
+    async def channel_sources(self) -> list[SourceIndex]:
+        """One Source per Telegram channel that has an index."""
+        return [
+            channel_source(uid.removeprefix(CHANNEL_PREFIX))
+            for uid in sorted(await self._index_uids())
+            if uid.startswith(CHANNEL_PREFIX) and not uid.endswith("__rebuild")
+        ]
 
     async def _multi_search(
         self, query: str, index_queries: Sequence[IndexQuery]

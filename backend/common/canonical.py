@@ -29,6 +29,18 @@ class Location:
         return f"{origin}{self.path}"
 
 
+@dataclass(frozen=True)
+class ExternalLocation:
+    """A Source that opens off our hosts, e.g. a Telegram message on `t.me`."""
+
+    origin: str
+    path: str
+
+
+def telegram_message(channel: str, message_id: int) -> ExternalLocation:
+    return ExternalLocation("https://t.me", f"/{quote(channel)}/{message_id}")
+
+
 def page(slug: str) -> Location:
     return Location("pages", f"/{quote(slug)}")
 

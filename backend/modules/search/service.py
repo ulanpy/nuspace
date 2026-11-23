@@ -22,6 +22,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from urllib.parse import urlsplit
 
+from backend.common.canonical import ExternalLocation
 from backend.common.service_origin import Service
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.dependencies import is_guest
@@ -34,6 +35,7 @@ from backend.modules.search.records import (
     course_record,
     event_record,
     grade_report_record,
+    message_record,
     page_record,
 )
 from backend.modules.search.repository import SearchRepository
@@ -56,7 +58,6 @@ from backend.modules.search.sources import (
     OPEN_EVENT_STATUSES,
     PAGES,
     SOURCES,
-    SOURCES_BY_NAME,
     Reach,
     SourceIndex,
     coarse_filter,
@@ -91,16 +92,19 @@ class SearchService:
         limit: int = 10,
     ) -> SearchResponse:
         query = query.strip()
-        selected = [source for source in SOURCES if kind is None or source.kind == kind]
         wanted = offset + limit
         window = min(wanted, MAX_TOTAL_HITS)
 
+        sources: list[SourceIndex] = list(SOURCES)
+        selected = [source for source in sources if kind is None or source.kind == kind]
         admitted: list[tuple[Record, Hit | None]] = []
         totals: dict[str, int] = {}
         if query:
             async with self.uow:
                 repo = self.uow.get_repo(SearchRepository)
                 reach = await self._reach(repo, viewer)
+                sources = [*SOURCES, *await self.retriever.channel_sources()]
+                selected = [source for source in sources if kind is None or source.kind == kind]
                 lexical = await self.retriever.retrieve(
                     query,
                     [
@@ -110,7 +114,7 @@ class SearchService:
                             limit=window if source in selected else 0,
                             filter=coarse_filter(source, reach),
                         )
-                        for source in SOURCES
+                        for source in sources
                     ],
                 )
                 totals = lexical.estimated_totals
@@ -118,9 +122,10 @@ class SearchService:
                 ranked = fuse([[hit.key for hit in lexical.hits]])[:MAX_TOTAL_HITS]
                 admitted = await self._admit(repo, viewer, ranked, hits, wanted=wanted)
 
+        kinds = {source.name: source.kind for source in sources}
         counts = {each: 0 for each in SearchKind}
         for name, total in totals.items():
-            counts[SOURCES_BY_NAME[name].kind] += total
+            counts[kinds[name]] += total
         estimated_total = sum(counts[source_kind] for source_kind in {s.kind for s in selected})
         has_next = wanted < min(estimated_total, MAX_TOTAL_HITS)
         return SearchResponse(
@@ -199,6 +204,13 @@ class SearchService:
             found += [course_record(row) for row in await repo.courses(ids)]
         if ids := wanted.get(GRADE_REPORTS):
             found += [grade_report_record(row) for row in await repo.grade_reports(ids)]
+        for source, primary_keys in wanted.items():
+            if source.kind is SearchKind.message:
+                found += [
+                    message_record(source, hit.document)
+                    for primary_key in primary_keys
+                    if (hit := hits.get(source_key(source, primary_key)))
+                ]
         for primary_key in wanted.get(CATALOGUE, []):
             # The catalogue lives only in Meilisearch: its hit is its record.
             # A catalogue key found only by dense retrieval (#441) needs its
@@ -208,14 +220,19 @@ class SearchService:
         return {record.key: record for record in found}
 
     def _result(self, record: Record, hit: Hit | None) -> SearchResult:
-        origin = self.service_origin(record.location.service)
+        location = record.location
+        if isinstance(location, ExternalLocation):
+            origin, url = location.origin, f"{location.origin}{location.path}"
+        else:
+            origin = self.service_origin(location.service)
+            url = location.url(origin)
         return SearchResult(
             id=record.key,
             kind=record.kind,
             title=record.title,
-            url=record.location.url(origin),
+            url=url,
             host=urlsplit(origin).netloc,
-            path=record.location.path.lstrip("/"),
+            path=location.path.lstrip("/"),
             date=record.date,
             snippet=(hit.snippet if hit else None) or snippets.from_text(record.text),
             visibility=record.visibility,

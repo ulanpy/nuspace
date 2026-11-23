@@ -1,8 +1,8 @@
 """The indexes search reads, one per structured source, and the coarse filters pushed into them.
 
 A source is one index: Pages, events, enrolled-course records,
-grade reports and the registrar catalogue. Telegram channels (#442) and profile
-pages (#440) join as more entries here.
+grade reports and the registrar catalogue, and one per Telegram channel (found
+in Meilisearch, see `channel_source`). Profile pages (#440) join as more entries here.
 
 The coarse filters are an optimisation, never the enforcement: they keep
 Meilisearch from filling a page of hits with Sources the predicate will drop
@@ -41,6 +41,19 @@ GRADE_REPORTS = SourceIndex("grade_report", SearchKind.course, "grade_reports")
 CATALOGUE = SourceIndex("catalogue", SearchKind.course, "course_schedule_catalog")
 
 
+CHANNEL_PREFIX = "telegram_"
+
+
+def channel_index_uid(channel: str) -> str:
+    return f"{CHANNEL_PREFIX}{channel}"
+
+
+def channel_source(channel: str) -> SourceIndex:
+    """One Telegram channel's messages. Its name is its index uid: `telegram_<channel>:123`."""
+    uid = channel_index_uid(channel)
+    return SourceIndex(uid, SearchKind.message, uid, crop_attribute="text")
+
+
 def source_key(source: SourceIndex, primary_key: int | str) -> str:
     """A Source's id in results, unique across sources: `page:12`, `catalogue:825-ANT-101`."""
     return f"{source.name}:{primary_key}"
@@ -62,6 +75,8 @@ SOURCES_BY_NAME = {source.name: source for source in SOURCES}
 def parse_source_key(key: str) -> tuple[SourceIndex, int | str]:
     """The inverse of `source_key`. Table-backed sources have integer keys."""
     name, _, primary_key = key.partition(":")
+    if name.startswith(CHANNEL_PREFIX):
+        return channel_source(name.removeprefix(CHANNEL_PREFIX)), int(primary_key)
     source = SOURCES_BY_NAME[name]
     return source, primary_key if source is CATALOGUE else int(primary_key)
 
