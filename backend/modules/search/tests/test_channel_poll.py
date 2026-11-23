@@ -178,3 +178,16 @@ async def test_a_parse_failure_raises_an_alert(monkeypatch: pytest.MonkeyPatch) 
     with pytest.raises(ParseError):
         async with httpx.AsyncClient(transport=tme.transport(), base_url="https://t.me") as http:
             await poll_channel(http, FakeGcs(), "bucket", CHANNEL)  # type: ignore[arg-type]
+
+
+def test_a_recorded_tme_page_parses() -> None:
+    """A real `t.me/s/telegram` page, its markup kept and every post's words replaced."""
+    posts = parse_page("telegram", _page("tme_page_recorded.html"))
+
+    assert len(posts) == 20
+    ids = [post["id"] for post in posts]
+    assert ids == sorted(ids)
+    for post in posts:
+        assert post["type"] == "message"
+        assert post["text"] == f"Sample post {post['id']}\nRoom 7.105"
+        assert post["date"][:2] == "20"  # an ISO timestamp from <time datetime>
