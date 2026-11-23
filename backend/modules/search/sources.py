@@ -1,8 +1,8 @@
 """The indexes search reads, one per structured source, and the coarse filters pushed into them.
 
 A source is one index: Pages, events, enrolled-course records,
-grade reports and the registrar catalogue, and one per Telegram channel (found
-in Meilisearch, see `channel_source`). Profile pages (#440) join as more entries here.
+grade reports, the registrar catalogue, profiles, and one per Telegram channel
+(found in Meilisearch, see `channel_source`).
 
 The coarse filters are an optimisation, never the enforcement: they keep
 Meilisearch from filling a page of hits with Sources the predicate will drop
@@ -11,6 +11,7 @@ therefore never exclude a Source the predicate admits, which is why a viewer's
 own non-public Pages and events ride along by id.
 """
 
+import json
 from collections.abc import Collection
 from dataclasses import dataclass, field
 
@@ -39,6 +40,7 @@ EVENTS = SourceIndex("event", SearchKind.event, "events", crop_attribute="descri
 COURSES = SourceIndex("course", SearchKind.course, "courses")
 GRADE_REPORTS = SourceIndex("grade_report", SearchKind.course, "grade_reports")
 CATALOGUE = SourceIndex("catalogue", SearchKind.course, "course_schedule_catalog")
+PROFILES = SourceIndex("profile", SearchKind.profile, "users")
 
 
 CHANNEL_PREFIX = "telegram_"
@@ -66,6 +68,7 @@ SOURCES: tuple[SourceIndex, ...] = (
     COURSES,
     GRADE_REPORTS,
     CATALOGUE,
+    PROFILES,
 )
 
 
@@ -73,12 +76,13 @@ SOURCES_BY_NAME = {source.name: source for source in SOURCES}
 
 
 def parse_source_key(key: str) -> tuple[SourceIndex, int | str]:
-    """The inverse of `source_key`. Table-backed sources have integer keys."""
+    """The inverse of `source_key`. Pages, events and courses have integer keys;
+    the catalogue's and profiles' keys are strings (a registrar id, a Keycloak sub)."""
     name, _, primary_key = key.partition(":")
     if name.startswith(CHANNEL_PREFIX):
         return channel_source(name.removeprefix(CHANNEL_PREFIX)), int(primary_key)
     source = SOURCES_BY_NAME[name]
-    return source, primary_key if source is CATALOGUE else int(primary_key)
+    return source, primary_key if source in (CATALOGUE, PROFILES) else int(primary_key)
 
 
 @dataclass(frozen=True)
@@ -93,6 +97,9 @@ class Reach:
     event_statuses: frozenset[EventStatus] | None
     managed_page_ids: Collection[int] = field(default_factory=frozenset)
     own_event_ids: Collection[int] = field(default_factory=frozenset)
+    # `profile_tiers` is None for a site admin, as `page_tiers` is.
+    profile_tiers: frozenset[PageVisibility] | None = frozenset()
+    own_profile_sub: str | None = None
 
 
 def _any_of(attribute: str, values: Collection[str], ids: Collection[int]) -> str:
@@ -103,8 +110,19 @@ def _any_of(attribute: str, values: Collection[str], ids: Collection[int]) -> st
     return clause
 
 
+def _profile_filter(reach: Reach) -> str:
+    tiers = sorted(tier.value for tier in reach.profile_tiers)
+    quoted = ", ".join(f'"{value}"' for value in tiers)
+    clause = f"profile_visibility IN [{quoted}]"
+    if reach.own_profile_sub:
+        clause += f" OR sub = {json.dumps(reach.own_profile_sub)}"
+    return clause
+
+
 def coarse_filter(source: SourceIndex, reach: Reach) -> str | None:
     """The Meilisearch filter for `source`, or None to search it unfiltered."""
+    if source is PROFILES and reach.profile_tiers is not None:
+        return _profile_filter(reach)
     if source is PAGES and reach.page_tiers is not None:
         return _any_of(
             "visibility", [tier.value for tier in reach.page_tiers], reach.managed_page_ids

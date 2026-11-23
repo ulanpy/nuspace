@@ -3643,7 +3643,7 @@ export interface components {
          *     reports and the registrar catalogue alike.
          * @enum {string}
          */
-        SearchKind: "page" | "event" | "course";
+        SearchKind: "page" | "event" | "course" | "message" | "profile";
         /** SearchResponse */
         SearchResponse: {
             /** Query */

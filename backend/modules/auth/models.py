@@ -1,8 +1,9 @@
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Text, true
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Text, select, true
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.common.datetime_utils import utc_now
@@ -68,3 +69,22 @@ class User(Base):
     profile_banner: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     department = relationship("Department", foreign_keys=[department_id])
+
+    # The department's name as a search document field (profiles index, #440).
+    # The instance reads a loaded `department`; the class is a scalar subquery
+    # so a rebuild can select it from SQL like any column.
+    @hybrid_property
+    def department_name(self) -> str | None:
+        return self.department.name if self.department else None
+
+    @department_name.inplace.expression
+    @classmethod
+    def _department_name_expression(cls):
+        from backend.modules.sgotinish.models import Department
+
+        return (
+            select(Department.name)
+            .where(Department.id == cls.department_id)
+            .scalar_subquery()
+            .label("department_name")
+        )

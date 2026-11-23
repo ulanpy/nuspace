@@ -19,6 +19,7 @@ class SearchKind(str, Enum):
     event = "event"
     course = "course"
     message = "message"
+    profile = "profile"
 
 
 class MatchSpan(BaseModel):

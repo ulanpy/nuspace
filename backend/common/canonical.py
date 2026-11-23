@@ -49,6 +49,10 @@ def event(event_id: int) -> Location:
     return Location("events", f"/{event_id}")
 
 
+def profile(handle: str) -> Location:
+    return Location("my", f"/u/{quote(handle)}")
+
+
 COURSES = Location("courses", "/")
 GRADE_REPORTS = Location("courses", "/stats")
 CATALOGUE = Location("courses", "/planner")

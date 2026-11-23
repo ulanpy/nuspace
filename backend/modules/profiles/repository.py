@@ -16,7 +16,12 @@ class ProfileRepository:
         self.session = session
 
     async def get_by_sub(self, sub: str) -> User | None:
-        return await self.session.get(User, sub)
+        # The department is loaded so the profile's search document can be built
+        # from this row after commit (`department_name`).
+        result = await self.session.execute(
+            select(User).where(User.sub == sub).options(selectinload(User.department))
+        )
+        return result.scalars().first()
 
     async def get_by_handle(self, handle: str) -> User | None:
         result = await self.session.execute(

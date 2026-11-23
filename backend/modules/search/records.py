@@ -22,6 +22,7 @@ from typing import Any, Protocol
 from backend.common import canonical
 from backend.common.canonical import ExternalLocation, Location
 from backend.modules.auth.dependencies import is_guest
+from backend.modules.auth.models import User
 from backend.modules.courses.models import Course, GradeReport
 from backend.modules.events.models import Event, EventStatus
 from backend.modules.pages.models import Page, PageVisibility
@@ -33,6 +34,7 @@ from backend.modules.search.sources import (
     GRADE_REPORTS,
     OPEN_EVENT_STATUSES,
     PAGES,
+    PROFILES,
     SourceIndex,
     source_key,
 )
@@ -206,6 +208,27 @@ def message_record(source: SourceIndex, document: dict[str, Any]) -> Record:
         ),
         text=document.get("text"),
         facts=_facts(f"@{document['channel']}", document.get("author")),
+    )
+
+
+def profile_record(user: User) -> Record | None:
+    """A profile is a Source only with a handle; its address is `my.nuspace.kz/u/<handle>`.
+
+    Only the name, handle and department are shown. The profile's free-form
+    content is never indexed or shown in a result.
+    """
+    if not user.handle:
+        return None
+    name = _clean(" ".join(part for part in (user.name, user.surname) if part))
+    tier = user.profile_visibility
+    return Record(
+        source=PROFILES,
+        primary_key=user.sub,
+        title=name or user.handle,
+        location=canonical.profile(user.handle),
+        gate=Tiered(RecordVisibility(tier=tier, managers={user.sub})),
+        facts=_facts(user.department.name if user.department else None),
+        visibility=None if tier == PageVisibility.public else tier,
     )
 
 
