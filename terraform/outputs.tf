@@ -94,3 +94,13 @@ output "schedule_sync_gcs_object" {
   value       = format("gs://%s/registrar/course_schedule_catalog.json", var.media_bucket_name)
   description = "GCS object written by the schedule sync job and read by FastAPI"
 }
+
+output "channel_poll_job_name" {
+  value       = google_cloud_run_v2_job.channel_poll.name
+  description = "Cloud Run Job that polls Telegram channel previews into GCS"
+}
+
+output "channel_poll_gcs_prefix" {
+  value       = format("gs://%s/telegram/", var.media_bucket_name)
+  description = "GCS prefix the channel poll job writes (telegram/<channel>/result.json) and FastAPI indexes"
+}

@@ -2,7 +2,7 @@
 
 GCS is the durable record of message text: a channel's index is rebuilt from its
 export, never from Postgres. The ingester does not care how the bytes arrived (a
-hand-uploaded Telegram export today, the poller's output later). It reads
+hand-uploaded Telegram export, or the daily poller's output, #444). It reads
 `telegram/<channel>/result.json` (Telegram Desktop's export format) and swaps a
 freshly built index in, so search keeps answering from the old one meanwhile.
 
@@ -12,6 +12,7 @@ permalink `t.me/<channel>/<id>`. Attachments are neither exported nor indexed.
 
 import json
 import logging
+import re
 from collections.abc import Iterable, Iterator
 from typing import Any
 
@@ -20,12 +21,19 @@ from google.cloud import storage
 
 from backend.bootstrap.meilisearch import delete_index, ensure_index
 from backend.common.utils import meilisearch
+from backend.modules.search.channel_poll import EXPORT_OBJECT
 from backend.modules.search.sources import channel_index_uid
 
 logger = logging.getLogger(__name__)
 
-EXPORT_OBJECT = "telegram/{channel}/result.json"
 TELEGRAM_ORIGIN = "https://t.me"
+_EXPORT_OBJECT_PATTERN = re.compile(r"telegram/([A-Za-z0-9_]+)/result\.json")
+
+
+def channel_of_export(object_name: str) -> str | None:
+    """The channel whose export a GCS object is, or None for any other object."""
+    match = _EXPORT_OBJECT_PATTERN.fullmatch(object_name)
+    return match.group(1) if match else None
 
 
 def permalink(channel: str, message_id: int) -> str:
