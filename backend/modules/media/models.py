@@ -28,6 +28,10 @@ class EntityType(str, PyEnum):
     messages = "messages"
     users = "users"
 
+# `users` media has no row to point at (a `sub` is not a bigint), so uploads for
+# it name this placeholder and the object path carries the `sub`. See #435.
+PROFILE_MEDIA_ENTITY_ID = 0
+
 
 class MediaFormat(PyEnum):
     banner = "banner"

@@ -114,3 +114,9 @@ export const NEW_PROFILE_DESIGN: ProfileDesign = {
     },
   },
 }
+
+/**
+ * The placeholder entity id a profile picture or banner upload names. Mirrors
+ * `PROFILE_MEDIA_ENTITY_ID` in the backend: a `sub` is not a bigint.
+ */
+export const PROFILE_MEDIA_ENTITY_ID = 0

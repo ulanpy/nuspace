@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { CheckIcon, EyeIcon, PencilIcon } from "lucide-react"
+import { CheckIcon, EyeIcon, PencilIcon, UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { apiErrorMessage } from "@/api/errors"
+import { ACCEPTED_IMAGE_TYPES, validateImage } from "@/lib/media"
 import type { PageVisibilityValue } from "@/lib/pages/types"
 import {
   PROFILE_VISIBILITY_COPY,
@@ -12,6 +13,8 @@ import {
   myProfileQueryOptions,
   profileAddress,
   useUpdateProfileSettings,
+  useUploadProfileMedia,
+  type ProfileMediaSlot,
 } from "@/lib/profiles"
 import { Page } from "@/components/shared/page"
 import { VisibilityPicker } from "@/components/shared/pages/visibility-picker"
@@ -163,6 +166,90 @@ function VisibilitySetting({ saved }: { saved: PageVisibilityValue }) {
 }
 
 /**
+ * One upload: a preview, and a button that opens the file picker. The file is
+ * checked in the browser before anything is signed, then sent through the
+ * presigned flow and confirmed onto the account.
+ */
+function MediaSetting({
+  slot,
+  title,
+  description,
+  current,
+  preview,
+}: {
+  slot: ProfileMediaSlot
+  title: string
+  description: string
+  current: string | null
+  preview: "round" | "wide"
+}) {
+  const upload = useUploadProfileMedia(slot)
+  const input = useRef<HTMLInputElement>(null)
+
+  const pick = (file: File | undefined) => {
+    if (!file) return
+    const problem = validateImage(file)
+    if (problem) {
+      toast.error(problem)
+      return
+    }
+    upload.mutate(file, {
+      onSuccess: () => {
+        toast.success(`${title} updated.`)
+      },
+      onError: (failure) => {
+        toast.error(apiErrorMessage(failure, "Could not upload. Try again."))
+      },
+    })
+  }
+
+  return (
+    <Item variant="muted">
+      <div
+        className={
+          preview === "round"
+            ? "size-16 shrink-0 overflow-hidden rounded-full bg-muted"
+            : "h-16 w-28 shrink-0 overflow-hidden rounded-md bg-muted"
+        }
+      >
+        {current ? (
+          <img src={current} alt="" className="size-full object-cover" />
+        ) : null}
+      </div>
+      <ItemContent>
+        <ItemTitle>{title}</ItemTitle>
+        <ItemDescription className="line-clamp-none">
+          {description}
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions className="ml-auto">
+        <input
+          ref={input}
+          type="file"
+          accept={ACCEPTED_IMAGE_TYPES.join(",")}
+          className="sr-only"
+          tabIndex={-1}
+          aria-label={`Choose ${title.toLowerCase()}`}
+          onChange={(event) => {
+            pick(event.target.files?.[0])
+            event.target.value = ""
+          }}
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={upload.isPending}
+          onClick={() => input.current?.click()}
+        >
+          <UploadIcon aria-hidden />
+          {upload.isPending ? "Uploading" : "Upload"}
+        </Button>
+      </ItemActions>
+    </Item>
+  )
+}
+
+/**
  * `my.nuspace.kz/profile`: the viewer's profile settings, reached by session
  * rather than by handle, so nobody needs to know their own handle to get here.
  *
@@ -205,6 +292,26 @@ export function ProfileSettingsScreen() {
         description="Who can open your profile page, and who can find it."
       >
         <VisibilitySetting saved={profile.visibility} />
+      </SettingsSection>
+
+      <SettingsSection
+        title="Picture and banner"
+        description="Your picture replaces your sign-in avatar everywhere it is shown."
+      >
+        <MediaSetting
+          slot="picture"
+          title="Picture"
+          description="A square image works best."
+          current={profile.picture}
+          preview="round"
+        />
+        <MediaSetting
+          slot="banner"
+          title="Banner"
+          description="Shown across the top of your profile page."
+          current={profile.banner}
+          preview="wide"
+        />
       </SettingsSection>
     </Page>
   )

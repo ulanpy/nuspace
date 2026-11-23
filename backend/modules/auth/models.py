@@ -62,5 +62,9 @@ class User(Base):
         server_default=PageVisibility.private.value,
     )
     profile_content: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Bucket object names (#435). No `media` row represents them: its entity_id
+    # is a bigint and cannot hold `sub`. A custom picture overrides `picture`.
+    profile_picture: Mapped[str | None] = mapped_column(Text, nullable=True)
+    profile_banner: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     department = relationship("Department", foreign_keys=[department_id])

@@ -13,3 +13,6 @@ export type ProfileListItem = components["schemas"]["ProfileListItem"]
 
 /** A Puck document, the shape the editor and the renderer pass around. */
 export type ProfileDesign = Record<string, unknown>
+
+/** Which of the two profile uploads. */
+export type ProfileMediaSlot = "picture" | "banner"

@@ -519,6 +519,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/profile/{slot}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Confirm My Profile Media
+         * @description Step three of the presigned flow for the picture or banner.
+         *
+         *     Writes the object to `users`. 422 for a name the caller was not issued.
+         */
+        put: operations["confirm_my_profile_media_me_profile__slot__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/profiles/{handle}": {
         parameters: {
             query?: never;
@@ -3298,6 +3320,14 @@ export interface components {
             /** Section Ids */
             section_ids?: number[];
         };
+        /** ProfileMediaConfirm */
+        ProfileMediaConfirm: {
+            /**
+             * Filename
+             * @description The object name the upload-url step issued, once its PUT has finished
+             */
+            filename: string;
+        };
         /** ProfileContentUpdate */
         ProfileContentUpdate: {
             /**
@@ -3359,8 +3389,16 @@ export interface components {
             name: string;
             /** Surname */
             surname: string;
-            /** Picture */
+            /**
+             * Picture
+             * @description The custom picture if set, else the sign-in avatar
+             */
             picture: string | null;
+            /**
+             * Banner
+             * @description The banner's URL; null when none is set
+             */
+            banner: string | null;
             /** Department */
             department: string | null;
             /**
@@ -3390,6 +3428,16 @@ export interface components {
             content: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Picture
+             * @description The custom picture's URL; null until one is uploaded
+             */
+            picture: string | null;
+            /**
+             * Banner
+             * @description The banner's URL; null until one is uploaded
+             */
+            banner: string | null;
         };
         /**
          * ProfileSettingsUpdate
@@ -4900,6 +4948,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_my_profile_media_me_profile__slot__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot: "picture" | "banner";
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileMediaConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
                 };
             };
             /** @description Validation Error */

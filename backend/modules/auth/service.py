@@ -22,6 +22,7 @@ from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.auth.mock import build_mock_creds, get_mock_user_by_sub
 from backend.modules.auth.models import User, UserRole, UserScope
 from backend.modules.auth.oauth import exchange_code_for_credentials
+from backend.modules.media.interfaces import ObjectStorage
 from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.schemas import CurrentUserResponse, UserSchema
 
@@ -371,6 +372,7 @@ class AuthService:
         self,
         kc_principal: dict,
         app_principal: dict,
+        storage: ObjectStorage | None = None,
     ) -> CurrentUserResponse:
         sub: str = kc_principal.get("sub")
         if not app_principal.get("sub") or app_principal.get("sub") != sub:
@@ -394,6 +396,11 @@ class AuthService:
             "role": app_principal.get("role"),
             "department_id": user.department_id,
         }
+        # A custom picture overrides the sign-in avatar (#435).
+        if user.profile_picture and storage is not None:
+            (user_data_for_response["picture"],) = await storage.generate_download_urls(
+                [user.profile_picture]
+            )
         return CurrentUserResponse(user=user_data_for_response, tg_id=user.telegram_id)
 
     async def logout(self, refresh_token: str) -> None:

@@ -101,10 +101,12 @@ async def generate_upload_url(
                 media_format=item.media_format,
                 media_order=item.media_order,
             )
-            try:
-                await media_service.upsert(media_data)
-            except Exception:
-                pass
+            # A profile picture or banner is confirmed onto `users`, not a row.
+            if item.entity_type != EntityType.users:
+                try:
+                    await media_service.upsert(media_data)
+                except Exception:
+                    pass
         else:
             signing_credentials = request.app.state.signing_credentials
             import asyncio
@@ -139,10 +141,14 @@ def _media_upsert_from_event(gcs_event: schemas.GCSEventData) -> MediaUpsertData
     if metadata is None:
         return None
     try:
+        entity_type = EntityType(metadata.media_table)
+        if entity_type == EntityType.users:
+            # Confirmed through `PUT /me/profile/*`, which writes `users`.
+            return None
         return MediaUpsertData(
             name=metadata.filename,
             mime_type=metadata.mime_type,
-            entity_type=EntityType(metadata.media_table),
+            entity_type=entity_type,
             entity_id=int(metadata.entity_id),
             media_format=MediaFormat(metadata.media_format),
             media_order=int(metadata.media_order),
