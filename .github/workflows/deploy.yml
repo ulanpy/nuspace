@@ -225,6 +225,25 @@ jobs:
             --project="$DEPLOY_GCP_PROJECT"
           echo "Updated schedule-sync-job to kamikadze24/fastapi:${{ steps.meta.outputs.version }}"
 
+      - name: Update channel-poll Cloud Run Job image
+        if: steps.changes.outputs.backend == 'true'
+        run: |
+          # Keep the Telegram channel poll job on the FastAPI image. Job must already exist (terraform apply).
+          if ! gcloud run jobs describe channel-poll-job \
+            --region=europe-central2 \
+            --project="$DEPLOY_GCP_PROJECT" >/dev/null 2>&1; then
+            echo "channel-poll-job not found in $DEPLOY_GCP_PROJECT (apply terraform first); skipping image update"
+            exit 0
+          fi
+          gcloud run jobs update channel-poll-job \
+            --image="kamikadze24/fastapi:${{ steps.meta.outputs.version }}" \
+            --command=/nuros/backend/.venv/bin/python \
+            --args=-m,backend.modules.search.channel_poll_job \
+            --update-env-vars="PYTHONPATH=/nuros,PYTHONUNBUFFERED=1" \
+            --region=europe-central2 \
+            --project="$DEPLOY_GCP_PROJECT"
+          echo "Updated channel-poll-job to kamikadze24/fastapi:${{ steps.meta.outputs.version }}"
+
       - name: Get VM information and Docker credentials from Secret Manager
         id: secrets
         run: |

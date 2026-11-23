@@ -216,3 +216,52 @@ variable "schedule_sync_cron" {
   type        = string
   default     = "0 5 * * *"
 }
+
+variable "channel_poll_job_name" {
+  description = "Cloud Run Job name for the daily Telegram channel poll to GCS"
+  type        = string
+  default     = "channel-poll-job"
+}
+
+variable "channel_poll_job_image" {
+  description = "Container image for the channel poll Cloud Run Job (same as fastapi)"
+  type        = string
+  default     = "kamikadze24/fastapi:latest"
+}
+
+variable "channel_poll_job_account_id" {
+  description = "Service account ID for the channel poll Cloud Run Job"
+  type        = string
+  default     = "nuspace-channel-poll-job"
+}
+
+variable "channel_poll_scheduler_account_id" {
+  description = "Service account ID for Cloud Scheduler invoking the channel poll job"
+  type        = string
+  default     = "nuspace-channel-poll-sched"
+}
+
+variable "channel_poll_cron" {
+  description = "Cron schedule (UTC) for the Telegram channel poll job"
+  type        = string
+  default     = "30 5 * * *"
+}
+
+variable "telegram_poll_channels" {
+  description = "Comma-separated public Telegram channel usernames (no @) the poll job follows"
+  type        = string
+  default     = ""
+}
+
+variable "telegram_alert_bot_token" {
+  description = "Telegram bot token the poll job alerts with on a parse failure"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "telegram_alert_chat_id" {
+  description = "Telegram chat ID the poll job alerts"
+  type        = string
+  default     = ""
+}
