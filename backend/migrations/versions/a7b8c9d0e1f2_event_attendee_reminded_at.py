@@ -4,7 +4,7 @@ When the 24h event reminder claimed an attendee. Null until then, so the
 reminder job sends each attendee one reminder and never a second.
 
 Revision ID: a7b8c9d0e1f2
-Revises: 6535213ea0e6
+Revises: b3f8a1c5d7e2
 Create Date: 2026-11-23 00:00:00.000000
 
 """
@@ -16,7 +16,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "a7b8c9d0e1f2"
-down_revision: Union[str, Sequence[str], None] = "6535213ea0e6"
+down_revision: Union[str, Sequence[str], None] = "b3f8a1c5d7e2"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
