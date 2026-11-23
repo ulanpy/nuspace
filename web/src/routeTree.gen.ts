@@ -25,12 +25,12 @@ import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/i
 import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/index'
 import { Route as PublicPrivacyIndexRouteImport } from './routes/_public/privacy/index'
 import { Route as PublicTermsIndexRouteImport } from './routes/_public/terms/index'
+import { Route as AppAccountMyIndexRouteImport } from './routes/_app/_account/my/index'
 import { Route as AppCoursesAuditIndexRouteImport } from './routes/_app/courses/audit/index'
 import { Route as AppCoursesPlannerIndexRouteImport } from './routes/_app/courses/planner/index'
 import { Route as AppCoursesStatsIndexRouteImport } from './routes/_app/courses/stats/index'
 import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$eventId/index'
 import { Route as AppPagesSlugIndexRouteImport } from './routes/_app/pages/$slug/index'
-import { Route as AppAccountMyIndexRouteImport } from './routes/_app/_account/my/index'
 import { Route as AppAccountMyAccountIndexRouteImport } from './routes/_app/_account/my/account/index'
 import { Route as AppAccountMyPagesIndexRouteImport } from './routes/_app/_account/my/pages/index'
 import { Route as AppAccountMyProfileIndexRouteImport } from './routes/_app/_account/my/profile/index'
@@ -117,6 +117,11 @@ const PublicTermsIndexRoute = PublicTermsIndexRouteImport.update({
   path: '/terms/',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const AppAccountMyIndexRoute = AppAccountMyIndexRouteImport.update({
+  id: '/my/',
+  path: '/my/',
+  getParentRoute: () => AppAccountRouteRoute,
+} as any)
 const AppCoursesAuditIndexRoute = AppCoursesAuditIndexRouteImport.update({
   id: '/audit/',
   path: '/audit/',
@@ -141,11 +146,6 @@ const AppPagesSlugIndexRoute = AppPagesSlugIndexRouteImport.update({
   id: '/pages/$slug/',
   path: '/pages/$slug/',
   getParentRoute: () => AppRouteRoute,
-} as any)
-const AppAccountMyIndexRoute = AppAccountMyIndexRouteImport.update({
-  id: '/my/',
-  path: '/my/',
-  getParentRoute: () => AppAccountRouteRoute,
 } as any)
 const AppAccountMyAccountIndexRoute =
   AppAccountMyAccountIndexRouteImport.update({
@@ -208,12 +208,12 @@ export interface FileRoutesByFullPath {
   '/about/': typeof PublicAboutIndexRoute
   '/privacy/': typeof PublicPrivacyIndexRoute
   '/terms/': typeof PublicTermsIndexRoute
+  '/my/': typeof AppAccountMyIndexRoute
   '/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/courses/planner/': typeof AppCoursesPlannerIndexRoute
   '/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/pages/$slug/': typeof AppPagesSlugIndexRoute
-  '/my/': typeof AppAccountMyIndexRoute
   '/my/account/': typeof AppAccountMyAccountIndexRoute
   '/my/pages/': typeof AppAccountMyPagesIndexRoute
   '/my/profile/': typeof AppAccountMyProfileIndexRoute
@@ -235,12 +235,12 @@ export interface FileRoutesByTo {
   '/about': typeof PublicAboutIndexRoute
   '/privacy': typeof PublicPrivacyIndexRoute
   '/terms': typeof PublicTermsIndexRoute
+  '/my': typeof AppAccountMyIndexRoute
   '/courses/audit': typeof AppCoursesAuditIndexRoute
   '/courses/planner': typeof AppCoursesPlannerIndexRoute
   '/courses/stats': typeof AppCoursesStatsIndexRoute
   '/events/$eventId': typeof AppEventsEventIdIndexRoute
   '/pages/$slug': typeof AppPagesSlugIndexRoute
-  '/my': typeof AppAccountMyIndexRoute
   '/my/account': typeof AppAccountMyAccountIndexRoute
   '/my/pages': typeof AppAccountMyPagesIndexRoute
   '/my/profile': typeof AppAccountMyProfileIndexRoute
@@ -268,12 +268,12 @@ export interface FileRoutesById {
   '/_public/about/': typeof PublicAboutIndexRoute
   '/_public/privacy/': typeof PublicPrivacyIndexRoute
   '/_public/terms/': typeof PublicTermsIndexRoute
+  '/_app/_account/my/': typeof AppAccountMyIndexRoute
   '/_app/courses/audit/': typeof AppCoursesAuditIndexRoute
   '/_app/courses/planner/': typeof AppCoursesPlannerIndexRoute
   '/_app/courses/stats/': typeof AppCoursesStatsIndexRoute
   '/_app/events/$eventId/': typeof AppEventsEventIdIndexRoute
   '/_app/pages/$slug/': typeof AppPagesSlugIndexRoute
-  '/_app/_account/my/': typeof AppAccountMyIndexRoute
   '/_app/_account/my/account/': typeof AppAccountMyAccountIndexRoute
   '/_app/_account/my/pages/': typeof AppAccountMyPagesIndexRoute
   '/_app/_account/my/profile/': typeof AppAccountMyProfileIndexRoute
@@ -299,12 +299,12 @@ export interface FileRouteTypes {
     | '/about/'
     | '/privacy/'
     | '/terms/'
+    | '/my/'
     | '/courses/audit/'
     | '/courses/planner/'
     | '/courses/stats/'
     | '/events/$eventId/'
     | '/pages/$slug/'
-    | '/my/'
     | '/my/account/'
     | '/my/pages/'
     | '/my/profile/'
@@ -326,12 +326,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/terms'
+    | '/my'
     | '/courses/audit'
     | '/courses/planner'
     | '/courses/stats'
     | '/events/$eventId'
     | '/pages/$slug'
-    | '/my'
     | '/my/account'
     | '/my/pages'
     | '/my/profile'
@@ -358,12 +358,12 @@ export interface FileRouteTypes {
     | '/_public/about/'
     | '/_public/privacy/'
     | '/_public/terms/'
+    | '/_app/_account/my/'
     | '/_app/courses/audit/'
     | '/_app/courses/planner/'
     | '/_app/courses/stats/'
     | '/_app/events/$eventId/'
     | '/_app/pages/$slug/'
-    | '/_app/_account/my/'
     | '/_app/_account/my/account/'
     | '/_app/_account/my/pages/'
     | '/_app/_account/my/profile/'
@@ -493,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicTermsIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_app/_account/my/': {
+      id: '/_app/_account/my/'
+      path: '/my'
+      fullPath: '/my/'
+      preLoaderRoute: typeof AppAccountMyIndexRouteImport
+      parentRoute: typeof AppAccountRouteRoute
+    }
     '/_app/courses/audit/': {
       id: '/_app/courses/audit/'
       path: '/audit'
@@ -527,13 +534,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/pages/$slug/'
       preLoaderRoute: typeof AppPagesSlugIndexRouteImport
       parentRoute: typeof AppRouteRoute
-    }
-    '/_app/_account/my/': {
-      id: '/_app/_account/my/'
-      path: '/my'
-      fullPath: '/my/'
-      preLoaderRoute: typeof AppAccountMyIndexRouteImport
-      parentRoute: typeof AppAccountRouteRoute
     }
     '/_app/_account/my/account/': {
       id: '/_app/_account/my/account/'
