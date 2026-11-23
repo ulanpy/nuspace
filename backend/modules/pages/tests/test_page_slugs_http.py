@@ -78,3 +78,12 @@ async def test_a_rename_breaks_the_admin_invite_link(
     await owner.client.patch("/api/pages/chess-club", json={"slug": "chess-society"})
 
     assert (await member.client.get("/api/pages/chess-club")).status_code == 404
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slug", ["contacts", "sgotinish"])
+async def test_a_page_can_take_a_slug_the_1_0_root_routes_held(member: Viewer, slug: str) -> None:
+    response = await member.client.post("/api/pages", json={"name": "Contacts", "slug": slug})
+
+    assert response.status_code == 200
+    assert (await member.client.get(f"/api/pages/{slug}")).status_code == 200
