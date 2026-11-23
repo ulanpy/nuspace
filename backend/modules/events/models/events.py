@@ -170,6 +170,8 @@ class EventAttendee(Base):
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    # Set once the 24h reminder (#447) has claimed this attendee; null until then.
+    reminded_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class EventAccessInvite(Base):
