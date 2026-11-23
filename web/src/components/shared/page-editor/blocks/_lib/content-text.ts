@@ -17,13 +17,20 @@ export function stripHtml(value: string): string {
     .replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (entity) => ENTITIES[entity])
 }
 
-// Keys whose strings are identifiers, not words a reader sees.
-const SKIPPED_KEYS = new Set(["id", "type"])
+// Keys whose strings are identifiers or styling, not words a reader sees.
+const SKIPPED_KEYS = new Set([
+  "id", "type", "className", "style", "href", "src", "url", "icon",
+  "color", "background", "variant", "align", "justify", "direction", "size", "layout", "gap",
+])
+
+// Values that are styling or addresses: colors, CSS functions, URLs and paths, lengths.
+const NON_TEXT_VALUE =
+  /^(#[0-9a-f]{3,8}|[a-z-]+\(.*\)|(https?:|mailto:|\/)\S*|-?\d+(\.\d+)?(px|rem|em|%|vh|vw|fr)?)$/i
 
 function collect(value: unknown, out: string[]): void {
   if (typeof value === "string") {
     const text = stripHtml(value).replace(/\s+/g, " ").trim()
-    if (text) out.push(text)
+    if (text && !NON_TEXT_VALUE.test(text)) out.push(text)
   } else if (Array.isArray(value)) {
     for (const item of value) collect(item, out)
   } else if (value && typeof value === "object") {

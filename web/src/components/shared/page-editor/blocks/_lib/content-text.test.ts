@@ -80,4 +80,24 @@ describe("pageContentText", () => {
     assert.equal(pageContentText(null), "")
     assert.equal(pageContentText({}), "")
   })
+
+  it("skips styling and addresses but keeps alt text", () => {
+    const data = {
+      content: [
+        {
+          type: "Hero",
+          props: {
+            id: "Hero-1",
+            title: "Robotics Club",
+            align: "center",
+            color: "#ff0000",
+            href: "https://example.com",
+            image: { url: "/media/a.png", alt: "Team at the finals" },
+            padding: "16px",
+          },
+        },
+      ],
+    }
+    assert.equal(pageContentText(data), "Robotics Club Team at the finals")
+  })
 })
