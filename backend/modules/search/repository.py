@@ -10,6 +10,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from backend.modules.auth.models import User
 from backend.modules.courses.models import Course, GradeReport
 from backend.modules.events.models import Event, EventStatus
 from backend.modules.pages.models import Page, PageAdmin, PageVisibility
@@ -57,4 +58,13 @@ class SearchRepository:
 
     async def grade_reports(self, ids: Sequence[int]) -> list[GradeReport]:
         stmt = select(GradeReport).where(GradeReport.id.in_(ids))
+        return list((await self.db_session.execute(stmt)).scalars().all())
+
+    async def profiles(self, subs: Sequence[str]) -> list[User]:
+        """The profiles with a handle among `subs`: a profile without one is no Source."""
+        stmt = (
+            select(User)
+            .where(User.sub.in_(subs), User.handle.is_not(None))
+            .options(selectinload(User.department))
+        )
         return list((await self.db_session.execute(stmt)).scalars().all())

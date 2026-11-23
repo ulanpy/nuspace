@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from httpx import AsyncClient
 
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.models import User, UserRole
@@ -6,6 +7,7 @@ from backend.modules.media.interfaces import ObjectStorage
 from backend.modules.profiles import schemas
 from backend.modules.profiles.media import ProfileMediaSlot, is_own_upload
 from backend.modules.profiles.repository import ProfileRepository
+from backend.modules.profiles.search_indexes import PROFILES_INDEX
 from backend.modules.shared.visibility import RecordVisibility, tiers_open_to, visible_to
 
 HANDLE_TAKEN_DETAIL = "That handle is already taken. Choose a different one."
@@ -16,9 +18,10 @@ SG_ROLES = frozenset({UserRole.boss, UserRole.capo, UserRole.soldier})
 
 
 class ProfileService:
-    def __init__(self, uow: UnitOfWork, storage: ObjectStorage):
+    def __init__(self, uow: UnitOfWork, storage: ObjectStorage, meilisearch_client: AsyncClient):
         self.uow = uow
         self.storage = storage
+        self.meilisearch_client = meilisearch_client
 
     async def _settings(self, user: User) -> schemas.ProfileSettingsResponse:
         picture, banner = await self._urls(user)
@@ -75,7 +78,10 @@ class ProfileService:
             # Inside the transaction, so a race on the unique index surfaces as
             # an IntegrityError the route turns into the same 409.
             await repo.flush()
-            return await self._settings(user)
+            response = await self._settings(user)
+        # After the commit, so the index never gets ahead of the row it indexes.
+        await PROFILES_INDEX.upsert(self.meilisearch_client, user)
+        return response
 
     async def save_content(self, sub: str, content: dict) -> schemas.ProfileSettingsResponse:
         async with self.uow:

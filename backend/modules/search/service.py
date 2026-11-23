@@ -35,6 +35,7 @@ from backend.modules.search.records import (
     event_record,
     grade_report_record,
     page_record,
+    profile_record,
 )
 from backend.modules.search.repository import SearchRepository
 from backend.modules.search.retrieval import (
@@ -55,6 +56,7 @@ from backend.modules.search.sources import (
     GRADE_REPORTS,
     OPEN_EVENT_STATUSES,
     PAGES,
+    PROFILES,
     SOURCES,
     SOURCES_BY_NAME,
     Reach,
@@ -136,16 +138,20 @@ class SearchService:
 
     async def _reach(self, repo: SearchRepository, viewer: Principal) -> Reach:
         if is_site_admin(viewer):
-            return Reach(page_tiers=None, event_statuses=None)
+            return Reach(page_tiers=None, event_statuses=None, profile_tiers=None)
         tiers = tiers_open_to(viewer)
         if is_guest(viewer):
-            return Reach(page_tiers=tiers, event_statuses=OPEN_EVENT_STATUSES)
+            return Reach(
+                page_tiers=tiers, event_statuses=OPEN_EVENT_STATUSES, profile_tiers=tiers
+            )
         sub = viewer[0]["sub"]
         return Reach(
             page_tiers=tiers,
             event_statuses=OPEN_EVENT_STATUSES,
             managed_page_ids=await repo.managed_page_ids(sub, outside=tiers),
             own_event_ids=await repo.own_event_ids(sub, outside=OPEN_EVENT_STATUSES),
+            profile_tiers=tiers,
+            own_profile_sub=sub,
         )
 
     async def _admit(
@@ -199,6 +205,12 @@ class SearchService:
             found += [course_record(row) for row in await repo.courses(ids)]
         if ids := wanted.get(GRADE_REPORTS):
             found += [grade_report_record(row) for row in await repo.grade_reports(ids)]
+        if ids := wanted.get(PROFILES):
+            found += [
+                record
+                for user in await repo.profiles(ids)
+                if (record := profile_record(user)) is not None
+            ]
         for primary_key in wanted.get(CATALOGUE, []):
             # The catalogue lives only in Meilisearch: its hit is its record.
             # A catalogue key found only by dense retrieval (#441) needs its

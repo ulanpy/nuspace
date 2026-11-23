@@ -2,18 +2,20 @@ import type { SearchKind } from "./types"
 
 /**
  * The kinds, in chip order, as the backend's `SearchKind` names them. Channel
- * messages (#442) and Profiles (#440) join here when they become kinds.
+ * messages (#442) join here when they become a kind.
  */
 export const SEARCH_KINDS = [
   "page",
   "course",
   "event",
+  "profile",
 ] as const satisfies readonly SearchKind[]
 
 export const KIND_LABELS: Record<SearchKind, string> = {
   page: "Pages",
   course: "Courses",
   event: "Events",
+  profile: "Profiles",
 }
 
 /** Results per request; the backend's default too. */
