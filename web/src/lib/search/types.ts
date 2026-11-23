@@ -2,6 +2,7 @@ import type { components } from "@/api/schema"
 
 export type SearchResponse = components["schemas"]["SearchResponse"]
 export type SearchResult = components["schemas"]["SearchResult"]
+export type SearchOverview = components["schemas"]["OverviewResponse"]
 export type SearchKind = components["schemas"]["SearchKind"]
 export type Snippet = components["schemas"]["Snippet"]
 export type SourceDate = components["schemas"]["SourceDate"]
