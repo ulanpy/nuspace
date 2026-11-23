@@ -95,6 +95,15 @@ export function ProfileScreen({ handle }: { handle: string }) {
         </div>
       </header>
 
+      {profile.banner ? (
+        <ResilientImage
+          src={profile.banner}
+          alt=""
+          containerClassName="h-32 w-full bg-muted sm:h-48"
+          eager
+        />
+      ) : null}
+
       {/* No width clamp: the profile's own design decides how wide it is. */}
       <div>
         <PageRenderer data={profile.content ?? {}} />

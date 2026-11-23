@@ -6,11 +6,17 @@ import {
 
 import { api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
+import { useMediaUpload } from "@/hooks/use-media-upload"
 import { hostOf, serviceByKey } from "@/lib/hosts"
 import { slugSchema } from "@/lib/slug"
-import { ACCOUNT_RESERVED_WORDS, NEW_PROFILE_DESIGN } from "./constants"
+import {
+  ACCOUNT_RESERVED_WORDS,
+  NEW_PROFILE_DESIGN,
+  PROFILE_MEDIA_ENTITY_ID,
+} from "./constants"
 import type {
   ProfileDesign,
+  ProfileMediaSlot,
   ProfileSettings,
   ProfileSettingsUpdate,
 } from "./types"
@@ -79,6 +85,40 @@ export function useUpdateProfileSettings() {
     mutationFn: (body: ProfileSettingsUpdate) =>
       unwrap(api.PATCH("/me/profile", { body })),
     onSuccess: settle,
+  })
+}
+
+/** The upload format each slot is signed with. */
+const SLOT_FORMATS = { picture: "profile", banner: "banner" } as const
+
+/**
+ * Upload a picture or banner: sign (ADR 0005), PUT to the bucket, then confirm,
+ * which writes `users`. A person is not a numbered entity, so the upload names
+ * `users` entity 0 and the object path carries the account.
+ */
+export function useUploadProfileMedia(slot: ProfileMediaSlot) {
+  const queryClient = useQueryClient()
+  const settle = useSettleProfile()
+  const { uploadMedia } = useMediaUpload()
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const [target] = await uploadMedia({
+        entityType: "users",
+        entityId: PROFILE_MEDIA_ENTITY_ID,
+        items: [{ file, mediaFormat: SLOT_FORMATS[slot], mediaOrder: 0 }],
+      })
+      return unwrap(
+        api.PUT("/me/profile/{slot}", {
+          params: { path: { slot } },
+          body: { filename: target.filename },
+        })
+      )
+    },
+    onSuccess: (settings) => {
+      settle(settings)
+      // The header's avatar reads the session, which now answers differently.
+      void queryClient.invalidateQueries({ queryKey: qk.session() })
+    },
   })
 }
 
