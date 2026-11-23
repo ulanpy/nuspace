@@ -140,7 +140,7 @@ async def test_the_walk_stops_at_the_watermark_and_new_posts_become_searchable(
 
     assert await ingest_channel(app.state.meilisearch_client, gcs, "bucket", CHANNEL) == 5  # type: ignore[arg-type]
     await search_settled()
-    (result,) = await _search(guest, "CSCI 235")
+    result = (await _search(guest, "CSCI 235"))[0]  # 101 ("CSCI 151") may follow on "CSCI" alone
     assert result["id"] == f"telegram_{CHANNEL}:103"
     assert result["url"] == f"https://t.me/{CHANNEL}/103"
     assert len(await _search(guest, "Career fair")) == 1
@@ -149,14 +149,14 @@ async def test_the_walk_stops_at_the_watermark_and_new_posts_become_searchable(
 
 @pytest.mark.asyncio
 async def test_a_second_poll_with_nothing_new_adds_nothing() -> None:
-    gcs = FakeGcs()
+    gcs = FakeGcs(_earlier_export())
     async with httpx.AsyncClient(transport=RecordedTme().transport(), base_url="https://t.me") as http:
         await poll_channel(http, gcs, "bucket", CHANNEL)  # type: ignore[arg-type]
         tme = RecordedTme()
         async with httpx.AsyncClient(transport=tme.transport(), base_url="https://t.me") as again:
             assert await poll_channel(again, gcs, "bucket", CHANNEL) == 0  # type: ignore[arg-type]
 
-    assert tme.requested == [None, "103"]
+    assert tme.requested == [None]  # the normal day: one fetch, already at the watermark
 
 
 @pytest.mark.asyncio
