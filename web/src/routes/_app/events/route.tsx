@@ -1,7 +1,6 @@
 import {
   Outlet,
   createFileRoute,
-  redirect,
   stripSearchParams,
 } from "@tanstack/react-router"
 import { useCallback } from "react"
@@ -24,11 +23,6 @@ const eventsSearchSchema = z.object({
     ])
     .optional(),
   q: z.string().optional(),
-  /**
-   * Legacy. Shared links use /events?id=123; beforeLoad rewrites them to the
-   * path form so old URLs keep working.
-   */
-  id: z.coerce.number().optional(),
 })
 
 export type EventsListSearch = z.infer<typeof eventsSearchSchema>
@@ -47,14 +41,6 @@ export const Route = createFileRoute("/_app/events")({
     // Keeps the default out of the address: an event opens at `/42`, not
     // `/42?time=upcoming`.
     middlewares: [stripSearchParams({ time: "upcoming" })],
-  },
-  beforeLoad: ({ search }) => {
-    if (search.id !== undefined) {
-      throw redirect({
-        to: "/events/$eventId",
-        params: { eventId: String(search.id) },
-      })
-    }
   },
   component: EventsBoardRoute,
 })

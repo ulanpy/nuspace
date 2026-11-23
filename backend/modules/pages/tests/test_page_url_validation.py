@@ -83,11 +83,8 @@ def test_rejects_invalid_slug_patterns(model_factory: ModelFactory, slug: str):
         "users",
         "events",
         "courses",
-        "announcements",
-        "contacts",
         "opportunities",
         "profile",
-        "sgotinish",
     ],
 )
 def test_rejects_reserved_words(model_factory: ModelFactory, slug: str):

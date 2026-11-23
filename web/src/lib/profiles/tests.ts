@@ -24,7 +24,7 @@ describe("handleSchema", () => {
   })
 
   it("refuses a reserved slug", () => {
-    assert.equal(accepts("sgotinish"), false)
+    assert.equal(accepts("settings"), false)
   })
 
   it("refuses the account host's own words", () => {

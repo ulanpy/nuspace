@@ -112,12 +112,6 @@ export const ROUTE_TABLE: readonly RouteTableRow[] = [
     service: "root",
     mount: "",
     routes: ["/", "/about", "/privacy", "/terms"],
-    unmigrated: [
-      "/announcements",
-      "/contacts",
-      "/mynuspace",
-      "/sgotinish",
-    ],
   },
   {
     service: "events",

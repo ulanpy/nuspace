@@ -25,11 +25,8 @@ export const RESERVED_SLUGS: readonly string[] = [
   "users",
   "events",
   "courses",
-  "announcements",
-  "contacts",
   "opportunities",
   "profile",
-  "sgotinish",
   // A Page is `pages.nuspace.kz/<slug>`, so a slug may not be a path nginx
   // answers itself on that host (some of these fail the pattern anyway).
   "api",

@@ -169,6 +169,37 @@ describe("nginx include", () => {
   it("reads the staging environment off a staging host", () => {
     assert.match(include, /courses_staging\.nuspace\.kz +staging;/)
   })
+
+  it("gives every service a production and a staging host row", () => {
+    for (const service of SERVICES) {
+      for (const environment of ["production", "staging"] as const) {
+        const host = service.hosts[environment].replace(/\./g, "\\.")
+        assert.match(include, new RegExp(`\\n {4}${host} +${service.key};`))
+      }
+    }
+  })
+
+  it("404s every 1.0 surface the cutover removed, on every host", () => {
+    const removed = [
+      "announcements",
+      "contacts",
+      "mynuspace",
+      "sgotinish",
+      "settings",
+    ]
+    for (const name of removed) {
+      assert.doesNotMatch(include, new RegExp(`"root:/${name}/?"`))
+    }
+    for (const row of ROUTE_TABLE) {
+      assert.equal(row.unmigrated, undefined)
+    }
+    assert.deepEqual(
+      parseRouteTree(ROUTE_TREE).paths.filter((path) =>
+        removed.some((name) => path === `/${name}` || path === `/${name}/`)
+      ),
+      []
+    )
+  })
 })
 
 describe("404 page", () => {

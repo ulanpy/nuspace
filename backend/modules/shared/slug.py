@@ -35,11 +35,8 @@ _RESERVED_WORDS = {
     "users",
     "events",
     "courses",
-    "announcements",
-    "contacts",
     "opportunities",
     "profile",
-    "sgotinish",
 }
 
 # Slugs sit at the root of `pages.nuspace.kz` (`/<slug>`), so a slug may not be

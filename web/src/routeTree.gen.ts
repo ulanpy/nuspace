@@ -15,13 +15,9 @@ import { Route as AppAccountRouteRouteImport } from './routes/_app/_account/rout
 import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
 import { Route as AppEventsRouteRouteImport } from './routes/_app/events/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
-import { Route as AppAnnouncementsIndexRouteImport } from './routes/_app/announcements/index'
-import { Route as AppContactsIndexRouteImport } from './routes/_app/contacts/index'
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
-import { Route as AppMynuspaceIndexRouteImport } from './routes/_app/mynuspace/index'
 import { Route as AppPagesIndexRouteImport } from './routes/_app/pages/index'
-import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
 import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/index'
 import { Route as PublicPrivacyIndexRouteImport } from './routes/_public/privacy/index'
 import { Route as PublicTermsIndexRouteImport } from './routes/_public/terms/index'
@@ -67,16 +63,6 @@ const PublicIndexRoute = PublicIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const AppAnnouncementsIndexRoute = AppAnnouncementsIndexRouteImport.update({
-  id: '/announcements/',
-  path: '/announcements/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppContactsIndexRoute = AppContactsIndexRouteImport.update({
-  id: '/contacts/',
-  path: '/contacts/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -87,19 +73,9 @@ const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppEventsRouteRoute,
 } as any)
-const AppMynuspaceIndexRoute = AppMynuspaceIndexRouteImport.update({
-  id: '/mynuspace/',
-  path: '/mynuspace/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppPagesIndexRoute = AppPagesIndexRouteImport.update({
   id: '/pages/',
   path: '/pages/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppSgotinishIndexRoute = AppSgotinishIndexRouteImport.update({
-  id: '/sgotinish/',
-  path: '/sgotinish/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const PublicAboutIndexRoute = PublicAboutIndexRouteImport.update({
@@ -198,13 +174,9 @@ export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/courses': typeof AppCoursesRouteRouteWithChildren
   '/events': typeof AppEventsRouteRouteWithChildren
-  '/announcements/': typeof AppAnnouncementsIndexRoute
-  '/contacts/': typeof AppContactsIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
   '/events/': typeof AppEventsIndexRoute
-  '/mynuspace/': typeof AppMynuspaceIndexRoute
   '/pages/': typeof AppPagesIndexRoute
-  '/sgotinish/': typeof AppSgotinishIndexRoute
   '/about/': typeof PublicAboutIndexRoute
   '/privacy/': typeof PublicPrivacyIndexRoute
   '/terms/': typeof PublicTermsIndexRoute
@@ -225,13 +197,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
-  '/announcements': typeof AppAnnouncementsIndexRoute
-  '/contacts': typeof AppContactsIndexRoute
   '/courses': typeof AppCoursesIndexRoute
   '/events': typeof AppEventsIndexRoute
-  '/mynuspace': typeof AppMynuspaceIndexRoute
   '/pages': typeof AppPagesIndexRoute
-  '/sgotinish': typeof AppSgotinishIndexRoute
   '/about': typeof PublicAboutIndexRoute
   '/privacy': typeof PublicPrivacyIndexRoute
   '/terms': typeof PublicTermsIndexRoute
@@ -258,13 +226,9 @@ export interface FileRoutesById {
   '/_app/courses': typeof AppCoursesRouteRouteWithChildren
   '/_app/events': typeof AppEventsRouteRouteWithChildren
   '/_public/': typeof PublicIndexRoute
-  '/_app/announcements/': typeof AppAnnouncementsIndexRoute
-  '/_app/contacts/': typeof AppContactsIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
-  '/_app/mynuspace/': typeof AppMynuspaceIndexRoute
   '/_app/pages/': typeof AppPagesIndexRoute
-  '/_app/sgotinish/': typeof AppSgotinishIndexRoute
   '/_public/about/': typeof PublicAboutIndexRoute
   '/_public/privacy/': typeof PublicPrivacyIndexRoute
   '/_public/terms/': typeof PublicTermsIndexRoute
@@ -289,13 +253,9 @@ export interface FileRouteTypes {
     | '/'
     | '/courses'
     | '/events'
-    | '/announcements/'
-    | '/contacts/'
     | '/courses/'
     | '/events/'
-    | '/mynuspace/'
     | '/pages/'
-    | '/sgotinish/'
     | '/about/'
     | '/privacy/'
     | '/terms/'
@@ -316,13 +276,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/announcements'
-    | '/contacts'
     | '/courses'
     | '/events'
-    | '/mynuspace'
     | '/pages'
-    | '/sgotinish'
     | '/about'
     | '/privacy'
     | '/terms'
@@ -348,13 +304,9 @@ export interface FileRouteTypes {
     | '/_app/courses'
     | '/_app/events'
     | '/_public/'
-    | '/_app/announcements/'
-    | '/_app/contacts/'
     | '/_app/courses/'
     | '/_app/events/'
-    | '/_app/mynuspace/'
     | '/_app/pages/'
-    | '/_app/sgotinish/'
     | '/_public/about/'
     | '/_public/privacy/'
     | '/_public/terms/'
@@ -423,20 +375,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/_app/announcements/': {
-      id: '/_app/announcements/'
-      path: '/announcements'
-      fullPath: '/announcements/'
-      preLoaderRoute: typeof AppAnnouncementsIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/contacts/': {
-      id: '/_app/contacts/'
-      path: '/contacts'
-      fullPath: '/contacts/'
-      preLoaderRoute: typeof AppContactsIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/_app/courses/': {
       id: '/_app/courses/'
       path: '/'
@@ -451,25 +389,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEventsIndexRouteImport
       parentRoute: typeof AppEventsRouteRoute
     }
-    '/_app/mynuspace/': {
-      id: '/_app/mynuspace/'
-      path: '/mynuspace'
-      fullPath: '/mynuspace/'
-      preLoaderRoute: typeof AppMynuspaceIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/_app/pages/': {
       id: '/_app/pages/'
       path: '/pages'
       fullPath: '/pages/'
       preLoaderRoute: typeof AppPagesIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/sgotinish/': {
-      id: '/_app/sgotinish/'
-      path: '/sgotinish'
-      fullPath: '/sgotinish/'
-      preLoaderRoute: typeof AppSgotinishIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_public/about/': {
@@ -654,11 +578,7 @@ interface AppRouteRouteChildren {
   AppAccountRouteRoute: typeof AppAccountRouteRouteWithChildren
   AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
   AppEventsRouteRoute: typeof AppEventsRouteRouteWithChildren
-  AppAnnouncementsIndexRoute: typeof AppAnnouncementsIndexRoute
-  AppContactsIndexRoute: typeof AppContactsIndexRoute
-  AppMynuspaceIndexRoute: typeof AppMynuspaceIndexRoute
   AppPagesIndexRoute: typeof AppPagesIndexRoute
-  AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
   AppPagesSlugIndexRoute: typeof AppPagesSlugIndexRoute
   AppPagesSlugEditIndexRoute: typeof AppPagesSlugEditIndexRoute
   AppPagesSlugSettingsIndexRoute: typeof AppPagesSlugSettingsIndexRoute
@@ -668,11 +588,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAccountRouteRoute: AppAccountRouteRouteWithChildren,
   AppCoursesRouteRoute: AppCoursesRouteRouteWithChildren,
   AppEventsRouteRoute: AppEventsRouteRouteWithChildren,
-  AppAnnouncementsIndexRoute: AppAnnouncementsIndexRoute,
-  AppContactsIndexRoute: AppContactsIndexRoute,
-  AppMynuspaceIndexRoute: AppMynuspaceIndexRoute,
   AppPagesIndexRoute: AppPagesIndexRoute,
-  AppSgotinishIndexRoute: AppSgotinishIndexRoute,
   AppPagesSlugIndexRoute: AppPagesSlugIndexRoute,
   AppPagesSlugEditIndexRoute: AppPagesSlugEditIndexRoute,
   AppPagesSlugSettingsIndexRoute: AppPagesSlugSettingsIndexRoute,
