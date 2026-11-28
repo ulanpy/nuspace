@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from backend.modules.auth.models import User
 from backend.modules.pages.constants import PageAdminSort
-from backend.modules.pages.models.page import PageAdmin
+from backend.modules.pages.models.page import PageAdmin, PageVisibility
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.service import PageService
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
-USER = ({"sub": "viewer"}, {"role": "user"})
+USER = ({"sub": "viewer"}, {"role": "default", "scope": "allowed"})
 BASE = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
@@ -32,7 +32,9 @@ def _admin(sub: str, minute: int) -> SimpleNamespace:
 
 def _service(total: int, returned: int) -> tuple[PageService, MagicMock]:
     repo = MagicMock(spec=PageRepository)
-    repo.get_by_slug = _async_return(SimpleNamespace(id=7, owner="owner", slug="club"))
+    repo.get_by_slug = _async_return(
+        SimpleNamespace(id=7, owner="owner", slug="club", visibility=PageVisibility.public)
+    )
     repo.is_admin = _async_return(True)
     repo.list_admins_page = AsyncMock(
         return_value=([_admin(f"a{i}", i) for i in range(returned)], total)

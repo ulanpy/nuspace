@@ -12,8 +12,8 @@ The frontend needed consistent patterns for file organization, naming, and code 
 
 **Source layout:**
 - `routes/` — TanStack Router file-based routes (thin, routing only)
-- `components/routes/<route>/` — Page components and route-exclusive UI
-- `components/layouts/` — App shells (app, courses, public)
+- `components/routes/<route>/` — Route screens and route-exclusive UI
+- `components/layouts/` — Shells: `site` (the header, rail and footer every host renders inside; a route shapes it through `staticData.shell`), plus the courses and settings layouts
 - `components/shared/` — Cross-page reusable UI grouped by domain
 - `components/ui/` — shadcn/ui primitives (vendor code, consume only)
 - `lib/<module>/` — Bounded capabilities: constants, functions, types, tests
@@ -27,10 +27,10 @@ The frontend needed consistent patterns for file organization, naming, and code 
 - Route segments: `$` prefix
 - `_`-prefixed directories: private to parent
 
-**Page layout:**
-- Every page uses the `Page` component from `shared/page`
+**Route screen layout:**
+- Every route screen uses the `Page` component from `shared/page` — the layout shell, not a Page
 - Box is always `max-w-7xl`, two body widths: `wide` (uncapped) and `prose` (`max-w-3xl`)
-- Pages never set padding — layouts own it
+- Route screens never set padding — layouts own it
 
 **Tables:**
 - `DataTable` (box) + `useDataTable` (config) + `TablePagination` (footer)
@@ -43,7 +43,7 @@ The frontend needed consistent patterns for file organization, naming, and code 
 
 - Consistent file organization across all routes
 - Predictable component patterns
-- No drift in page layout
+- No drift in route screen layout
 - Design tokens handle dark mode automatically
 
 ## Related

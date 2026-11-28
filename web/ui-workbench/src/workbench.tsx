@@ -1,6 +1,6 @@
 /**
  * The workbench shell. Portable: it imports shadcn primitives and the host
- * project's tokens, and discovers whatever sits in `components/` and `pages/`.
+ * project's tokens, and discovers whatever sits in `components/` and `route-screens/`.
  * See README.md for the files to edit when dropping it into a project.
  *
  * The shell owns the two pieces of state every surface needs: what has been typed
@@ -56,6 +56,12 @@ type Entry = { name: string; path: string; load: () => Promise<Module> }
 const SIDEBAR: CSSProperties & Record<`--${string}`, string> = {
   "--sidebar-width": "16rem",
   "--sidebar-width-mobile": "16rem",
+  // Declared here, on the shared ancestor, because the panel sizes itself against
+  // it from a sibling subtree of the header: a custom property inherits downward
+  // only, so declaring it on the header meant the read always took its fallback
+  // and the two could drift apart silently. The header below reads this same
+  // value for its own height, so there is one number.
+  "--wb-header": "3.5rem",
 }
 
 /**
@@ -78,10 +84,12 @@ function entries(glob: Record<string, () => Promise<Module>>): Entry[] {
 }
 
 const COMPONENTS = entries(import.meta.glob<Module>("../components/*.wb.tsx"))
-const PAGES = entries(import.meta.glob<Module>("../pages/*.wb.tsx"))
+const ROUTE_SCREENS = entries(
+  import.meta.glob<Module>("../route-screens/*.wb.tsx")
+)
 
 const GROUPS = [
-  { label: "Pages", entries: PAGES },
+  { label: "Route screens", entries: ROUTE_SCREENS },
   { label: "Components", entries: COMPONENTS },
 ]
 
@@ -222,7 +230,7 @@ function Header({
   const { toggleSidebar, open, openMobile, isMobile } = useSidebar()
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 [--wb-header:3.5rem] sm:px-4">
+    <header className="sticky top-0 z-20 flex h-(--wb-header) shrink-0 items-center gap-2 border-b bg-background px-3 sm:px-4">
       <Button
         variant="ghost"
         size="icon-sm"
@@ -332,10 +340,12 @@ export function Workbench({ source }: { source: string }) {
     [source, tokens, sheet]
   )
 
-  const entry = [...COMPONENTS, ...PAGES].find(
+  const entry = [...COMPONENTS, ...ROUTE_SCREENS].find(
     (item) => item.name === params.entry
   )
-  const isPage = PAGES.some((page) => page.name === params.entry)
+  const isRouteScreen = ROUTE_SCREENS.some(
+    (screen) => screen.name === params.entry
+  )
 
   const edit = (token: Token, value: string) =>
     setOverrides((prev) => new Map(prev).set(keyOf(token), value))
@@ -381,7 +391,7 @@ export function Workbench({ source }: { source: string }) {
             entry={entry.path}
             sheet={sheet}
             onEdit={edit}
-            padded={!isPage}
+            padded={!isRouteScreen}
           >
             <Loaded load={entry.load} />
           </UsedByPanel>
@@ -391,7 +401,8 @@ export function Workbench({ source }: { source: string }) {
               {params.entry}
             </h1>
             <p className="text-sm text-muted-foreground">
-              No <code>{params.entry}.wb.tsx</code> in components or pages.
+              No <code>{params.entry}.wb.tsx</code> in components or route
+              screens.
             </p>
           </div>
         )}

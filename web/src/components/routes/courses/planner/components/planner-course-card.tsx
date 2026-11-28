@@ -1,15 +1,10 @@
-import { ExternalLinkIcon, Loader2, RefreshCcw, Trash2 } from "lucide-react"
+import { Loader2, RefreshCcw } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-import {
-  useLoadSections,
-  useRemovePlannerCourse,
-  useSelectSections,
-} from "@/lib/courses/planner"
+import { useLoadSections, useSelectSections } from "@/lib/courses/planner"
 import {
   DEMAND_LABEL,
   demandLevel,
@@ -21,8 +16,6 @@ import {
   normalizeTitle,
 } from "@/lib/courses/planner/schedule"
 import type { PlannerCourse, PlannerSection } from "@/lib/courses/planner"
-import type { SyllabusLinks } from "@/lib/courses/planner"
-import { syllabusLink } from "@/lib/courses/planner"
 
 function sectionSummary(section: PlannerSection): string {
   const parts = [
@@ -103,30 +96,22 @@ interface PlannerCourseCardProps {
   clashes: ReadonlySet<number>
   /** Which saved plan this card belongs to, so refetches hit the right one. */
   scheduleId: number | null
-  syllabusLinks: SyllabusLinks
 }
 
+/**
+ * The section controls for the course picked in the shortlist: every section
+ * the registrar lists, grouped by type, with the ones in the schedule marked.
+ * Removing the course and its requisites live on its shortlist card.
+ */
 export function PlannerCourseCard({
   course,
   clashes,
   scheduleId,
-  syllabusLinks,
 }: PlannerCourseCardProps) {
   const loadSections = useLoadSections({ scheduleId })
   const selectSections = useSelectSections({ scheduleId })
-  const removeCourse = useRemovePlannerCourse({ scheduleId })
 
   const groups = groupSectionsByType(course.sections)
-  const syllabus = syllabusLink(syllabusLinks, course.course_code)
-  const requirementRows = [
-    ["Prerequisites", course.pre_req],
-    ["Corequisites", course.co_req],
-    ["Antirequisites", course.anti_req],
-    ["Priority 1", course.priority_1],
-    ["Priority 2", course.priority_2],
-    ["Priority 3", course.priority_3],
-    ["Priority 4", course.priority_4],
-  ].filter((row): row is [string, string] => Boolean(row[1]?.trim()))
   const isBusy =
     (loadSections.isPending && loadSections.variables.courseId === course.id) ||
     (selectSections.isPending &&
@@ -134,77 +119,28 @@ export function PlannerCourseCard({
 
   return (
     <Card className="space-y-3 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="font-semibold">{course.course_code}</h3>
+          <h3 className="font-semibold">{course.course_code} sections</h3>
           <p className="text-sm text-muted-foreground">
             {normalizeTitle(course.title)}
           </p>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {course.level && <Badge variant="outline">{course.level}</Badge>}
-            {course.school && (
-              <Badge variant="secondary">{course.school}</Badge>
-            )}
-          </div>
-          {syllabus && (
-            <a
-              href={syllabus}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-            >
-              Syllabus
-              <ExternalLinkIcon className="size-3" aria-hidden />
-            </a>
-          )}
-          {requirementRows.length > 0 && (
-            <details className="mt-2 text-xs">
-              <summary className="cursor-pointer font-medium text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-                Priorities & requisites
-              </summary>
-              <dl className="mt-2 space-y-2 rounded-lg border bg-muted/20 p-3">
-                {requirementRows.map(([label, value]) => (
-                  <div key={label}>
-                    <dt className="font-medium text-muted-foreground">
-                      {label}
-                    </dt>
-                    <dd className="mt-0.5 whitespace-pre-wrap">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </details>
-          )}
         </div>
-
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={isBusy}
-            onClick={() => {
-              loadSections.mutate({ courseId: course.id, refresh: true })
-            }}
-          >
-            {isBusy ? (
-              <Loader2 className="animate-spin" aria-hidden />
-            ) : (
-              <RefreshCcw aria-hidden />
-            )}
-            <span className="sr-only sm:not-sr-only">Sections</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={removeCourse.isPending}
-            onClick={() => {
-              removeCourse.mutate(course.id)
-            }}
-          >
-            <Trash2 aria-hidden />
-            <span className="sr-only">Remove {course.course_code}</span>
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={isBusy}
+          onClick={() => {
+            loadSections.mutate({ courseId: course.id, refresh: true })
+          }}
+        >
+          {isBusy ? (
+            <Loader2 className="animate-spin" aria-hidden />
+          ) : (
+            <RefreshCcw aria-hidden />
+          )}
+          Refresh
+        </Button>
       </div>
 
       {course.sections.length === 0 ? (

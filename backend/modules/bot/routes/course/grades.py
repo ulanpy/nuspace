@@ -6,6 +6,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import CallbackQuery, Message
 from redis.asyncio import Redis
 
+from backend.core.configs.config import config
 from backend.core.database.uow import UnitOfWork
 from backend.modules.bot.keyboards.callback_factory import CourseGradesPage
 from backend.modules.bot.services.grades import (
@@ -26,7 +27,6 @@ async def course_command(
     uow: UnitOfWork,
     meilisearch_client: httpx.AsyncClient,
     redis: Redis,
-    public_url: str,
 ) -> None:
     keyword = (command.args or "").strip()
     if not keyword:
@@ -40,7 +40,7 @@ async def course_command(
         redis=redis,
         keyword=keyword,
         page=1,
-        public_url=public_url,
+        courses_origin=config.service_origin("courses"),
     )
 
 
@@ -51,7 +51,6 @@ async def course_grades_page(
     uow: UnitOfWork,
     meilisearch_client: httpx.AsyncClient,
     redis: Redis,
-    public_url: str,
 ) -> None:
     if callback.message is None or callback.from_user is None:
         await callback.answer()
@@ -68,7 +67,7 @@ async def course_grades_page(
         keyword=keyword,
         page=callback_data.page,
     )
-    text = build_grades_message(keyword, response, public_url)
+    text = build_grades_message(keyword, response, config.service_origin("courses"))
     keyboard = build_grades_keyboard(response.page, response.total_pages)
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboard)
     await callback.answer()

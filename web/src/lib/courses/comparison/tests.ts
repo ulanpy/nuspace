@@ -4,6 +4,7 @@ import {
   MAX_GRADE_COMPARISONS,
   bestValueIndexes,
   comparisonMetrics,
+  difficultyLabel,
   toggleGradeComparison,
 } from "./functions"
 
@@ -48,5 +49,20 @@ describe("grade comparison", () => {
     assert.deepEqual(bestValueIndexes([3.2, null, 3.8, 3.8], "highest"), [2, 3])
     assert.deepEqual(bestValueIndexes([0.2, undefined, 0.1], "lowest"), [2])
     assert.deepEqual(bestValueIndexes([null, undefined], "highest"), [])
+  })
+})
+
+describe("difficultyLabel", () => {
+  it("reads the spread as well as the average", () => {
+    assert.equal(difficultyLabel(3.6, 0.3), "Easy")
+    assert.equal(difficultyLabel(3.6, 0.9), "Moderate")
+    assert.equal(difficultyLabel(3.6, null), "Easy")
+  })
+
+  it("steps down with the average", () => {
+    assert.equal(difficultyLabel(3.1, 0.2), "Moderate")
+    assert.equal(difficultyLabel(2.6), "Hard")
+    assert.equal(difficultyLabel(2.1), "Very Hard")
+    assert.equal(difficultyLabel(null), "No signal")
   })
 })

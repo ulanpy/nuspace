@@ -20,11 +20,11 @@ project through `ui-workbench.config.ts`, which names the import alias and the
 dark class.
 
 A file is a workbench file when it is named `*.wb.tsx` in `components/` or
-`pages/`. The suffix is the convention and `import.meta.glob` is the discovery:
-fixtures go in a sibling `*.wb.demo.tsx`, which the pattern does not match, so
-nothing filters them out afterwards. Each mounts by its default export.
-Everything in the folder is scratch, and work leaves by being written fresh in
-`src/components/shared/` against its real props.
+`route-screens/`. The suffix is the convention and `import.meta.glob` is the
+discovery: fixtures go in a sibling `*.wb.demo.tsx`, which the pattern does not
+match, so nothing filters them out afterwards. Each mounts by its default
+export. Everything in the folder is scratch, and work leaves by being written
+fresh in `src/components/shared/` against its real props.
 
 Tokens are read from the source text of the configured stylesheet, via the
 `?raw` suffix. The text carries each declaration's enclosing selector and its
@@ -91,8 +91,8 @@ because a link should open the value on screen.
 
 - The workbench needs Vite, shadcn and Tailwind v4. Discovery has no equivalent
   outside Vite.
-- A page in `pages/` cannot import from the app's own routes. Those bring a shell
-  and a session fetch, so a page builds its own layout.
+- A route screen in `route-screens/` cannot import from the app's own routes. Those
+  bring a shell and a session fetch, so a route screen builds its own layout.
 - Type errors in a workbench file are not caught until Vite's overlay. The real
   file is checked when it is written for real.
 - A token override is per session. A reload discards it, and Download is the only
@@ -104,6 +104,10 @@ because a link should open the value on screen.
   the `@import "tailwindcss";`, which is where a `@source` is compiled.
 - The app's own build does scan this folder, since its root is the app, which adds
   about 450 bytes to the production stylesheet.
+- `ui-workbench/references/` sits under that same source base and is scanned with
+  it, so `src/index.css` also carries `@source not "../ui-workbench/references";`.
+  The exclusion names that folder alone: excluding the workbench would strip the
+  utilities from every workbench file, since they are what the workbench renders.
 - A token's type is kept for the session, since nothing in the file records it. A
   reload forgets it, and Reset discards it.
 

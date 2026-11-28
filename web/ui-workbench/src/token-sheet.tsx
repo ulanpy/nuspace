@@ -121,20 +121,24 @@ export function downloadPlan(
  * Every file as text, so what a component uses is a walk rather than a guess.
  * The keys are the paths the glob produced, which are relative to this folder,
  * and `@/` means the app's `src` in that same namespace.
+ *
+ * `css` is in the first glob because the walk follows a component's imports into
+ * stylesheets and used to drop them silently: `resolve` could name the file, the
+ * source map had no key for it, and every token inside went unreported.
  */
 const SOURCES: Record<string, string> = {
-  ...import.meta.glob("../../src/**/*.{ts,tsx}", {
+  ...import.meta.glob("../../src/**/*.{ts,tsx,css}", {
     query: "?raw",
     import: "default",
     eager: true,
   }),
-  ...import.meta.glob("../{components,pages}/*.wb.tsx", {
+  ...import.meta.glob("../{components,route-screens}/*.wb.tsx", {
     query: "?raw",
     import: "default",
     eager: true,
   }),
   // Fixtures hold markup too. They are walked, never listed.
-  ...import.meta.glob("../{components,pages}/*.wb.demo.tsx", {
+  ...import.meta.glob("../{components,route-screens}/*.wb.demo.tsx", {
     query: "?raw",
     import: "default",
     eager: true,
@@ -1338,12 +1342,15 @@ export function UsedByPanel({
   entry: string
   sheet: SheetState
   onEdit: (token: Token, value: string) => void
-  /** A page is judged at the width it will run at, so it gets no padding. */
+  /** A route screen is judged at the width it will run at, so it gets no padding. */
   padded?: boolean
   /** The component itself. */
   children: ReactNode
 }) {
-  const [open, setOpen] = useState(true)
+  // Closed by default, and not persisted, so a refresh opens the sheet and leaves
+  // this shut. The toggle row below is outside the gate, so there is still
+  // something to click.
+  const [open, setOpen] = useState(false)
   const active = useActiveBlock()
   const usage = useMemo(
     () => usedTokens(SOURCES, entry, tokens, ALIAS_BASE),
@@ -1377,18 +1384,26 @@ export function UsedByPanel({
     rows.find((row) => keyOf(row.token) === sheet.selected) ?? rows[0] ?? null
 
   return (
-    // The header is 56px above this, so a whole viewport here is a whole viewport
-    // of page. Saying `min-h-svh` instead leaves every short page one header
-    // taller than the window, and a scrollbar for it.
-    <div className="flex min-h-[calc(100svh-var(--wb-header,3.5rem))] flex-col">
-      <div className={`min-h-0 flex-1 ${padded ? "p-4 sm:p-6" : ""}`}>
+    // A height of its own rather than a minimum, so this column is exactly one
+    // window minus the header and the entry scrolls inside it. With `min-h` the
+    // box was unbounded, `flex-1` had nothing to divide, the content grew past
+    // the viewport, and the document became the scrollport -- which left the
+    // header's `sticky top-0` and the panel's `sticky bottom-0` both resolving
+    // against the window, so the scrollbar ran the full height of the page and
+    // read as though it sat over the header. No fallback on the property: it is
+    // declared on the shared ancestor in `workbench.tsx`, so it is always set.
+    <div className="flex h-[calc(100svh-var(--wb-header))] flex-col">
+      <div
+        className={`min-h-0 flex-1 overflow-y-auto overscroll-contain ${
+          padded ? "p-4 sm:p-6" : ""
+        }`}
+      >
         {children}
       </div>
 
-      {/* A height of its own, `overscroll-contain` and no scrollbar: the list
-          scrolls here, reaching its end stops here rather than dragging the page
-          above along with it, and the rows get the width the panel is. */}
-      <div className="sticky bottom-0 z-20 flex flex-col border-t bg-background/95 backdrop-blur">
+      {/* Opaque, and with no padding above it, so the rows sliding underneath
+          cannot show through. */}
+      <div className="sticky bottom-0 z-20 flex flex-col border-t bg-background">
         <div className="flex items-center gap-2.5 px-4 py-1.5 sm:px-6">
           <Button
             variant="ghost"

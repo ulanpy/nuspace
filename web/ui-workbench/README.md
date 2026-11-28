@@ -26,7 +26,8 @@ web/
     │   ├── tokens.ts        source-text parser, categories, dependency walk
     │   ├── values.ts        reading and writing a CSS value
     │   └── usage.ts         what a component's import tree uses
-    └── components/ + pages/   your scratch
+    └── components/ + route-screens/   your scratch
+    └── references/                     material to look at, never rendered
 ```
 
 Three files to edit, then one command.
@@ -39,7 +40,7 @@ project sets the path twice.
 ```ts
 export default {
   alias: { "@": "src" }, // paths relative to the app root
-  darkClass: "dark",     // the class your theme toggle adds to <html>
+  darkClass: "dark", // the class your theme toggle adds to <html>
 }
 ```
 
@@ -88,7 +89,7 @@ prints as JSON, so measure rather than look:
 
 ```js
 // check.mjs: does this window scroll sideways?
-(() => {
+;(() => {
   const doc = document.documentElement
   return JSON.stringify({
     scrollWidth: doc.scrollWidth,
@@ -99,8 +100,8 @@ prints as JSON, so measure rather than look:
 
 ## Adding demos
 
-Any `*.wb.tsx` file in `components/` or `pages/` shows up in the sidebar under
-its filename. Nothing is registered anywhere.
+Any `*.wb.tsx` file in `components/` or `route-screens/` shows up in the sidebar
+under its filename. Nothing is registered anywhere.
 
 ```tsx
 // components/pricing-table.wb.tsx
@@ -121,9 +122,52 @@ components/
 └── pricing-table.wb.demo.tsx   fixtures, deleted when you are done
 ```
 
-Pages live in `pages/` and render full-bleed with no heading, so you can judge
-one at the width it will run at. A page builds its own layout out of shared
-components; your app's own routes bring a shell and a session fetch with them.
+Route screens live in `route-screens/` and render full-bleed with no heading, so
+you can judge one at the width it will run at. A route screen builds its own
+layout out of shared components; your app's own routes bring a shell and a
+session fetch with them.
+
+Name one after the URL path it serves. Both folders are globbed flat, so the path
+is flattened into the filename: `/account/settings` is
+`account-settings.wb.tsx`, `/p/courses` is `p-courses.wb.tsx`. The sidebar shows
+the filename, so the path is what you read.
+
+Take the path from your router's file tree rather than guessing. A `_`-prefixed
+directory is a pathless group and is not part of the URL; every other segment is.
+A dynamic segment has no name to take, so substitute a plausible one and say so
+at the top of the file:
+
+```tsx
+// route-screens/p-course-catalog.wb.tsx
+// Stands in for /p/$slug.
+```
+
+## References
+
+`references/` holds what you want looked at while you work: reference code, a
+screenshot, a spec somebody sent you, a snippet out of a library. Any file type
+goes in there and nothing renders it. The entry globs do not match this folder,
+so a `.tsx` file in it is never mounted as a demo, and the browser never reads
+it.
+
+Keep it out of the production stylesheet. This folder sits under the Vite root,
+which is Tailwind's automatic source base, so a `.tsx` in here has its utilities
+compiled into your CSS unless you say otherwise. One line in your stylesheet,
+beside the `@source` line, does it:
+
+```css
+@source not "../ui-workbench/references";
+```
+
+A prototype made from a reference still goes in `components/` or
+`route-screens/`, built with your own components and your own conventions. The
+reference is for looking at, not for importing.
+
+## The agent skill
+
+`.agents/skills/ui-workbench-prototype/` is a skill that runs the loop above:
+state the question, start the workbench, prototype, confirm the page renders,
+write the component for real. It is the short version of the sections here.
 
 ## The token sheet
 
@@ -195,9 +239,9 @@ token it no longer declares is neither counted nor written.
 
 ## What a component is using
 
-Open a component or a page and the tokens it touches are docked underneath it,
-with the same editor, so a value can be changed while the component is on
-screen.
+Open a component or a route screen and the tokens it touches are docked
+underneath it, with the same editor, so a value can be changed while the
+component is on screen.
 
 The list comes from a walk of the component's own import tree: every file it
 reaches through a local import, read as text. It collects `var(--x)` references
@@ -213,8 +257,13 @@ gives the editor's links somewhere to land. The result is grouped by category
 and by block, like the token sheet, because it is the same list of tokens.
 
 The panel is a fixed share of the window: the editor holds the top of it, the
-groups scroll underneath with 16px between them, and the scroll stops at the
-end of the list. A page renders full bleed with no padding.
+groups scroll underneath with 16px between them, and the scroll stops at the end
+of the list. A route screen renders full bleed with no padding.
+
+The entry scrolls between the header and the panel, not the window, so the frame
+is one viewport less the header. A full-bleed entry fills that frame: say
+`min-h-0` or `h-full` rather than `min-h-svh`, which is one header taller than
+the space it gets and scrolls that much too early.
 
 ## Getting work out
 
@@ -224,13 +273,16 @@ Everything in here is scratch. The component you keep gets written fresh in
 ## Known limits
 
 - Your production stylesheet grows by about 450 bytes, because Tailwind now
-  scans this folder too. Gitignoring `ui-workbench/` removes it.
+  scans this folder too. Excluding the whole folder from that scan is the wrong
+  fix: every workbench file is a `.tsx` this tool renders, so it needs its
+  utilities. Exclude only `references/`, as above, and gitignore the folder when
+  you have no reason to track it.
 - The theme toggle does not persist. The workbench flips the root class
   directly and forgets on reload, so match `darkClass` to your app's or the
   preview shows a palette it never paints.
-- A picked kind lives in the session. It survives a reload and is discarded by
-  Reset. Retyping a token rewrites its value to that kind's default; Reset puts
-  the file's value back.
+- A picked kind does not persist either. It lives in the page, so a reload
+  forgets it and Reset discards it. Retyping a token rewrites its value to that
+  kind's default; Reset puts the file's value back.
 - A declaration can only be given a new value. Adding one and striking one out
   happen in the stylesheet, and the download only writes values.
 - No typecheck. A type error surfaces as a Vite overlay while you work. The

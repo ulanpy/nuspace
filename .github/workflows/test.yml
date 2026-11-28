@@ -1,0 +1,61 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.15.0
+      - name: Install frontend dependencies
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+      - name: Build and check host routes
+        working-directory: web
+        run: pnpm build
+      - name: Check committed route tree
+        run: git diff --exit-code -- web/src/routeTree.gen.ts
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # The same compose file a developer starts locally (backend/tests/README.md).
+      - name: Start test stores
+        run: docker compose -f infra/test.docker-compose.yml up -d --wait
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Run backend tests
+        working-directory: backend
+        run: uv run pytest
+
+      - name: Stop test stores
+        if: always()
+        run: docker compose -f infra/test.docker-compose.yml down

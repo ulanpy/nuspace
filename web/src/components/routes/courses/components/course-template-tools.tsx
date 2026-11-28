@@ -32,10 +32,8 @@ export function CourseTemplateTools({
   const user = useCurrentUser()
   const [open, setOpen] = useState(false)
   const [page, setPage] = useState(1)
-  // Local, not URL: this list lives in a dialog inside a course card, and
-  // `course-card.tsx` is rendered by both `/courses` and `/courses/schedule`.
-  // A `size` param on either route would be one page-size control fighting the
-  // other for a single key, describing a dialog nobody has opened yet.
+  // Local, not URL: this list lives in a dialog inside the course summary.
+  // A `size` param on the route would describe a dialog nobody has opened yet.
   const [size, setSize] = useState<number>(DEFAULT_PAGE_SIZE)
   const [importing, setImporting] = useState<CourseTemplate | null>(null)
 

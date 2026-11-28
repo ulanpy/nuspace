@@ -116,11 +116,11 @@ async def get_my_pages(
 
     `sort` and `visibility` are **silently ignored when `keyword` is set**. The
     keyword path short-circuits to Meilisearch, which ranks by relevance and
-    has `filterable_attributes=None`, so there is no facet to filter on either.
+    is not asked to filter on `visibility`, although the index now carries it
+    as a filterable attribute (`modules/pages/search_indexes.py`).
     No error, just wrong rows — which is how you get "the sort button does
-    nothing". My Pages has no search box today, so this is unreachable. Adding
-    one means `filterableAttributes` in `modules/pages/search_indexes.py` plus
-    a reindex, not just a UI control.
+    nothing". My Pages has no search box today, so this is unreachable.
+    Adding one means passing the filter to Meilisearch, not just a UI control.
     """
     return await page_service.list_my_pages(
         infra=infra,

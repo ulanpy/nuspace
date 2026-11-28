@@ -4,6 +4,11 @@
    points at that folder and misses every component it renders. This has to sit
    beside the @import above: a @source in any other file is never compiled. */
 @source "./**/*.{ts,tsx}";
+
+/* `ui-workbench/references/` is material to look at, not part of the app, and it
+   sits under the workbench's Vite root, which is the automatic source base. Left
+   alone, every .tsx in there has its utilities compiled into this stylesheet. */
+@source not "../ui-workbench/references";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/onest";

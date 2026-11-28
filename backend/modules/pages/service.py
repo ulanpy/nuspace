@@ -8,7 +8,7 @@ from backend.common.schemas import Infra, ShortUserResponse
 from backend.common.utils import response_builder
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.uow import UnitOfWork
-from backend.modules.auth.models import UserRole
+from backend.modules.auth.dependencies import is_guest
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.media.schemas import MediaResponse
 from backend.modules.pages import schemas
@@ -21,10 +21,11 @@ from backend.modules.pages.constants import (
 )
 from backend.modules.pages.interfaces import MediaAttachmentResolver
 from backend.modules.pages.models.page import Page, PageAdmin, PageVisibility
-from backend.modules.pages.policy import PagePolicy
+from backend.modules.pages.policy import PagePolicy, page_visibility
 from backend.modules.pages.repository import PageRepository
 from backend.modules.pages.utils import get_page_permissions
 from backend.modules.shared.media_ownership import delete_owned_media
+from backend.modules.shared.visibility import tiers_open_to, visible_to
 
 
 class PageService:
@@ -35,10 +36,6 @@ class PageService:
     ):
         self.uow = uow
         self.media_attachment_resolver = media_attachment_resolver
-
-    @staticmethod
-    def _is_site_admin(user: tuple[dict, dict]) -> bool:
-        return user[1]["role"] == UserRole.admin.value
 
     async def _ensure_user_exists(self, sub: str) -> None:
         async with self.uow:
@@ -58,8 +55,8 @@ class PageService:
 
     @staticmethod
     def _build_admin_link_url(infra: Infra, page: Page, raw_token: str) -> str:
-        origin = infra.config.HOME_URL.rstrip("/")
-        return f"{origin}/p/{page.slug}?admin={raw_token}"
+        origin = infra.config.service_origin("pages")
+        return f"{origin}/{page.slug}?admin={raw_token}"
 
     async def create_page(
         self, infra: Infra, page_data: schemas.PageCreateRequest, user: tuple[dict, dict]
@@ -287,12 +284,15 @@ class PageService:
         pages the caller does not run, so it has no relationship to filter by
         and no owner-first ordering to disturb.
 
-        No policy check here: this is a list, so there is no single page to
-        check, and the repository puts the visibility restriction in the WHERE
-        itself. Asking anyway dereferenced a `None` page.
+        No `PagePolicy` check here: this is a list, so there is no single page
+        to check, and asking anyway dereferenced a `None` page. The WHERE is
+        narrowed by `tiers_open_to`, and every row it returns is then put to
+        `visible_to`, the same predicate a read by slug asks. The WHERE is
+        built from that predicate, so it should drop nothing; the second
+        question is what makes the predicate, not the query, the enforcement.
         """
-        is_guest = bool(user[1].get("is_guest"))
-        if scope == "mine" and is_guest:
+        guest = is_guest(user)
+        if scope == "mine" and guest:
             # `/pages/mine` is about the caller's own pages, and a guest has
             # none. Reachable only by a hand-written URL, since the UI shows
             # the table to signed-in users only.
@@ -304,13 +304,13 @@ class PageService:
 
         async with self.uow:
             repo = self.uow.get_repo(PageRepository)
-            if not is_guest:
+            if not guest:
                 admin_page_ids = await repo.admin_page_ids(user[0]["sub"])
             pages, count, keyword_no_results = await repo.list_pages(
                 page=page,
                 size=size,
-                viewer_sub=None if is_guest else user[0]["sub"],
-                is_site_admin=self._is_site_admin(user),
+                viewer_sub=None if guest else user[0]["sub"],
+                tiers=tiers_open_to(user),
                 scope=scope,
                 keyword=keyword,
                 meilisearch_client=infra.meilisearch_client,
@@ -319,6 +319,14 @@ class PageService:
                 sort=sort,
                 order=order,
             )
+            pages = [
+                page
+                for page in pages
+                if visible_to(
+                    user,
+                    page_visibility(page, user[0]["sub"], is_page_admin=page.id in admin_page_ids),
+                )
+            ]
             media_objs: List[Media] = await repo.list_media(
                 page_ids=[page.id for page in pages],
                 media_formats=[MediaFormat.profile, MediaFormat.banner],
@@ -365,25 +373,6 @@ class PageService:
     ) -> schemas.PageResponse:
         page, policy = await self._load_page_and_policy(slug, user)
         await policy.check_permission(action=ResourceAction.READ, page=page)
-        return await self._build_page_response(page, infra, user)
-
-    async def get_page_response_by_id(
-        self, infra: Infra, page_id: int, user: tuple[dict, dict]
-    ) -> schemas.PageResponse:
-        """Same as `get_page_response`, for callers that hold an id and not a slug.
-
-        The OG routes are addressed by `?id=`, and the frontend and the Telegram
-        preview URL both build them that way.
-        """
-        async with self.uow:
-            repo = self.uow.get_repo(PageRepository)
-            page = await repo.get_by_id(page_id)
-            if page is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found")
-            is_page_admin = await repo.is_admin(page.id, user[0]["sub"])
-        await PagePolicy(user=user, is_page_admin=is_page_admin).check_permission(
-            action=ResourceAction.READ, page=page
-        )
         return await self._build_page_response(page, infra, user)
 
     @staticmethod

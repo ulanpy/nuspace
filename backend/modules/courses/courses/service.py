@@ -495,7 +495,11 @@ class StudentCourseService:
 
         async with self.uow:
             course_repo = self.uow.get_repo(CourseRepository)
-            return await course_repo.create_course(course_data)
+            course = await course_repo.create_course(course_data)
+        # Index after the commit, so search never lists a row that rolled back.
+        if self.infra is not None:
+            await course_repo.upsert_search(self.infra.meilisearch_client, course)
+        return course
 
     async def sync_courses_from_registrar(
         self,

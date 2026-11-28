@@ -1,20 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/landing"
+import { HeaderSearch, SearchScreen } from "@/components/routes/search"
+import { SEARCH_KINDS } from "@/lib/search"
 import { sessionQueryOptions } from "@/lib/user"
 
-const landingSearchSchema = z.object({
+const searchSchema = z.object({
+  q: z.string().optional().catch(undefined),
+  kind: z.enum(SEARCH_KINDS).optional().catch(undefined),
   returnTo: z.string().optional(),
 })
 
+/** `nuspace.kz/`: the search front door; with `?q=`, the results. */
 export const Route = createFileRoute("/_public/")({
-  validateSearch: landingSearchSchema,
+  validateSearch: searchSchema,
   beforeLoad: ({ context }) =>
     context.queryClient.ensureQueryData(sessionQueryOptions),
-  component: LandingRoute,
+  staticData: { shell: { search: HeaderSearch } },
+  component: SearchRoute,
 })
 
-function LandingRoute() {
-  return <Page />
+function SearchRoute() {
+  const { q, kind } = Route.useSearch()
+  return <SearchScreen q={q} kind={kind} />
 }

@@ -4,7 +4,12 @@ import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 
 import { apiErrorMessage } from "@/api/errors"
-import { useDeletePage, useUpdatePage, canEditField } from "@/lib/pages"
+import {
+  canEditField,
+  pageAddress,
+  useDeletePage,
+  useUpdatePage,
+} from "@/lib/pages"
 import type { Page as PageEntity } from "@/lib/pages"
 import { SettingsSection } from "@/components/shared/settings/settings-section"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
@@ -22,7 +27,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item"
 
-export function Page({ page }: { page: PageEntity }) {
+export function GeneralSettings({ page }: { page: PageEntity }) {
   const navigate = useNavigate()
   const updatePage = useUpdatePage()
   const deletePage = useDeletePage()
@@ -52,17 +57,31 @@ export function Page({ page }: { page: PageEntity }) {
     )
   }
 
-  const handleDetailsSubmit = ({ update, items }: PageSubmitPayload) => {
+  // A save that changes the slug waits here for the rename dialog's answer.
+  const [pendingRename, setPendingRename] = useState<PageSubmitPayload | null>(
+    null
+  )
+
+  const handleDetailsSubmit = (payload: PageSubmitPayload) => {
+    if (payload.update.slug != null && payload.update.slug !== page.slug) {
+      setPendingRename(payload)
+      return
+    }
+    save(payload)
+  }
+
+  const save = ({ update, items }: PageSubmitPayload) => {
     const loading = toast.loading("Saving page…")
     updatePage.mutate(
       { slug: page.slug, id: page.id, body: update, items },
       {
         onSuccess: (result) => {
+          setPendingRename(null)
           toast.success("Page updated.", { id: loading })
           // The slug may have changed in the same request, so navigate to the
           // address the response reports rather than the one we asked with.
           const currentSlug = result.entity.slug ?? page.slug
-          void navigate({ to: "/p/$slug", params: { slug: currentSlug } })
+          void navigate({ to: "/pages/$slug", params: { slug: currentSlug } })
         },
         onError: (error) => {
           toast.error(apiErrorMessage(error, "Could not save. Try again."), {
@@ -89,7 +108,7 @@ export function Page({ page }: { page: PageEntity }) {
           }
           onSubmit={handleDetailsSubmit}
           onCancel={() => {
-            void navigate({ to: "/p/$slug", params: { slug: page.slug } })
+            void navigate({ to: "/pages/$slug", params: { slug: page.slug } })
           }}
         />
       </SettingsSection>
@@ -156,11 +175,53 @@ export function Page({ page }: { page: PageEntity }) {
           deletePage.mutate(page.slug, {
             onSuccess: () => {
               setIsConfirmingDelete(false)
-              void navigate({ to: "/mynuspace" })
+              void navigate({ to: "/pages" })
             },
           })
         }}
       />
+
+      <ConfirmDialog
+        open={pendingRename !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingRename(null)
+        }}
+        title="Change this page's address?"
+        description={
+          pendingRename?.update.slug ? (
+            <RenameWarning from={page.slug} to={pendingRename.update.slug} />
+          ) : null
+        }
+        confirmLabel="Change address"
+        isPending={updatePage.isPending}
+        onConfirm={() => {
+          if (pendingRename) save(pendingRename)
+        }}
+      />
+    </>
+  )
+}
+
+/**
+ * What a rename costs, said before it happens. Nothing redirects from the old
+ * address (#416), so every link to it breaks, and an admin-invite link names
+ * the slug too, so the ones already sent break with it.
+ */
+function RenameWarning({ from, to }: { from: string; to: string }) {
+  const hostname = window.location.hostname
+  return (
+    <>
+      The page moves from{" "}
+      <span className="font-medium break-all text-foreground">
+        {pageAddress(from, hostname)}
+      </span>{" "}
+      to{" "}
+      <span className="font-medium break-all text-foreground">
+        {pageAddress(to, hostname)}
+      </span>
+      . Every existing link to the old address will stop working, and nothing
+      will redirect it. That includes admin-invite links you have already sent:
+      copy the link again from Admin controls and resend it.
     </>
   )
 }

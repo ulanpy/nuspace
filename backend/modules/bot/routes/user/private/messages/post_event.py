@@ -2,6 +2,7 @@ from aiogram import Bot, Router
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from backend.core.configs.config import config
 from backend.modules.bot.keyboards.kb import kb_url
 from backend.modules.bot.services.event_post import EventPostService
 from backend.modules.bot.utils.telegram_event_album import load_event_album_messages
@@ -13,8 +14,8 @@ from redis.asyncio import Redis
 router = Router(name="Post event router")
 
 
-def _event_link(base_url: str, event_id: int) -> str:
-    return f"{base_url.rstrip('/')}/events?id={event_id}"
+def _event_link(events_origin: str, event_id: int) -> str:
+    return f"{events_origin.rstrip('/')}/{event_id}"
 
 
 def _https_url_or_none(url: str) -> str | None:
@@ -101,7 +102,7 @@ async def post_event_command(
         return
 
     if result.status == EventBotSubmissionStatus.published and result.event_id is not None:
-        url = _event_link(public_url, result.event_id)
+        url = _event_link(config.service_origin("events"), result.event_id)
         safe_url = _https_url_or_none(url)
         keyboard = None
         if safe_url is not None:

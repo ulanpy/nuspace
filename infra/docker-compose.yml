@@ -1,7 +1,8 @@
 services:
   postgres:
     container_name: postgres
-    image: postgres:17.7
+    # pgvector for search embeddings (#441).
+    image: pgvector/pgvector:pg17
     networks:
       - nuros
     restart: always
@@ -63,6 +64,8 @@ services:
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
+      # Route-table include and 404 pages; `pnpm dev` in `web` regenerates them.
+      - ../web/nginx:/etc/nginx/nuspace:ro
       - nginx-logs:/var/log/nginx
     depends_on:
       fastapi:
@@ -77,7 +80,7 @@ services:
           rm /var/log/nginx/access.log && touch /var/log/nginx/access.log;
         fi &&
         apk -u add inotify-tools &&
-        (while inotifywait -e modify /etc/nginx/nginx.conf; do
+        (while inotifywait -e modify /etc/nginx/nginx.conf /etc/nginx/nuspace/hosts.conf; do
         echo 'nginx config changed, copying and reloading Nginx...' &&
         nginx -t && nginx -s reload;
         done) &
@@ -145,6 +148,10 @@ services:
     container_name: meilisearch
     ports:
       - 7700:7700
+    # Indexes survive restarts; the app does not rebuild them at boot.
+    # Fill them with: python -m backend.bootstrap.rebuild_search
+    volumes:
+      - meili-data:/meili_data
 
 
   rabbitmq:
@@ -386,3 +393,4 @@ volumes:
   tempo_data:
   pyroscope_data:
   gcs_data:
+  meili-data:

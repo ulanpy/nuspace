@@ -1,0 +1,146 @@
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query"
+
+import { api, unwrap } from "@/api/client"
+import { qk } from "@/api/query-keys"
+import { useMediaUpload } from "@/hooks/use-media-upload"
+import { hostOf, serviceByKey } from "@/lib/hosts"
+import { slugSchema } from "@/lib/slug"
+import {
+  ACCOUNT_RESERVED_WORDS,
+  NEW_PROFILE_DESIGN,
+  PROFILE_MEDIA_ENTITY_ID,
+} from "./constants"
+import type {
+  ProfileDesign,
+  ProfileMediaSlot,
+  ProfileSettings,
+  ProfileSettingsUpdate,
+} from "./types"
+
+/**
+ * A handle: the slug rules, reserved slugs included, plus the account host's
+ * own words. The server's `validate_handle` is the same two checks.
+ */
+export function handleSchema() {
+  return slugSchema().refine(
+    (value) => !ACCOUNT_RESERVED_WORDS.includes(value),
+    { message: "That handle is reserved" }
+  )
+}
+
+/**
+ * Where a handle's profile page lives, as the settings screen prints it: on
+ * the account host of the environment the viewer is in, so staging never
+ * shows a production address. An unknown host gets production's.
+ */
+export function profileAddress(handle: string, hostname: string): string {
+  const environment = hostOf(hostname)?.environment ?? "production"
+  return `${serviceByKey("my").hosts[environment]}/u/${handle}`
+}
+
+/**
+ * The design the editor opens on. A profile never saved (`null`) starts from
+ * About and Links; once saved, the editor opens on exactly what was saved,
+ * even if the person cleared it.
+ */
+export function designToEdit(content: ProfileDesign | null): ProfileDesign {
+  return content ?? structuredClone(NEW_PROFILE_DESIGN)
+}
+
+export function myProfileQueryOptions() {
+  return queryOptions({
+    queryKey: qk.profiles.mine(),
+    queryFn: () => unwrap(api.GET("/me/profile")),
+  })
+}
+
+/**
+ * One page of the people directory, for `useInfiniteList`. The server leaves
+ * out every profile the viewer may not open, so the count it returns is the
+ * list's.
+ */
+export function fetchProfiles(
+  { keyword }: { keyword?: string },
+  { page, size }: { page: number; size: number }
+) {
+  return unwrap(
+    api.GET("/profiles", { params: { query: { page, size, keyword } } })
+  )
+}
+
+export function profileQueryOptions(handle: string) {
+  return queryOptions({
+    queryKey: qk.profiles.detail(handle),
+    queryFn: () =>
+      unwrap(api.GET("/profiles/{handle}", { params: { path: { handle } } })),
+  })
+}
+
+/**
+ * Every profile write answers with the viewer's settings, so the cache takes
+ * the answer as is. Read-by-handle entries are dropped: a rename or a new tier
+ * changes what they say.
+ */
+function useSettleProfile() {
+  const queryClient = useQueryClient()
+  return (settings: ProfileSettings) => {
+    queryClient.setQueryData(qk.profiles.mine(), settings)
+    void queryClient.invalidateQueries({ queryKey: qk.profiles.details() })
+  }
+}
+
+export function useUpdateProfileSettings() {
+  const settle = useSettleProfile()
+  return useMutation({
+    mutationFn: (body: ProfileSettingsUpdate) =>
+      unwrap(api.PATCH("/me/profile", { body })),
+    onSuccess: settle,
+  })
+}
+
+/** The upload format each slot is signed with. */
+const SLOT_FORMATS = { picture: "profile", banner: "banner" } as const
+
+/**
+ * Upload a picture or banner: sign (ADR 0005), PUT to the bucket, then confirm,
+ * which writes `users`. A person is not a numbered entity, so the upload names
+ * `users` entity 0 and the object path carries the account.
+ */
+export function useUploadProfileMedia(slot: ProfileMediaSlot) {
+  const queryClient = useQueryClient()
+  const settle = useSettleProfile()
+  const { uploadMedia } = useMediaUpload()
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const [target] = await uploadMedia({
+        entityType: "users",
+        entityId: PROFILE_MEDIA_ENTITY_ID,
+        items: [{ file, mediaFormat: SLOT_FORMATS[slot], mediaOrder: 0 }],
+      })
+      return unwrap(
+        api.PUT("/me/profile/{slot}", {
+          params: { path: { slot } },
+          body: { filename: target.filename },
+        })
+      )
+    },
+    onSuccess: (settings) => {
+      settle(settings)
+      // The header's avatar reads the session, which now answers differently.
+      void queryClient.invalidateQueries({ queryKey: qk.session() })
+    },
+  })
+}
+
+export function useSaveProfileDesign() {
+  const settle = useSettleProfile()
+  return useMutation({
+    mutationFn: (content: ProfileDesign) =>
+      unwrap(api.PUT("/me/profile/content", { body: { content } })),
+    onSuccess: settle,
+  })
+}

@@ -50,6 +50,9 @@ class Page(Base):
     )
     slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     page_content: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # The text inside the blocks, walked and stripped of HTML by the editor at
+    # save time (#439). Searchable; never served back.
+    content_text: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 

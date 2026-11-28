@@ -7,11 +7,12 @@ import { toast } from "sonner"
 import { api, unwrap } from "@/api/client"
 import { apiErrorMessage } from "@/api/errors"
 import { pageDetailQueryOptions } from "@/lib/pages"
+import { pageContentText } from "@/components/shared/page-editor/blocks/_lib"
 import { Editor } from "@/components/shared/page-editor/components/editor"
 import { UploadContext } from "@/components/shared/page-editor/context"
 import { qk } from "@/api/query-keys"
 
-export function Page({
+export function PageEditorScreen({
   slug,
   queryClient,
 }: {
@@ -28,7 +29,7 @@ export function Page({
     unwrap(
       api.PATCH("/pages/{slug}", {
         params: { path: { slug } },
-        body: { page_content: data },
+        body: { page_content: data, content_text: pageContentText(data) },
       })
     )
       .then(() => {
@@ -37,7 +38,7 @@ export function Page({
           queryKey: qk.pages.all(),
         })
         void navigate({
-          to: "/p/$slug",
+          to: "/pages/$slug",
           params: { slug },
         })
       })
@@ -54,7 +55,7 @@ export function Page({
         <Editor
           data={pageContent}
           onPublish={handlePublish}
-          onCancel={() => navigate({ to: "/p/$slug", params: { slug } })}
+          onCancel={() => navigate({ to: "/pages/$slug", params: { slug } })}
         />
       </div>
     </UploadContext.Provider>

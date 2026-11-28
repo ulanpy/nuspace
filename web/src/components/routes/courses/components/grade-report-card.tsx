@@ -1,88 +1,102 @@
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import {
+  AlertTriangleIcon,
+  CheckIcon,
+  GitCompareArrowsIcon,
+  PieChartIcon,
+  TrendingUpIcon,
+  UsersIcon,
+} from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 import { difficultyLabel } from "@/lib/courses/comparison"
+import { gradeBands } from "@/lib/courses/grades"
+import type { GradeBandKey } from "@/lib/courses/grades"
 import { formatGpa, formatPoints } from "@/lib/courses/gpa"
 import type { GradeReport } from "@/lib/courses"
 
-/**
- * The distribution bands, in the order they stack.
- *
- * A/B/C/D/F are the graded outcomes; P (pass), I (incomplete), AU (audit) and
- * W/AW (withdrawn) are not grades at all but do account for enrolled students,
- * so leaving them out would make the bar not add up.
- */
-const BANDS = [
-  { key: "pct_A", label: "A", className: "bg-chart-2" },
-  { key: "pct_B", label: "B", className: "bg-chart-1" },
-  { key: "pct_C", label: "C", className: "bg-chart-4" },
-  { key: "pct_D", label: "D", className: "bg-chart-5" },
-  { key: "pct_F", label: "F", className: "bg-destructive" },
-  { key: "pct_P", label: "P", className: "bg-chart-3" },
-  { key: "pct_I", label: "I", className: "bg-muted-foreground/40" },
-  { key: "pct_AU", label: "AU", className: "bg-muted-foreground/30" },
-  { key: "pct_W_AW", label: "W", className: "bg-muted-foreground/20" },
-] as const satisfies readonly {
-  key: keyof GradeReport
-  label: string
-  className: string
-}[]
-
-interface Band {
-  label: string
-  className: string
-  pct: number
+const DIFFICULTY_TONE: Record<string, string> = {
+  Easy: "text-success",
+  Moderate: "text-primary",
+  Hard: "text-warning",
+  "Very Hard": "text-destructive",
 }
 
-function bands(report: GradeReport): Band[] {
-  return BANDS.flatMap(({ key, label, className }) => {
-    const pct = report[key]
-    return typeof pct === "number" && pct > 0 ? [{ label, className, pct }] : []
-  })
+/** The graded outcomes are coloured; the rest are neutral. */
+const BAND_TONE: Record<GradeBandKey, string> = {
+  pct_A: "bg-success",
+  pct_B: "bg-primary",
+  pct_C: "bg-warning",
+  pct_D: "bg-destructive/60",
+  pct_F: "bg-destructive",
+  pct_P: "bg-chart-3",
+  pct_I: "bg-muted-foreground/40",
+  pct_AU: "bg-muted-foreground/30",
+  pct_W_AW: "bg-muted-foreground/20",
 }
 
 /**
  * The distribution as one stacked bar.
  *
- * Described in text beside it rather than through the bar itself — the
- * segments are the same information as the legend below, and announcing both
- * would read every percentage twice.
+ * Decorative: the same numbers are in the breakdown below it, so announcing
+ * both would read every percentage twice.
  */
 function DistributionBar({ report }: { report: GradeReport }) {
-  const segments = bands(report)
-  if (segments.length === 0) return null
+  const bands = gradeBands(report)
+  const total = bands.reduce((sum, band) => sum + band.pct, 0)
+  if (total <= 0) return null
 
   return (
-    <div className="space-y-1.5">
-      <div
-        className="flex h-2 overflow-hidden rounded-full bg-muted"
-        aria-hidden
-      >
-        {segments.map(({ label, className, pct }) => (
-          <div
-            key={label}
-            className={className}
-            style={{ width: `${String(pct)}%` }}
-          />
-        ))}
-      </div>
-
-      <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        {segments.map(({ label, className, pct }) => (
-          <li key={label} className="flex items-center gap-1">
-            <span
-              className={cn("size-2 shrink-0 rounded-full", className)}
-              aria-hidden
-            />
-            <span className="tabular-nums">
-              {label} {formatPoints(pct)}%
-            </span>
-          </li>
-        ))}
-      </ul>
+    <div
+      className="flex h-2 w-24 overflow-hidden rounded-full bg-muted sm:w-40"
+      aria-hidden
+    >
+      {bands.map((band) => (
+        <div
+          key={band.key}
+          className={BAND_TONE[band.key]}
+          style={{ width: `${String((band.pct / total) * 100)}%` }}
+        />
+      ))}
     </div>
+  )
+}
+
+function Breakdown({ report }: { report: GradeReport }) {
+  const bands = gradeBands(report)
+
+  if (bands.length === 0) {
+    return (
+      <p className="border-t border-border pt-4 text-[13px] text-muted-foreground">
+        No grade distribution was published for this section.
+      </p>
+    )
+  }
+
+  return (
+    <ul className="space-y-2 border-t border-border pt-4">
+      {bands.map((band) => (
+        <li key={band.key} className="flex items-center gap-3 text-[13px]">
+          <span
+            className={cn("size-2 shrink-0 rounded-full", BAND_TONE[band.key])}
+            aria-hidden
+          />
+          <span className="w-5 font-medium">{band.label}</span>
+          <span className="w-16 text-muted-foreground tabular-nums">
+            {formatPoints(band.pct)}%
+          </span>
+          {band.students !== null && (
+            <span className="text-muted-foreground tabular-nums">
+              {band.students} {band.students === 1 ? "student" : "students"}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -97,83 +111,169 @@ export function GradeReportCard({
   compareDisabled?: boolean
   onToggleCompare?: () => void
 }) {
+  const [showBreakdown, setShowBreakdown] = useState(false)
+  const level = difficultyLabel(report.avg_gpa, report.std_dev)
+  const withdrew = report.pct_W_AW
+
   return (
-    <Card className="space-y-3 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-        <div className="min-w-0">
-          <h3 className="font-semibold">
-            {report.course_code}
-            {report.section && (
-              <span className="font-normal text-muted-foreground">
-                {" "}
-                · {report.section}
-              </span>
+    <Card
+      className={cn(
+        "h-full transition-shadow duration-300 hover:shadow-lg",
+        selected && "border-primary/40 ring-2 ring-primary/50"
+      )}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="truncate text-lg font-bold">
+                {report.course_code}
+              </h3>
+              {report.section && (
+                <Badge variant="outline" className="shrink-0 text-[11px]">
+                  {report.section}
+                </Badge>
+              )}
+              {report.term && (
+                <Badge variant="secondary" className="shrink-0 text-[11px]">
+                  {report.term}
+                </Badge>
+              )}
+              <Badge
+                variant="outline"
+                className={cn(
+                  "shrink-0 text-[11px]",
+                  DIFFICULTY_TONE[level] ?? "text-muted-foreground"
+                )}
+              >
+                {level}
+              </Badge>
+            </div>
+            {report.course_title && (
+              <p className="mt-0.5 line-clamp-1 text-sm font-medium">
+                {report.course_title}
+              </p>
             )}
-          </h3>
-          {report.course_title && (
-            <p className="text-sm text-muted-foreground">
-              {report.course_title}
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              <UsersIcon
+                className="mr-1 inline size-3.5 align-text-bottom"
+                aria-hidden
+              />
+              {report.faculty && (
+                <span className="font-medium text-foreground">
+                  {report.faculty}
+                  {report.grades_count !== null && " · "}
+                </span>
+              )}
+              {report.grades_count !== null &&
+                `based on ${String(report.grades_count)} students`}
             </p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            {[
-              report.faculty,
-              report.term,
-              report.grades_count === null
-                ? null
-                : `${String(report.grades_count)} students`,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1">
-            <Badge variant="secondary">{difficultyLabel(report.avg_gpa)}</Badge>
-            <Badge
-              variant={(report.pct_W_AW ?? 0) >= 10 ? "destructive" : "outline"}
-            >
-              {report.pct_W_AW === null
-                ? "Withdrawals unknown"
-                : `${formatPoints(report.pct_W_AW)}% withdrew`}
-            </Badge>
           </div>
+
+          {onToggleCompare && (
+            <Button
+              type="button"
+              size="sm"
+              variant={selected ? "default" : "outline"}
+              className="h-7 shrink-0 gap-1 rounded-md px-2.5 text-[11px] font-medium"
+              disabled={compareDisabled && !selected}
+              aria-pressed={selected}
+              onClick={onToggleCompare}
+            >
+              {selected ? (
+                <>
+                  <CheckIcon className="size-3" aria-hidden />
+                  Selected
+                </>
+              ) : (
+                <>
+                  <GitCompareArrowsIcon className="size-3" aria-hidden />
+                  Compare
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[1.75rem] leading-none font-bold tracking-tight tabular-nums">
+              {formatGpa(report.avg_gpa)}
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">
+              GPA
+            </span>
+          </div>
+
+          <div className="h-6 w-px bg-border" aria-hidden />
+
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <TrendingUpIcon className="size-3.5" aria-hidden />
+            <span>
+              Median{" "}
+              <strong className="text-foreground tabular-nums">
+                {formatGpa(report.median_gpa)}
+              </strong>
+            </span>
+          </div>
+
+          {report.std_dev !== null && (
+            <div className="text-sm text-muted-foreground">
+              ±
+              <strong className="text-foreground tabular-nums">
+                {formatGpa(report.std_dev)}
+              </strong>{" "}
+              std dev
+            </div>
+          )}
+
+          {withdrew === null ? (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <AlertTriangleIcon className="size-3.5" aria-hidden />
+              Withdrawal data not reported
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "flex items-center gap-1.5 text-sm",
+                withdrew > 5 ? "text-destructive" : "text-muted-foreground"
+              )}
+            >
+              <AlertTriangleIcon className="size-3.5" aria-hidden />
+              <span>
+                <strong className="tabular-nums">
+                  {formatPoints(withdrew)}%
+                </strong>{" "}
+                withdrew
+              </span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            aria-expanded={showBreakdown}
+            onClick={() => {
+              setShowBreakdown(!showBreakdown)
+            }}
+            className="ml-auto flex shrink-0 items-center gap-1.5 rounded-md py-1 pr-1.5 pl-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            aria-label={
+              showBreakdown
+                ? "Hide grade distribution breakdown"
+                : "Show grade distribution breakdown"
+            }
+          >
+            <DistributionBar report={report} />
+            <span className="text-[11px] font-medium underline decoration-dotted underline-offset-2">
+              {showBreakdown ? "Hide" : "Breakdown"}
+            </span>
+            <PieChartIcon className="size-3.5" aria-hidden />
+          </button>
         </div>
 
-        <dl className="flex shrink-0 gap-4 text-right">
-          <div>
-            <dt className="text-xs text-muted-foreground">Average</dt>
-            <dd className="text-lg font-semibold tabular-nums">
-              {formatGpa(report.avg_gpa)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Median</dt>
-            <dd className="text-lg font-semibold tabular-nums">
-              {formatGpa(report.median_gpa)}
-            </dd>
-          </div>
-          <div>
-            {/* Spread matters as much as the average: a 3.0 mean with a 0.2
-                deviation is a very different course from one with 0.9. */}
-            <dt className="text-xs text-muted-foreground">Spread</dt>
-            <dd className="text-lg font-semibold tabular-nums">
-              {report.std_dev === null ? "—" : `±${formatGpa(report.std_dev)}`}
-            </dd>
-          </div>
-        </dl>
-        {onToggleCompare && (
-          <Button
-            size="sm"
-            variant={selected ? "default" : "outline"}
-            aria-pressed={selected}
-            disabled={compareDisabled && !selected}
-            onClick={onToggleCompare}
-          >
-            {selected ? "Selected" : "Compare"}
-          </Button>
-        )}
-      </div>
-
-      <DistributionBar report={report} />
+        {showBreakdown && <Breakdown report={report} />}
+      </CardContent>
     </Card>
   )
 }

@@ -16,7 +16,7 @@ export interface RouteTab {
  * every filter row in the app.
  *
  * Tabs are real child routes rather than `useState`, so each section is
- * linkable, back-button-able and separately code-split — `/courses/schedule` and
+ * linkable, back-button-able and separately code-split — `/courses/planner` and
  * `/courses/audit` are the two heaviest screens in the app, and tab state in one
  * component meant shipping both to every student who only wanted a grade. The
  * `Link` is kept in `render` rather than replaced by a click handler so the href

@@ -1,7 +1,13 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { isPageAdminSort, isPageSort } from "./constants"
-import { adminPageActions, pageOwnership, sortingToSearch } from "./functions"
+import {
+  adminPageActions,
+  pageAddress,
+  pageOwnership,
+  pageStats,
+  sortingToSearch,
+} from "./functions"
 import type { Page } from "./types"
 
 /** Nobody's permissions. The ownership answer must not depend on these. */
@@ -181,6 +187,52 @@ describe("sortingToSearch", () => {
     assert.deepEqual(
       sortingToSearch([{ id: "visibility", desc: true }], isPageAdminSort),
       { sort: undefined, order: undefined }
+    )
+  })
+})
+
+describe("pageStats", () => {
+  it("splits the viewer's Pages into owned and administered", () => {
+    assert.deepEqual(pageStats({ owned: 3, total: 8 }), {
+      owned: 3,
+      administered: 5,
+      remaining: 97,
+    })
+  })
+
+  it("never reports a negative number of pages left", () => {
+    assert.equal(pageStats({ owned: 120, total: 120 }).remaining, 0)
+  })
+
+  it("is all zeros before any Page exists", () => {
+    assert.deepEqual(pageStats({ owned: 0, total: 0 }), {
+      owned: 0,
+      administered: 0,
+      remaining: 100,
+    })
+  })
+})
+
+describe("pageAddress", () => {
+  it("names the Page on the pages host of the visitor's environment", () => {
+    assert.equal(
+      pageAddress("chess-club", "nuspace.kz"),
+      "pages.nuspace.kz/chess-club"
+    )
+    assert.equal(
+      pageAddress("chess-club", "my_staging.nuspace.kz"),
+      "pages_staging.nuspace.kz/chess-club"
+    )
+    assert.equal(
+      pageAddress("chess-club", "pages.localhost"),
+      "pages.localhost/chess-club"
+    )
+  })
+
+  it("falls back to production on a host outside the table", () => {
+    assert.equal(
+      pageAddress("chess-club", "127.0.0.1"),
+      "pages.nuspace.kz/chess-club"
     )
   })
 })

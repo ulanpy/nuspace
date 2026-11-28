@@ -1,0 +1,95 @@
+{
+  "name": "Sgotinish",
+  "slug": "sgotinish",
+  "description": "Ask Student Government anonymously in Telegram.",
+  "visibility": "public",
+  "page_content": {
+    "root": {
+      "props": {}
+    },
+    "content": [
+      {
+        "type": "Text",
+        "props": {
+          "id": "Text-0e435cd8-9d4f-418b-b541-05a3bfc5afcc",
+          "text": "Student Government",
+          "align": "left",
+          "size": 16,
+          "maxWidth": "",
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Heading",
+        "props": {
+          "id": "Heading-2843d625-b0da-4414-a66b-71d08cfd27fc",
+          "text": "SG otinish",
+          "level": 1,
+          "align": "left",
+          "size": 20,
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "8px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Text",
+        "props": {
+          "id": "Text-c272501c-ce88-4720-bc46-24357b610126",
+          "text": "Ask Student Government anonymously in Telegram — they see the issue, not who you are, and reply in the same chat.",
+          "align": "left",
+          "size": 18,
+          "maxWidth": "",
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "RichText",
+        "props": {
+          "id": "RichText-34b96cce-3be5-484d-aa52-fbc6393d7555",
+          "richtext": "<ol><li><p><strong>Ask</strong></p><p>Open the bot, pick a topic, and write what's going on — in your own words.</p></li><li><p><strong>SG gets it — anonymously</strong></p><p>Student Government sees the appeal, not your name or profile. No need to find who to ping.</p></li><li><p><strong>Chat until it's done</strong></p><p>While the channel is open, just type in the bot — messages go to SG. Send /close when you're finished.</p></li></ol>",
+          "size": 16,
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Button",
+        "props": {
+          "id": "Button-95bba436-fd2d-42fe-863d-dedd2a286993",
+          "label": "Ask in Telegram",
+          "description": "@nuspacebot · category, then one message",
+          "href": "https://t.me/nuspacebot?start=otinish",
+          "variant": "primary",
+          "size": "large",
+          "icon": "Telegram",
+          "iconPosition": "left",
+          "iconOnly": false
+        }
+      }
+    ],
+    "zones": {}
+  },
+  "content_text": "Student Government SG otinish Ask Student Government anonymously in Telegram — they see the issue, not who you are, and reply in the same chat. Ask Open the bot, pick a topic, and write what's going on — in your own words. SG gets it — anonymously Student Government sees the appeal, not your name or profile. No need to find who to ping. Chat until it's done While the channel is open, just type in the bot — messages go to SG. Send /close when you're finished. Ask in Telegram @nuspacebot · category, then one message"
+}

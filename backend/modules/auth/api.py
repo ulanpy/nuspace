@@ -13,6 +13,7 @@ from backend.modules.auth import dependencies as deps
 from backend.modules.auth.cookies import (
     set_app_token_cookie,
     set_kc_auth_cookies,
+    unset_app_token_cookie,
     unset_kc_auth_cookies,
 )
 from backend.modules.auth.dependencies import (
@@ -23,12 +24,16 @@ from backend.modules.auth.dependencies import (
 from backend.modules.auth.models import UserRole
 from backend.modules.auth.schemas import (
     CurrentUserResponse,
+    EventNotificationsRequest,
+    EventNotificationsResponse,
     Sub,
     UserScopeResponse,
     UserScopeUpdateRequest,
 )
 from backend.modules.auth.service import AuthService
 from backend.modules.bot.utils.telegram_link_tokens import issue_telegram_link_token
+from backend.modules.media.dependencies import get_media_service
+from backend.modules.media.service import MediaService
 
 router = APIRouter(tags=["Auth Routes"])
 # Auth-flow routes must not call get_creds_* (refresh-token rotation / pre-login).
@@ -152,10 +157,13 @@ async def refresh_token(
 async def get_current_user(
     principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     auth_service: AuthService = Depends(deps.get_auth_service),
+    media_service: MediaService = Depends(get_media_service),
     extended: bool = False,
 ):
     kc_principal, app_principal = principals
-    return await auth_service.get_current_user(kc_principal, app_principal)
+    return await auth_service.get_current_user(
+        kc_principal, app_principal, storage=media_service.storage
+    )
 
 
 @router.get("/logout")
@@ -180,8 +188,28 @@ async def logout(
         ) from exc
 
     unset_kc_auth_cookies(response)
-    response.delete_cookie(key=config.COOKIE_APP_NAME)
+    unset_app_token_cookie(response)
     return status.HTTP_200_OK
+
+
+@router.get("/users/me/event-notifications", response_model=EventNotificationsResponse)
+async def get_event_notifications(
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    auth_service: AuthService = Depends(deps.get_auth_service),
+) -> EventNotificationsResponse:
+    """Whether the signed-in user hears on Telegram about cancelled or moved events."""
+    enabled, connected = await auth_service.get_event_notifications(user[0]["sub"])
+    return EventNotificationsResponse(enabled=enabled, telegram_connected=connected)
+
+
+@router.put("/users/me/event-notifications", response_model=EventNotificationsResponse)
+async def set_event_notifications(
+    body: EventNotificationsRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    auth_service: AuthService = Depends(deps.get_auth_service),
+) -> EventNotificationsResponse:
+    enabled, connected = await auth_service.set_event_notifications(user[0]["sub"], body.enabled)
+    return EventNotificationsResponse(enabled=enabled, telegram_connected=connected)
 
 
 @router.patch("/users/{sub}/scope", response_model=UserScopeResponse)

@@ -19,7 +19,7 @@
  * `SUMMARY_FILE` is optional. It must be a path inside a mounted directory;
  * otherwise the result disappears with `docker run --rm`.
  *
- * TARGET: planner | planner_semesters | search | events | profile | registered_courses | meilisearch
+ * TARGET: planner | planner_semesters | events | profile | registered_courses | meilisearch
  *
  * Direct Meilisearch benchmark (runs in the Compose network):
  *   # Docker's --env-file requires KEY=value. This command also works when
@@ -61,9 +61,9 @@ const DIRECT_FASTAPI = API_PREFIX === "";
 const MEILISEARCH_INDEX = __ENV.MEILISEARCH_INDEX || "grade_reports";
 const MEILISEARCH_QUERY = __ENV.MEILISEARCH_QUERY || "CSCI";
 
-if (!["planner", "planner_semesters", "search", "events", "profile", "registered_courses", "meilisearch", "communities"].includes(TARGET)) {
+if (!["planner", "planner_semesters", "events", "profile", "registered_courses", "meilisearch", "communities"].includes(TARGET)) {
   throw new Error(
-    `TARGET must be "planner", "planner_semesters", "search", "events", "profile", "registered_courses", or "meilisearch", got "${TARGET}"`,
+    `TARGET must be "planner", "planner_semesters", "events", "profile", "registered_courses", or "meilisearch", got "${TARGET}"`,
   );
 }
 if (!Number.isFinite(RATE) || RATE <= 0) {
@@ -85,7 +85,6 @@ const errors = new Rate("target_errors");
 const endpoints = {
   planner: `${API_PREFIX}/planner/courses/search?term_value=Fall%202026&course_code=CSCI&page=1&size=5`,
   planner_semesters: `${API_PREFIX}/planner/semesters`,
-  search: `${API_PREFIX}/search/?keyword=CSCI&storage_name=grade_reports&page=1&size=10`,
   events: `${API_PREFIX}/events?size=${EVENTS_SIZE}&event_status=approved`,
   profile: `${API_PREFIX}/profile`,
   registered_courses: `${API_PREFIX}/registered_courses`,

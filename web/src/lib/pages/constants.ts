@@ -137,3 +137,6 @@ export const PAGE_ADMIN_SORTS = [
 /** Narrows a react-table column id to a column the admins API will sort by. */
 export const isPageAdminSort = (value: string): value is PageAdminSort =>
   (PAGE_ADMIN_SORTS as readonly string[]).includes(value)
+
+/** The sections of a Page's settings, as its `?tab=` names them. */
+export const PAGE_SETTINGS_TABS = ["general", "admin-controls"] as const

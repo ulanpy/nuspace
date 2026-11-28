@@ -1,103 +1,53 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from httpx import HTTPError
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.common.utils import meilisearch
-from backend.modules.auth.dependencies import get_creds_or_guest
-from backend.modules.media.models import EntityType
+from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
+from backend.modules.search.dependencies import get_overview_service, get_search_service
+from backend.modules.search.overview import OverviewResponse, OverviewService
+from backend.modules.search.retrieval import SearchUnavailable
+from backend.modules.search.schemas import SearchKind, SearchResponse
+from backend.modules.search.service import SearchService
 
-router = APIRouter(tags=["Search Routes"])
+router = APIRouter(prefix="/search", tags=["Search"])
 
 
-@router.get("/search/")
-async def full_search(
-    request: Request,
-    keyword: str,
-    storage_name: EntityType,
-    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    page: int = 1,
-    size: int = Query(10, ge=1, le=30),
-):
+@router.get("/results", response_model=SearchResponse)
+async def search_results(
+    viewer: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    service: Annotated[SearchService, Depends(get_search_service)],
+    q: Annotated[str, Query(max_length=256, description="What to search for.")],
+    kind: Annotated[SearchKind | None, Query(description="Only this kind of Source.")] = None,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=50)] = 10,
+) -> SearchResponse:
+    """Ranked Sources from every structured source that this viewer may open.
+
+    Anyone may search; what comes back follows the viewer (ADR 0011). The pager
+    is stateless: ask again with a larger `offset`, and dedupe by `id`. Past
+    Meilisearch's `maxTotalHits` (1,000) the results are empty.
     """
-    Full search implementation returning complete entity details
-    """
-    filters = []
     try:
-        # We need to avoid duplicate hits (e.g., identical BUS 101 rows) and
-        # still return up to `size` unique results. Fetch successive pages from
-        # Meilisearch until we accumulate the requested window of unique items.
-        target_start = (page - 1) * size
-        target_end = target_start + size
-
-        def _norm(value):
-            return value.strip().lower() if isinstance(value, str) else value
-
-        def build_dedupe_key(hit: dict):
-            """
-            Build a dedupe key per storage. For grade reports we want one row per
-            course (code + title) regardless of faculty/section/term duplicates.
-            """
-            if storage_name == EntityType.grade_reports:
-                key_fields = (
-                    _norm(hit.get("course_code")),
-                    _norm(hit.get("course_title")),
-                )
-            else:
-                key_fields = (
-                    _norm(hit.get("course_code")),
-                    _norm(hit.get("course_title")),
-                    _norm(hit.get("faculty")),
-                    _norm(hit.get("section")),
-                    _norm(hit.get("term")),
-                )
-            # Fallback to id if no meaningful fields exist
-            return key_fields if any(key_fields) else hit.get("id")
-
-        unique_hits = []
-        seen_keys = set()
-
-        current_page = 1
-        total_hits = None
-
-        while len(unique_hits) < target_end:
-            result = await meilisearch.get(
-                client=request.app.state.meilisearch_client,
-                storage_name=storage_name.value,
-                keyword=keyword,
-                page=current_page,
-                size=size,
-                filters=filters,
-            )
-
-            hits = result.get("hits", [])
-            if total_hits is None:
-                total_hits = result.get("estimatedTotalHits", len(hits))
-
-            if not hits:
-                break
-
-            for hit in hits:
-                key = build_dedupe_key(hit)
-                if key in seen_keys:
-                    continue
-                seen_keys.add(key)
-                unique_hits.append(hit)
-                if len(unique_hits) >= target_end:
-                    break
-
-            # Stop if we've exhausted all available hits
-            if total_hits is not None and current_page * size >= total_hits:
-                break
-
-            current_page += 1
-
-        # Return only the slice for the requested page, after deduplication
-        return unique_hits[target_start:target_end]
-    except HTTPError as exc:
-        # Do not turn an upstream timeout into an apparently successful empty
-        # search response.  It hides capacity problems from clients and k6.
+        return await service.search(viewer, query=q, kind=kind, offset=offset, limit=limit)
+    except SearchUnavailable as exc:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Search is temporarily unavailable",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Search is unavailable"
         ) from exc
+
+
+@router.get("/overview", response_model=OverviewResponse)
+async def search_overview(
+    viewer: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: Annotated[OverviewService, Depends(get_overview_service)],
+    q: Annotated[str, Query(max_length=256, description="What to search for.")],
+) -> OverviewResponse:
+    """A short cited answer over the top Sources this viewer may open (signed in only).
+
+    The query is searched again server-side for this viewer; Sources are never
+    accepted from the client. `answer` is null when there is no Overview (fewer
+    than three Sources, the model abstained, or it failed or timed out).
+    """
+    try:
+        return await service.overview(viewer, query=q)
+    except SearchUnavailable:
+        return OverviewResponse(answer=None)

@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from typing import List, Literal, Tuple
 
 from httpx import AsyncClient
@@ -12,6 +13,8 @@ from backend.modules.auth.models import User
 from backend.modules.media.models import EntityType, Media, MediaFormat
 from backend.modules.pages.constants import PageAdminSort, PageRole, PageSort
 from backend.modules.pages.models.page import Page, PageAdmin, PageAdminLink, PageVisibility
+from backend.modules.pages.search_indexes import PAGES_INDEX
+from backend.modules.shared.visibility import ALL_TIERS
 
 # Sort columns are whitelisted, never interpolated into an `order_by` from a
 # caller-supplied string. The keys are the `PageSort` members, so the value
@@ -74,22 +77,11 @@ class PageRepository:
 
     @staticmethod
     async def upsert_search(meilisearch_client: AsyncClient, page: Page) -> None:
-        await meilisearch.upsert(
-            client=meilisearch_client,
-            storage_name=Page.__tablename__,
-            json_values={
-                "id": page.id,
-                "name": page.name,
-            },
-        )
+        await PAGES_INDEX.upsert(meilisearch_client, page)
 
     @staticmethod
     async def delete_from_search(meilisearch_client: AsyncClient, page_id: int) -> None:
-        await meilisearch.delete(
-            client=meilisearch_client,
-            storage_name=Page.__tablename__,
-            primary_key=str(page_id),
-        )
+        await PAGES_INDEX.delete(meilisearch_client, page_id)
 
     async def list_media(
         self,
@@ -130,7 +122,7 @@ class PageRepository:
         cls,
         *,
         viewer_sub: str | None,
-        is_site_admin: bool,
+        tiers: Collection[PageVisibility],
         scope: Literal["browsable", "mine"],
         role: PageRole | None = None,
         visibility: list[PageVisibility] | None = None,
@@ -146,7 +138,10 @@ class PageRepository:
         shows up here as the absence of a concept rather than a new one:
 
         - `browsable` is a visibility question about pages the caller does not
-          run. It has no relationship filter, and needs a site-admin bypass.
+          run. It has no relationship filter: it is the `tiers` this viewer
+          reads without running the page, which the caller takes from
+          `shared.visibility.tiers_open_to` so the directory and a read by slug
+          ask one predicate. A site admin reads every tier.
         - `mine` is "pages I run" — you own it, or you administer it — at every
           visibility. `private` belongs here and only here, because this is
           where you manage your pages.
@@ -201,11 +196,11 @@ class PageRepository:
         # visibility alone, and the directory has no relationship filter to
         # narrow. Only `/pages/mine` exposes those params, so this is
         # unreachable rather than a silent ignore — see the docstring.
-        if is_site_admin:
+        if ALL_TIERS <= set(tiers):
             return []
-        if viewer_sub:
-            return [Page.visibility.in_([PageVisibility.public, PageVisibility.internal])]
-        return [Page.visibility == PageVisibility.public]
+        # Sorted in declaration order only so the same tiers always compile to
+        # the same SQL.
+        return [Page.visibility.in_(sorted(tiers, key=list(PageVisibility).index))]
 
     @classmethod
     def _page_order_clauses(
@@ -274,7 +269,7 @@ class PageRepository:
         page: int,
         size: int,
         viewer_sub: str | None,
-        is_site_admin: bool,
+        tiers: Collection[PageVisibility],
         scope: Literal["browsable", "mine"],
         keyword: str | None,
         meilisearch_client: AsyncClient,
@@ -309,7 +304,7 @@ class PageRepository:
 
         conditions = self._list_conditions(
             viewer_sub=viewer_sub,
-            is_site_admin=is_site_admin,
+            tiers=tiers,
             scope=scope,
             role=role,
             visibility=visibility,

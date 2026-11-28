@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { SearchIcon } from "lucide-react"
 
 import { qk } from "@/api/query-keys"
-import { fetchBrowsablePages } from "@/lib/pages"
+import { fetchBrowsablePages, pageAddress } from "@/lib/pages"
 import { selectMedia } from "@/lib/media/functions"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { useDebounced } from "@/hooks/use-debounced"
@@ -134,7 +134,7 @@ export function TemplateDialog({
                   <span className="min-w-0 flex-1">
                     <span className="truncate font-medium">{page.name}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      /p/{page.slug}
+                      {pageAddress(page.slug, window.location.hostname)}
                     </span>
                   </span>
                   {!design ? (

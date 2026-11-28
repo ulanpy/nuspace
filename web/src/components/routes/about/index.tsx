@@ -52,7 +52,7 @@ function MemberCard({ member }: { member: TeamMember }) {
   )
 }
 
-export function Page() {
+export function AboutScreen() {
   return (
     <PageLayout
       eyebrow="Built for NU"

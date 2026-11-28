@@ -16,8 +16,10 @@ from backend.modules.events.models import (
     EventAccessPurpose,
     EventAttendee,
     EventAttendeeViewer,
+    EventStatus,
     EventType,
 )
+from backend.modules.events.search_indexes import EVENTS_INDEX
 from backend.modules.media.models import EntityType, Media, MediaFormat
 
 
@@ -195,24 +197,11 @@ class EventRepository:
 
     @staticmethod
     async def upsert_search(meilisearch_client: AsyncClient, event: Event) -> None:
-        await meilisearch.upsert(
-            client=meilisearch_client,
-            storage_name=Event.__tablename__,
-            json_values={
-                "id": event.id,
-                "name": event.name,
-                "description": event.description,
-                "policy": event.policy.value if event.policy else None,
-            },
-        )
+        await EVENTS_INDEX.upsert(meilisearch_client, event)
 
     @staticmethod
     async def delete_from_search(meilisearch_client: AsyncClient, event_id: int) -> None:
-        await meilisearch.delete(
-            client=meilisearch_client,
-            storage_name=Event.__tablename__,
-            primary_key=str(event_id),
-        )
+        await EVENTS_INDEX.delete(meilisearch_client, event_id)
 
     async def delete_event_and_media(
         self, event: Event, media_objects: List[Media]
@@ -268,7 +257,7 @@ class EventRepository:
         if event_filter.keyword:
             meili_result = await meilisearch.get(
                 client=meilisearch_client,
-                storage_name=EntityType.community_events.value,
+                storage_name=Event.__tablename__,
                 keyword=event_filter.keyword,
                 page=event_filter.page,
                 size=event_filter.size,
@@ -374,6 +363,47 @@ class EventRepository:
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
+
+    async def list_notifiable_telegram_ids(self, event_id: int) -> List[int]:
+        """Chats of attendees who connected Telegram and left event notices on."""
+        stmt = (
+            select(User.telegram_id)
+            .join(EventAttendee, EventAttendee.user_sub == User.sub)
+            .where(
+                EventAttendee.event_id == event_id,
+                User.telegram_id.is_not(None),
+                User.event_notifications.is_(True),
+            )
+            .order_by(EventAttendee.created_at)
+        )
+        return list((await self.db_session.execute(stmt)).scalars().all())
+
+    async def claim_due_reminders(
+        self, now: datetime, until: datetime
+    ) -> List[Tuple[Event, int | None, bool]]:
+        """Claim the attendees of approved events starting in (now, until] not yet reminded.
+
+        Each claimed row is locked (rows another run holds are skipped) and stamped
+        `reminded_at = now` in this transaction. Returns (event, telegram_id,
+        event_notifications) per claimed attendee.
+        """
+        stmt = (
+            select(EventAttendee, Event, User.telegram_id, User.event_notifications)
+            .join(Event, Event.id == EventAttendee.event_id)
+            .join(User, User.sub == EventAttendee.user_sub)
+            .where(
+                EventAttendee.reminded_at.is_(None),
+                Event.status == EventStatus.approved,
+                Event.start_datetime > now,
+                Event.start_datetime <= until,
+            )
+            .with_for_update(of=EventAttendee, skip_locked=True)
+        )
+        rows = list((await self.db_session.execute(stmt)).all())
+        for attendee, *_ in rows:
+            attendee.reminded_at = now
+        await self.db_session.flush()
+        return [(event, telegram_id, enabled) for _, event, telegram_id, enabled in rows]
 
     async def add_attendee(self, event_id: int, user_sub: str) -> EventAttendee:
         existing = await self.get_attendee(event_id, user_sub)

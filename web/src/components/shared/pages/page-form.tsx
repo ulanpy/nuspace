@@ -19,7 +19,7 @@ import { visibilityCopy } from "@/components/shared/pages/visibilities"
 import type { UploadItem } from "@/hooks/use-media-upload"
 import { MediaPicker } from "@/components/shared/media/picker"
 import { slugSchema } from "@/lib/slug"
-import { toPageUploadItems } from "@/lib/pages"
+import { pageAddress, toPageUploadItems } from "@/lib/pages"
 import { PAGE_VISIBILITY_VALUES } from "@/lib/pages/constants"
 import {
   canEditField,
@@ -153,6 +153,8 @@ export function PageForm({
               // events. The generated type marks it required, so the client
               // sends it rather than omitting it.
               owner: "me",
+              // A new Page has no blocks yet; the editor fills this on publish.
+              content_text: "",
             },
             update: {
               ...ifEditable("name", values.name),
@@ -201,8 +203,16 @@ export function PageForm({
           description={
             <>
               Web address for your page, e.g.{" "}
-              <span className="font-medium">/p/nu-fencing-club</span>. Lowercase
-              letters, digits and single hyphens only.
+              <span className="font-medium break-all">
+                {pageAddress(
+                  page?.slug ?? "nu-fencing-club",
+                  window.location.hostname
+                )}
+              </span>
+              . Lowercase letters, digits and single hyphens only.
+              {page
+                ? " Changing it breaks every existing link to the page."
+                : null}
             </>
           }
           error={errors.slug?.message}

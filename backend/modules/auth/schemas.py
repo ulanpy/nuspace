@@ -24,6 +24,15 @@ class CurrentUserResponse(BaseModel):
     tg_id: int | None = None  # Indicates if user exists in the database
 
 
+class EventNotificationsRequest(BaseModel):
+    enabled: bool = Field(..., description="Whether to hear about cancelled or moved events")
+
+
+class EventNotificationsResponse(BaseModel):
+    enabled: bool
+    telegram_connected: bool
+
+
 class UserScopeUpdateRequest(BaseModel):
     scope: UserScope = Field(..., description="New scope: 'allowed' or 'banned'")
 

@@ -21,6 +21,7 @@ from backend.modules.media.dependencies import get_media_service
 from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
 from backend.modules.media.service import MediaService
+from backend.modules.search.channel_messages import channel_of_export, ingest_channel
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 _mark_gcs_emulator = mark_access_actor("gcs_emulator")
@@ -101,10 +102,12 @@ async def generate_upload_url(
                 media_format=item.media_format,
                 media_order=item.media_order,
             )
-            try:
-                await media_service.upsert(media_data)
-            except Exception:
-                pass
+            # A profile picture or banner is confirmed onto `users`, not a row.
+            if item.entity_type != EntityType.users:
+                try:
+                    await media_service.upsert(media_data)
+                except Exception:
+                    pass
         else:
             signing_credentials = request.app.state.signing_credentials
             import asyncio
@@ -139,10 +142,14 @@ def _media_upsert_from_event(gcs_event: schemas.GCSEventData) -> MediaUpsertData
     if metadata is None:
         return None
     try:
+        entity_type = EntityType(metadata.media_table)
+        if entity_type == EntityType.users:
+            # Confirmed through `PUT /me/profile/*`, which writes `users`.
+            return None
         return MediaUpsertData(
             name=metadata.filename,
             mime_type=metadata.mime_type,
-            entity_type=EntityType(metadata.media_table),
+            entity_type=entity_type,
             entity_id=int(metadata.entity_id),
             media_format=MediaFormat(metadata.media_format),
             media_order=int(metadata.media_order),
@@ -162,6 +169,7 @@ async def gcs_webhook(
     """
     Pub/Sub push for GCS OBJECT_FINALIZE:
     - registrar schedule catalog JSON → reindex Meilisearch
+    - Telegram channel export (`telegram/<channel>/result.json`) → reindex that channel
     - media uploads (routing-prefix + custom metadata) → media upsert
     """
     config: Config = request.app.state.config
@@ -196,6 +204,17 @@ async def gcs_webhook(
                 "reason": result.reason,
             }
         return {"status": "ok", "schedule_docs": result.schedule_docs}
+
+    # Route: a Telegram channel's export → re-index that channel.
+    channel = channel_of_export(gcs_event.name)
+    if channel is not None:
+        indexed = await ingest_channel(
+            request.app.state.meilisearch_client,
+            request.app.state.storage_client,
+            config.BUCKET_NAME,
+            channel,
+        )
+        return {"status": "ok", "channel": channel, "messages": indexed}
 
     # Media path: must live under this backend's routing prefix.
     parts = gcs_event.name.split("/", maxsplit=1)

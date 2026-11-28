@@ -198,26 +198,16 @@ Run the checks relevant to your change.
 **Backend:**
 
 ```bash
+docker compose -f infra/test.docker-compose.yml up -d --wait   # once, from the repo root
 cd backend
 uv run ruff check .
 uv run black --check .
-PYTHONPATH="$(dirname "$PWD")" uv run python -c "
-from dotenv import load_dotenv
-load_dotenv('../infra/.env')
-import pytest, sys
-sys.exit(pytest.main(['-q']))"
+uv run pytest
 ```
 
-Note the shape of the `pytest` line. A bare `uv run pytest` has never worked on a
-host checkout, for two reasons the container hides:
-
-- the importable package is `backend/` itself, so its **parent** has to be on
-  `PYTHONPATH`. The container sets `PYTHONPATH=/nuros`; the host must be told.
-- `core.configs.Config` requires ~25 variables that live in `infra/.env`. The
-  container mounts that file at `/.env`; the host has to load it.
-
-Load the env in-process rather than `source infra/.env` — two of its values are
-unquoted and abort `zsh` with `command not found`.
+The tests over HTTP need the throwaway Postgres and Meilisearch the first line
+starts; the rest need nothing. `backend/conftest.py` sets the environment, so
+`infra/.env` is not read. See [`backend/tests/README.md`](backend/tests/README.md).
 
 You cannot fall back to the container: `backend/Dockerfile` builds with
 `uv sync --frozen --no-dev`, so **pytest, ruff and black are not installed in
@@ -245,11 +235,9 @@ pnpm build
   `OPENAPI_URL=http://nginx/api/openapi.json`.
 - `pnpm format` rewrites *every* file that has drifted, not just the one you
   touched. Stage deliberately rather than `git add -A`.
-- `pnpm lint` currently exits 1 on a **pre-existing** baseline of 9 errors in
-  files you are not touching: `layouts/app/app-sidebar.tsx` (jsx-a11y — a click
-  handler on a non-interactive element), `routes/announcements/index.tsx`
-  (`Date.now()` called during render) and `routes/events/` (non-canonical
-  Tailwind classes). Check whether your change added to the count rather than
+- `pnpm lint` currently exits 1 on a **pre-existing** baseline of errors in
+  files you are not touching, among them `routes/events/` (non-canonical
+  Tailwind classes) and the workbench's own scratch files. Check whether your change added to the count rather than
   assuming you caused it. `uv run ruff check .` has a similar baseline of 11.
 
 Also verify the changed user flow manually when automated coverage does not exist. Include the commands you ran and the result in the pull request description.

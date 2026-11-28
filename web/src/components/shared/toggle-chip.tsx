@@ -25,7 +25,7 @@ interface ToggleChipProps {
  * `aria-pressed` rather than a checkbox: these are filters and multi-selects
  * that apply immediately, not fields waiting on a submit, and a screen reader
  * should hear "pressed" rather than "checked". Used by the degree audit filters
- * and by the opportunity form's level, year and type pickers.
+ * in the courses screen.
  */
 export function ToggleChip({
   label,

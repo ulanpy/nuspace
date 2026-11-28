@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useCallback } from "react"
 import { z } from "zod"
 
-import { Page } from "@/components/routes/courses/audit"
+import { Page } from "@/components/shared/page"
+
+import { DegreeAuditScreen } from "@/components/routes/courses/audit"
 
 const auditSearchSchema = z.object({
   /**
@@ -38,5 +40,9 @@ function DegreeAuditRoute() {
     [navigate]
   )
 
-  return <Page search={search} onSearchChange={onSearchChange} />
+  return (
+    <Page title="Degree Audit">
+      <DegreeAuditScreen search={search} onSearchChange={onSearchChange} />
+    </Page>
+  )
 }

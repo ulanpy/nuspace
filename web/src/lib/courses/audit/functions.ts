@@ -74,3 +74,33 @@ export function buildTransferCreditMappings(
 
   return { mappings, errors }
 }
+
+/** How the results table orders requirements by their status. */
+export type StatusSort = "pending" | "satisfied" | "source"
+
+/** Outstanding first, then satisfied first, then the order the audit sent. */
+const NEXT_STATUS_SORT: Record<StatusSort, StatusSort> = {
+  pending: "satisfied",
+  satisfied: "source",
+  source: "pending",
+}
+
+export function nextStatusSort(sort: StatusSort): StatusSort {
+  return NEXT_STATUS_SORT[sort]
+}
+
+/**
+ * Requirements ordered by status; the audit's own order breaks ties.
+ *
+ * This screen is used to work out what is still needed, so outstanding
+ * requirements lead by default.
+ */
+export function sortRequirements<T extends { status: string }>(
+  rows: readonly T[],
+  sort: StatusSort
+): T[] {
+  if (sort === "source") return [...rows]
+  const leading = sort === "satisfied"
+  const rank = (row: T) => ((row.status === "Satisfied") === leading ? 0 : 1)
+  return [...rows].sort((a, b) => rank(a) - rank(b))
+}

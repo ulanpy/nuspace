@@ -22,7 +22,8 @@ import type {
   PageUpdate,
   PageVisibilityValue,
 } from "./types"
-import { PAGE_OWNERSHIP } from "./constants"
+import { MAX_PAGES_PER_OWNER, PAGE_OWNERSHIP } from "./constants"
+import { hostOf, serviceByKey } from "@/lib/hosts"
 
 /**
  * One page of the public directory, for `useInfiniteList`.
@@ -97,6 +98,17 @@ export function myPagesQueryOptions({
     queryFn: () =>
       fetchMyPages({ role, visibility, sort, order }, { page, size }),
   })
+}
+
+/**
+ * A Page's address as a visitor reads it, `pages.nuspace.kz/chess-club`, on
+ * the pages host of the environment `hostname` is in (production when it is in
+ * none). For copy that names the address, not for links: a link is a router
+ * path, and the host rewrite gives it its host.
+ */
+export function pageAddress(slug: string, hostname: string): string {
+  const environment = hostOf(hostname)?.environment ?? "production"
+  return `${serviceByKey("pages").hosts[environment]}/${slug}`
 }
 
 function fetchPage(slug: string) {
@@ -557,4 +569,18 @@ export function sortingToSearch<T extends PageSort | PageAdminSort>(
 
 export function canEditField(page: Page, field: string): boolean {
   return page.permissions.editable_fields.includes(field)
+}
+
+/**
+ * The account page's Page stats, from two totals the API already returns: how
+ * many Pages the viewer owns, and how many they own or administer. An owned
+ * Page is also administered by its owner, and the API counts it once, so the
+ * administered figure is what is left over.
+ */
+export function pageStats({ owned, total }: { owned: number; total: number }) {
+  return {
+    owned,
+    administered: Math.max(total - owned, 0),
+    remaining: Math.max(MAX_PAGES_PER_OWNER - owned, 0),
+  }
 }

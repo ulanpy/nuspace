@@ -17,7 +17,7 @@ interface SettingsShellProps {
  * content.
  *
  * The header is `PageHeader` so settings screens match every other page, and
- * the tabs are `RouteTabs`, which `layouts/courses` shares. `sections` is a prop
+ * the tabs are `RouteTabs`, the same control as the filter rows. `sections` is a prop
  * rather than a constant so a tabless area reuses the shell without inheriting
  * tabs it has no business showing.
  *

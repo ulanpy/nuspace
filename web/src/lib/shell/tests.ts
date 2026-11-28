@@ -1,47 +1,61 @@
 import assert from "node:assert/strict"
-import test from "node:test"
+import { describe, it } from "node:test"
 
-import {
-  SIDEBAR_COLLAPSED_KEY,
-  parseSidebarCollapsed,
-  readSidebarCollapsed,
-  writeSidebarCollapsed,
-} from "./functions"
+import { launcherItems, visibleSections } from "./functions.ts"
 
-test("parses only the legacy true value as collapsed", () => {
-  assert.equal(parseSidebarCollapsed("true"), true)
-  assert.equal(parseSidebarCollapsed("false"), false)
-  assert.equal(parseSidebarCollapsed("1"), false)
-  assert.equal(parseSidebarCollapsed("TRUE"), false)
-  assert.equal(parseSidebarCollapsed(null), false)
+describe("launcher", () => {
+  it("lists the five hosts by name, in launcher order", () => {
+    assert.deepEqual(
+      launcherItems("nuspace.kz").map((item) => [item.key, item.name]),
+      [
+        ["root", "Search"],
+        ["courses", "Courses"],
+        ["events", "Events"],
+        ["pages", "Pages"],
+        ["my", "My Nuspace"],
+      ]
+    )
+  })
+
+  it("highlights the host the visitor is on, in any environment", () => {
+    const current = (hostname: string) =>
+      launcherItems(hostname)
+        .filter((item) => item.current)
+        .map((item) => item.key)
+
+    assert.deepEqual(current("events.nuspace.kz"), ["events"])
+    assert.deepEqual(current("EVENTS_STAGING.nuspace.kz"), ["events"])
+    assert.deepEqual(current("my.localhost"), ["my"])
+    assert.deepEqual(current("stage.nuspace.kz"), ["root"])
+  })
+
+  it("highlights nothing on a hostname outside the table", () => {
+    assert.ok(launcherItems("127.0.0.1").every((item) => !item.current))
+  })
 })
 
-test("reads and writes the legacy preference key", () => {
-  const values = new Map<string, string>([[SIDEBAR_COLLAPSED_KEY, "true"]])
-  const storage = {
-    getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      values.set(key, value)
-    },
-  }
+describe("rail visibility", () => {
+  const sections = [
+    { label: "Account", requiresSession: true },
+    { label: "My Pages", requiresSession: true },
+    { label: "People" },
+  ]
+  const labels = (rows: readonly { label: string }[] | undefined) =>
+    rows?.map((row) => row.label)
 
-  assert.equal(readSidebarCollapsed(storage), true)
-  writeSidebarCollapsed(storage, false)
-  assert.equal(values.get(SIDEBAR_COLLAPSED_KEY), "false")
-})
+  it("gives a signed-in visitor every section", () => {
+    assert.deepEqual(labels(visibleSections(sections, true)), [
+      "Account",
+      "My Pages",
+      "People",
+    ])
+  })
 
-test("storage failures fall back without breaking navigation", () => {
-  const unavailableStorage = {
-    getItem: () => {
-      throw new Error("unavailable")
-    },
-    setItem: () => {
-      throw new Error("unavailable")
-    },
-  }
+  it("keeps only the open sections for a signed-out visitor", () => {
+    assert.deepEqual(labels(visibleSections(sections, false)), ["People"])
+  })
 
-  assert.equal(readSidebarCollapsed(unavailableStorage), false)
-  assert.doesNotThrow(() => {
-    writeSidebarCollapsed(unavailableStorage, true)
+  it("passes a host with no sections through", () => {
+    assert.equal(visibleSections(undefined, false), undefined)
   })
 })

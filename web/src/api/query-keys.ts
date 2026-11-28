@@ -13,6 +13,21 @@ export const qk = {
   users: {
     all: () => ["users"] as const,
     detail: (slug: string) => ["users", "detail", slug] as const,
+    eventNotifications: () => ["users", "event-notifications"] as const,
+  },
+
+  /**
+   * Profile pages. `mine` is the viewer's own settings and design; `detail`
+   * is a profile read by handle, under `details()` so a rename or a new tier
+   * can drop every one of them without touching `mine`.
+   */
+  profiles: {
+    all: () => ["profiles"] as const,
+    mine: () => ["profiles", "mine"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["profiles", "list", filters] as const,
+    details: () => ["profiles", "detail"] as const,
+    detail: (handle: string) => ["profiles", "detail", handle] as const,
   },
 
   events: {
@@ -68,19 +83,6 @@ export const qk = {
     detail: (slug: string) => ["admin-link", slug] as const,
   },
 
-  announcements: {
-    all: () => ["announcements"] as const,
-    bundle: () => ["announcements", "bundle"] as const,
-    telegram: () => ["announcements", "telegram"] as const,
-  },
-
-  opportunities: {
-    all: () => ["opportunities"] as const,
-    list: (filters: Record<string, unknown>) =>
-      ["opportunities", "list", filters] as const,
-    detail: (id: number) => ["opportunities", "detail", id] as const,
-  },
-
   courses: {
     all: () => ["courses"] as const,
     catalog: (filters: Record<string, unknown>) =>
@@ -108,17 +110,12 @@ export const qk = {
     plannerPlans: () => ["courses", "planner-plans"] as const,
   },
 
-  sgotinish: {
-    all: () => ["sgotinish"] as const,
-    stats: () => ["sgotinish", "stats"] as const,
+  search: {
+    all: () => ["search"] as const,
+    /** `q` and `kind` are the whole request; the offset is the page param. */
+    results: (filters: Record<string, unknown>) =>
+      ["search", "results", filters] as const,
+    /** The Overview is per query, and only for a signed-in viewer. */
+    overview: (q: string) => ["search", "overview", q] as const,
   },
-
-  notifications: {
-    all: () => ["notifications"] as const,
-    list: (filters: Record<string, unknown>) =>
-      ["notifications", "list", filters] as const,
-  },
-
-  search: (keyword: string, storageName: string) =>
-    ["search", storageName, keyword] as const,
 } as const

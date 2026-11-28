@@ -3,8 +3,50 @@ import { describe, it } from "node:test"
 import {
   buildTransferCreditMappings,
   mergeTransferCreditMappings,
+  nextStatusSort,
+  sortRequirements,
   transferCreditMappingRows,
 } from "./functions"
+
+describe("requirement status sort", () => {
+  const rows = [
+    { code: "A", status: "Satisfied" },
+    { code: "B", status: "Pending" },
+    { code: "C", status: "Satisfied" },
+    { code: "D", status: "Pending" },
+  ]
+  const codes = (sorted: typeof rows) => sorted.map((row) => row.code)
+
+  it("puts outstanding first and keeps the audit's order within a group", () => {
+    assert.deepEqual(codes(sortRequirements(rows, "pending")), [
+      "B",
+      "D",
+      "A",
+      "C",
+    ])
+  })
+
+  it("can lead with satisfied instead", () => {
+    assert.deepEqual(codes(sortRequirements(rows, "satisfied")), [
+      "A",
+      "C",
+      "B",
+      "D",
+    ])
+  })
+
+  it("returns the audit's order untouched, as a copy", () => {
+    const sorted = sortRequirements(rows, "source")
+    assert.deepEqual(codes(sorted), ["A", "B", "C", "D"])
+    assert.notEqual(sorted, rows)
+  })
+
+  it("cycles through all three orders", () => {
+    assert.equal(nextStatusSort("pending"), "satisfied")
+    assert.equal(nextStatusSort("satisfied"), "source")
+    assert.equal(nextStatusSort("source"), "pending")
+  })
+})
 
 describe("transfer-credit mappings", () => {
   it("starts with transcript credits and leaves the NU code blank", () => {

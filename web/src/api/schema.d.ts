@@ -137,6 +137,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/event-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Notifications
+         * @description Whether the signed-in user hears on Telegram about cancelled or moved events.
+         */
+        get: operations["get_event_notifications_users_me_event_notifications_get"];
+        /** Set Event Notifications */
+        put: operations["set_event_notifications_users_me_event_notifications_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{sub}/scope": {
         parameters: {
             query?: never;
@@ -238,11 +259,11 @@ export interface paths {
          *
          *     `sort` and `visibility` are **silently ignored when `keyword` is set**. The
          *     keyword path short-circuits to Meilisearch, which ranks by relevance and
-         *     has `filterable_attributes=None`, so there is no facet to filter on either.
+         *     is not asked to filter on `visibility`, although the index now carries it
+         *     as a filterable attribute (`modules/pages/search_indexes.py`).
          *     No error, just wrong rows — which is how you get "the sort button does
-         *     nothing". My Pages has no search box today, so this is unreachable. Adding
-         *     one means `filterableAttributes` in `modules/pages/search_indexes.py` plus
-         *     a reindex, not just a UI control.
+         *     nothing". My Pages has no search box today, so this is unreachable.
+         *     Adding one means passing the filter to Meilisearch, not just a UI control.
          */
         get: operations["get_my_pages_pages_mine_get"];
         put?: never;
@@ -423,6 +444,165 @@ export interface paths {
          * @description Redeem an admin access link. Idempotent; no-op if already admin or owner.
          */
         post: operations["accept_page_admin_link_pages_admin_links_accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Profile
+         * @description The viewer's handle, profile visibility and design (null until first saved).
+         */
+        get: operations["get_my_profile_me_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update My Profile
+         * @description Set or change the handle, or the profile's visibility.
+         *
+         *     422 for a malformed or reserved handle, 409 for one someone else holds.
+         */
+        patch: operations["update_my_profile_me_profile_patch"];
+        trace?: never;
+    };
+    "/me/profile/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save My Profile Content
+         * @description Save the design the profile editor publishes.
+         */
+        put: operations["save_my_profile_content_me_profile_content_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Profiles
+         * @description The people directory at `my.nuspace.kz/`.
+         *
+         *     Anonymous viewers get `public` profiles, members also `internal`. `total`
+         *     counts only what the viewer may open.
+         */
+        get: operations["list_profiles_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/profile/{slot}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Confirm My Profile Media
+         * @description Step three of the presigned flow for the picture or banner.
+         *
+         *     Writes the object to `users`. 422 for a name the caller was not issued.
+         */
+        put: operations["confirm_my_profile_media_me_profile__slot__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profiles/{handle}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Profile
+         * @description A profile page: the identity header, read live from `users`, and the design.
+         */
+        get: operations["read_profile_profiles__handle__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Results
+         * @description Ranked Sources from every structured source that this viewer may open.
+         *
+         *     Anyone may search; what comes back follows the viewer (ADR 0011). The pager
+         *     is stateless: ask again with a larger `offset`, and dedupe by `id`. Past
+         *     Meilisearch's `maxTotalHits` (1,000) the results are empty.
+         */
+        get: operations["search_results_search_results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Overview
+         * @description A short cited answer over the top Sources this viewer may open (signed in only).
+         *
+         *     The query is searched again server-side for this viewer; Sources are never
+         *     accepted from the client. `answer` is null when there is no Overview (fewer
+         *     than three Sources, the model abstained, or it failed or timed out).
+         */
+        get: operations["search_overview_search_overview_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -639,26 +819,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/search/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Full Search
-         * @description Full search implementation returning complete entity details
-         */
-        get: operations["full_search_search__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/bucket/upload-url": {
         parameters: {
             query?: never;
@@ -692,6 +852,7 @@ export interface paths {
          * Gcs Webhook
          * @description Pub/Sub push for GCS OBJECT_FINALIZE:
          *     - registrar schedule catalog JSON → reindex Meilisearch
+         *     - Telegram channel export (`telegram/<channel>/result.json`) → reindex that channel
          *     - media uploads (routing-prefix + custom metadata) → media upsert
          */
         post: operations["gcs_webhook_bucket_gcs_hook_post"];
@@ -1468,123 +1629,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/notification": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get */
-        get: operations["get_notification_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/announcements/telegram": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Announcements From Telegram
-         * @description Get latest announcements from the public Telegram channel.
-         */
-        get: operations["get_announcements_from_telegram_announcements_telegram_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/announcements/bundle": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Announcements Bundle Route
-         * @description Single endpoint for the announcements landing page to reduce initial request fan-out.
-         *
-         *     The single list contains approved upcoming events. Recruitment events are ordered by their
-         *     deadline; all other events are ordered by their start time.
-         */
-        get: operations["get_announcements_bundle_route_announcements_bundle_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/opportunities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Opportunities */
-        get: operations["list_opportunities_opportunities_get"];
-        put?: never;
-        /** Create Opportunity */
-        post: operations["create_opportunity_opportunities_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/opportunities/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Opportunity */
-        get: operations["get_opportunity_opportunities__id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Opportunity */
-        delete: operations["delete_opportunity_opportunities__id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Opportunity */
-        patch: operations["update_opportunity_opportunities__id__patch"];
-        trace?: never;
-    };
-    "/opportunities/{id}/calendar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Opportunity To Calendar
-         * @description Add a single opportunity to the user's Google Calendar (all-day event on the deadline).
-         */
-        post: operations["add_opportunity_to_calendar_opportunities__id__calendar_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/elections/counter/stream": {
         parameters: {
             query?: never;
@@ -1683,13 +1727,6 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-        };
-        /**
-         * AnnouncementsBundleResponse
-         * @description Aggregated response for the announcements landing page to reduce request count.
-         */
-        AnnouncementsBundleResponse: {
-            events: components["schemas"]["ListEventResponse"];
         };
         /** AuditProgramResult */
         AuditProgramResult: {
@@ -1972,28 +2009,6 @@ export interface components {
              */
             updated_at: string;
         };
-        /** BaseNotification */
-        BaseNotification: {
-            /** Id */
-            id: number;
-            /** Title */
-            title: string;
-            /** Message */
-            message: string;
-            notification_source: components["schemas"]["EntityType"];
-            /** Receiver Sub */
-            receiver_sub: string;
-            /** Tg Id */
-            tg_id: number;
-            type: components["schemas"]["NotificationType"];
-            /** Url */
-            url?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
         /** BaseTemplateItem */
         BaseTemplateItem: {
             /** Id */
@@ -2151,11 +2166,6 @@ export interface components {
             /** Excepts */
             excepts: string[];
         };
-        /**
-         * EducationLevel
-         * @enum {string}
-         */
-        EducationLevel: "UG" | "GrM" | "PhD";
         /**
          * EntityType
          * @description Enum representing different types of entities (db table names).
@@ -2321,6 +2331,21 @@ export interface components {
             attendees_count: number;
             /** Is Going */
             is_going: boolean;
+        };
+        /** EventNotificationsRequest */
+        EventNotificationsRequest: {
+            /**
+             * Enabled
+             * @description Whether to hear about cancelled or moved events
+             */
+            enabled: boolean;
+        };
+        /** EventNotificationsResponse */
+        EventNotificationsResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Telegram Connected */
+            telegram_connected: boolean;
         };
         /** EventResponse */
         EventResponse: {
@@ -2823,6 +2848,16 @@ export interface components {
             total_pages: number;
         };
         /**
+         * MatchSpan
+         * @description A matched stretch of the snippet, in UTF-16 code units (JavaScript string indices).
+         */
+        MatchSpan: {
+            /** Start */
+            start: number;
+            /** Length */
+            length: number;
+        };
+        /**
          * MediaFormat
          * @enum {string}
          */
@@ -2841,180 +2876,6 @@ export interface components {
             media_format: components["schemas"]["MediaFormat"];
             /** Media Order */
             media_order: number;
-        };
-        /**
-         * NotificationType
-         * @description Enum representing different types of notifications.
-         *
-         *     ⚠️  IMPORTANT: When adding new values to this enum:
-         *     1. Add the new value to this Python enum class
-         *     2. Create a new Alembic migration manually (alembic revision -m "add_new_notification_type")
-         *     3. In the migration's upgrade() function, add:
-         *        op.execute("ALTER TYPE notification_type ADD VALUE 'your_new_value'")
-         *     4. Run the migration: alembic upgrade head
-         *
-         *     Alembic cannot auto-detect enum value changes, so manual migration is required!
-         * @enum {string}
-         */
-        NotificationType: "info";
-        /** OpportunityCalendarResponse */
-        OpportunityCalendarResponse: {
-            /** Created */
-            created: number;
-            /**
-             * Google Errors
-             * @default []
-             */
-            google_errors: string[];
-        };
-        /** OpportunityCreateDto */
-        OpportunityCreateDto: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Deadline */
-            deadline?: string | null;
-            /** Host */
-            host?: string | null;
-            type: components["schemas"]["OpportunityType"];
-            /**
-             * Majors
-             * @default []
-             */
-            majors: components["schemas"]["OpportunityMajor"][];
-            /** Link */
-            link?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Funding */
-            funding?: string | null;
-            /**
-             * Eligibilities
-             * @default []
-             */
-            eligibilities: components["schemas"]["OpportunityEligibilityCreateDto"][];
-        };
-        /**
-         * OpportunityEligibilityBase
-         * @description orm to pydantic mapping. do not use in create/update requests
-         */
-        OpportunityEligibilityBase: {
-            /** Id */
-            id: number;
-            education_level: components["schemas"]["EducationLevel"];
-            /** Year */
-            year: number | null;
-        };
-        /** OpportunityEligibilityCreateDto */
-        OpportunityEligibilityCreateDto: {
-            education_level: components["schemas"]["EducationLevel"];
-            /** Year */
-            year: number | null;
-        };
-        /**
-         * OpportunityEligibilityUpdateDto
-         * @description update request of eligibility perform full replacement
-         */
-        OpportunityEligibilityUpdateDto: {
-            education_level?: components["schemas"]["EducationLevel"] | null;
-            /** Year */
-            year?: number | null;
-        };
-        /** OpportunityListResponse */
-        OpportunityListResponse: {
-            /** Items */
-            items: components["schemas"]["OpportunityResponseDto"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Size */
-            size: number;
-            /** Total Pages */
-            total_pages: number;
-            /** Has Next */
-            has_next: boolean;
-        };
-        /**
-         * OpportunityMajor
-         * @enum {string}
-         */
-        OpportunityMajor: "Engineering Management" | "Mechanical and Aerospace Engineering" | "Electrical and Computer Engineering" | "Chemical and Materials Engineering" | "Civil and Environmental Engineering" | "Biomedical Engineering" | "Mining Engineering" | "Petroleum Engineering" | "Robotics and Mechatronics Engineering" | "Computer Science" | "Data Science" | "Applied Mathematics" | "Mathematics" | "Economics" | "Business Administration" | "Finance" | "Life Sciences" | "Biological Sciences" | "Medical Sciences" | "Molecular Medicine" | "Pharmacology and Toxicology" | "Public Health" | "Sports Medicine and Rehabilitation" | "Nursing" | "Doctor of Medicine" | "A Six-Year Medical Program" | "Chemistry" | "Physics" | "Geosciences" | "Geology" | "Political Science and International Relations" | "Public Policy" | "Public Administration" | "Eurasian Studies" | "Sociology" | "Anthropology" | "History" | "Educational Leadership" | "Multilingual Education" | "World Languages, Literature and Culture";
-        /**
-         * OpportunityMajorMapBase
-         * @description orm to pydantic mapping. do not use in create/update requests
-         */
-        OpportunityMajorMapBase: {
-            /** Id */
-            id: number;
-            /** Opportunity Id */
-            opportunity_id: number;
-            major: components["schemas"]["OpportunityMajor"];
-        };
-        /** OpportunityResponseDto */
-        OpportunityResponseDto: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Deadline */
-            deadline?: string | null;
-            /** Host */
-            host?: string | null;
-            type: components["schemas"]["OpportunityType"];
-            /**
-             * Majors
-             * @default []
-             */
-            majors: components["schemas"]["OpportunityMajorMapBase"][];
-            /** Link */
-            link?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Funding */
-            funding?: string | null;
-            /** Eligibilities */
-            eligibilities?: components["schemas"]["OpportunityEligibilityBase"][];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * OpportunityType
-         * @enum {string}
-         */
-        OpportunityType: "research" | "internship" | "summer_school" | "forum" | "summit" | "grant" | "scholarship" | "conference";
-        /** OpportunityUpdateDto */
-        OpportunityUpdateDto: {
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Deadline */
-            deadline?: string | null;
-            /** Host */
-            host?: string | null;
-            type?: components["schemas"]["OpportunityType"] | null;
-            /** Majors */
-            majors?: components["schemas"]["OpportunityMajor"][] | null;
-            /** Link */
-            link?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Funding */
-            funding?: string | null;
-            /** Eligibilities */
-            eligibilities?: components["schemas"]["OpportunityEligibilityUpdateDto"][] | null;
         };
         /**
          * OtinishPublicStats
@@ -3041,6 +2902,30 @@ export interface components {
             unique_students: number;
             /** By Category */
             by_category?: components["schemas"]["CategoryStat"][];
+        };
+        /** OverviewResponse */
+        OverviewResponse: {
+            /**
+             * Answer
+             * @description Null when there is no Overview: too few Sources, abstention or failure.
+             */
+            answer: string | null;
+            /** Sources */
+            sources?: components["schemas"]["OverviewSource"][];
+        };
+        /** OverviewSource */
+        OverviewSource: {
+            /**
+             * N
+             * @description The citation number, 1-based, as `[n]` in the answer.
+             */
+            n: number;
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
         };
         /**
          * PageAdminSort
@@ -3080,6 +2965,12 @@ export interface components {
             page_content?: {
                 [key: string]: unknown;
             };
+            /**
+             * Content Text
+             * @description The text inside the page's blocks, for search
+             * @default
+             */
+            content_text: string;
             /**
              * @description Who may see this page
              * @default public
@@ -3252,6 +3143,11 @@ export interface components {
             page_content?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Content Text
+             * @description The text inside the page's blocks, for search
+             */
+            content_text?: string | null;
             /** @description Who may see this page */
             visibility?: components["schemas"]["PageVisibility"] | null;
             /**
@@ -3433,6 +3329,139 @@ export interface components {
         PlannerSectionSelectionRequest: {
             /** Section Ids */
             section_ids?: number[];
+        };
+        /** ProfileContentUpdate */
+        ProfileContentUpdate: {
+            /**
+             * Content
+             * @description The Puck document the person wrote
+             */
+            content: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ProfileList
+         * @description The people directory: one page of the profiles the viewer may open.
+         */
+        ProfileList: {
+            /** Items */
+            items?: components["schemas"]["ProfileListItem"][];
+            /**
+             * Total Pages
+             * @default 1
+             */
+            total_pages: number;
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Has Next */
+            has_next: boolean;
+        };
+        /**
+         * ProfileListItem
+         * @description One card of the people directory: what the Pages card shows, and the address.
+         */
+        ProfileListItem: {
+            /** Handle */
+            handle: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /** Picture */
+            picture: string | null;
+            /** Department */
+            department: string | null;
+        };
+        /** ProfileMediaConfirm */
+        ProfileMediaConfirm: {
+            /**
+             * Filename
+             * @description The object name the upload-url step issued, once its PUT has finished
+             */
+            filename: string;
+        };
+        /**
+         * ProfileResponse
+         * @description A profile page as a reader sees it.
+         *
+         *     Everything but `content` is the identity header, read from `users` on every
+         *     request, so it is never stale and the person cannot delete it by editing.
+         */
+        ProfileResponse: {
+            /** Handle */
+            handle: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /**
+             * Picture
+             * @description The custom picture if set, else the sign-in avatar
+             */
+            picture: string | null;
+            /**
+             * Banner
+             * @description The banner's URL; null when none is set
+             */
+            banner: string | null;
+            /** Department */
+            department: string | null;
+            /**
+             * Sg Role
+             * @description The Student Government role; null outside SG
+             */
+            sg_role: ("boss" | "capo" | "soldier") | null;
+            /** Content */
+            content: {
+                [key: string]: unknown;
+            } | null;
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /**
+         * ProfileSettingsResponse
+         * @description The viewer's own profile: its address, its tier, and what they wrote.
+         *
+         *     `content` is null until the first save, which is how the editor knows to
+         *     open on the About and Links template rather than on a blank canvas.
+         */
+        ProfileSettingsResponse: {
+            /** Handle */
+            handle: string | null;
+            visibility: components["schemas"]["PageVisibility"];
+            /** Content */
+            content: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Picture
+             * @description The custom picture's URL; null until one is uploaded
+             */
+            picture: string | null;
+            /**
+             * Banner
+             * @description The banner's URL; null until one is uploaded
+             */
+            banner: string | null;
+        };
+        /**
+         * ProfileSettingsUpdate
+         * @description Either field may be left out. `handle: null` takes the profile page down.
+         */
+        ProfileSettingsUpdate: {
+            /**
+             * Handle
+             * @description The address at my.nuspace.kz/u/<handle>
+             * @example aigerim-b
+             */
+            handle?: string | null;
+            /** @description Who may read the profile */
+            visibility?: components["schemas"]["PageVisibility"] | null;
         };
         /**
          * PubSubMessage
@@ -3616,6 +3645,80 @@ export interface components {
             start: components["schemas"]["TimeSchema"];
             end: components["schemas"]["TimeSchema"];
         };
+        /**
+         * SearchKind
+         * @description What a Source is, as the kind chips name it.
+         *
+         *     One kind may span several indexes: `course` is enrolled-course records, grade
+         *     reports and the registrar catalogue alike. `message` is Channel messages, one
+         *     index per Telegram channel.
+         * @enum {string}
+         */
+        SearchKind: "page" | "event" | "course" | "message" | "profile";
+        /** SearchResponse */
+        SearchResponse: {
+            /** Query */
+            query: string;
+            kind: components["schemas"]["SearchKind"] | null;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /** Results */
+            results: components["schemas"]["SearchResult"][];
+            /**
+             * Estimated Total
+             * @description Estimated matches for `kind` (or every kind), before the visibility predicate. Shown as "About N".
+             */
+            estimated_total: number;
+            /**
+             * Counts
+             * @description Estimated matches per kind, whatever `kind` is.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Next Offset
+             * @description Where the next page starts; null past the last page or `maxTotalHits`.
+             */
+            next_offset: number | null;
+        };
+        /** SearchResult */
+        SearchResult: {
+            /**
+             * Id
+             * @description Unique across kinds: `<source>:<primary key>`, e.g. `page:12`.
+             */
+            id: string;
+            kind: components["schemas"]["SearchKind"];
+            /** Title */
+            title: string;
+            /**
+             * Url
+             * @description The Source's canonical address, bare.
+             */
+            url: string;
+            /**
+             * Host
+             * @description The breadcrumb's host, e.g. `pages.nuspace.kz`.
+             */
+            host: string;
+            /**
+             * Path
+             * @description The breadcrumb's path, without a leading slash; may be empty.
+             */
+            path: string;
+            date?: components["schemas"]["SourceDate"] | null;
+            snippet?: components["schemas"]["Snippet"] | null;
+            /** @description Set only when the Source is not public. */
+            visibility?: components["schemas"]["PageVisibility"] | null;
+            /**
+             * Facts
+             * @description Kind-specific facts, in display order.
+             */
+            facts?: string[];
+        };
         /** SemesterOption */
         SemesterOption: {
             /** Label */
@@ -3668,6 +3771,26 @@ export interface components {
             mime_type: string;
             /** Purpose */
             purpose?: string | null;
+        };
+        /** Snippet */
+        Snippet: {
+            /** Text */
+            text: string;
+            /** Matches */
+            matches?: components["schemas"]["MatchSpan"][];
+        };
+        /**
+         * SourceDate
+         * @description The date a result shows, and what it is the date of.
+         */
+        SourceDate: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "updated" | "starts" | "deadline" | "posted";
+            /** Value */
+            value: string;
         };
         /** SpaceBlock */
         SpaceBlock: {
@@ -4099,6 +4222,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_notifications_users_me_event_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventNotificationsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_event_notifications_users_me_event_notifications_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventNotificationsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventNotificationsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4634,6 +4827,301 @@ export interface operations {
             };
         };
     };
+    get_my_profile_me_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_my_profile_me_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_my_profile_content_me_profile_content_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileContentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_profiles_profiles_get: {
+        parameters: {
+            query?: {
+                /** @description Name, handle or department */
+                keyword?: string | null;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_my_profile_media_me_profile__slot__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot: "picture" | "banner";
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileMediaConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_profile_profiles__handle__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_results_search_results_get: {
+        parameters: {
+            query: {
+                /** @description What to search for. */
+                q: string;
+                /** @description Only this kind of Source. */
+                kind?: components["schemas"]["SearchKind"] | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_overview_search_overview_get: {
+        parameters: {
+            query: {
+                /** @description What to search for. */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_events_events_get: {
         parameters: {
             query?: {
@@ -5098,44 +5586,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventAccessInviteAcceptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    full_search_search__get: {
-        parameters: {
-            query: {
-                keyword: string;
-                storage_name: components["schemas"]["EntityType"];
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -6692,340 +7142,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditResponse"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_notification_get: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BaseNotification"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_announcements_from_telegram_announcements_telegram_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_announcements_bundle_route_announcements_bundle_get: {
-        parameters: {
-            query?: {
-                events_page?: number;
-                events_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnnouncementsBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_opportunities_opportunities_get: {
-        parameters: {
-            query?: {
-                /** @description Filter by opportunity types */
-                type?: components["schemas"]["OpportunityType"][] | null;
-                /** @description Filter by majors */
-                majors?: components["schemas"]["OpportunityMajor"][] | null;
-                /** @description Filter by education levels */
-                education_level?: components["schemas"]["EducationLevel"][] | null;
-                /** @description Study years to match (for UG/GrM) */
-                years?: number[] | null;
-                /** @description Search in name/description */
-                q?: string | null;
-                /** @description Hide expired opportunities */
-                hide_expired?: boolean;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Page size */
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OpportunityListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_opportunity_opportunities_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpportunityCreateDto"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OpportunityResponseDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_opportunity_opportunities__id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OpportunityResponseDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_opportunity_opportunities__id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_opportunity_opportunities__id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpportunityUpdateDto"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OpportunityResponseDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_opportunity_to_calendar_opportunities__id__calendar_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OpportunityCalendarResponse"];
                 };
             };
             /** @description Validation Error */

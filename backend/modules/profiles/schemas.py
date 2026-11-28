@@ -1,0 +1,88 @@
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
+
+from backend.modules.pages.models.page import PageVisibility
+from backend.modules.profiles.handle import validate_handle
+
+
+class ProfileSettingsResponse(BaseModel):
+    """The viewer's own profile: its address, its tier, and what they wrote.
+
+    `content` is null until the first save, which is how the editor knows to
+    open on the About and Links template rather than on a blank canvas.
+    """
+
+    handle: str | None
+    visibility: PageVisibility
+    content: dict | None
+    picture: str | None = Field(description="The custom picture's URL; null until one is uploaded")
+    banner: str | None = Field(description="The banner's URL; null until one is uploaded")
+
+
+class ProfileSettingsUpdate(BaseModel):
+    """Either field may be left out. `handle: null` takes the profile page down."""
+
+    handle: str | None = Field(
+        default=None,
+        description="The address at my.nuspace.kz/u/<handle>",
+        examples=["aigerim-b"],
+    )
+    visibility: PageVisibility | None = Field(default=None, description="Who may read the profile")
+
+    @field_validator("handle")
+    @classmethod
+    def _valid_handle(cls, value: str | None) -> str | None:
+        return None if value is None else validate_handle(value)
+
+
+class ProfileContentUpdate(BaseModel):
+    content: dict = Field(..., description="The Puck document the person wrote")
+
+
+class ProfileMediaConfirm(BaseModel):
+    filename: str = Field(
+        ...,
+        description="The object name the upload-url step issued, once its PUT has finished",
+    )
+
+
+class ProfileResponse(BaseModel):
+    """A profile page as a reader sees it.
+
+    Everything but `content` is the identity header, read from `users` on every
+    request, so it is never stale and the person cannot delete it by editing.
+    """
+
+    handle: str
+    name: str
+    surname: str
+    picture: str | None = Field(description="The custom picture if set, else the sign-in avatar")
+    banner: str | None = Field(description="The banner's URL; null when none is set")
+    department: str | None
+    sg_role: Literal["boss", "capo", "soldier"] | None = Field(
+        description="The Student Government role; null outside SG"
+    )
+    content: dict | None
+    can_edit: bool
+
+
+class ProfileListItem(BaseModel):
+    """One card of the people directory: what the Pages card shows, and the address."""
+
+    handle: str
+    name: str
+    surname: str
+    picture: str | None
+    department: str | None
+
+
+class ProfileList(BaseModel):
+    """The people directory: one page of the profiles the viewer may open."""
+
+    items: list[ProfileListItem] = Field(default_factory=list)
+    total_pages: int = Field(default=1, ge=1)
+    total: int
+    page: int
+    size: int
+    has_next: bool

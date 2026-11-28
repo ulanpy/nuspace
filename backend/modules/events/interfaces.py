@@ -8,6 +8,14 @@ from backend.modules.media.schemas import MediaResponse
 T = TypeVar("T")
 
 
+class AttendeeMessenger(Protocol):
+    """Sends one direct message with one URL button. True if it went out, False if not."""
+
+    async def send(
+        self, telegram_id: int, text: str, *, button_label: str, button_url: str
+    ) -> bool: ...
+
+
 class MediaAttachmentResolver(Protocol):
     async def delete_many(self, media_objects: list[Media]) -> None: ...
 

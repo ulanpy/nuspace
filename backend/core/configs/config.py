@@ -2,9 +2,17 @@ import json
 import os
 import re
 from functools import cached_property
-from typing import List
+from urllib.parse import urlsplit
 
 import requests
+from backend.common.service_origin import (
+    Environment,
+    Service,
+    app_hosts,
+    cookie_domain,
+    environment_from,
+    service_origin,
+)
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -44,7 +52,6 @@ class Config(BaseSettings):
     PUSH_AUTH_AUDIENCE: str
     VM_SERVICE_ACCOUNT_EMAIL: str
     GCP_SIGNING_SERVICE_ACCOUNT_KEY_JSON: str | None = None
-    ORIGINS: List[str] = ["*"]
     MOCK_KEYCLOAK: bool  # always set True in local dev
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
@@ -57,6 +64,8 @@ class Config(BaseSettings):
     GEMINI_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-3-flash-preview"
     GEMINI_LOCATION: str = "global"
+    # Dense search embeddings (768 dimensions), over the same client.
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
     GEMINI_USE_ENTERPRISE: bool | None = None
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
@@ -110,6 +119,30 @@ class Config(BaseSettings):
         if not self.IS_DEBUG:
             return self.NUSPACE.rstrip("/")
         return self.DEV_APP_URL.rstrip("/")
+
+    @cached_property
+    def ENVIRONMENT(self) -> Environment:
+        return environment_from(is_debug=self.IS_DEBUG, nuspace_url=self.NUSPACE)
+
+    def service_origin(self, service: Service) -> str:
+        """Origin of a service host here (dev: `*.localhost` on DEV_APP_URL's port)."""
+        dev_port = urlsplit(self.DEV_APP_URL).port if self.ENVIRONMENT == "dev" else None
+        return service_origin(service, self.ENVIRONMENT, dev_port)
+
+    @cached_property
+    def APP_HOSTS(self) -> frozenset[str]:
+        """Hostnames a browser reaches the app on here: the six service hosts.
+
+        Dev also accepts DEV_APP_URL's host and the cloudflared tunnel's host.
+        """
+        if self.ENVIRONMENT == "dev":
+            return app_hosts(self.ENVIRONMENT, self.HOME_URL, self.PUBLIC_WEBHOOK_URL)
+        return app_hosts(self.ENVIRONMENT, self.HOME_URL)
+
+    @cached_property
+    def COOKIE_DOMAIN(self) -> str | None:
+        """`Domain` of the auth cookies: `.nuspace.kz`, or host-only (None) in dev."""
+        return cookie_domain(self.ENVIRONMENT)
 
     @cached_property
     def PUBLIC_WEBHOOK_URL(self) -> str:

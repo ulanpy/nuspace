@@ -106,10 +106,9 @@ ws.onmessage = (event) => {
     const { exceptionDetails } = message.params
     complaints.push(
       "[threw] " +
-        (exceptionDetails.exception?.description ?? exceptionDetails.text).slice(
-          0,
-          400
-        )
+        (
+          exceptionDetails.exception?.description ?? exceptionDetails.text
+        ).slice(0, 400)
     )
   }
   if (message.id && waiting.has(message.id)) {
@@ -148,10 +147,9 @@ if (check) {
 
 if (out?.endsWith(".png")) {
   const shot = await send("Page.captureScreenshot", { format: "png" })
-  await (await import("node:fs/promises")).writeFile(
-    out,
-    Buffer.from(shot.data, "base64")
-  )
+  await (
+    await import("node:fs/promises")
+  ).writeFile(out, Buffer.from(shot.data, "base64"))
   console.log("wrote", out)
 }
 

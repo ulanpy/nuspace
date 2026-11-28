@@ -38,7 +38,7 @@ def setup_middlewares(
     middlewares = [
         DatabaseMiddleware(db_manager),
         RedisMiddleware(redis),
-        UrlMiddleware(config.PUBLIC_WEBHOOK_URL),
+        UrlMiddleware(cfg.service_origin("root")),
         I18N(),
         TelegramLinkMiddleware(),
         OtinishMiddleware(),

@@ -23,6 +23,11 @@ export function Button({ className }: { className?: string }) {
 `,
   "/src/loop-b.ts": `import "./loop-a"
 `,
+  "/src/ui/styled.tsx": `import "./styled.css"
+export const Styled = () => <span className="border-input" />
+`,
+  "/src/ui/styled.css": `.x { color: var(--destructive); }
+`,
 }
 
 const TOKENS = [
@@ -85,4 +90,14 @@ void test("an entry that does not exist walks nothing", () => {
   assert.deepEqual(usedTokens(FILES, "/wb/missing.wb.tsx", TOKENS, "/src"), {
     found: new Map(),
   })
+})
+
+void test("a stylesheet in the tree reports the tokens it references", () => {
+  const { found } = usedTokens(FILES, "/src/ui/styled.tsx", TOKENS, "/src")
+  // `styled.css` is reached through an import, and the walk used to skip it: the
+  // source map held no key for it, so `resolve` named a file it could not read and
+  // the token inside went unreported. The glob loads stylesheets now, and this is
+  // what stops a future extension filter from quietly dropping them again.
+  assert.equal(found.get("--destructive"), "var")
+  assert.equal(found.get("--input"), "class")
 })

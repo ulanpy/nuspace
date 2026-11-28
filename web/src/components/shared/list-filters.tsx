@@ -1,5 +1,6 @@
 import { SearchIcon, XIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -24,6 +25,7 @@ export function SearchFilter({
   onChange,
   placeholder,
   label,
+  className,
 }: {
   value: string
   onChange: (value: string) => void
@@ -32,9 +34,11 @@ export function SearchFilter({
    * label when the placeholder is a content hint like "Security, counseling…".
    */
   label?: string
+  /** Sized by the caller when the field sits beside other controls. */
+  className?: string
 }) {
   return (
-    <InputGroup className="min-w-56 flex-1">
+    <InputGroup className={cn("min-w-48 flex-1", className)}>
       <InputGroupAddon>
         <SearchIcon aria-hidden />
       </InputGroupAddon>

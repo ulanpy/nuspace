@@ -26,19 +26,6 @@ export function useCurrentUser(): CurrentUser {
 }
 
 /**
- * Addresses the backend lets manage opportunities regardless of role, copied
- * from `OpportunityPolicy.ALLOWED_EMAILS`.
- *
- * `bob@example.com` is in the backend set and is kept here deliberately: this
- * mirrors the server, and dropping it would only hide the button from an
- * account the server still authorises. Removing it is a backend change.
- */
-const OPPORTUNITY_EMAILS = new Set([
-  "ministry.innovations@nu.edu.kz",
-  "bob@example.com",
-])
-
-/**
  * Permission checks derived from the user's role and scopes, so authorization
  * lives in one place.
  */
@@ -57,17 +44,5 @@ export function usePermissions() {
     isSgMember,
     isSgLead: role === "boss",
     hasTelegramLinked: session?.tg_id != null,
-    /**
-     * Authoring the opportunities digest. Mirrors
-     * `backend/modules/opportunities/policy.py` exactly: the allowlist is not
-     * an authorization mechanism on its own — the server checks the same thing
-     * — but showing the button to someone the server will refuse is the bug the
-     * old app had, so the two must agree. If the policy changes, change it
-     * there first and follow here.
-     */
-    canManageOpportunities:
-      isAdmin ||
-      role === "boss" ||
-      (user != null && OPPORTUNITY_EMAILS.has(user.email)),
   }
 }

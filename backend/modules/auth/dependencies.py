@@ -257,6 +257,17 @@ async def get_creds_or_guest(
         return guest_kc, guest_app
 
 
+def is_guest(user: tuple[dict, dict]) -> bool:
+    """The one answer to "is this an unauthenticated principal?".
+
+    Production's guest has `sub == "guest"` in the Keycloak claims and `is_guest`
+    only in the app claims (see `get_creds_or_guest`), so either marks one. Read
+    this instead of indexing into the credentials tuple.
+    """
+    kc, app = user
+    return bool(app.get("is_guest")) or kc.get("sub") == "guest"
+
+
 async def check_tg(
     creds: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],

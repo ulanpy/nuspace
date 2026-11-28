@@ -1,4 +1,5 @@
-FROM postgres:17-bookworm
+# pgvector for search embeddings (#441).
+FROM pgvector/pgvector:pg17-bookworm
 
 ARG WALG_VERSION=v3.0.8
 # WAL-G release assets use Ubuntu ABI tags (no debian-12); bookworm ≈ 22.04.

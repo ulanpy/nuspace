@@ -3,11 +3,6 @@ import { ApiError } from "@/api/client"
 /**
  * A message safe to put in front of a user for a failed API call.
  *
- * The old app open-coded this twice — once in `opportunity-form.tsx` and once
- * in the SG membership manager — as ~70 lines apiece of re-reading the
- * `Response` body and re-parsing JSON that the fetch layer had already parsed.
- * Both copies rendered whatever `detail` came back, whatever the status.
- *
  * This one follows the rule established in
  * `src/lib/courses/functions.ts`: **never render a 5xx `detail`.**
  * FastAPI runs with `debug=True` locally, so a 500 body is a Python traceback;

@@ -1,0 +1,380 @@
+{
+  "name": "Contacts",
+  "slug": "contacts",
+  "description": "Campus offices and services: security, counseling, health, housing, advising and more.",
+  "visibility": "public",
+  "page_content": {
+    "root": {
+      "props": {}
+    },
+    "content": [
+      {
+        "type": "Heading",
+        "props": {
+          "id": "Heading-a09d86f5-1102-4432-a34b-dae02b58bbf6",
+          "text": "Find the right office or service",
+          "level": 1,
+          "align": "left",
+          "size": 20,
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "8px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Text",
+        "props": {
+          "id": "Text-21287cf7-489f-497a-9fbf-72bc1e399e87",
+          "text": "In an emergency, call campus security or local services immediately.",
+          "align": "left",
+          "size": 18,
+          "maxWidth": "",
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Heading",
+        "props": {
+          "id": "Heading-dbd48788-f27d-4db0-8b5e-dac3b2578dee",
+          "text": "Urgent & wellbeing",
+          "level": 2,
+          "align": "left",
+          "size": 20,
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "8px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Grid",
+        "props": {
+          "id": "Grid-33893806-e5c0-4f20-bdad-b18942c185d4",
+          "numColumns": 2,
+          "gap": 16,
+          "items": [
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-db0462c0-a9a3-4f30-bb6f-ad90f93f75a7",
+                "richtext": "<h3>Campus Security</h3><p>24/7 campus security dispatch and emergency response for immediate incidents.</p><ul><li>Campus Security: <a href=\"tel:+77172706256\">+7 (717) 270-62-56</a></li><li><a href=\"https://docs.google.com/forms/d/e/1FAIpQLSe7ANcHNvVAc0DDygHLYxG1N7716iJ1NJqQyw7_Upi0XABsfg/viewform\" target=\"_blank\" rel=\"noopener noreferrer\">Incident report form</a></li><li><a href=\"https://forms.gle/WdG6Piik6tSThyKc7\" target=\"_blank\" rel=\"noopener noreferrer\">Campus access form</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-246ff131-19a5-45b2-a7d8-6747dd9769e4",
+                "richtext": "<h3>Psychological Support</h3><p>Confidential psychological support and counseling coordination through PCS.</p><ul><li><a href=\"https://t.me/pcs_nu\" target=\"_blank\" rel=\"noopener noreferrer\">Telegram @pcs_nu</a></li><li>City Mental Health Center: <a href=\"tel:+77172273828\">+7 (7172) 27-38-28</a><br>Alt: +7 (7172) 54-76-03</li><li>National Hotline (Domestic Violence, Bullying): <a href=\"tel:111\">111</a></li><li>Unified Psychological Service (24/7): <a href=\"tel:150\">150</a><br>WhatsApp: +7 708 10 608 10</li><li><a href=\"https://wa.me/77081060810\" target=\"_blank\" rel=\"noopener noreferrer\">Unified Psychological Service (WhatsApp)</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-c033a704-e8db-4ff0-a7ce-403a72010211",
+                "richtext": "<h3>University Health Center (UHC)</h3><p>Medical appointments, on-duty doctor support, and psychological services through the UHC.</p><ul><li>UHC Appointment: <a href=\"tel:+77172692606\">+7 (7172) 69-26-06</a></li><li>UHC Appointment: <a href=\"tel:+77172692616\">+7 (7172) 69-26-16</a></li><li>UHC Appointment: <a href=\"tel:+77172692608\">+7 (7172) 69-26-08</a><br>Hours: Mon-Fri 8:00-20:00, Sat 9:00-13:00</li><li>On-duty Doctor: <a href=\"tel:+77028536130\">+7 702 853 61 30</a><br>Block D3 (19), room 19201 | When UHC is closed</li><li>UHC Psychologist/Psychiatrist: <a href=\"tel:+77172702616\">+7 (7172) 70-26-16</a></li><li>UHC Psychologist/Psychiatrist: <a href=\"tel:+77172702608\">+7 (7172) 70-26-08</a></li><li>UHC Psychologist/Psychiatrist: <a href=\"tel:+77172702606\">+7 (7172) 70-26-06</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-0512da55-a004-49c5-bd6f-4be26ec0eaeb",
+                "richtext": "<h3>Fire and Safety</h3><p>Report fire hazards and safety concerns across campus facilities.</p><ul><li>Fire &amp; Safety: <a href=\"tel:+77172706262\">+7 (717) 270-62-62</a></li><li><a href=\"https://docs.google.com/forms/d/e/1FAIpQLSe7ANcHNvVAc0DDygHLYxG1N7716iJ1NJqQyw7_Upi0XABsfg/viewform\" target=\"_blank\" rel=\"noopener noreferrer\">Report form</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-609821c3-9f4e-402b-9a92-d7943a0b4534",
+                "richtext": "<h3>Anti-harassment</h3><p>Dedicated contacts for reporting harassment and seeking follow-up.</p><ul><li>AHC: <a href=\"mailto:ahc@nu.edu.kz\">ahc@nu.edu.kz</a></li><li>Daniyar Kossumbayev: <a href=\"mailto:daniyar.kossumbayev@nu.edu.kz\">daniyar.kossumbayev@nu.edu.kz</a></li><li>Assima Seitaliyeva: <a href=\"mailto:assima.seitaliyeva@nu.edu.kz\">assima.seitaliyeva@nu.edu.kz</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            }
+          ],
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Heading",
+        "props": {
+          "id": "Heading-62183eac-d118-43bc-a694-573f9fd77d92",
+          "text": "Student life",
+          "level": 2,
+          "align": "left",
+          "size": 20,
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "8px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Grid",
+        "props": {
+          "id": "Grid-d4236bd7-db27-4ae7-a615-0ebea730fdb0",
+          "numColumns": 2,
+          "gap": 16,
+          "items": [
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-cc384fbf-8501-40a6-90f0-dc2808579313",
+                "richtext": "<h3>Student Housing</h3><p>Housing assignments, residence support, and residential services.</p><ul><li>General: <a href=\"mailto:student_housing@nu.edu.kz\">student_housing@nu.edu.kz</a></li><li>Samal Tastambekova: <a href=\"mailto:samal.tastambekova@nu.edu.kz\">samal.tastambekova@nu.edu.kz</a></li><li>Yerzhan Kani: <a href=\"mailto:yerzhan.kani@nu.edu.kz\">yerzhan.kani@nu.edu.kz</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-b9c647aa-1a0d-48aa-9f54-9620c6bf2643",
+                "richtext": "<h3>Student Advocacy</h3><p>Student support office for advocacy, wellbeing, and harassment reporting.</p><ul><li>Student support: <a href=\"mailto:student_support@nu.edu.kz\">student_support@nu.edu.kz</a></li><li>AHC: <a href=\"mailto:ahc@nu.edu.kz\">ahc@nu.edu.kz</a></li><li>Daniyar Kossumbayev: <a href=\"mailto:daniyar.kossumbayev@nu.edu.kz\">daniyar.kossumbayev@nu.edu.kz</a></li><li>Assima Seitaliyeva: <a href=\"mailto:assima.seitaliyeva@nu.edu.kz\">assima.seitaliyeva@nu.edu.kz</a></li><li>SRC support: <a href=\"mailto:student.rights@nu.edu.kz\">student.rights@nu.edu.kz</a></li><li><a href=\"https://t.me/spooktaken\" target=\"_blank\" rel=\"noopener noreferrer\">Support Dmitriy</a></li><li><a href=\"https://t.me/mirutghts\" target=\"_blank\" rel=\"noopener noreferrer\">Support Amira</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-cb9cd80d-1687-4d70-a673-495d1a0724fd",
+                "richtext": "<h3>Block Managers</h3><p>Residence block managers for on-site assistance and escalation.</p><ul><li>Amina Amangeldinova: <a href=\"tel:+77172705834\">+7 (7172) 70-58-34</a><br>Blocks 11-19 (D1-D3)</li><li>Nailya Bulekpayeva: <a href=\"tel:+77172706410\">+7 (7172) 70-64-10</a><br>Block 20 (D4)</li><li>Gulmira Yerkeblankyzy: <a href=\"tel:+77172694908\">+7 (7172) 69-49-08</a><br>Block 22 (D5)</li><li>Zhanna Kopeyeva: <a href=\"tel:+77172706651\">+7 (7172) 70-66-51</a><br>Block 23 (D6)</li><li>Irina Temchenko: <a href=\"tel:+77172692655\">+7 (7172) 69-26-55</a><br>Block 24 (D7)</li><li>Sandugash Turlybayeva: <a href=\"tel:+77172706571\">+7 (7172) 70-65-71</a><br>Block 25 (D8)</li><li>Salidat Baidauletova: <a href=\"tel:+77172706461\">+7 (7172) 70-64-61</a><br>Block 26 (D9)</li><li>Dina Kast: <a href=\"tel:+77172694673\">+7 (7172) 69-46-73</a><br>Block 27 (D10)</li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-cf6d9109-8c7b-40f9-9df2-ae449eb53ff6",
+                "richtext": "<h3>International Office</h3><p>Office of International Students and Scholars Services for visa and travel support.</p><ul><li>OISS: <a href=\"mailto:oiss@nu.edu.kz\">oiss@nu.edu.kz</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            }
+          ],
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Heading",
+        "props": {
+          "id": "Heading-9e6bb4b9-92ba-40b8-8f2a-1f8f04282356",
+          "text": "Academic support",
+          "level": 2,
+          "align": "left",
+          "size": 20,
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "8px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Grid",
+        "props": {
+          "id": "Grid-428a246c-a72e-4802-8f79-3b58ec9e616b",
+          "numColumns": 2,
+          "gap": 16,
+          "items": [
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-edc62600-7584-4658-8b53-129bd365b5e4",
+                "richtext": "<h3>Academic Advising</h3><p>Academic advising offices located in Block 9 (rooms 9106, 9112, 9113) for all schools.</p><ul><li>AAO: <a href=\"mailto:aao@nu.edu.kz\">aao@nu.edu.kz</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-1c037720-69c7-45f9-bde0-12f20a486020",
+                "richtext": "<h3>School Administrators</h3><p>School-specific administrators for academic and student support.</p><ul><li>SSH - Gulden Kassenova: <a href=\"mailto:gulden.kassenova@nu.edu.kz\">gulden.kassenova@nu.edu.kz</a></li><li>SSH - Anel Kaliyeva: <a href=\"mailto:akaliyeva@nu.edu.kz\">akaliyeva@nu.edu.kz</a></li><li>SSH - Aigerim Kuttubayeva: <a href=\"mailto:aigerim.kuttubayeva@nu.edu.kz\">aigerim.kuttubayeva@nu.edu.kz</a></li><li>SEDS - Yenlik Molgozhdarova: <a href=\"mailto:yenlik.molgozhdarova@nu.edu.kz\">yenlik.molgozhdarova@nu.edu.kz</a></li><li>SEDS - Laura Kabdylmanova: <a href=\"mailto:laura.kabdylmanova@nu.edu.kz\">laura.kabdylmanova@nu.edu.kz</a></li><li>SEDS - Dana Maratova: <a href=\"mailto:d.maratova@nu.edu.kz\">d.maratova@nu.edu.kz</a></li><li>SEDS - Aruzhan Iskakova: <a href=\"mailto:aruzhan.iskakova@nu.edu.kz\">aruzhan.iskakova@nu.edu.kz</a></li><li>SMG - Balzhan Bektursinova: <a href=\"mailto:balzhan.bektursinova@nu.edu.kz\">balzhan.bektursinova@nu.edu.kz</a></li><li>NUSOM - Bauyrzhan Seitbayev: <a href=\"mailto:bauyrzhan.seitbayev@nu.edu.kz\">bauyrzhan.seitbayev@nu.edu.kz</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            }
+          ],
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Heading",
+        "props": {
+          "id": "Heading-1c23078b-0b6e-498e-8915-18993df9e235",
+          "text": "Campus services",
+          "level": 2,
+          "align": "left",
+          "size": 20,
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "8px",
+            "grow": false
+          }
+        }
+      },
+      {
+        "type": "Grid",
+        "props": {
+          "id": "Grid-8b3c6b51-73ea-43bd-9b05-dad60c5c7574",
+          "numColumns": 2,
+          "gap": 16,
+          "items": [
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-e3cefed0-6a8c-42b0-b6c7-840ce60800d0",
+                "richtext": "<h3>IT Help Desk</h3><p>Technical assistance, account access, and IT service requests.</p><ul><li><a href=\"https://helpdesk.nu.edu.kz/\" target=\"_blank\" rel=\"noopener noreferrer\">Helpdesk portal</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            },
+            {
+              "type": "RichText",
+              "props": {
+                "id": "RichText-fbec3078-49bf-43fd-b439-1c7677b5d3a2",
+                "richtext": "<h3>Facilities and Maintenance</h3><p>Report issues with furniture, plumbing, or electrical systems.</p><ul><li>Service desk: <a href=\"mailto:servicedesk@nu.edu.kz\">servicedesk@nu.edu.kz</a></li><li>Roof and Toilet Leaks: <a href=\"mailto:usmcomments@nu.edu.kz\">usmcomments@nu.edu.kz</a></li></ul>",
+                "size": 16,
+                "layout": {
+                  "spanCol": 1,
+                  "spanRow": 1,
+                  "paddingX": "16px",
+                  "padding": "0px",
+                  "grow": false
+                }
+              }
+            }
+          ],
+          "layout": {
+            "spanCol": 1,
+            "spanRow": 1,
+            "paddingX": "16px",
+            "padding": "0px",
+            "grow": false
+          }
+        }
+      }
+    ],
+    "zones": {}
+  },
+  "content_text": "Find the right office or service In an emergency, call campus security or local services immediately. Urgent & wellbeing Campus Security 24/7 campus security dispatch and emergency response for immediate incidents. Campus Security: +7 (717) 270-62-56 Incident report form Campus access form Psychological Support Confidential psychological support and counseling coordination through PCS. Telegram @pcs_nu City Mental Health Center: +7 (7172) 27-38-28 Alt: +7 (7172) 54-76-03 National Hotline (Domestic Violence, Bullying): 111 Unified Psychological Service (24/7): 150 WhatsApp: +7 708 10 608 10 Unified Psychological Service (WhatsApp) University Health Center (UHC) Medical appointments, on-duty doctor support, and psychological services through the UHC. UHC Appointment: +7 (7172) 69-26-06 UHC Appointment: +7 (7172) 69-26-16 UHC Appointment: +7 (7172) 69-26-08 Hours: Mon-Fri 8:00-20:00, Sat 9:00-13:00 On-duty Doctor: +7 702 853 61 30 Block D3 (19), room 19201 | When UHC is closed UHC Psychologist/Psychiatrist: +7 (7172) 70-26-16 UHC Psychologist/Psychiatrist: +7 (7172) 70-26-08 UHC Psychologist/Psychiatrist: +7 (7172) 70-26-06 Fire and Safety Report fire hazards and safety concerns across campus facilities. Fire & Safety: +7 (717) 270-62-62 Report form Anti-harassment Dedicated contacts for reporting harassment and seeking follow-up. AHC: ahc@nu.edu.kz Daniyar Kossumbayev: daniyar.kossumbayev@nu.edu.kz Assima Seitaliyeva: assima.seitaliyeva@nu.edu.kz Student life Student Housing Housing assignments, residence support, and residential services. General: student_housing@nu.edu.kz Samal Tastambekova: samal.tastambekova@nu.edu.kz Yerzhan Kani: yerzhan.kani@nu.edu.kz Student Advocacy Student support office for advocacy, wellbeing, and harassment reporting. Student support: student_support@nu.edu.kz AHC: ahc@nu.edu.kz Daniyar Kossumbayev: daniyar.kossumbayev@nu.edu.kz Assima Seitaliyeva: assima.seitaliyeva@nu.edu.kz SRC support: student.rights@nu.edu.kz Support Dmitriy Support Amira Block Managers Residence block managers for on-site assistance and escalation. Amina Amangeldinova: +7 (7172) 70-58-34 Blocks 11-19 (D1-D3) Nailya Bulekpayeva: +7 (7172) 70-64-10 Block 20 (D4) Gulmira Yerkeblankyzy: +7 (7172) 69-49-08 Block 22 (D5) Zhanna Kopeyeva: +7 (7172) 70-66-51 Block 23 (D6) Irina Temchenko: +7 (7172) 69-26-55 Block 24 (D7) Sandugash Turlybayeva: +7 (7172) 70-65-71 Block 25 (D8) Salidat Baidauletova: +7 (7172) 70-64-61 Block 26 (D9) Dina Kast: +7 (7172) 69-46-73 Block 27 (D10) International Office Office of International Students and Scholars Services for visa and travel support. OISS: oiss@nu.edu.kz Academic support Academic Advising Academic advising offices located in Block 9 (rooms 9106, 9112, 9113) for all schools. AAO: aao@nu.edu.kz School Administrators School-specific administrators for academic and student support. SSH - Gulden Kassenova: gulden.kassenova@nu.edu.kz SSH - Anel Kaliyeva: akaliyeva@nu.edu.kz SSH - Aigerim Kuttubayeva: aigerim.kuttubayeva@nu.edu.kz SEDS - Yenlik Molgozhdarova: yenlik.molgozhdarova@nu.edu.kz SEDS - Laura Kabdylmanova: laura.kabdylmanova@nu.edu.kz SEDS - Dana Maratova: d.maratova@nu.edu.kz SEDS - Aruzhan Iskakova: aruzhan.iskakova@nu.edu.kz SMG - Balzhan Bektursinova: balzhan.bektursinova@nu.edu.kz NUSOM - Bauyrzhan Seitbayev: bauyrzhan.seitbayev@nu.edu.kz Campus services IT Help Desk Technical assistance, account access, and IT service requests. Helpdesk portal Facilities and Maintenance Report issues with furniture, plumbing, or electrical systems. Service desk: servicedesk@nu.edu.kz Roof and Toilet Leaks: usmcomments@nu.edu.kz"
+}

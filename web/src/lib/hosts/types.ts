@@ -1,0 +1,50 @@
+/** Where a hostname is served from. Each one names its own five hosts. */
+export type Environment = "production" | "staging" | "development"
+
+export type ServiceKey =
+  | "root"
+  | "courses"
+  | "events"
+  | "pages"
+  | "my"
+
+/** One of the five first-party hosts, as a visitor knows it. */
+export interface Service {
+  key: ServiceKey
+  /** What the launcher calls the host: "Events". The root host is "Search". */
+  name: string
+  /** The 404 page's question for this host: "Looking for events?". */
+  prompt: string
+  /**
+   * Searches that mean "take me to this host", typed as the whole query:
+   * "pages", "clubs". Lowercase, single-spaced. The host's name and its own
+   * hostnames match too, without being listed here.
+   */
+  keywords: readonly string[]
+  hosts: Record<Environment, string>
+}
+
+/** One host's claim on the route tree. See `ROUTE_TABLE`. */
+export interface RouteTableRow {
+  service: ServiceKey
+  /**
+   * The router path this host's routes live under, `""` for the root host.
+   * `events.nuspace.kz/42` is the router's `/events/42`: the mount is added to
+   * the browser path on the way in and removed on the way out.
+   */
+  mount: string
+  /** Paths the host serves, as the browser sees them: `"/"`, `"/$eventId"`. */
+  routes: readonly string[]
+  /**
+   * What nginx accepts for a `$` segment, as a regex fragment. A parameter not
+   * listed matches any one segment. `{ eventId: "[0-9]+" }` keeps
+   * `events.nuspace.kz/about` a 404 rather than an event that never loads.
+   */
+  params?: Readonly<Record<string, string>>
+  /**
+   * Root host only, and only until phase 2 finishes: router paths whose
+   * service host has no row yet. Served on the root host at their old address
+   * and never preloaded. Each service ticket removes its paths from here.
+   */
+  unmigrated?: readonly string[]
+}

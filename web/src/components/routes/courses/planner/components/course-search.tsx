@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { ExternalLinkIcon, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { CourseLinks } from "@/components/routes/courses/planner/components/course-links"
 
 import {
   courseSearchQueryOptions,
@@ -47,21 +47,19 @@ export function CourseSearch({
   const results: PlannerSearchResult[] = query.data?.items ?? []
 
   return (
-    <div className="space-y-3">
-      <div>
-        <label htmlFor="course-search" className="sr-only">
-          Search courses
-        </label>
-        <Input
-          id="course-search"
-          value={input}
-          onChange={(event) => {
-            setInput(event.target.value)
-          }}
-          placeholder={`Search ${termLabel} courses — e.g. CSCI 151`}
-          autoComplete="off"
-        />
-      </div>
+    <div className="mt-3 min-w-0 space-y-2">
+      <label htmlFor="course-search" className="sr-only">
+        Search courses
+      </label>
+      <Input
+        id="course-search"
+        value={input}
+        onChange={(event) => {
+          setInput(event.target.value)
+        }}
+        placeholder="Search by code (e.g., MATH 161)"
+        autoComplete="off"
+      />
 
       {query.isError && (
         <p className="text-sm text-destructive">
@@ -75,93 +73,65 @@ export function CourseSearch({
         </p>
       )}
 
-      <ul className="space-y-2">
-        {results.map((result) => {
-          const isAdded = addedCodes.has(result.course_code)
-          const syllabus = syllabusLink(syllabusLinks, result.course_code)
-          const requirements = [
-            ["Prerequisites", result.pre_req],
-            ["Corequisites", result.co_req],
-            ["Antirequisites", result.anti_req],
-            ["Priority 1", result.priority_1],
-            ["Priority 2", result.priority_2],
-            ["Priority 3", result.priority_3],
-            ["Priority 4", result.priority_4],
-          ].filter((row): row is [string, string] => Boolean(row[1]?.trim()))
+      {results.length > 0 && (
+        <ul className="max-h-96 min-w-0 divide-y divide-border/60 overflow-x-hidden overflow-y-auto rounded-xl border border-border/60 bg-card shadow-lg">
+          {results.map((result) => {
+            const isAdded = addedCodes.has(result.course_code)
+            const meta = [
+              result.school,
+              result.level,
+              result.credits ? `${result.credits} cr` : null,
+            ].filter(Boolean)
 
-          return (
-            <li
-              key={result.course_code}
-              className="flex items-start justify-between gap-3 rounded-lg border p-3"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">{result.course_code}</p>
-                <p className="text-sm text-muted-foreground">
-                  {normalizeTitle(result.title)}
-                </p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {result.credits && (
-                    <Badge variant="secondary">{result.credits} cr</Badge>
-                  )}
-                  {result.school && (
-                    <Badge variant="outline">{result.school}</Badge>
-                  )}
-                </div>
-                {syllabus && (
-                  <a
-                    href={syllabus}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            return (
+              <li key={result.course_code} className="p-3">
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">
+                      {result.course_code}
+                    </p>
+                    <p className="text-xs wrap-break-word text-muted-foreground">
+                      {normalizeTitle(result.title)}
+                    </p>
+                    {meta.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {meta.join(" · ")}
+                      </p>
+                    )}
+                    <CourseLinks
+                      course={result}
+                      syllabus={syllabusLink(syllabusLinks, result.course_code)}
+                    />
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant={isAdded ? "secondary" : "default"}
+                    className="shrink-0 self-start"
+                    disabled={isAdded || addCourse.isPending}
+                    onClick={() => {
+                      addCourse.mutate({
+                        course_code: result.course_code,
+                        term_value: term,
+                        term_label: termLabel,
+                        level: result.level,
+                      })
+                    }}
                   >
-                    Syllabus
-                    <ExternalLinkIcon className="size-3" aria-hidden />
-                  </a>
-                )}
-                {requirements.length > 0 && (
-                  <details className="mt-2 text-xs">
-                    <summary className="cursor-pointer font-medium text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-                      Priorities & requisites
-                    </summary>
-                    <dl className="mt-2 space-y-1 rounded-md bg-muted/40 p-2">
-                      {requirements.map(([label, value]) => (
-                        <div key={label}>
-                          <dt className="font-medium text-muted-foreground">
-                            {label}
-                          </dt>
-                          <dd className="whitespace-pre-wrap">{value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </details>
-                )}
-              </div>
-
-              <Button
-                size="sm"
-                variant={isAdded ? "secondary" : "default"}
-                disabled={isAdded || addCourse.isPending}
-                onClick={() => {
-                  addCourse.mutate({
-                    course_code: result.course_code,
-                    term_value: term,
-                    term_label: termLabel,
-                    level: result.level,
-                  })
-                }}
-              >
-                {isAdded ? (
-                  "Added"
-                ) : (
-                  <>
-                    <Plus aria-hidden /> Add
-                  </>
-                )}
-              </Button>
-            </li>
-          )
-        })}
-      </ul>
+                    {isAdded ? (
+                      "Added"
+                    ) : (
+                      <>
+                        <Plus aria-hidden /> Add
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

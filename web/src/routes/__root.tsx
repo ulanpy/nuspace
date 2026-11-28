@@ -1,5 +1,7 @@
-import { Outlet, createRootRouteWithContext } from "@tanstack/react-router"
+import { createRootRouteWithContext } from "@tanstack/react-router"
 import type { QueryClient } from "@tanstack/react-query"
+
+import { SiteLayout } from "@/components/layouts/site"
 
 /**
  * The router carries the QueryClient so route `beforeLoad`/`loader` hooks and
@@ -10,10 +12,10 @@ export interface RouterContext {
   queryClient: QueryClient
 }
 
+/**
+ * Every host renders inside one shell: the same header and footer, and the
+ * host's rail when a route gives it sections (`staticData.shell`).
+ */
 export const Route = createRootRouteWithContext<RouterContext>()({
-  component: RootComponent,
+  component: SiteLayout,
 })
-
-function RootComponent() {
-  return <Outlet />
-}

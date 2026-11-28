@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from backend.bootstrap.tracing import tracing_enabled
@@ -24,13 +23,6 @@ app = FastAPI(
 
 app.mount("/metrics", metrics_app)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"] if config.IS_DEBUG else config.ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_MIDDLEWARE_KEY)
 
 app.add_middleware(PrometheusMetricsMiddleware)
